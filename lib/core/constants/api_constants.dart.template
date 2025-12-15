@@ -1,0 +1,20 @@
+/// API and backend constants
+/// 
+/// IMPORTANT: Copy this file to api_constants.dart and update with your server URL
+/// DO NOT commit api_constants.dart with actual server URLs or secrets
+class ApiConstants {
+  ApiConstants._();
+
+  // Serverpod Configuration
+  // Update this with your Serverpod server URL
+  // Local: 'http://localhost:8080'
+  // Production: 'https://your-server.serverpod.cloud'
+  static const String serverUrl = 'YOUR_SERVER_URL_HERE';
+
+  // Endpoints (if not using Serverpod's auto-generated client)
+  static const String authEndpoint = '/auth';
+  static const String userEndpoint = '/user';
+  static const String loggingEndpoint = '/logging';
+  static const String dashboardEndpoint = '/dashboard';
+}
+
