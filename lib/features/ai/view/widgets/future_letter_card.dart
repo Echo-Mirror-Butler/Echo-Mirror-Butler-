@@ -10,10 +10,7 @@ import '../../data/models/ai_insight_model.dart';
 class FutureLetterCard extends StatefulWidget {
   final AiInsightModel insight;
 
-  const FutureLetterCard({
-    super.key,
-    required this.insight,
-  });
+  const FutureLetterCard({super.key, required this.insight});
 
   @override
   State<FutureLetterCard> createState() => _FutureLetterCardState();
@@ -126,13 +123,16 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                                 onLoaded: (composition) {
                                   if (mounted) {
                                     // Update duration and play animation 3 times
-                                    _lottieController.duration = composition.duration;
+                                    _lottieController.duration =
+                                        composition.duration;
                                     _playEnvelopeAnimation();
                                   }
                                 },
                                 errorBuilder: (context, error, stackTrace) {
                                   // Gracefully handle missing Lottie file
-                                  debugPrint('[FutureLetterCard] Envelope Lottie error: $error');
+                                  debugPrint(
+                                    '[FutureLetterCard] Envelope Lottie error: $error',
+                                  );
                                   return const SizedBox.shrink();
                                 },
                               ),
@@ -142,12 +142,12 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                      'Letter from Future You',
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurface,
-                      ),
+                          'Letter from Future You',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ],
@@ -164,23 +164,23 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                       ),
                     ),
                     child: Text(
-                  widget.insight.futureLetter,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    height: 1.6,
-                    color: theme.colorScheme.onSurface.withOpacity(0.9),
-                    letterSpacing: 0.2,
-                  ),
+                      widget.insight.futureLetter,
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        height: 1.6,
+                        color: theme.colorScheme.onSurface.withOpacity(0.9),
+                        letterSpacing: 0.2,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                'Generated ${_formatDate(widget.insight.generatedAt)}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  fontStyle: FontStyle.italic,
-                ),
+                    'Generated ${_formatDate(widget.insight.generatedAt)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ],
               ),
@@ -210,7 +210,9 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                   },
                   errorBuilder: (context, error, stackTrace) {
                     // Log error for debugging
-                    debugPrint('[FutureLetterCard] Sparkle animation error: $error');
+                    debugPrint(
+                      '[FutureLetterCard] Sparkle animation error: $error',
+                    );
                     return const SizedBox.shrink();
                   },
                 ),
@@ -223,13 +225,13 @@ class _FutureLetterCardState extends State<FutureLetterCard>
 
   void _playEnvelopeAnimation() {
     if (!mounted || _envelopePlayCount >= 3) return;
-    
+
     _lottieController.forward().then((_) {
       if (!mounted) return;
       setState(() {
         _envelopePlayCount++;
       });
-      
+
       if (_envelopePlayCount < 3) {
         // Wait a bit before playing again
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -264,4 +266,3 @@ class _FutureLetterCardState extends State<FutureLetterCard>
     }
   }
 }
-

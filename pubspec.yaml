@@ -40,9 +40,11 @@ dependencies:
   intl: ^0.19.0
   shared_preferences: ^2.3.2
   speech_to_text: ^6.6.1
+  flutter_tts: ^4.0.2
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
   path_provider: ^2.1.4
+  url_launcher: ^6.3.1
   
   # Global Mirror Feature
   geolocator: ^13.0.2

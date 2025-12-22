@@ -11,6 +11,7 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import 'future_letter_card.dart';
 import 'prediction_card.dart';
 import 'suggestions_list.dart';
+import 'stress_detection_card.dart';
 
 /// Section widget that displays AI insights on the dashboard
 class AiInsightSection extends ConsumerWidget {
@@ -28,17 +29,27 @@ class AiInsightSection extends ConsumerWidget {
         final logs = loggingState.value ?? [];
         if (logs.length >= 3 && aiState.value == null && !aiState.isLoading) {
           final now = DateTime.now();
-          final recentLogs = logs
-              .where((log) => log.date.isAfter(now.subtract(const Duration(days: 14))))
-              .toList()
-            ..sort((a, b) => b.date.compareTo(a.date));
-          
+          final recentLogs =
+              logs
+                  .where(
+                    (log) => log.date.isAfter(
+                      now.subtract(const Duration(days: 14)),
+                    ),
+                  )
+                  .toList()
+                ..sort((a, b) => b.date.compareTo(a.date));
+
           if (recentLogs.length >= 3) {
             // Wrap in try-catch to prevent crashes
-            ref.read(aiInsightProvider.notifier).generateInsight(recentLogs).catchError((error) {
-              debugPrint('[AiInsightSection] Error generating insight: $error');
-              // Error is already handled by the provider, just log it
-            });
+            ref
+                .read(aiInsightProvider.notifier)
+                .generateInsight(recentLogs)
+                .catchError((error) {
+                  debugPrint(
+                    '[AiInsightSection] Error generating insight: $error',
+                  );
+                  // Error is already handled by the provider, just log it
+                });
           }
         }
       } catch (e) {
@@ -79,10 +90,7 @@ class AiInsightSection extends ConsumerWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.secondaryColor,
-                    ],
+                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -94,7 +102,7 @@ class AiInsightSection extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child:                 Text(
+                child: Text(
                   'AI Insights',
                   style: GoogleFonts.poppins(
                     fontSize: 24,
@@ -113,6 +121,8 @@ class AiInsightSection extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
+        // Stress detection card (shown if stress level >= 3)
+        StressDetectionCard(insight: insight),
         // Prediction card
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -183,12 +193,12 @@ class AiInsightSection extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                    'Log at least 3 entries to receive personalized AI insights, predictions, and habit suggestions powered by Gemini AI.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                      height: 1.5,
-                    ),
+                  'Log at least 3 entries to receive personalized AI insights, predictions, and habit suggestions powered by Gemini AI.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    height: 1.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -203,9 +213,7 @@ class AiInsightSection extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -237,9 +245,7 @@ class AiInsightSection extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -271,9 +277,7 @@ class AiInsightSection extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -316,7 +320,8 @@ class AiInsightSection extends ConsumerWidget {
   }
 
   void _refreshInsight(WidgetRef ref) {
-    if (!ref.read(authProvider).isAuthenticated || ref.read(authProvider).user == null) {
+    if (!ref.read(authProvider).isAuthenticated ||
+        ref.read(authProvider).user == null) {
       return;
     }
 
@@ -326,10 +331,14 @@ class AiInsightSection extends ConsumerWidget {
     if (logs.length >= 3) {
       // Get recent logs (last 7-14 days)
       final now = DateTime.now();
-      final recentLogs = logs
-          .where((log) => log.date.isAfter(now.subtract(const Duration(days: 14))))
-          .toList()
-        ..sort((a, b) => b.date.compareTo(a.date));
+      final recentLogs =
+          logs
+              .where(
+                (log) =>
+                    log.date.isAfter(now.subtract(const Duration(days: 14))),
+              )
+              .toList()
+            ..sort((a, b) => b.date.compareTo(a.date));
 
       if (recentLogs.length >= 3) {
         ref.read(aiInsightProvider.notifier).generateInsight(recentLogs);
@@ -337,4 +346,3 @@ class AiInsightSection extends ConsumerWidget {
     }
   }
 }
-

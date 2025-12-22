@@ -8,10 +8,7 @@ import '../../data/models/ai_insight_model.dart';
 class SuggestionsList extends StatelessWidget {
   final AiInsightModel insight;
 
-  const SuggestionsList({
-    super.key,
-    required this.insight,
-  });
+  const SuggestionsList({super.key, required this.insight});
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +20,7 @@ class SuggestionsList extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -39,10 +34,7 @@ class SuggestionsList extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppTheme.accentColor,
-                        AppTheme.primaryColor,
-                      ],
+                      colors: [AppTheme.accentColor, AppTheme.primaryColor],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -109,10 +101,7 @@ class SuggestionsList extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.accentColor,
-                  AppTheme.primaryColor,
-                ],
+                colors: [AppTheme.accentColor, AppTheme.primaryColor],
               ),
               shape: BoxShape.circle,
             ),
@@ -144,4 +133,3 @@ class SuggestionsList extends StatelessWidget {
     );
   }
 }
-
