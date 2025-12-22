@@ -263,6 +263,18 @@ class AiRepository {
         '[AiRepository]   Future Letter: ${futureLetter.length} chars (min: 300)',
       );
       debugPrint('[AiRepository]   Suggestions: ${suggestions.length} items');
+      
+      // Log stress level if present
+      final stressLevel = result.stressLevel as int?;
+      if (stressLevel != null) {
+        debugPrint(
+          '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})',
+        );
+      } else {
+        debugPrint(
+          '[AiRepository]   ⚠️ Stress Level: NOT PROVIDED by server. Server-side code needs to calculate stressLevel from logs.',
+        );
+      }
 
       // Validate suggestions are detailed too
       for (var i = 0; i < suggestions.length; i++) {
@@ -273,6 +285,13 @@ class AiRepository {
         }
       }
 
+      // Extract new fields if available
+      final calmingMessage = result.calmingMessage as String?;
+      final musicRecs = (result.musicRecommendations as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
       // Convert Serverpod AiInsight to AiInsightModel
       return AiInsightModel(
         prediction: prediction,
@@ -280,6 +299,8 @@ class AiRepository {
         futureLetter: futureLetter,
         generatedAt: result.generatedAt as DateTime? ?? DateTime.now(),
         stressLevel: result.stressLevel as int?,
+        calmingMessage: calmingMessage,
+        musicRecommendations: musicRecs,
       );
     } on NoSuchMethodError catch (e) {
       // Endpoint doesn't exist yet (serverpod generate not run)

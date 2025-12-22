@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../widgets/privacy_info_sheet.dart';
@@ -35,8 +35,16 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
     super.initState();
     // Check location permission on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
       ref.read(globalMirrorProvider.notifier).checkLocationPermission();
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
   }
 
   Color _getSentimentColor(String sentiment) {
@@ -78,10 +86,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
       appBar: AppBar(
         title: Text(
           'Global Mirror',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-          ),
+          style: theme.textTheme.headlineSmall,
         ),
         actions: [
           // Notifications button with badge
@@ -136,14 +141,6 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
               });
             },
             tooltip: _use3DGlobe && !_has3DError ? 'Switch to 2D Map' : 'Switch to 3D Globe',
-          ),
-          IconButton(
-            icon: const FaIcon(FontAwesomeIcons.arrowRotateRight),
-            onPressed: () {
-              // Refresh the stream
-              ref.invalidate(moodPinsStreamProvider);
-            },
-            tooltip: 'Refresh',
           ),
           IconButton(
             icon: const FaIcon(FontAwesomeIcons.circleInfo),
@@ -206,9 +203,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                             const SizedBox(width: 8),
                             Text(
                               'Active Moods',
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                              style: theme.textTheme.titleSmall?.copyWith(
                                 color: theme.colorScheme.onSurface,
                               ),
                             ),
@@ -217,9 +212,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                         const SizedBox(height: 4),
                       Text(
                         '${pins.length} worldwide',
-                        style: GoogleFonts.poppins(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
+                        style: theme.textTheme.headlineSmall?.copyWith(
                           color: AppTheme.primaryColor,
                         ),
                       ),
@@ -227,8 +220,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Showing first 50 pins',
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
+                          style: theme.textTheme.labelSmall?.copyWith(
                             color: Colors.orange,
                             fontStyle: FontStyle.italic,
                           ),
@@ -238,8 +230,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                           const SizedBox(height: 8),
                           Text(
                             'Share a mood to see it here!',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
+                            style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.grey,
                               fontStyle: FontStyle.italic,
                             ),
@@ -248,10 +239,8 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Stream connected',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
+                            style: theme.textTheme.labelSmall?.copyWith(
                               color: Colors.green,
-                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
@@ -273,7 +262,10 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
           );
         },
         loading: () => const Center(
-          child: CircularProgressIndicator(),
+          child: ShimmerLoading(
+            width: 40,
+            height: 40,
+          ),
         ),
         error: (error, stack) => Center(
           child: Padding(
@@ -289,17 +281,14 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                 const SizedBox(height: 16),
                 Text(
                   'Error loading mood pins',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     color: theme.colorScheme.error,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   error.toString(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.grey,
                   ),
                   textAlign: TextAlign.center,
@@ -391,10 +380,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
         children: [
           Text(
             'Mood Legend',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            style: theme.textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
           ...sentiments.map((sentiment) => Padding(
@@ -413,7 +399,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       sentiment['name'] as String,
-                      style: GoogleFonts.poppins(fontSize: 10),
+                      style: theme.textTheme.labelSmall,
                     ),
                   ],
                 ),

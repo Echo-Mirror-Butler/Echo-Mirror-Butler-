@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 
 /// Custom button widget with icon support
 class CustomButton extends StatelessWidget {
@@ -33,13 +34,9 @@ class CustomButton extends StatelessWidget {
         ),
       ),
       child: isLoading
-          ? const SizedBox(
-              height: 20,
+          ? const ShimmerLoading(
               width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
+              height: 20,
             )
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,

@@ -16,6 +16,8 @@ class NotificationService {
 
   // Notification IDs
   static const int _dailyReminderId = 1;
+  static const int _eveningCheckInId = 2;
+  static const int _inactiveNudgeId = 3;
   static const String _logNowActionId = 'log_now';
   static const String _snoozeActionId = 'snooze';
 
@@ -343,6 +345,90 @@ class NotificationService {
       final time = await getReminderTime();
       await scheduleDailyReminder(hour: time.hour, minute: time.minute);
     }
+    
+    // Schedule evening check-in (8 PM default)
+    await scheduleEveningCheckIn();
+  }
+
+  /// Schedule daily evening check-in notification
+  Future<void> scheduleEveningCheckIn({
+    int hour = 20,
+    int minute = 0,
+  }) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    // Calculate next occurrence
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+
+    // If time has passed today, schedule for tomorrow
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    // Schedule notification
+    await _scheduleNotification(
+      id: _eveningCheckInId,
+      scheduledDate: scheduledDate,
+      title: 'Your future self is checking in',
+      body: 'How was your day today? 🌟',
+      repeatDaily: true,
+    );
+
+    debugPrint('[NotificationService] Scheduled evening check-in at ${hour}:${minute.toString().padLeft(2, '0')}');
+  }
+
+  /// Schedule inactive nudge (2+ days without logs)
+  /// This should be called when app detects no logs for 2+ days
+  Future<void> scheduleInactiveNudge({
+    String? geminiMessage,
+  }) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    // Schedule for tomorrow at 10 AM
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      10,
+      0,
+    );
+
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    final message = geminiMessage ?? 
+        'Hey, future you here—I noticed you haven\'t logged in a while. Let\'s reconnect and see how you\'re doing.';
+
+    await _scheduleNotification(
+      id: _inactiveNudgeId,
+      scheduledDate: scheduledDate,
+      title: 'We miss you!',
+      body: message,
+      repeatDaily: false,
+    );
+
+    debugPrint('[NotificationService] Scheduled inactive nudge');
+  }
+
+  /// Cancel inactive nudge
+  Future<void> cancelInactiveNudge() async {
+    await _notifications.cancel(_inactiveNudgeId);
+    debugPrint('[NotificationService] Cancelled inactive nudge');
   }
 }
 

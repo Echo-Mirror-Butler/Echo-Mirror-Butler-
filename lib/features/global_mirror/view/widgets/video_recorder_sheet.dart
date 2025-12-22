@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 
 /// Video recorder bottom sheet
@@ -441,7 +442,12 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                     ],
                   )
                 : const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                    child: ShimmerLoading(
+                      width: 40,
+                      height: 40,
+                      baseColor: Colors.white24,
+                      highlightColor: Colors.white70,
+                    ),
                   ),
           ),
           const SizedBox(height: 24),
@@ -659,13 +665,11 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                     ),
                   ),
                   child: _isUploading
-                      ? const SizedBox(
-                          height: 20,
+                      ? const ShimmerLoading(
                           width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
+                          height: 20,
+                          baseColor: Colors.white70,
+                          highlightColor: Colors.white,
                         )
                       : Text(
                           'Share Video',
