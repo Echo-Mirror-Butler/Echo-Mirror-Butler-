@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,7 +19,33 @@ class AiInsightSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final aiState = ref.watch(aiInsightProvider);
+    final loggingState = ref.watch(loggingProvider);
     final theme = Theme.of(context);
+
+    // Auto-generate insights when logs are available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        final logs = loggingState.value ?? [];
+        if (logs.length >= 3 && aiState.value == null && !aiState.isLoading) {
+          final now = DateTime.now();
+          final recentLogs = logs
+              .where((log) => log.date.isAfter(now.subtract(const Duration(days: 14))))
+              .toList()
+            ..sort((a, b) => b.date.compareTo(a.date));
+          
+          if (recentLogs.length >= 3) {
+            // Wrap in try-catch to prevent crashes
+            ref.read(aiInsightProvider.notifier).generateInsight(recentLogs).catchError((error) {
+              debugPrint('[AiInsightSection] Error generating insight: $error');
+              // Error is already handled by the provider, just log it
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('[AiInsightSection] Error in auto-generate callback: $e');
+        // Don't crash, just log the error
+      }
+    });
 
     return aiState.when(
       data: (insight) {
@@ -67,9 +94,9 @@ class AiInsightSection extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
+                child:                 Text(
                   'AI Insights',
-                  style: GoogleFonts.playfairDisplay(
+                  style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: theme.colorScheme.onSurface,
@@ -113,7 +140,6 @@ class AiInsightSection extends ConsumerWidget {
     ThemeData theme,
     WidgetRef ref,
   ) {
-    final authState = ref.read(authProvider);
     final loggingState = ref.read(loggingProvider);
     final logs = loggingState.value ?? [];
 
@@ -149,7 +175,7 @@ class AiInsightSection extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(
                   'AI Insights Coming Soon',
-                  style: GoogleFonts.playfairDisplay(
+                  style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                     color: theme.colorScheme.onSurface,
@@ -157,12 +183,12 @@ class AiInsightSection extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Log at least 3 entries to receive personalized AI insights, predictions, and habit suggestions.',
-                  style: GoogleFonts.roboto(
-                    fontSize: 14,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    height: 1.5,
-                  ),
+                    'Log at least 3 entries to receive personalized AI insights, predictions, and habit suggestions powered by Gemini AI.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      height: 1.5,
+                    ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -188,7 +214,7 @@ class AiInsightSection extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(
                 'Generating Insights...',
-                style: GoogleFonts.playfairDisplay(
+                style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
@@ -221,7 +247,7 @@ class AiInsightSection extends ConsumerWidget {
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
               Text(
-                'Generating AI Insights...',
+                'Generating AI Insights with Gemini...',
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -259,17 +285,28 @@ class AiInsightSection extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Failed to Load Insights',
-                style: GoogleFonts.playfairDisplay(
+                'Unable to Generate AI Insights',
+                style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
-              TextButton(
+              Text(
+                'Gemini AI is currently unavailable. Please check your connection and try again.',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              TextButton.icon(
                 onPressed: () => _refreshInsight(ref),
-                child: const Text('Retry'),
+                icon: const Icon(FontAwesomeIcons.arrowsRotate),
+                label: const Text('Retry with Gemini'),
               ),
             ],
           ),
@@ -279,8 +316,7 @@ class AiInsightSection extends ConsumerWidget {
   }
 
   void _refreshInsight(WidgetRef ref) {
-    final authState = ref.read(authProvider);
-    if (!authState.isAuthenticated || authState.user == null) {
+    if (!ref.read(authProvider).isAuthenticated || ref.read(authProvider).user == null) {
       return;
     }
 

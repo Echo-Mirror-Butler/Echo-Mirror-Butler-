@@ -147,7 +147,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     isLoading: authState.isLoading,
                     icon: FontAwesomeIcons.rightToBracket,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  // Forgot password link
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => context.go('/forgot-password'),
+                      child: Text(
+                        'Forgot Password?',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   // Sign up link
                   TextButton(
                     onPressed: () => context.go('/signup'),

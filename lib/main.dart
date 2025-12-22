@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/routing/app_router.dart';
 import 'core/themes/app_theme.dart';
 import 'core/viewmodel/providers/theme_provider.dart';
+import 'core/viewmodel/providers/notification_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
   runApp(
     const ProviderScope(
       child: EchoMirrorApp(),
@@ -12,13 +15,30 @@ void main() {
   );
 }
 
-class EchoMirrorApp extends ConsumerWidget {
+class EchoMirrorApp extends ConsumerStatefulWidget {
   const EchoMirrorApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EchoMirrorApp> createState() => _EchoMirrorAppState();
+}
+
+class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize notifications on app start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationInitProvider.future);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeProvider);
+
+    // Watch notification init (but don't block UI)
+    ref.watch(notificationInitProvider);
 
     return MaterialApp.router(
       title: 'EchoMirror Butler',

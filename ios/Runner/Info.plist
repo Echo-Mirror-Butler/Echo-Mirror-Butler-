@@ -45,5 +45,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>EchoMirror uses speech recognition to help you quickly log your daily mood and thoughts by voice. This makes it easier to capture your reflections without typing.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>EchoMirror needs microphone access to convert your voice into text for quick mood and habit logging.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>EchoMirror needs your location to anonymously share your mood on the Global Mirror map. Your location is rounded to ~11km precision for privacy.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>EchoMirror needs camera access to record mood videos that you can share anonymously with the global community.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>EchoMirror needs photo library access to let you choose videos to share with the community.</string>
 </dict>
 </plist>

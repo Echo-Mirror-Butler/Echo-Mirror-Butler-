@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -10,6 +11,8 @@ import '../../../auth/view/widgets/custom_button.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../data/models/log_entry_model.dart';
 import '../../viewmodel/providers/logging_provider.dart';
+import '../widgets/voice_input_button.dart';
+import '../../../global_mirror/viewmodel/providers/global_mirror_provider.dart';
 
 /// Screen for creating a new log entry
 class CreateEntryScreen extends ConsumerStatefulWidget {
@@ -28,6 +31,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
   int? _selectedMood;
   final List<String> _selectedHabits = [];
   bool _isSubmitting = false;
+  bool _isListening = false;
+  String _voiceTranscription = '';
+  bool _shareAnonymously = false;
 
   @override
   void dispose() {
@@ -128,6 +134,26 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
         if (success) {
           ErrorHandler.showSuccess(context, 'Entry created successfully!');
           
+          // Share mood anonymously if opted in
+          if (_shareAnonymously && _selectedMood != null) {
+            debugPrint('[CreateEntryScreen] Sharing mood anonymously: mood=$_selectedMood, shareAnonymously=$_shareAnonymously');
+            final sentiment = _getMoodSentiment(_selectedMood!);
+            debugPrint('[CreateEntryScreen] Mapped mood $_selectedMood to sentiment: $sentiment');
+            final shareResult = await ref.read(globalMirrorProvider.notifier).shareMood(sentiment);
+            debugPrint('[CreateEntryScreen] Share mood result: $shareResult');
+            if (!shareResult && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Failed to share mood. Check location permissions.'),
+                  backgroundColor: Colors.orange,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          } else {
+            debugPrint('[CreateEntryScreen] Not sharing mood: shareAnonymously=$_shareAnonymously, selectedMood=$_selectedMood');
+          }
+          
           // Trigger AI insight generation if we have at least 3 logs
           final loggingState = ref.read(loggingProvider);
           final allLogs = loggingState.value ?? [];
@@ -177,8 +203,10 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
       appBar: AppBar(
         title: const Text('New Entry'),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
@@ -403,11 +431,31 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                 const SizedBox(height: 24),
 
                 // Notes section
-                Text(
-                  'Notes (Optional)',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Notes (Optional)',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    // Voice input hint
+                    if (!_isListening)
+                      TextButton.icon(
+                        onPressed: () {
+                          // Voice button will handle this
+                        },
+                        icon: const Icon(
+                          FontAwesomeIcons.microphone,
+                          size: 16,
+                        ),
+                        label: const Text('Voice'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -416,9 +464,118 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                   decoration: InputDecoration(
                     hintText: 'Write about your day, thoughts, or anything else...',
                     prefixIcon: const Icon(FontAwesomeIcons.noteSticky, size: 18),
+                    suffixIcon: _isListening
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppTheme.primaryColor,
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Anonymous sharing opt-in - Made more prominent
+                if (_selectedMood != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.primaryColor.withOpacity(0.5),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          blurRadius: 8,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: _shareAnonymously,
+                          onChanged: (value) {
+                            setState(() {
+                              _shareAnonymously = value ?? false;
+                            });
+                          },
+                          activeColor: AppTheme.primaryColor,
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    FontAwesomeIcons.globe,
+                                    size: 16,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Share mood on Global Mirror',
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Help the global community by sharing your mood anonymously. Your location is anonymized (~11km) and data expires in 24 hours.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      IconButton(
+                        icon: const Icon(
+                          FontAwesomeIcons.circleInfo,
+                          size: 18,
+                        ),
+                        color: AppTheme.primaryColor,
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Anonymous Sharing'),
+                              content: const Text(
+                                'When enabled, your mood will be shared anonymously on the Global Mirror map. '
+                                'Your location is anonymized to ~11km precision and no personal information is stored. '
+                                'All shared data expires after 24 hours.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Got It'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -435,6 +592,44 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
             ),
           ),
         ),
+          ),
+          // Voice input overlay
+          if (_isListening)
+            VoiceInputOverlay(
+              isListening: _isListening,
+              transcription: _voiceTranscription,
+              onStop: () {
+                setState(() {
+                  _isListening = false;
+                });
+              },
+            ),
+          // Floating voice input button
+          Positioned(
+            bottom: 24,
+            right: 24,
+            child: VoiceInputButton(
+              notesController: _notesController,
+              onListeningStateChanged: (isListening) {
+                setState(() {
+                  _isListening = isListening;
+                });
+              },
+              onTranscriptionComplete: (transcription) {
+                setState(() {
+                  _voiceTranscription = transcription;
+                  _isListening = false;
+                });
+                // Append to existing notes if any
+                if (_notesController.text.isNotEmpty && transcription.isNotEmpty) {
+                  _notesController.text = '${_notesController.text} $transcription';
+                } else if (transcription.isNotEmpty) {
+                  _notesController.text = transcription;
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -453,6 +648,23 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
         return FontAwesomeIcons.faceGrinStars;
       default:
         return FontAwesomeIcons.faceSmile;
+    }
+  }
+
+  String _getMoodSentiment(int mood) {
+    switch (mood) {
+      case 1:
+        return 'negative';
+      case 2:
+        return 'neutral';
+      case 3:
+        return 'positive';
+      case 4:
+        return 'excited';
+      case 5:
+        return 'excited';
+      default:
+        return 'neutral';
     }
   }
 }

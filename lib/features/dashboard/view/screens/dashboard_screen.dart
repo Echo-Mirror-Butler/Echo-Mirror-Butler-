@@ -2,37 +2,101 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:confetti/confetti.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
+import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../data/models/insight_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
+import '../widgets/mood_trend_chart.dart';
+import '../../viewmodel/providers/mood_chart_provider.dart';
 
 /// Dashboard screen showing insights and predictions
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  late ConfettiController _confettiController;
+  bool _hasCheckedMilestone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  void _checkMilestones(List<InsightModel> insights) {
+    if (_hasCheckedMilestone) return;
+    
+    // Mock milestone check - trigger confetti for 7+ insights
+    if (insights.length >= 7) {
+      _hasCheckedMilestone = true;
+      _confettiController.play();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
     final theme = Theme.of(context);
 
-    // Load insights when we have a user ID (only once, provider handles caching)
+    // Load logs and insights when we have a user ID
     if (authState.isAuthenticated && authState.user != null) {
       final userId = authState.user!.id;
       // Use addPostFrameCallback to avoid calling during build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (userId.isNotEmpty) {
-          // Only load if not already loaded (provider handles this check)
+          // Load logs first (needed for analytics and AI insights)
+          await ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
+          
+          // Load insights
           ref.read(dashboardProvider.notifier).loadInsights(
             userId: userId,
             forceReload: false,
           );
+          
+          // Auto-generate AI insights if we have enough logs (after logs are loaded)
+          Future.delayed(const Duration(milliseconds: 500), () {
+            // Check if widget is still mounted before using ref
+            if (!mounted) return;
+            
+            final loggingState = ref.read(loggingProvider);
+            final logs = loggingState.value ?? [];
+            if (logs.length >= 3) {
+              final now = DateTime.now();
+              final recentLogs = logs
+                  .where((log) => log.date.isAfter(now.subtract(const Duration(days: 14))))
+                  .toList()
+                ..sort((a, b) => b.date.compareTo(a.date));
+              
+              if (recentLogs.length >= 3) {
+                // Check if insight already exists
+                if (!mounted) return;
+                final aiState = ref.read(aiInsightProvider);
+                if (aiState.value == null) {
+                  if (!mounted) return;
+                  // Auto-generate insight
+                  ref.read(aiInsightProvider.notifier).generateInsight(recentLogs);
+                }
+              }
+            }
+          });
         }
       });
     }
@@ -41,11 +105,16 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dashboard'),
       ),
-      body: dashboardState.when(
+      body: Stack(
+        children: [
+          dashboardState.when(
         data: (insights) {
           if (insights.isEmpty) {
             return _buildEmptyState(context, theme, ref);
           }
+
+          // Check milestones and trigger confetti
+          _checkMilestones(insights);
 
           // Group insights by type
           final predictions = insights
@@ -84,6 +153,11 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   // Stats section
                   DashboardStats(insights: insights),
+                  const SizedBox(height: 8),
+                  // Mood Trend Chart
+                  MoodTrendChart(
+                    recentLogs: ref.watch(moodChartDataProvider),
+                  ),
                   const SizedBox(height: 8),
                   // AI Insights section
                   const AiInsightSection(),
@@ -134,6 +208,28 @@ class DashboardScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => _buildErrorState(context, theme, error, ref),
+      ),
+          // Confetti overlay
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirection: 3.14 / 2, // Down
+              maxBlastForce: 5,
+              minBlastForce: 2,
+              emissionFrequency: 0.05,
+              numberOfParticles: 20,
+              gravity: 0.1,
+              shouldLoop: false,
+              colors: const [
+                AppTheme.primaryColor,
+                AppTheme.secondaryColor,
+                AppTheme.accentColor,
+                AppTheme.successColor,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -257,7 +353,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Start logging your daily activities, moods, and habits to see personalized insights and AI-powered predictions.',
+                'Start logging your daily activities, moods, and habits to see personalized insights and AI-powered predictions generated by Gemini.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.6),
                   height: 1.6,

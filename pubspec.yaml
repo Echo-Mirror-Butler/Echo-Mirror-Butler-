@@ -25,6 +25,10 @@ dependencies:
   table_calendar: ^3.1.2
   fl_chart: ^0.69.0
   google_nav_bar: ^5.0.7
+  lottie: ^3.1.2
+  confetti: ^0.7.0
+  animated_text_kit: ^4.2.2
+  smooth_page_indicator: ^1.1.0
 
   # Backend (Serverpod)
   serverpod_client: ^3.0.1
@@ -35,6 +39,24 @@ dependencies:
   # Utilities
   intl: ^0.19.0
   shared_preferences: ^2.3.2
+  speech_to_text: ^6.6.1
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.4
+  path_provider: ^2.1.4
+  
+  # Global Mirror Feature
+  geolocator: ^13.0.2
+  permission_handler: ^11.3.1
+  camera: ^0.11.0+2
+  video_player: ^2.9.2
+  image_picker: ^1.1.2
+  http: ^1.2.2
+  animate_do: ^3.3.4
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  webview_flutter: ^4.9.0
+  flutter_globe_3d: ^1.0.0
+  vector_math: ^2.1.4
 
   # Icons
   cupertino_icons: ^1.0.8
@@ -53,7 +75,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  # Assets
+  assets:
+    - assets/lottie/

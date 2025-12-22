@@ -4,12 +4,18 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/view/screens/login_screen.dart';
 import '../../features/auth/view/screens/signup_screen.dart';
 import '../../features/auth/view/screens/verification_screen.dart';
+import '../../features/auth/view/screens/forgot_password_screen.dart';
+import '../../features/auth/view/screens/reset_password_screen.dart';
+import '../../features/settings/view/screens/change_password_screen.dart';
 import '../../features/auth/viewmodel/providers/auth_provider.dart';
 import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
 import '../../features/logging/view/screens/create_entry_screen.dart';
 import '../../features/logging/view/screens/entry_detail_screen.dart';
 import '../../features/logging/data/models/log_entry_model.dart';
-import '../../core/navigation/main_navigation_screen.dart';
+import '../../features/onboarding/view/screens/onboarding_screen.dart';
+import '../../features/onboarding/viewmodel/providers/onboarding_provider.dart';
+import '../../features/dashboard/view/screens/main_navigation_screen.dart';
+import '../../features/global_mirror/view/screens/mood_comment_notifications_screen.dart';
 
 /// Refresh notifier for GoRouter
 class GoRouterRefreshNotifier extends ChangeNotifier {
@@ -28,15 +34,36 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = GoRouterRefreshNotifier(ref);
   
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/onboarding',
     refreshListenable: notifier,
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final authState = ref.read(authProvider);
       final isAuthenticated = authState.isAuthenticated;
+      final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
       final isVerifying = state.matchedLocation == '/verify';
       final isAuthRoute = isLoggingIn || isSigningUp || isVerifying;
+
+      // Check if onboarding is completed
+      // Use try-catch to handle any errors gracefully
+      bool onboardingCompleted = false;
+      try {
+        onboardingCompleted = await ref.read(onboardingCompletedProvider.future);
+      } catch (e) {
+        // If there's an error reading, assume not completed to be safe
+        onboardingCompleted = false;
+      }
+
+      // If onboarding not completed and not on onboarding screen, redirect to onboarding
+      if (!onboardingCompleted && !isOnboarding) {
+        return '/onboarding';
+      }
+
+      // If onboarding completed and on onboarding screen, redirect to login
+      if (onboardingCompleted && isOnboarding) {
+        return '/login';
+      }
 
       // If authenticated and on auth pages, redirect to dashboard
       if (isAuthenticated && isAuthRoute) {
@@ -44,7 +71,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // If not authenticated and trying to access protected route
-      if (!isAuthenticated && !isAuthRoute) {
+      if (!isAuthenticated && !isAuthRoute && !isOnboarding) {
         return '/login';
       }
 
@@ -52,6 +79,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       GoRoute(
         path: '/login',
         name: 'login',
@@ -72,6 +104,22 @@ final routerProvider = Provider<GoRouter>((ref) {
             accountRequestId: queryParams['accountRequestId'] ?? '',
             password: queryParams['password'] ?? '',
             name: queryParams['name'],
+          );
+        },
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        name: 'forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        name: 'reset-password',
+        builder: (context, state) {
+          final queryParams = state.uri.queryParameters;
+          return ResetPasswordScreen(
+            email: queryParams['email'] ?? '',
+            token: queryParams['token'] ?? '',
           );
         },
       ),
@@ -115,6 +163,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const MainNavigationScreen(),
+      ),
+      GoRoute(
+        path: '/settings/change-password',
+        name: 'change-password',
+        builder: (context, state) {
+          // Import needed
+          return const ChangePasswordScreen();
+        },
+      ),
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        builder: (context, state) => const MoodCommentNotificationsScreen(),
       ),
     ],
   );
