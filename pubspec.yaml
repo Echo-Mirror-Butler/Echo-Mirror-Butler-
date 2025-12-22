@@ -29,6 +29,7 @@ dependencies:
   confetti: ^0.7.0
   animated_text_kit: ^4.2.2
   smooth_page_indicator: ^1.1.0
+  shimmer: ^3.0.0
 
   # Backend (Serverpod)
   serverpod_client: ^3.0.1
@@ -43,6 +44,7 @@ dependencies:
   flutter_tts: ^4.0.2
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
+  audioplayers: ^6.1.0
   path_provider: ^2.1.4
   url_launcher: ^6.3.1
   

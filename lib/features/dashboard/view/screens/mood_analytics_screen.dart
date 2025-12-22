@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../data/models/mood_analytics_model.dart';
@@ -85,7 +86,12 @@ class MoodAnalyticsScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: ShimmerLoading(
+            width: 40,
+            height: 40,
+          ),
+        ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

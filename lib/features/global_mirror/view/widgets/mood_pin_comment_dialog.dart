@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
@@ -25,11 +26,40 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
   final List<MoodPinCommentModel> _comments = [];
   bool _isLoading = false;
   bool _isSubmitting = false;
+  String? _clusterEncouragement;
+  bool _isLoadingEncouragement = false;
 
   @override
   void initState() {
     super.initState();
     _loadComments();
+    _loadClusterEncouragement();
+  }
+
+  Future<void> _loadClusterEncouragement() async {
+    setState(() => _isLoadingEncouragement = true);
+    try {
+      // Count nearby pins with same sentiment (simplified - count all pins with same sentiment)
+      final allPinsAsync = ref.read(moodPinsStreamProvider);
+      final allPins = allPinsAsync.value ?? [];
+      final nearbyCount = allPins.where((p) => p.sentiment == widget.pin.sentiment).length;
+      
+      final encouragement = await ref.read(globalMirrorProvider.notifier).generateClusterEncouragement(
+        widget.pin.sentiment,
+        nearbyCount,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _clusterEncouragement = encouragement;
+          _isLoadingEncouragement = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingEncouragement = false);
+      }
+    }
   }
 
   @override
@@ -208,10 +238,62 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
               ),
             ),
 
+            // Cluster encouragement message (if available)
+            if (_clusterEncouragement != null && _clusterEncouragement!.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      FontAwesomeIcons.heart,
+                      color: AppTheme.primaryColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _clusterEncouragement!,
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                          color: theme.colorScheme.onSurface,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (_isLoadingEncouragement)
+              Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
+                child: ShimmerLoading(
+                  width: double.infinity,
+                  height: 40,
+                  shape: ShimmerShape.rectangle,
+                  radius: 12,
+                ),
+              ),
+
             // Comments list
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: ShimmerLoading(
+                        width: 40,
+                        height: 40,
+                      ),
+                    )
                   : _comments.isEmpty
                       ? Center(
                           child: Padding(
@@ -344,13 +426,11 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                     ),
                     child: IconButton(
                       icon: _isSubmitting
-                          ? const SizedBox(
+                          ? const ShimmerLoading(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
+                              baseColor: Colors.white70,
+                              highlightColor: Colors.white,
                             )
                           : const Icon(
                               FontAwesomeIcons.paperPlane,

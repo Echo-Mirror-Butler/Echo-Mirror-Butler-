@@ -8,6 +8,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../widgets/video_recorder_sheet.dart';
 
@@ -355,7 +356,12 @@ class _VideoReelItemState extends State<VideoReelItem> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(color: Colors.white),
+                  const ShimmerLoading(
+                    width: 40,
+                    height: 40,
+                    baseColor: Colors.white24,
+                    highlightColor: Colors.white70,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Loading video...',

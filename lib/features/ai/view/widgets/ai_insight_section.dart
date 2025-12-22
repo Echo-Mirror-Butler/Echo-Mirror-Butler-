@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/ai_insight_model.dart';
 import '../../viewmodel/providers/ai_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
@@ -22,6 +24,33 @@ class AiInsightSection extends ConsumerWidget {
     final aiState = ref.watch(aiInsightProvider);
     final loggingState = ref.watch(loggingProvider);
     final theme = Theme.of(context);
+
+    // Listen for insight changes and auto-navigate to breathing exercise when stress is detected
+    ref.listen<AsyncValue<AiInsightModel?>>(aiInsightProvider, (previous, next) {
+      // Only trigger when we transition from loading/error/null to a valid insight with stress
+      if (previous?.value == null && next.value != null) {
+        final insight = next.value!;
+        debugPrint(
+          '[AiInsightSection] 📊 Insight generated - stressLevel: ${insight.stressLevel}',
+        );
+        
+        if (insight.stressLevel != null && insight.stressLevel! >= 3) {
+          // Small delay to let the UI render first
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (context.mounted) {
+              debugPrint(
+                '[AiInsightSection] 🧘 Auto-navigating to breathing exercise (stress level: ${insight.stressLevel})',
+              );
+              context.push('/breathing');
+            }
+          });
+        } else if (insight.stressLevel == null) {
+          debugPrint(
+            '[AiInsightSection] ⚠️ Warning: Gemini did not return stressLevel. Server-side code may need to calculate stress from logs.',
+          );
+        }
+      }
+    });
 
     // Auto-generate insights when logs are available
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -218,7 +247,10 @@ class AiInsightSection extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const CircularProgressIndicator(),
+              const ShimmerLoading(
+                width: 40,
+                height: 40,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Generating Insights...',
@@ -250,7 +282,10 @@ class AiInsightSection extends ConsumerWidget {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const CircularProgressIndicator(),
+              const ShimmerLoading(
+                width: 40,
+                height: 40,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Generating AI Insights with Gemini...',

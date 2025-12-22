@@ -1,33 +1,50 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:lottie/lottie.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../viewmodel/providers/ai_provider.dart';
 import 'music_recommendations_screen.dart';
 
 /// Breathing exercise screen with guided breathing and animations
-class BreathingExerciseScreen extends StatefulWidget {
+class BreathingExerciseScreen extends ConsumerStatefulWidget {
   const BreathingExerciseScreen({super.key});
 
   @override
-  State<BreathingExerciseScreen> createState() =>
+  ConsumerState<BreathingExerciseScreen> createState() =>
       _BreathingExerciseScreenState();
 }
 
-class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
+class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScreen>
     with TickerProviderStateMixin {
   late AnimationController _breathController;
   late AnimationController _pulseController;
+  late AnimationController _fadeController;
   late Animation<double> _breathAnimation;
   late Animation<double> _pulseAnimation;
+  late Animation<double> _fadeAnimation;
   final FlutterTts _tts = FlutterTts();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   int _currentCycle = 0;
   final int _totalCycles = 5;
-  String _currentPhase = 'Breathe In';
+  String _currentPhase = 'Get Ready';
   bool _isPaused = false;
   bool _isCompleted = false;
+  bool _hasSpokenForPhase = false;
+  bool _isMusicPlaying = true;
+
+  // Calming ambient music URL (peaceful meditation/ambient track)
+  // Using a reliable free ambient sound source
+  // Alternative sources if this fails:
+  // - https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
+  // - Or use local asset (add to assets/ folder and pubspec.yaml)
+  static const String _ambientMusicUrl =
+      'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
 
   @override
   void initState() {
@@ -45,16 +62,71 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
 
-    _breathAnimation = Tween<double>(begin: 0.5, end: 1.5).animate(
+    _breathAnimation = Tween<double>(begin: 0.7, end: 1.4).animate(
       CurvedAnimation(parent: _breathController, curve: Curves.easeInOut),
     );
 
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
+    );
+
     _initializeTts();
+    _startBackgroundMusic();
     _startBreathing();
+  }
+
+  Future<void> _startBackgroundMusic() async {
+    try {
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.setVolume(0.25); // Low volume so it doesn't overpower voice
+      
+      // Try to play the music, with timeout
+      await _audioPlayer.play(UrlSource(_ambientMusicUrl))
+          .timeout(const Duration(seconds: 5), onTimeout: () {
+        debugPrint('Music playback timed out - continuing without music');
+        setState(() => _isMusicPlaying = false);
+        throw TimeoutException('Music load timeout');
+      });
+      
+      // Check if playback actually started
+      final state = _audioPlayer.state;
+      if (state == PlayerState.stopped || state == PlayerState.completed) {
+        setState(() => _isMusicPlaying = false);
+        debugPrint('Music failed to start - continuing without music');
+      }
+    } catch (e) {
+      // Music is optional, continue without it if it fails
+      debugPrint('Could not play background music: $e');
+      setState(() => _isMusicPlaying = false);
+    }
+  }
+
+  Future<void> _toggleMusic() async {
+    if (!_isMusicPlaying) {
+      // Try to start music if it wasn't playing
+      try {
+        await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+        await _audioPlayer.setVolume(0.25);
+        await _audioPlayer.play(UrlSource(_ambientMusicUrl))
+            .timeout(const Duration(seconds: 3));
+        setState(() => _isMusicPlaying = true);
+      } catch (e) {
+        debugPrint('Could not start music: $e');
+        // Keep music off if it fails
+      }
+    } else {
+      await _audioPlayer.pause();
+      setState(() => _isMusicPlaying = false);
+    }
   }
 
   Future<void> _initializeTts() async {
@@ -84,32 +156,57 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
   Future<void> _speakInstructions() async {
     if (_isPaused) return;
 
+    // Only speak on first cycle to avoid repetition
+    final shouldSpeak = _currentCycle == 0;
+
     // Breathe in (4 seconds)
-    setState(() => _currentPhase = 'Breathe In');
-    await _tts.speak('Breathe in slowly through your nose');
+    setState(() {
+      _currentPhase = 'Breathe In';
+      _hasSpokenForPhase = false;
+    });
+    _fadeController.forward().then((_) => _fadeController.reverse());
+    if (shouldSpeak && !_hasSpokenForPhase) {
+      _hasSpokenForPhase = true;
+      await _tts.speak('Breathe in');
+    }
     await Future.delayed(const Duration(seconds: 4));
 
     if (!_isPaused && mounted) {
       // Hold (7 seconds)
-      setState(() => _currentPhase = 'Hold');
-      await _tts.speak('Hold your breath');
+      setState(() {
+        _currentPhase = 'Hold';
+        _hasSpokenForPhase = false;
+      });
+      _fadeController.forward().then((_) => _fadeController.reverse());
+      if (shouldSpeak && !_hasSpokenForPhase) {
+        _hasSpokenForPhase = true;
+        await _tts.speak('Hold');
+      }
       await Future.delayed(const Duration(seconds: 7));
     }
 
     if (!_isPaused && mounted) {
       // Breathe out (8 seconds)
-      setState(() => _currentPhase = 'Breathe Out');
-      await _tts.speak('Breathe out slowly through your mouth');
+      setState(() {
+        _currentPhase = 'Breathe Out';
+        _hasSpokenForPhase = false;
+      });
+      _fadeController.forward().then((_) => _fadeController.reverse());
+      if (shouldSpeak && !_hasSpokenForPhase) {
+        _hasSpokenForPhase = true;
+        await _tts.speak('Breathe out');
+      }
       await Future.delayed(const Duration(seconds: 8));
     }
   }
 
-  void _completeSession() {
+  void _completeSession() async {
     setState(() {
       _isCompleted = true;
       _currentPhase = 'Complete';
     });
-    _tts.speak('Great job! You\'ve completed your breathing exercise.');
+    await _audioPlayer.stop();
+    _tts.speak('Well done');
   }
 
   void _togglePause() {
@@ -127,7 +224,9 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
   void dispose() {
     _breathController.dispose();
     _pulseController.dispose();
+    _fadeController.dispose();
     _tts.stop();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -140,35 +239,142 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
     }
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor.withOpacity(0.05),
-      appBar: AppBar(
-        title: Text(
-          'Breathing Exercise',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+      backgroundColor: const Color(0xFF1A1A2E),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF16213E),
+              const Color(0xFF0F3460),
+              const Color(0xFF1A1A2E),
+            ],
+          ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
+            // Subtle Lottie background animation
+            Positioned.fill(
+              child: Opacity(
+                opacity: 0.1,
+                child: Lottie.asset(
+                  'assets/lottie/sparkle.json',
+                  fit: BoxFit.cover,
+                  repeat: true,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ),
+            Column(
+          children: [
+            // Custom AppBar with music toggle
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () {
+                        _audioPlayer.stop();
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Breathing Exercise',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        _isMusicPlaying
+                            ? FontAwesomeIcons.volumeHigh
+                            : FontAwesomeIcons.volumeOff,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                      onPressed: _toggleMusic,
+                      tooltip: _isMusicPlaying ? 'Mute music' : 'Play music',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Gemini calming message (if available)
+            Consumer(
+              builder: (context, ref, child) {
+                final aiState = ref.watch(aiInsightProvider);
+                final calmingMessage = aiState.value?.calmingMessage;
+                
+                if (calmingMessage != null && calmingMessage.isNotEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            FontAwesomeIcons.heart,
+                            color: Colors.white.withOpacity(0.8),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              calmingMessage,
+                              style: GoogleFonts.playfairDisplay(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                color: Colors.white.withOpacity(0.9),
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             // Progress indicator
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
                 children: List.generate(
                   _totalCycles,
                   (index) => Expanded(
                     child: Container(
-                      height: 4,
+                      height: 6,
                       margin: EdgeInsets.only(
                         right: index < _totalCycles - 1 ? 8 : 0,
                       ),
                       decoration: BoxDecoration(
                         color: index < _currentCycle
                             ? AppTheme.primaryColor
-                            : Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+                            : index == _currentCycle
+                            ? AppTheme.primaryColor.withOpacity(0.5)
+                            : Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
                   ),
@@ -176,50 +382,142 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
               ),
             ),
 
-            // Breathing circle animation
+            // Breathing circle animation with text outside
             Expanded(
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([
-                    _breathAnimation,
-                    _pulseAnimation,
-                  ]),
-                  builder: (context, child) {
-                    final scale = _currentPhase == 'Breathe In'
-                        ? _breathAnimation.value
-                        : _currentPhase == 'Hold'
-                        ? 1.5
-                        : 0.5;
-                    final pulse = _pulseAnimation.value;
-
-                    return Container(
-                      width: 200 * scale * pulse,
-                      height: 200 * scale * pulse,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            AppTheme.primaryColor.withOpacity(0.8),
-                            AppTheme.secondaryColor.withOpacity(0.6),
-                          ],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
-                            blurRadius: 30 * scale,
-                            spreadRadius: 10 * scale,
-                          ),
-                        ],
-                      ),
-                      child: Center(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Phase text above circle with smooth transitions
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.1),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: child,
+                            ),
+                          );
+                        },
                         child: Text(
                           _currentPhase,
+                          key: ValueKey<String>(_currentPhase),
                           style: GoogleFonts.poppins(
-                            fontSize: 24,
+                            fontSize: 38,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
+                            letterSpacing: 1.5,
+                            shadows: [
+                              Shadow(
+                                color: _getPhaseColor().withOpacity(0.5),
+                                blurRadius: 20,
+                              ),
+                            ],
                           ),
+                          textAlign: TextAlign.center,
                         ),
+                      ),
+                            SizedBox(height: constraints.maxHeight * 0.06),
+                      // Animated breathing circle with multiple rings
+                      AnimatedBuilder(
+                        animation: Listenable.merge([
+                          _breathAnimation,
+                          _pulseAnimation,
+                        ]),
+                        builder: (context, child) {
+                          final scale = _currentPhase == 'Breathe In'
+                              ? _breathAnimation.value
+                              : _currentPhase == 'Hold'
+                              ? 1.4
+                              : _currentPhase == 'Breathe Out'
+                              ? 1.4 - ((_breathAnimation.value - 0.7) * 0.7)
+                              : 0.9;
+
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Outer glow ring
+                              Container(
+                                width: 220 * scale * _pulseAnimation.value,
+                                height: 220 * scale * _pulseAnimation.value,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      _getPhaseColor().withOpacity(0.15),
+                                      _getPhaseColor().withOpacity(0.0),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Main circle
+                              Container(
+                                width: 180 * scale,
+                                height: 180 * scale,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [
+                                      _getPhaseColor().withOpacity(0.9),
+                                      _getPhaseColor().withOpacity(0.6),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _getPhaseColor().withOpacity(0.5),
+                                      blurRadius: 50 * scale,
+                                      spreadRadius: 8 * scale,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Inner highlight
+                              Container(
+                                width: 120 * scale,
+                                height: 120 * scale,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.3),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                            SizedBox(height: constraints.maxHeight * 0.06),
+                      // Instruction text below circle
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                          child: Text(
+                            _getInstructionText(),
+                            key: ValueKey<String>(_currentPhase),
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
+                              shadows: [
+                                const Shadow(
+                                  color: Colors.black26,
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                      ),
+                    ],
+                  ),
                       ),
                     );
                   },
@@ -227,57 +525,97 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
               ),
             ),
 
-            // Instructions
-            Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                children: [
-                  AnimatedTextKit(
-                    animatedTexts: [
-                      TypewriterAnimatedText(
-                        _getInstructionText(),
-                        textStyle: GoogleFonts.poppins(
-                          fontSize: 18,
-                          color: theme.colorScheme.onSurface,
-                        ),
-                        speed: const Duration(milliseconds: 50),
+            // Controls and progress
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    Text(
+                      'Cycle ${_currentCycle + 1} of $_totalCycles',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.8),
                       ),
-                    ],
-                    totalRepeatCount: 1,
-                    displayFullTextOnTap: true,
-                  ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Cycle ${_currentCycle + 1} of $_totalCycles',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          _isPaused
-                              ? FontAwesomeIcons.play
-                              : FontAwesomeIcons.pause,
+                    const SizedBox(height: 28),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Pause/Play button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor,
+                            borderRadius: BorderRadius.circular(50),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(50),
+                              onTap: _togglePause,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Icon(
+                                  _isPaused
+                                      ? FontAwesomeIcons.play
+                                      : FontAwesomeIcons.pause,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        onPressed: _togglePause,
-                        iconSize: 32,
-                        color: AppTheme.primaryColor,
-                      ),
-                      const SizedBox(width: 24),
-                      TextButton.icon(
-                        icon: const Icon(FontAwesomeIcons.xmark),
-                        label: const Text('Skip'),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 32),
+                        // Exit button
+                        TextButton(
+                          onPressed: () {
+                            _audioPlayer.stop();
+                            Navigator.of(context).pop();
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onSurface.withOpacity(0.6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                FontAwesomeIcons.xmark,
+                                size: 18,
+                                color: Colors.white.withOpacity(0.9),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Exit',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+            ),
+              ],
             ),
           ],
         ),
@@ -285,23 +623,48 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
     );
   }
 
+  Color _getPhaseColor() {
+    switch (_currentPhase) {
+      case 'Breathe In':
+        return AppTheme.primaryColor;
+      case 'Hold':
+        return AppTheme.secondaryColor;
+      case 'Breathe Out':
+        return const Color(0xFF6B8DD6);
+      default:
+        return AppTheme.primaryColor;
+    }
+  }
+
   String _getInstructionText() {
     switch (_currentPhase) {
       case 'Breathe In':
-        return 'Breathe in slowly through your nose...';
+        return 'Inhale through your nose';
       case 'Hold':
-        return 'Hold your breath...';
+        return 'Hold gently';
       case 'Breathe Out':
-        return 'Breathe out slowly through your mouth...';
+        return 'Exhale through your mouth';
       default:
-        return 'Follow the circle and breathe naturally...';
+        return 'Follow the circle';
     }
   }
 
   Widget _buildCompletionScreen(BuildContext context, ThemeData theme) {
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor.withOpacity(0.05),
-      body: SafeArea(
+      backgroundColor: const Color(0xFF1A1A2E),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF16213E),
+              const Color(0xFF0F3460),
+              const Color(0xFF1A1A2E),
+            ],
+          ),
+        ),
+        child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
@@ -318,7 +681,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                 style: GoogleFonts.poppins(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
@@ -326,7 +689,7 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
                 'You\'ve completed your breathing exercise. How do you feel?',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: Colors.white.withOpacity(0.9),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -356,11 +719,18 @@ class _BreathingExerciseScreenState extends State<BreathingExerciseScreen>
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Done'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white.withOpacity(0.8),
+                ),
+                child: Text(
+                  'Done',
+                  style: GoogleFonts.poppins(fontSize: 16),
+                ),
               ),
             ],
           ),
         ),
+      ),
       ),
     );
   }

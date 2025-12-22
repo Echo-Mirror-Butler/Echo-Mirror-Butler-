@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/animations/lottie_animations.dart';
 import '../../viewmodel/providers/onboarding_provider.dart';
 
@@ -303,12 +304,18 @@ class _OnboardingPage extends StatelessWidget {
                                 ),
             ),
             child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                          color: Colors.white,
+                                child: loadingProgress.expectedTotalBytes != null
+                                    ? ShimmerLoading(
+                                        width: 40,
+                                        height: 40,
+                                        baseColor: Colors.white24,
+                                        highlightColor: Colors.white70,
+                                      )
+                                    : const ShimmerLoading(
+                                        width: 40,
+                                        height: 40,
+                                        baseColor: Colors.white24,
+                                        highlightColor: Colors.white70,
                                 ),
                               ),
                         );

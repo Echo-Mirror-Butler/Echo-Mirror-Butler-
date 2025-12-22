@@ -444,6 +444,27 @@ class GlobalMirrorRepository {
     }
   }
 
+  /// Generate cluster encouragement message for mood clusters
+  Future<String> generateClusterEncouragement(
+    String sentiment,
+    int nearbyCount,
+  ) async {
+    if (_useMockData) {
+      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+    }
+
+    try {
+      final message = await _client.global.generateClusterEncouragement(
+        sentiment,
+        nearbyCount,
+      );
+      return message;
+    } catch (e) {
+      debugPrint('[GlobalMirrorRepository] Error generating cluster encouragement: $e');
+      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+    }
+  }
+
   void dispose() {
     _mockTimer?.cancel();
   }

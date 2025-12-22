@@ -242,6 +242,16 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       return [];
     }
   }
+
+  /// Generate cluster encouragement message
+  Future<String> generateClusterEncouragement(String sentiment, int nearbyCount) async {
+    try {
+      return await _repository.generateClusterEncouragement(sentiment, nearbyCount);
+    } catch (e) {
+      debugPrint('[GlobalMirrorNotifier] Error generating cluster encouragement: $e');
+      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+    }
+  }
 }
 
 /// Provider for Global Mirror state notifier

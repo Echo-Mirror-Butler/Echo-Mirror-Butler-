@@ -5,6 +5,8 @@ class AiInsightModel {
   final String futureLetter;
   final DateTime generatedAt;
   final int? stressLevel; // 0-5, where 0=no stress, 5=high stress
+  final String? calmingMessage; // Personalized calming message from future self
+  final List<String>? musicRecommendations; // Music recommendations with vibe descriptions
 
   const AiInsightModel({
     required this.prediction,
@@ -12,6 +14,8 @@ class AiInsightModel {
     required this.futureLetter,
     required this.generatedAt,
     this.stressLevel,
+    this.calmingMessage,
+    this.musicRecommendations,
   });
 
   /// Create AiInsightModel from JSON
@@ -28,6 +32,10 @@ class AiInsightModel {
           ? DateTime.parse(json['generatedAt'] as String)
           : DateTime.now(),
       stressLevel: json['stressLevel'] as int?,
+      calmingMessage: json['calmingMessage'] as String?,
+      musicRecommendations: (json['musicRecommendations'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
     );
   }
 
@@ -39,6 +47,8 @@ class AiInsightModel {
       'futureLetter': futureLetter,
       'generatedAt': generatedAt.toIso8601String(),
       'stressLevel': stressLevel,
+      'calmingMessage': calmingMessage,
+      'musicRecommendations': musicRecommendations,
     };
   }
 
@@ -49,6 +59,8 @@ class AiInsightModel {
     String? futureLetter,
     DateTime? generatedAt,
     int? stressLevel,
+    String? calmingMessage,
+    List<String>? musicRecommendations,
   }) {
     return AiInsightModel(
       prediction: prediction ?? this.prediction,
@@ -56,6 +68,8 @@ class AiInsightModel {
       futureLetter: futureLetter ?? this.futureLetter,
       generatedAt: generatedAt ?? this.generatedAt,
       stressLevel: stressLevel ?? this.stressLevel,
+      calmingMessage: calmingMessage ?? this.calmingMessage,
+      musicRecommendations: musicRecommendations ?? this.musicRecommendations,
     );
   }
 }

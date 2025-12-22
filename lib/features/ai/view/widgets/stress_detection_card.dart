@@ -16,11 +16,16 @@ class StressDetectionCard extends StatelessWidget {
   }
 
   String get _stressMessage {
+    // Use Gemini-generated calming message if available, otherwise fallback
+    if (insight.calmingMessage != null && insight.calmingMessage!.isNotEmpty) {
+      return insight.calmingMessage!;
+    }
+    
     final level = insight.stressLevel ?? 0;
     if (level >= 4) {
-      return 'You\'ve been working a lot without much rest. Let\'s take a moment to breathe.';
+      return 'Hey, future you here—I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';
     } else if (level >= 3) {
-      return 'I noticed you\'ve been working hard. A quick breathing break might help.';
+      return 'Hey, future you here—I noticed you\'ve been working hard. A quick breathing break might help.';
     }
     return '';
   }
@@ -72,8 +77,8 @@ class StressDetectionCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Take a Break',
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: theme.colorScheme.onSurface,
                       ),

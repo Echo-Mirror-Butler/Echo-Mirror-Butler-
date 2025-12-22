@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/mood_pin_model.dart';
 
 /// 3D Globe widget using WebView with Three.js
@@ -491,13 +492,17 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(color: Colors.white),
+                  const ShimmerLoading(
+                    width: 40,
+                    height: 40,
+                    baseColor: Colors.white24,
+                    highlightColor: Colors.white70,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Loading 3D Globe...',
-                    style: GoogleFonts.poppins(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Colors.white,
-                      fontSize: 16,
                     ),
                   ),
                 ],
@@ -506,5 +511,12 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
           ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    // WebViewController doesn't need explicit disposal in newer versions,
+    // but we ensure cleanup of any pending operations
+    super.dispose();
   }
 }

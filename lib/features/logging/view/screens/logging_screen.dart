@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/animated_card.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
@@ -113,7 +114,12 @@ class LoggingScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: ShimmerLoading(
+            width: 40,
+            height: 40,
+          ),
+        ),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

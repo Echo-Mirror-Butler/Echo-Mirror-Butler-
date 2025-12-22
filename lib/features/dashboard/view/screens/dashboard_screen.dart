@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
@@ -206,7 +207,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: ShimmerLoading(
+            width: 40,
+            height: 40,
+          ),
+        ),
         error: (error, stack) => _buildErrorState(context, theme, error, ref),
       ),
           // Confetti overlay

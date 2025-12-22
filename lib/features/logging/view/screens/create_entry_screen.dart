@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
@@ -467,15 +468,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                     suffixIcon: _isListening
                         ? const Padding(
                             padding: EdgeInsets.all(12),
-                            child: SizedBox(
+                            child: ShimmerLoading(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.primaryColor,
-                                ),
-                              ),
                             ),
                           )
                         : null,
