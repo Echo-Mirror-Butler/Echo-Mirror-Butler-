@@ -1,0 +1,348 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Service for managing local push notifications
+class NotificationService {
+  static final NotificationService _instance = NotificationService._internal();
+  factory NotificationService() => _instance;
+  NotificationService._internal();
+
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+  bool _initialized = false;
+
+  // Notification IDs
+  static const int _dailyReminderId = 1;
+  static const String _logNowActionId = 'log_now';
+  static const String _snoozeActionId = 'snooze';
+
+  // SharedPreferences keys
+  static const String _keyReminderEnabled = 'reminder_enabled';
+  static const String _keyReminderHour = 'reminder_hour';
+  static const String _keyReminderMinute = 'reminder_minute';
+
+  /// Initialize the notification service
+  Future<bool> initialize() async {
+    if (_initialized) return true;
+
+    try {
+      // Initialize timezone
+      tz.initializeTimeZones();
+      final locationName = tz.local.name;
+      tz.setLocalLocation(tz.getLocation(locationName));
+
+      // Android initialization settings
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+
+      // iOS initialization settings
+      const iosSettings = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+
+      // Initialization settings
+      const initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
+
+      // Initialize plugin
+      final initialized = await _notifications.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _handleNotificationResponse,
+      );
+
+      if (initialized == true) {
+        // Request permissions (iOS)
+        if (defaultTargetPlatform == TargetPlatform.iOS) {
+          final iosImplementation = _notifications
+              .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin>();
+          if (iosImplementation != null) {
+            await iosImplementation.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
+          }
+        }
+
+        // Request permissions (Android 13+)
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          final androidImplementation = _notifications
+              .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>();
+          if (androidImplementation != null) {
+            await androidImplementation.requestNotificationsPermission();
+          }
+        }
+
+        _initialized = true;
+        debugPrint('[NotificationService] Initialized successfully');
+        return true;
+      }
+
+      debugPrint('[NotificationService] Failed to initialize');
+      return false;
+    } catch (e) {
+      debugPrint('[NotificationService] Initialization error: $e');
+      return false;
+    }
+  }
+
+  /// Handle notification tap/action
+  void _handleNotificationResponse(NotificationResponse response) {
+    debugPrint('[NotificationService] Notification response: ${response.id}, action: ${response.actionId}');
+
+    // Handle actions
+    if (response.actionId == _logNowActionId) {
+      // Navigate to logging screen
+      // Note: We'll need to access the router from the app context
+      // This will be handled by the main app or a provider
+      _navigateToLogging();
+    } else if (response.actionId == _snoozeActionId) {
+      // Snooze for 1 hour
+      _snoozeReminder();
+    } else if (response.id == _dailyReminderId) {
+      // Regular tap on notification
+      _navigateToLogging();
+    }
+  }
+
+  /// Navigate to logging screen
+  void _navigateToLogging() {
+    // This will be set by the app router
+    // For now, we'll use a callback pattern
+    if (_onNotificationTap != null) {
+      _onNotificationTap!();
+    }
+  }
+
+  /// Snooze reminder for 1 hour
+  Future<void> _snoozeReminder() async {
+    final now = tz.TZDateTime.now(tz.local);
+    final snoozeTime = now.add(const Duration(hours: 1));
+
+    await _scheduleNotification(
+      id: _dailyReminderId + 1000, // Use different ID for snooze
+      scheduledDate: snoozeTime,
+      title: 'Reminder: Time to Reflect',
+      body: 'Your future self is still waiting 🌟',
+    );
+
+    debugPrint('[NotificationService] Snoozed until ${snoozeTime.toString()}');
+  }
+
+  /// Callback for notification tap (set by app)
+  VoidCallback? _onNotificationTap;
+
+  /// Set callback for notification tap
+  void setNotificationTapCallback(VoidCallback callback) {
+    _onNotificationTap = callback;
+  }
+
+  /// Request notification permissions
+  Future<bool> requestPermissions() async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final iosImplementation = _notifications
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>();
+        if (iosImplementation != null) {
+          final result = await iosImplementation.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+          return result ?? false;
+        }
+        return false;
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        final androidImplementation = _notifications
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        if (androidImplementation != null) {
+          final result = await androidImplementation.requestNotificationsPermission();
+          return result ?? false;
+        }
+        return false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('[NotificationService] Permission request error: $e');
+      return false;
+    }
+  }
+
+  /// Schedule daily reminder notification
+  Future<void> scheduleDailyReminder({
+    int hour = 20,
+    int minute = 0,
+  }) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    // Cancel existing reminder
+    await cancelDailyReminder();
+
+    // Save reminder time
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyReminderHour, hour);
+    await prefs.setInt(_keyReminderMinute, minute);
+    await prefs.setBool(_keyReminderEnabled, true);
+
+    // Calculate next occurrence
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+
+    // If time has passed today, schedule for tomorrow
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    // Schedule notification
+    await _scheduleNotification(
+      id: _dailyReminderId,
+      scheduledDate: scheduledDate,
+      title: 'Time to Reflect',
+      body: 'Hey, your future self wants to hear from you today 🌟',
+      repeatDaily: true,
+    );
+
+    debugPrint('[NotificationService] Scheduled daily reminder at ${hour}:${minute.toString().padLeft(2, '0')}');
+  }
+
+  /// Schedule a notification
+  Future<void> _scheduleNotification({
+    required int id,
+    required tz.TZDateTime scheduledDate,
+    required String title,
+    required String body,
+    bool repeatDaily = false,
+  }) async {
+    // Android notification details
+    const androidDetails = AndroidNotificationDetails(
+      'daily_reminder_channel',
+      'Daily Reflection Reminders',
+      channelDescription: 'Notifications to remind you to log your daily reflections',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+      category: AndroidNotificationCategory.reminder,
+      actions: [
+        AndroidNotificationAction(
+          _logNowActionId,
+          'Log Now',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          _snoozeActionId,
+          'Snooze',
+        ),
+      ],
+    );
+
+    // iOS notification details
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      categoryIdentifier: 'daily_reminder',
+      interruptionLevel: InterruptionLevel.active,
+    );
+
+    // Notification details
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // Schedule notification
+    if (repeatDaily) {
+      await _notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } else {
+      await _notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    }
+  }
+
+  /// Cancel daily reminder
+  Future<void> cancelDailyReminder() async {
+    await _notifications.cancel(_dailyReminderId);
+    
+    // Cancel any snoozed reminders
+    for (int i = 1001; i <= 1010; i++) {
+      await _notifications.cancel(i);
+    }
+
+    // Update preferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyReminderEnabled, false);
+
+    debugPrint('[NotificationService] Cancelled daily reminder');
+  }
+
+  /// Check if reminder is enabled
+  Future<bool> isReminderEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyReminderEnabled) ?? false;
+  }
+
+  /// Get reminder time
+  Future<({int hour, int minute})> getReminderTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hour = prefs.getInt(_keyReminderHour) ?? 20;
+    final minute = prefs.getInt(_keyReminderMinute) ?? 0;
+    return (hour: hour, minute: minute);
+  }
+
+  /// Reschedule reminder (called on app open)
+  Future<void> rescheduleIfNeeded() async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    final isEnabled = await isReminderEnabled();
+    if (isEnabled) {
+      final time = await getReminderTime();
+      await scheduleDailyReminder(hour: time.hour, minute: time.minute);
+    }
+  }
+}
+

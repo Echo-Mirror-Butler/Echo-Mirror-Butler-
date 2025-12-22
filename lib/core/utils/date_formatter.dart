@@ -21,8 +21,10 @@ class DateFormatter {
   }
 
   /// Format date as "MM/dd/yyyy" (e.g., "01/15/2024")
+  /// Normalizes to local date to avoid timezone issues
   static String formatDateShort(DateTime date) {
-    return DateFormat('MM/dd/yyyy').format(date);
+    final localDate = date.isUtc ? date.toLocal() : date;
+    return DateFormat('MM/dd').format(localDate);
   }
 
   /// Format time as "hh:mm a" (e.g., "02:30 PM")

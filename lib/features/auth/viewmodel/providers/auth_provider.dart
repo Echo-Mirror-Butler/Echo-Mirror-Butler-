@@ -203,6 +203,61 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     }
   }
+
+  /// Request password reset
+  Future<bool> requestPasswordReset(String email) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final success = await _repository.requestPasswordReset(email);
+      state = state.copyWith(isLoading: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Reset password with token
+  Future<bool> resetPassword(
+    String email,
+    String token,
+    String newPassword,
+  ) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final success = await _repository.resetPassword(email, token, newPassword);
+      state = state.copyWith(isLoading: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
+
+  /// Change password for authenticated user
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final success = await _repository.changePassword(currentPassword, newPassword);
+      state = state.copyWith(isLoading: false);
+      return success;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+      return false;
+    }
+  }
 }
 
 /// Auth provider

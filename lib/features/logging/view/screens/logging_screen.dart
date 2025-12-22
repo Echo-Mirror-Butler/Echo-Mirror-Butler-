@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/widgets/animated_card.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/log_entry_model.dart';
 import '../../viewmodel/providers/logging_provider.dart';
@@ -74,34 +75,39 @@ class LoggingScreen extends ConsumerWidget {
             itemCount: entries.length,
             itemBuilder: (context, index) {
               final entry = entries[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                    child: Icon(
-                      FontAwesomeIcons.smile,
-                      color: AppTheme.primaryColor,
+              return Hero(
+                tag: 'log_entry_${entry.id}',
+                child: AnimatedCard(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.zero,
+                  animationDuration: Duration(milliseconds: 300 + (index * 50)),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      child: Icon(
+                        _getMoodIcon(entry.mood),
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
+                    title: Text(
+                      DateFormatter.formatDate(entry.date),
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    subtitle: Text(
+                      entry.mood != null
+                          ? 'Mood: ${entry.mood}/5'
+                          : 'No mood logged',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    trailing: Icon(
+                      FontAwesomeIcons.chevronRight,
+                      size: 16,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                    onTap: () {
+                      context.push('/logging/detail/${entry.id}', extra: entry);
+                    },
                   ),
-                  title: Text(
-                    DateFormatter.formatDate(entry.date),
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  subtitle: Text(
-                    entry.mood != null
-                        ? 'Mood: ${entry.mood}/5'
-                        : 'No mood logged',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  trailing: Icon(
-                    FontAwesomeIcons.chevronRight,
-                    size: 16,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                  ),
-                  onTap: () {
-                    context.push('/logging/detail/${entry.id}', extra: entry);
-                  },
                 ),
               );
             },
@@ -142,6 +148,26 @@ class LoggingScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
       ),
     );
+  }
+
+  IconData _getMoodIcon(int? mood) {
+    if (mood == null) {
+      return FontAwesomeIcons.smile;
+    }
+    switch (mood) {
+      case 1:
+        return FontAwesomeIcons.faceFrown;
+      case 2:
+        return FontAwesomeIcons.faceMeh;
+      case 3:
+        return FontAwesomeIcons.faceSmile;
+      case 4:
+        return FontAwesomeIcons.faceSmileBeam;
+      case 5:
+        return FontAwesomeIcons.faceGrinStars;
+      default:
+        return FontAwesomeIcons.faceSmile;
+    }
   }
 
   void _showCalendar(BuildContext context, WidgetRef ref, List<LogEntryModel> entries) {

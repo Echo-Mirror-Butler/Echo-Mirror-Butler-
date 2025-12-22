@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../data/models/ai_insight_model.dart';
 
@@ -52,7 +53,7 @@ class PredictionCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '1-Month Prediction',
-                    style: GoogleFonts.playfairDisplay(
+                    style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: theme.colorScheme.onSurface,
@@ -82,14 +83,21 @@ class PredictionCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      insight.prediction,
-                      style: GoogleFonts.roboto(
-                        fontSize: 15,
-                        height: 1.6,
-                        color: theme.colorScheme.onSurface.withOpacity(0.9),
-                        letterSpacing: 0.2,
-                      ),
+                    child: AnimatedTextKit(
+                      animatedTexts: [
+                        TypewriterAnimatedText(
+                          insight.prediction,
+                          textStyle: GoogleFonts.poppins(
+                            fontSize: 15,
+                            height: 1.6,
+                            color: theme.colorScheme.onSurface.withOpacity(0.9),
+                            letterSpacing: 0.2,
+                          ),
+                          speed: const Duration(milliseconds: 30),
+                        ),
+                      ],
+                      totalRepeatCount: 1,
+                      displayFullTextOnTap: true,
                     ),
                   ),
                 ],

@@ -56,7 +56,7 @@ class SuggestionsList extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Habit Suggestions',
-                    style: GoogleFonts.playfairDisplay(
+                    style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: theme.colorScheme.onSurface,
@@ -119,7 +119,7 @@ class SuggestionsList extends StatelessWidget {
             child: Center(
               child: Text(
                 '$number',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -131,7 +131,7 @@ class SuggestionsList extends StatelessWidget {
           Expanded(
             child: Text(
               suggestion,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.poppins(
                 fontSize: 15,
                 height: 1.5,
                 color: theme.colorScheme.onSurface.withOpacity(0.9),
