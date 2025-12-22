@@ -9,10 +9,7 @@ import '../../data/models/ai_insight_model.dart';
 class PredictionCard extends StatelessWidget {
   final AiInsightModel insight;
 
-  const PredictionCard({
-    super.key,
-    required this.insight,
-  });
+  const PredictionCard({super.key, required this.insight});
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +17,7 @@ class PredictionCard extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -36,10 +31,7 @@ class PredictionCard extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppTheme.secondaryColor,
-                        AppTheme.accentColor,
-                      ],
+                      colors: [AppTheme.secondaryColor, AppTheme.accentColor],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -109,4 +101,3 @@ class PredictionCard extends StatelessWidget {
     );
   }
 }
-

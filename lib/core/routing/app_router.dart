@@ -16,6 +16,8 @@ import '../../features/onboarding/view/screens/onboarding_screen.dart';
 import '../../features/onboarding/viewmodel/providers/onboarding_provider.dart';
 import '../../features/dashboard/view/screens/main_navigation_screen.dart';
 import '../../features/global_mirror/view/screens/mood_comment_notifications_screen.dart';
+import '../../features/ai/view/screens/breathing_exercise_screen.dart';
+import '../../features/ai/view/screens/music_recommendations_screen.dart';
 
 /// Refresh notifier for GoRouter
 class GoRouterRefreshNotifier extends ChangeNotifier {
@@ -25,14 +27,14 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
       (_, __) => notifyListeners(),
     );
   }
-  
+
   final Ref ref;
 }
 
 /// App router configuration with GoRouter
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = GoRouterRefreshNotifier(ref);
-  
+
   return GoRouter(
     initialLocation: '/onboarding',
     refreshListenable: notifier,
@@ -49,7 +51,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Use try-catch to handle any errors gracefully
       bool onboardingCompleted = false;
       try {
-        onboardingCompleted = await ref.read(onboardingCompletedProvider.future);
+        onboardingCompleted = await ref.read(
+          onboardingCompletedProvider.future,
+        );
       } catch (e) {
         // If there's an error reading, assume not completed to be safe
         onboardingCompleted = false;
@@ -177,7 +181,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'notifications',
         builder: (context, state) => const MoodCommentNotificationsScreen(),
       ),
+      GoRoute(
+        path: '/breathing',
+        name: 'breathing',
+        builder: (context, state) => const BreathingExerciseScreen(),
+      ),
+      GoRoute(
+        path: '/music-recommendations',
+        name: 'music-recommendations',
+        builder: (context, state) => const MusicRecommendationsScreen(),
+      ),
     ],
   );
 });
-

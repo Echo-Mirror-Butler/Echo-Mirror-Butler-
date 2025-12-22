@@ -17,7 +17,7 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
   AiInsightModel? _cachedInsight;
 
   /// Generate insight based on recent logs
-  /// 
+  ///
   /// Takes a list of UserLog (LogEntryModel) and generates AI insights
   /// Uses Gemini AI - will show error state if API fails (no mock data fallback)
   Future<void> generateInsight(List<LogEntryModel> recentLogs) async {
@@ -32,12 +32,16 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
       debugPrint('[AiInsightNotifier] Generating insight with Gemini...');
       final insight = await _repository.generateInsight(recentLogs);
       _cachedInsight = insight;
-      debugPrint('[AiInsightNotifier] ✅ Successfully generated insight from Gemini');
+      debugPrint(
+        '[AiInsightNotifier] ✅ Successfully generated insight from Gemini',
+      );
       state = AsyncValue.data(insight);
     } catch (e, stackTrace) {
       // Show error state instead of silently falling back to null
       // This ensures users know when Gemini API is not working
-      debugPrint('[AiInsightNotifier] ❌ Error generating insight from Gemini: $e');
+      debugPrint(
+        '[AiInsightNotifier] ❌ Error generating insight from Gemini: $e',
+      );
       debugPrint('[AiInsightNotifier] Stack trace: $stackTrace');
       // Set to error state so UI can show appropriate message
       state = AsyncValue.error(e, stackTrace);
@@ -56,8 +60,9 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
 
 /// AI insight provider
 final aiInsightProvider =
-    StateNotifierProvider<AiInsightNotifier, AsyncValue<AiInsightModel?>>((ref) {
-  final repository = ref.watch(aiRepositoryProvider);
-  return AiInsightNotifier(repository);
-});
-
+    StateNotifierProvider<AiInsightNotifier, AsyncValue<AiInsightModel?>>((
+      ref,
+    ) {
+      final repository = ref.watch(aiRepositoryProvider);
+      return AiInsightNotifier(repository);
+    });

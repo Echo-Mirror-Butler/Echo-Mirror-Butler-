@@ -279,6 +279,7 @@ class AiRepository {
         suggestions: suggestions,
         futureLetter: futureLetter,
         generatedAt: result.generatedAt as DateTime? ?? DateTime.now(),
+        stressLevel: result.stressLevel as int?,
       );
     } on NoSuchMethodError catch (e) {
       // Endpoint doesn't exist yet (serverpod generate not run)
