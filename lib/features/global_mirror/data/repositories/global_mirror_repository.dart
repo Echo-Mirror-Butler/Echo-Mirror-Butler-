@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:echomirror_server_client/echomirror_server_client.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../../../../core/services/serverpod_client_service.dart';
 import '../models/mood_pin_model.dart';
 import '../models/video_post_model.dart';
 import '../models/mood_pin_comment_model.dart';
@@ -13,13 +13,14 @@ import '../models/mood_pin_comment_model.dart';
 /// Handles anonymous mood sharing and video posts
 class GlobalMirrorRepository {
   // Use real Serverpod backend
-  // Set to true to test without server (useful when testing large file uploads)
-  bool _useMockData = false; // Change to true to enable mock mode for testing
-  late final Client _client;
+  // DISABLED - app uses real-time data only
+  bool _useMockData = false;
   
   GlobalMirrorRepository() {
-    _client = Client(ApiConstants.serverUrl);
+    // Use shared client with persistent authentication
   }
+  
+  Client get _client => ServerpodClientService.instance.client;
   final List<MoodPinModel> _mockPins = [];
   final List<VideoPostModel> _mockVideos = [];
   final List<MoodPinCommentModel> _mockComments = [];
@@ -222,6 +223,103 @@ class GlobalMirrorRepository {
       }
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorRepository] Error uploading video: $e');
+      debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
+      return null;
+    }
+  }
+
+  /// Upload image and create post
+  Future<String?> uploadImage({
+    required String imagePath,
+    required String moodTag,
+  }) async {
+    try {
+      debugPrint('[GlobalMirrorRepository] Starting image upload: path=$imagePath, moodTag=$moodTag');
+      
+      // Check if file exists
+      final file = File(imagePath);
+      if (!await file.exists()) {
+        debugPrint('[GlobalMirrorRepository] ERROR: Image file does not exist at path: $imagePath');
+        return null;
+      }
+      
+      // Check file size
+      final fileSize = await file.length();
+      debugPrint('[GlobalMirrorRepository] Image file size: ${fileSize / (1024 * 1024)} MB');
+      
+      if (_useMockData) {
+        // Simulate upload delay
+        debugPrint('[GlobalMirrorRepository] Using mock data - simulating upload...');
+        await Future.delayed(const Duration(seconds: 1));
+        
+        final post = VideoPostModel(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          videoUrl: 'mock://image/${DateTime.now().millisecondsSinceEpoch}.jpg',
+          moodTag: moodTag,
+          timestamp: DateTime.now(),
+          expiresAt: DateTime.now().add(const Duration(hours: 24)),
+        );
+        _mockVideos.insert(0, post);
+        debugPrint('[GlobalMirrorRepository] Mock image uploaded successfully: $moodTag');
+        return post.videoUrl;
+      } else {
+        // Upload to Serverpod
+        try {
+          // Check file size - Serverpod endpoints have a 512KB limit by default
+          // Serialization overhead is significant (~20-25%), so use 400KB as safe limit
+          const maxDirectUploadSize = 400 * 1024; // 400KB to account for request serialization overhead
+          
+          if (fileSize > maxDirectUploadSize) {
+            debugPrint('[GlobalMirrorRepository] ERROR: Image file (${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB / ${(fileSize / 1024).toStringAsFixed(0)} KB) exceeds safe upload limit of 400KB');
+            debugPrint('[GlobalMirrorRepository] Please compress the image or use a smaller file');
+            return null;
+          }
+          
+          debugPrint('[GlobalMirrorRepository] Reading image file bytes...');
+          final bytes = await file.readAsBytes();
+          debugPrint('[GlobalMirrorRepository] Read ${bytes.length} bytes from image file');
+          
+          final byteData = ByteData.view(bytes.buffer);
+          
+          debugPrint('[GlobalMirrorRepository] Uploading to Serverpod...');
+          final imageUrl = await _client.global.uploadImage(
+            byteData,
+            moodTag,
+          );
+          
+          if (imageUrl != null && imageUrl.isNotEmpty) {
+            debugPrint('[GlobalMirrorRepository] Image uploaded successfully: $moodTag - URL: $imageUrl');
+          } else {
+            debugPrint('[GlobalMirrorRepository] WARNING: Upload returned null or empty URL');
+          }
+          return imageUrl;
+        } catch (e, stackTrace) {
+          debugPrint('[GlobalMirrorRepository] Error uploading image to server: $e');
+          debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
+          
+          // Check if it's a size limit error
+          if (e.toString().contains('Request size exceeds') || 
+              e.toString().contains('413') ||
+              e.toString().contains('524288')) {
+            debugPrint('[GlobalMirrorRepository] File too large for direct upload (exceeds 512KB limit)');
+            debugPrint('[GlobalMirrorRepository] Please compress the image or use a smaller file');
+            // Return a specific error message for size errors
+            throw Exception('Image file exceeds 400KB limit. Please choose a smaller image.');
+          }
+          
+          // Check if it's a method not found error (server endpoint not deployed)
+          if (e.toString().contains('Method not found') ||
+              e.toString().contains('statusCode = 400') ||
+              e.toString().contains('Bad request')) {
+            debugPrint('[GlobalMirrorRepository] uploadImage endpoint not found on server');
+            throw Exception('Upload service is temporarily unavailable. Please try again in a moment.');
+          }
+          
+          return null;
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[GlobalMirrorRepository] Error uploading image: $e');
       debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
       return null;
     }

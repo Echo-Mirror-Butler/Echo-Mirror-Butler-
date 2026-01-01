@@ -2,7 +2,7 @@ name: echomirror
 description: "EchoMirror Butler - A personal growth assistant with daily logging, AI predictions, and automated habit tweaks."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+4
 
 environment:
   sdk: ^3.10.0
@@ -40,7 +40,7 @@ dependencies:
   # Utilities
   intl: ^0.19.0
   shared_preferences: ^2.3.2
-  speech_to_text: ^6.6.1
+  speech_to_text: ^7.3.0
   flutter_tts: ^4.0.2
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
@@ -54,6 +54,7 @@ dependencies:
   camera: ^0.11.0+2
   video_player: ^2.9.2
   image_picker: ^1.1.2
+  cached_network_image: ^3.3.1
   http: ^1.2.2
   animate_do: ^3.3.4
   flutter_map: ^7.0.2
@@ -61,6 +62,10 @@ dependencies:
   webview_flutter: ^4.9.0
   flutter_globe_3d: ^1.0.0
   vector_math: ^2.1.4
+
+  # Video Calls (Agora)
+  agora_rtc_engine: ^6.3.0
+  wakelock_plus: ^1.2.8
 
   # Icons
   cupertino_icons: ^1.0.8

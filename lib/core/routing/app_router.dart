@@ -39,8 +39,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/onboarding',
     refreshListenable: notifier,
     redirect: (context, state) async {
+      // Wait for auth check to complete if it's still loading
       final authState = ref.read(authProvider);
-      final isAuthenticated = authState.isAuthenticated;
+      if (authState.isLoading) {
+        // Wait for auth check to complete
+        await ref.read(authProvider.notifier).checkAuthStatus();
+      }
+      
+      final updatedAuthState = ref.read(authProvider);
+      final isAuthenticated = updatedAuthState.isAuthenticated;
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';

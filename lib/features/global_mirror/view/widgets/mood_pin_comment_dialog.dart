@@ -282,8 +282,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                   height: 40,
                   shape: ShimmerShape.rectangle,
                   radius: 12,
-                ),
               ),
+            ),
 
             // Comments list
             Expanded(

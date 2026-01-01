@@ -32,38 +32,6 @@ final moodChartDataProvider = Provider<List<LogEntryModel>>((ref) {
       .toList()
     ..sort((a, b) => a.date.compareTo(b.date));
 
-  // Return mock data for testing if no real data
-  if (recentLogs.isEmpty) {
-    return _getMockChartData();
-  }
-
   return recentLogs;
 });
-
-/// Mock data for testing the chart
-List<LogEntryModel> _getMockChartData() {
-  final now = DateTime.now();
-  final mockLogs = <LogEntryModel>[];
-  
-  // Generate mock data for last 7 days
-  for (int i = 6; i >= 0; i--) {
-    final date = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: i));
-    
-    // Vary mood values for visual interest
-    final mood = 2 + (i % 3); // Values between 2-4
-    
-    mockLogs.add(LogEntryModel(
-      id: 'mock_$i',
-      userId: 'mock_user',
-      date: date,
-      mood: mood,
-      habits: ['Exercise', 'Meditation'],
-      notes: 'Day ${i + 1} of tracking',
-      createdAt: date,
-    ));
-  }
-  
-  return mockLogs;
-}
 

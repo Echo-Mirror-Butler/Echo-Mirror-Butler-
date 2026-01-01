@@ -48,6 +48,21 @@ class VideoPostModel {
     return DateTime.now().isAfter(expiresAt);
   }
 
+  /// Check if this is an image (based on URL extension)
+  bool get isImage {
+    final url = videoUrl.toLowerCase();
+    return url.contains('.jpg') || 
+           url.contains('.jpeg') || 
+           url.contains('.png') || 
+           url.contains('.gif') ||
+           url.contains('/images/');
+  }
+
+  /// Check if this is a video (based on URL extension)
+  bool get isVideo {
+    return !isImage;
+  }
+
   VideoPostModel copyWith({
     String? id,
     String? videoUrl,

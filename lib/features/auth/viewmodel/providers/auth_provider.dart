@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/serverpod_client_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -42,31 +43,50 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   final AuthRepository _repository;
+  bool _isCheckingAuth = false;
 
   /// Check if user is already authenticated
   Future<void> _checkAuthStatus() async {
+    if (_isCheckingAuth) return;
+    _isCheckingAuth = true;
     state = state.copyWith(isLoading: true);
     try {
+      // Ensure client is initialized before checking auth
+      await ServerpodClientService.instance.ensureInitialized();
+      
       final isAuth = await _repository.isAuthenticated();
+      debugPrint('[AuthNotifier] Auth check result: $isAuth');
+      
       if (isAuth) {
         final userData = await _repository.getCurrentUser();
         if (userData != null) {
+          debugPrint('[AuthNotifier] ✅ User authenticated, loading user data');
           state = state.copyWith(
             user: UserModel.fromJson(userData),
             isLoading: false,
           );
         } else {
+          debugPrint('[AuthNotifier] ⚠️ Authenticated but no user data available');
           state = state.copyWith(isLoading: false);
         }
       } else {
+        debugPrint('[AuthNotifier] User not authenticated');
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
+      debugPrint('[AuthNotifier] Error checking auth status: $e');
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
+    } finally {
+      _isCheckingAuth = false;
     }
+  }
+
+  /// Public method to check auth status (for router)
+  Future<void> checkAuthStatus() async {
+    await _checkAuthStatus();
   }
 
   /// Sign in with email and password

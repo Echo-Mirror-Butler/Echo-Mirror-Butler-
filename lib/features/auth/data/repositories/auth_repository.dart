@@ -1,35 +1,103 @@
 import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
-import '../../../../core/constants/api_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/serverpod_client_service.dart';
 
 /// Repository for authentication operations
 /// This handles all Serverpod backend calls for auth
 class AuthRepository {
   AuthRepository() {
-    // Initialize Serverpod client
-    _client = Client(ApiConstants.serverUrl);
-    debugPrint(
-      '[AuthRepository] Initialized client -> ${ApiConstants.serverUrl}',
-    );
+    debugPrint('[AuthRepository] Initialized - client will be accessed when needed');
   }
 
-  late final Client _client;
+  /// Get the client instance (lazy initialization)
+  Client get _client {
+    // Ensure client is initialized before use
+    if (!ServerpodClientService.instance.isInitialized) {
+      throw StateError(
+        'ServerpodClientService not initialized. Call ensureInitialized() in main() first.',
+    );
+  }
+    return ServerpodClientService.instance.client;
+  }
 
   /// Sign in with email and password
   /// Returns user ID on success, throws exception on failure
   Future<String> signIn(String email, String password) async {
     try {
       debugPrint('[AuthRepository] signIn -> $email');
-      await _client.emailIdp.login(
+      
+      // Check if we have a key before login
+      final keyBefore = await _client.authenticationKeyManager?.get();
+      debugPrint('[AuthRepository] Key before login: ${keyBefore != null ? "exists" : "null"}');
+      
+      // Login and get the response
+      final authResult = await _client.emailIdp.login(
         email: email,
         password: password,
       );
-      // AuthSuccess contains authentication information
-      // The key is stored automatically by the client
-      // Return a user identifier - you may need to create a custom endpoint
-      // to get the actual user ID from the server
-      debugPrint('[AuthRepository] signIn success -> $email');
-      return 'user_${email.hashCode}';
+      
+      // Extract the JWT token and user info from the AuthSuccess response
+      final dynamic result = authResult;
+      final String? token = result.token as String?;
+      
+      // authUserId might be UuidValue or String, handle both
+      String? authUserId;
+      try {
+        final authUserIdValue = result.authUserId;
+        if (authUserIdValue != null) {
+          // Try to access .uuid property (for UuidValue) or use toString()
+          try {
+            // If it has a .uuid property, use it (UuidValue)
+            final dynamic uuidValue = authUserIdValue;
+            authUserId = uuidValue.uuid as String?;
+          } catch (_) {
+            // If .uuid doesn't work, try toString()
+            authUserId = authUserIdValue.toString();
+          }
+        }
+      } catch (e) {
+        debugPrint('[AuthRepository] Error extracting authUserId: $e');
+        authUserId = null;
+      }
+      
+      debugPrint('[AuthRepository] Login response - token: ${token != null ? "${token.length} chars" : "null"}, authUserId: $authUserId');
+      
+      if (token == null || token.isEmpty) {
+        debugPrint('[AuthRepository] ⚠️ No token found in login response');
+        throw Exception('Login succeeded but no authentication token received');
+      }
+      
+      // Save the JWT token to SharedPreferences for persistence
+      debugPrint('[AuthRepository] Saving JWT authentication token (${token.length} chars)...');
+      await _client.authenticationKeyManager?.put(token);
+      
+      // Save user info (email and authUserId) to SharedPreferences for persistence
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', email);
+      if (authUserId != null && authUserId.isNotEmpty) {
+        await prefs.setString('user_id', authUserId);
+        debugPrint('[AuthRepository] Saved user ID from server: $authUserId');
+      } else {
+        // Fallback to email hash if authUserId not available
+        final fallbackUserId = 'user_${email.hashCode}';
+        await prefs.setString('user_id', fallbackUserId);
+        debugPrint('[AuthRepository] Using fallback user ID: $fallbackUserId');
+      }
+      
+      // Verify the token was saved
+      final savedToken = await _client.authenticationKeyManager?.get();
+      if (savedToken == null || savedToken != token) {
+        debugPrint('[AuthRepository] ❌ ERROR: Token was not saved correctly!');
+        throw Exception('Failed to save authentication token');
+      }
+      
+      debugPrint('[AuthRepository] ✅ Authentication token and user info saved');
+      
+      // Return the user ID (prefer server's authUserId, fallback to email hash)
+      final userId = authUserId ?? 'user_${email.hashCode}';
+      debugPrint('[AuthRepository] signIn success -> $email, userId: $userId');
+      return userId;
     } catch (e) {
       debugPrint('[AuthRepository] signIn error -> $e');
       throw Exception('Sign in failed: ${e.toString()}');
@@ -115,9 +183,15 @@ class AuthRepository {
   Future<void> signOut() async {
     try {
       // Serverpod handles sign out through session management
-      // Clear the authentication key
+      // Clear the authentication key and user info
       debugPrint('[AuthRepository] signOut');
       await _client.authenticationKeyManager?.remove();
+      
+      // Clear saved user info
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_email');
+      await prefs.remove('user_id');
+      debugPrint('[AuthRepository] Cleared saved user info');
     } catch (e) {
       debugPrint('[AuthRepository] signOut error -> $e');
       throw Exception('Sign out failed: ${e.toString()}');
@@ -130,14 +204,27 @@ class AuthRepository {
     try {
       // Check if we have an authentication key
       final key = await _client.authenticationKeyManager?.get();
-      if (key == null) return null;
+      if (key == null) {
+        debugPrint('[AuthRepository] getCurrentUser: No authentication key');
+        return null;
+      }
       
-      // For now, return basic user info
-      // You'll need to create a custom endpoint in Serverpod to get full user details
+      // Retrieve saved user info from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final savedEmail = prefs.getString('user_email');
+      final savedUserId = prefs.getString('user_id');
+      
+      if (savedUserId == null) {
+        debugPrint('[AuthRepository] getCurrentUser: No saved user ID found');
+        return null;
+      }
+      
+      debugPrint('[AuthRepository] getCurrentUser: Found saved user - id: $savedUserId, email: ${savedEmail ?? "not saved"}');
+      
       return {
-        'id': 'user_${key.hashCode}',
-        'email': '', // Get from custom endpoint
-        'name': '', // Get from custom endpoint
+        'id': savedUserId,
+        'email': savedEmail ?? '',
+        'name': null, // Get from custom endpoint if needed
         'createdAt': DateTime.now().toIso8601String(),
       };
     } catch (e) {

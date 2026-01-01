@@ -10,6 +10,7 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
+import '../../../help/view/screens/professional_help_screen.dart';
 import '../../data/models/insight_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
 import '../widgets/insight_section.dart';
@@ -105,6 +106,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
+        actions: [
+          // Need Help? button
+          IconButton(
+            icon: const Icon(FontAwesomeIcons.handHoldingHeart),
+            tooltip: 'Need Help?',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfessionalHelpScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [

@@ -1,18 +1,17 @@
 import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
-import '../../../../core/constants/api_constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/serverpod_client_service.dart';
 import '../models/log_entry_model.dart';
 
 /// Repository for logging operations
 /// Handles all Serverpod backend calls for daily logging
 class LoggingRepository {
   LoggingRepository() {
-    debugPrint(
-      '[LoggingRepository] Initialized client -> ${ApiConstants.serverUrl}',
-    );
+    debugPrint('[LoggingRepository] Using shared client with persistent authentication');
   }
 
-  final Client _client = Client(ApiConstants.serverUrl);
+  Client get _client => ServerpodClientService.instance.client;
 
   /// Check if error is a 404 (endpoint not found)
   bool _isNotFoundError(dynamic error) {
@@ -23,6 +22,14 @@ class LoggingRepository {
     return errorString.contains('404') || 
            errorString.contains('Not found') ||
            errorString.contains('statusCode = 404');
+  }
+
+  /// Check if a string is a UUID format
+  bool _isUuid(String? str) {
+    if (str == null || str.isEmpty) return false;
+    // UUID format: 8-4-4-4-12 hex digits
+    final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+    return uuidRegex.hasMatch(str);
   }
 
   /// Create a new log entry
@@ -161,11 +168,70 @@ class LoggingRepository {
     try {
       debugPrint('[LoggingRepository] getLogEntries -> userId: $userId');
       
-      final results = await _client.logging.getEntries(
+      // Check authentication before making the call
+      final authKey = await _client.authenticationKeyManager?.get();
+      if (authKey == null) {
+        debugPrint('[LoggingRepository] ⚠️ WARNING: No authentication key found!');
+      } else {
+        debugPrint('[LoggingRepository] ✅ Authentication key found (${authKey.length} chars)');
+      }
+      
+      final headerValue = await _client.authenticationKeyManager?.getHeaderValue();
+      debugPrint('[LoggingRepository] Header value: ${headerValue != null ? "${headerValue.length} chars" : "null"}');
+      
+      // Try with the provided userId first (usually UUID from server)
+      var results = await _client.logging.getEntries(
         userId,
         startDate: startDate,
         endDate: endDate,
       );
+      
+      debugPrint('[LoggingRepository] getLogEntries with UUID -> ${results.length} entries');
+      
+      // Always try fallback to old format if userId is a UUID (for backward compatibility)
+      // This ensures we get all entries regardless of which format they were created with
+      if (_isUuid(userId)) {
+        debugPrint('[LoggingRepository] UUID detected, checking for entries with old format...');
+        
+        // Get email from SharedPreferences to generate old format userId
+        final prefs = await SharedPreferences.getInstance();
+        final email = prefs.getString('user_email');
+        
+        if (email != null && email.isNotEmpty) {
+          final fallbackUserId = 'user_${email.hashCode}';
+          debugPrint('[LoggingRepository] Trying fallback userId: $fallbackUserId');
+          
+          try {
+            final fallbackResults = await _client.logging.getEntries(
+              fallbackUserId,
+              startDate: startDate,
+              endDate: endDate,
+            );
+            
+            debugPrint('[LoggingRepository] getLogEntries with fallback userId -> ${fallbackResults.length} entries');
+            
+            if (fallbackResults.isNotEmpty) {
+              debugPrint('[LoggingRepository] ✅ Found ${fallbackResults.length} entries with fallback userId format');
+              
+              // Merge results from both queries, avoiding duplicates by entry ID
+              final existingIds = results.map((e) => e.id?.toString() ?? '').toSet();
+              final newEntries = fallbackResults.where((e) {
+                final entryId = e.id?.toString() ?? '';
+                return entryId.isNotEmpty && !existingIds.contains(entryId);
+              }).toList();
+              
+              if (newEntries.isNotEmpty) {
+                debugPrint('[LoggingRepository] Merging ${newEntries.length} additional entries from fallback format');
+                results = [...results, ...newEntries];
+              } else {
+                debugPrint('[LoggingRepository] All fallback entries are duplicates, not merging');
+              }
+            }
+          } catch (e) {
+            debugPrint('[LoggingRepository] Fallback query failed: $e');
+          }
+        }
+      }
       
       debugPrint('[LoggingRepository] getLogEntries success -> ${results.length} entries');
       
@@ -182,6 +248,8 @@ class LoggingRepository {
         );
       }).toList();
     } catch (e, stackTrace) {
+      debugPrint('[LoggingRepository] getLogEntries error -> $e');
+      debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
       if (_isNotFoundError(e)) {
         // Log once, not repeatedly
         debugPrint(
