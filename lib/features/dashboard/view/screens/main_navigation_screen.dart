@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../global_mirror/view/screens/globe_screen.dart';
-import '../../../global_mirror/view/screens/video_feed_screen.dart';
+import '../../../socials/view/screens/socials_screen.dart';
 import '../../../logging/view/screens/logging_screen.dart';
 import '../../../settings/view/screens/settings_screen.dart';
 import 'dashboard_screen.dart';
@@ -24,7 +24,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   final List<Widget> _screens = const [
     DashboardScreen(),
     GlobeScreen(),
-    VideoFeedScreen(),
+    SocialsScreen(),
     LoggingScreen(),
     SettingsScreen(),
   ];
@@ -92,8 +92,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.video,
-                  label: 'Videos',
+                  icon: FontAwesomeIcons.users,
+                  label: 'Socials',
                   index: 2,
                   isSelected: _selectedIndex == 2,
                 ),

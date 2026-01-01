@@ -225,7 +225,6 @@ class VideoReelItem extends StatefulWidget {
 class _VideoReelItemState extends State<VideoReelItem> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
-  bool _isDownloading = false;
   File? _localVideoFile;
 
   @override
@@ -237,50 +236,32 @@ class _VideoReelItemState extends State<VideoReelItem> {
   @override
   void didUpdateWidget(VideoReelItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive) {
-      _controller?.play();
-    } else if (!widget.isActive && oldWidget.isActive) {
-      _controller?.pause();
+    // Only handle play/pause for videos, not images
+    if (!widget.video.isImage) {
+      if (widget.isActive && !oldWidget.isActive) {
+        _controller?.play();
+      } else if (!widget.isActive && oldWidget.isActive) {
+        _controller?.pause();
+      }
     }
   }
 
   Future<void> _initializeVideo() async {
     try {
-      debugPrint('[VideoReelItem] Initializing video: ${widget.video.videoUrl}');
-      
-      // Try direct network playback first (faster)
-      try {
-        _controller = VideoPlayerController.networkUrl(
-          Uri.parse(widget.video.videoUrl),
-        );
-        await _controller!.initialize();
-        await _controller!.setLooping(true);
-        
+      // Check if this is an image or video
+      if (widget.video.isImage) {
+        debugPrint('[VideoReelItem] Detected image, skipping video initialization: ${widget.video.videoUrl}');
         if (mounted) {
           setState(() {
-            _isInitialized = true;
+            _isInitialized = true; // Mark as initialized so image can be displayed
           });
-          
-          if (widget.isActive) {
-            _controller!.play();
-          }
         }
-        debugPrint('[VideoReelItem] Video initialized successfully from network');
         return;
-      } catch (networkError) {
-        debugPrint('[VideoReelItem] Network playback failed: $networkError');
-        // Fallback to downloading and playing locally
-        await _controller?.dispose();
-        _controller = null;
       }
+
+      debugPrint('[VideoReelItem] Initializing video: ${widget.video.videoUrl}');
       
-      // Fallback: Download video and play from local file
-      if (mounted) {
-        setState(() {
-          _isDownloading = true;
-        });
-      }
-      
+      // Download video first to avoid byte range issues with Serverpod Cloud Storage
       final videoUrl = widget.video.videoUrl;
       final response = await http.get(Uri.parse(videoUrl));
       
@@ -298,7 +279,6 @@ class _VideoReelItemState extends State<VideoReelItem> {
         if (mounted) {
           setState(() {
             _isInitialized = true;
-            _isDownloading = false;
           });
           
           if (widget.isActive) {
@@ -314,7 +294,6 @@ class _VideoReelItemState extends State<VideoReelItem> {
       if (mounted) {
         setState(() {
           _isInitialized = false;
-          _isDownloading = false;
         });
       }
     }
@@ -338,41 +317,96 @@ class _VideoReelItemState extends State<VideoReelItem> {
 
   @override
   Widget build(BuildContext context) {
+    final isImage = widget.video.isImage;
+    
     return Container(
       color: Colors.black,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Video player
-          if (_isInitialized && _controller != null)
-            Center(
-              child: AspectRatio(
-                aspectRatio: _controller!.value.aspectRatio,
-                child: VideoPlayer(_controller!),
-              ),
-            )
-          else
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const ShimmerLoading(
-                    width: 40,
-                    height: 40,
-                    baseColor: Colors.white24,
-                    highlightColor: Colors.white70,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading video...',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white70,
-                      fontSize: 14,
+          // Media content (image or video)
+          if (isImage)
+            // Display image
+            _isInitialized
+                ? Center(
+                    child: Image.network(
+                      widget.video.videoUrl,
+                      fit: BoxFit.contain,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: ShimmerLoading(
+                            width: 40,
+                            height: 40,
+                            baseColor: Colors.white24,
+                            highlightColor: Colors.white70,
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        debugPrint('[VideoReelItem] Error loading image: $error');
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const FaIcon(
+                                FontAwesomeIcons.triangleExclamation,
+                                color: Colors.white70,
+                                size: 48,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading image',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                ],
+                  )
+                : const Center(
+                    child: ShimmerLoading(
+                      width: 40,
+                      height: 40,
+                      baseColor: Colors.white24,
+                      highlightColor: Colors.white70,
+                    ),
+                  )
+          else
+            // Display video
+            if (_isInitialized && _controller != null)
+              Center(
+                child: AspectRatio(
+                  aspectRatio: _controller!.value.aspectRatio,
+                  child: VideoPlayer(_controller!),
+                ),
+              )
+            else
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const ShimmerLoading(
+                      width: 40,
+                      height: 40,
+                      baseColor: Colors.white24,
+                      highlightColor: Colors.white70,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading video...',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
           // Video info overlay
           Positioned(
@@ -422,23 +456,24 @@ class _VideoReelItemState extends State<VideoReelItem> {
             ),
           ),
 
-          // Tap to pause/play
-          GestureDetector(
-            onTap: () {
-              if (_controller != null) {
-                if (_controller!.value.isPlaying) {
-                  _controller!.pause();
-                } else {
-                  _controller!.play();
+          // Tap to pause/play (only for videos)
+          if (!isImage)
+            GestureDetector(
+              onTap: () {
+                if (_controller != null) {
+                  if (_controller!.value.isPlaying) {
+                    _controller!.pause();
+                  } else {
+                    _controller!.play();
+                  }
+                  setState(() {});
                 }
-                setState(() {});
-              }
-            },
-            child: Container(color: Colors.transparent),
-          ),
+              },
+              child: Container(color: Colors.transparent),
+            ),
 
-          // Play/pause indicator
-          if (_controller != null && !_controller!.value.isPlaying && _isInitialized)
+          // Play/pause indicator (only for videos)
+          if (!isImage && _controller != null && !_controller!.value.isPlaying && _isInitialized)
             Center(
               child: FadeIn(
                 child: Container(
@@ -452,6 +487,39 @@ class _VideoReelItemState extends State<VideoReelItem> {
                     color: Colors.white,
                     size: 40,
                   ),
+                ),
+              ),
+            ),
+          
+          // Image indicator badge
+          if (isImage && _isInitialized)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.image,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Image',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

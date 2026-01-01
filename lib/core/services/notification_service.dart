@@ -18,8 +18,10 @@ class NotificationService {
   static const int _dailyReminderId = 1;
   static const int _eveningCheckInId = 2;
   static const int _inactiveNudgeId = 3;
+  static const int _scheduledSessionBaseId = 1000; // Base ID for scheduled sessions
   static const String _logNowActionId = 'log_now';
   static const String _snoozeActionId = 'snooze';
+  static const String _joinSessionActionId = 'join_session';
 
   // SharedPreferences keys
   static const String _keyReminderEnabled = 'reminder_enabled';
@@ -430,5 +432,149 @@ class NotificationService {
     await _notifications.cancel(_inactiveNudgeId);
     debugPrint('[NotificationService] Cancelled inactive nudge');
   }
+
+  // ===== SCHEDULED SESSION NOTIFICATIONS =====
+
+  /// Schedule notification for a video session
+  Future<void> scheduleSessionNotification({
+    required int sessionId,
+    required String sessionTitle,
+    required String hostName,
+    required DateTime scheduledTime,
+  }) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    // Schedule notification 5 minutes before the session
+    final notificationTime = scheduledTime.subtract(const Duration(minutes: 5));
+    final now = DateTime.now();
+
+    // Don't schedule if notification time has already passed
+    if (notificationTime.isBefore(now)) {
+      debugPrint('[NotificationService] Session notification time has passed');
+      return;
+    }
+
+    final scheduledDate = tz.TZDateTime.from(notificationTime, tz.local);
+    
+    // Android notification details
+    final androidDetails = AndroidNotificationDetails(
+      'scheduled_sessions_channel',
+      'Scheduled Video Sessions',
+      channelDescription: 'Notifications for upcoming video call sessions',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+      category: AndroidNotificationCategory.event,
+      actions: [
+        AndroidNotificationAction(
+          _joinSessionActionId,
+          'Join Now',
+          showsUserInterface: true,
+        ),
+      ],
+    );
+
+    // iOS notification details
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      categoryIdentifier: 'scheduled_session',
+      interruptionLevel: InterruptionLevel.timeSensitive,
+    );
+
+    // Notification details
+    final notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    // Use session ID offset from base ID
+    final notificationId = _scheduledSessionBaseId + sessionId;
+
+    await _notifications.zonedSchedule(
+      notificationId,
+      'Video Session Starting Soon 📹',
+      '"$sessionTitle" with $hostName starts in 5 minutes',
+      scheduledDate,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'scheduled_session:$sessionId',
+    );
+
+    debugPrint('[NotificationService] Scheduled session notification for session $sessionId at $scheduledDate');
+  }
+
+  /// Cancel scheduled session notification
+  Future<void> cancelSessionNotification(int sessionId) async {
+    final notificationId = _scheduledSessionBaseId + sessionId;
+    await _notifications.cancel(notificationId);
+    debugPrint('[NotificationService] Cancelled session notification for session $sessionId');
+  }
+
+  /// Show immediate notification for session starting now
+  Future<void> showSessionStartingNowNotification({
+    required int sessionId,
+    required String sessionTitle,
+    required String hostName,
+  }) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    // Android notification details
+    final androidDetails = AndroidNotificationDetails(
+      'scheduled_sessions_channel',
+      'Scheduled Video Sessions',
+      channelDescription: 'Notifications for upcoming video call sessions',
+      importance: Importance.max,
+      priority: Priority.max,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+      category: AndroidNotificationCategory.call,
+      actions: [
+        AndroidNotificationAction(
+          _joinSessionActionId,
+          'Join Now',
+          showsUserInterface: true,
+        ),
+      ],
+    );
+
+    // iOS notification details
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      categoryIdentifier: 'scheduled_session',
+      interruptionLevel: InterruptionLevel.critical,
+    );
+
+    // Notification details
+    final notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final notificationId = _scheduledSessionBaseId + sessionId;
+
+    await _notifications.show(
+      notificationId,
+      'Video Session Starting Now! 🎥',
+      '"$sessionTitle" with $hostName is starting',
+      notificationDetails,
+      payload: 'scheduled_session:$sessionId',
+    );
+
+    debugPrint('[NotificationService] Showed immediate notification for session $sessionId');
+  }
 }
+
 

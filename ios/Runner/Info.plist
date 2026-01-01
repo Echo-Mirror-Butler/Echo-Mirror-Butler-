@@ -52,8 +52,12 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
+		<string>audio</string>
+		<string>picture-in-picture</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>EchoMirror needs your location to anonymously share your mood on the Global Mirror map. Your location is rounded to ~11km precision for privacy.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>EchoMirror needs your location to anonymously share your mood on the Global Mirror map. Your location is rounded to ~11km precision for privacy.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>EchoMirror needs camera access to record mood videos that you can share anonymously with the global community.</string>

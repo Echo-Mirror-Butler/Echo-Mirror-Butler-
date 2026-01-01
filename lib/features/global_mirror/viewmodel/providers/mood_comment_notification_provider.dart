@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:echomirror_server_client/echomirror_server_client.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../../../../core/services/serverpod_client_service.dart';
 import '../../data/models/mood_comment_notification_model.dart';
 
 /// Provider for mood comment notifications
@@ -12,14 +12,11 @@ final moodCommentNotificationProvider = StateNotifierProvider<MoodCommentNotific
 /// State notifier for managing mood comment notifications
 /// NOTE: Requires Serverpod endpoints to be implemented (see SERVERPOD_COMMENTS_SETUP.md)
 class MoodCommentNotificationNotifier extends StateNotifier<List<MoodCommentNotificationModel>> {
-  // Client will be used when Serverpod endpoints are implemented
-  // ignore: unused_field
-  late final Client _client;
-
   MoodCommentNotificationNotifier() : super([]) {
-    _client = Client(ApiConstants.serverUrl);
     _loadNotifications();
   }
+
+  Client get _client => ServerpodClientService.instance.client;
 
   /// Load notifications from Serverpod
   /// Note: Requires userId parameter - returns empty list if not authenticated

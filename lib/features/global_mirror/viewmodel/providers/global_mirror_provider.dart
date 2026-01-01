@@ -166,6 +166,57 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
     }
   }
 
+  /// Upload image
+  Future<bool> uploadImage({
+    required String imagePath,
+    required String moodTag,
+  }) async {
+    try {
+      state = state.copyWith(isSharing: true, error: null);
+
+      debugPrint('[GlobalMirrorProvider] Starting image upload: $imagePath');
+      
+      final imageUrl = await _repository.uploadImage(
+        imagePath: imagePath,
+        moodTag: moodTag,
+      );
+
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        debugPrint('[GlobalMirrorProvider] Image upload successful: $imageUrl');
+        state = state.copyWith(
+          isSharing: false,
+          error: null,
+        );
+
+        // Refresh video feed if successful
+        await loadVideoFeed(refresh: true);
+        return true;
+      } else {
+        debugPrint('[GlobalMirrorProvider] Image upload failed: returned null or empty URL');
+        state = state.copyWith(
+          isSharing: false,
+          error: 'Failed to upload image. Please check your connection and try again.',
+        );
+        return false;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[GlobalMirrorProvider] Image upload error: $e');
+      debugPrint('[GlobalMirrorProvider] Stack trace: $stackTrace');
+      
+      // Extract error message, removing "Exception: " prefix if present
+      String errorMessage = e.toString();
+      if (errorMessage.startsWith('Exception: ')) {
+        errorMessage = errorMessage.substring(11);
+      }
+      
+      state = state.copyWith(
+        isSharing: false,
+        error: errorMessage,
+      );
+      return false;
+    }
+  }
+
   /// Load video feed
   Future<void> loadVideoFeed({bool refresh = false}) async {
     try {

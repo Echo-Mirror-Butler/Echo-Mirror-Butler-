@@ -21,10 +21,14 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
   final ImagePicker _picker = ImagePicker();
   String _selectedMoodTag = 'reflective';
   bool _isUploading = false;
+  bool _isPickingMedia = false; // Track if media picker is open
   XFile? _selectedVideo;
+  XFile? _selectedImage;
+  bool _isImage = false; // Track if selected media is image or video
   VideoPlayerController? _previewController;
   final TextEditingController _customTagController = TextEditingController();
   bool _isUsingCustomTag = false;
+  String? _fileSizeError; // Store file size error message
 
   final List<String> _moodTags = [
     'happy',
@@ -61,13 +65,19 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
   }
 
   Future<void> _loadVideoPreview(XFile video) async {
+    debugPrint('[VideoRecorderSheet] Loading video preview: ${video.path}');
     // Dispose previous controller if any
     await _previewController?.dispose();
     
+    if (mounted) {
     setState(() {
       _selectedVideo = video;
+        _selectedImage = null; // Clear any selected image
+        _isImage = false; // Mark as video
       _previewController = null;
     });
+      debugPrint('[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedVideo=${_selectedVideo?.path}');
+    }
 
     // Initialize video player for preview
     try {
@@ -78,37 +88,279 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         setState(() {
           _previewController = controller;
         });
+        debugPrint('[VideoRecorderSheet] Video preview initialized successfully');
       }
-    } catch (e) {
-      debugPrint('Error loading video preview: $e');
+    } catch (e, stackTrace) {
+      debugPrint('[VideoRecorderSheet] Error loading video preview: $e');
+      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading video preview: $e'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickVideo() async {
     try {
+      debugPrint('[VideoRecorderSheet] Picking video from gallery...');
+      setState(() {
+        _isPickingMedia = true;
+        _fileSizeError = null;
+      });
+
       final video = await _picker.pickVideo(
         source: ImageSource.gallery,
         maxDuration: const Duration(seconds: 30),
       );
 
+      debugPrint('[VideoRecorderSheet] Video picker returned: ${video?.path}');
+
       if (video != null) {
+        debugPrint('[VideoRecorderSheet] Video selected: ${video.path}');
+        
+        // Check file size before loading preview
+        final file = File(video.path);
+        final fileSize = await file.length();
+        const maxSize = 400 * 1024; // 400KB
+        
+        if (fileSize > maxSize) {
+          final sizeMB = (fileSize / (1024 * 1024)).toStringAsFixed(2);
+          final sizeKB = (fileSize / 1024).toStringAsFixed(0);
+          if (mounted) {
+            setState(() {
+              _isPickingMedia = false;
+              _fileSizeError = 'Video is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please choose a shorter video (8-10 seconds).';
+            });
+            _showFileSizeError();
+          }
+          return;
+        }
+        
         await _loadVideoPreview(video);
+        if (mounted) {
+          setState(() {
+            _isPickingMedia = false;
+            _fileSizeError = null;
+          });
       }
-    } catch (e) {
+      } else {
+        debugPrint('[VideoRecorderSheet] No video selected (user cancelled)');
       if (mounted) {
+          setState(() {
+            _isPickingMedia = false;
+          });
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[VideoRecorderSheet] Error picking video: $e');
+      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _isPickingMedia = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking video: $e')),
+          SnackBar(
+            content: Text('Error picking video: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      debugPrint('[VideoRecorderSheet] Picking image from gallery...');
+      setState(() {
+        _isPickingMedia = true;
+        _fileSizeError = null;
+      });
+
+      final image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70, // Lower quality for better compression
+      );
+
+      debugPrint('[VideoRecorderSheet] Image picker returned: ${image?.path}');
+      
+      if (image != null) {
+        debugPrint('[VideoRecorderSheet] Image selected: ${image.path}');
+        
+        // Check file size before setting state
+        final file = File(image.path);
+        final fileSize = await file.length();
+        const maxSize = 400 * 1024; // 400KB
+        
+        if (fileSize > maxSize) {
+          final sizeMB = (fileSize / (1024 * 1024)).toStringAsFixed(2);
+          final sizeKB = (fileSize / 1024).toStringAsFixed(0);
+          if (mounted) {
+            setState(() {
+              _isPickingMedia = false;
+              _fileSizeError = 'Image is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please choose a smaller image.';
+            });
+            _showFileSizeError();
+          }
+          return;
+        }
+        
+        if (mounted) {
+          setState(() {
+            _selectedImage = image;
+            _selectedVideo = null;
+            _isImage = true;
+            _isPickingMedia = false;
+            _fileSizeError = null;
+            _previewController?.dispose();
+            _previewController = null;
+          });
+          debugPrint('[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}');
+        }
+      } else {
+        debugPrint('[VideoRecorderSheet] No image selected (user cancelled)');
+        if (mounted) {
+          setState(() {
+            _isPickingMedia = false;
+          });
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[VideoRecorderSheet] Error picking image: $e');
+      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _isPickingMedia = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking image: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showFileSizeError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const FaIcon(
+              FontAwesomeIcons.triangleExclamation,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _fileSizeError ?? 'File is too large. Maximum size is 400KB.',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      debugPrint('[VideoRecorderSheet] Taking photo with camera...');
+      setState(() {
+        _isPickingMedia = true;
+        _fileSizeError = null;
+      });
+
+      final image = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70, // Lower quality for better compression
+      );
+
+      debugPrint('[VideoRecorderSheet] Camera returned: ${image?.path}');
+      
+      if (image != null) {
+        debugPrint('[VideoRecorderSheet] Photo taken: ${image.path}');
+        
+        // Check file size before setting state
+        final file = File(image.path);
+        final fileSize = await file.length();
+        const maxSize = 400 * 1024; // 400KB
+        
+        if (fileSize > maxSize) {
+          final sizeMB = (fileSize / (1024 * 1024)).toStringAsFixed(2);
+          final sizeKB = (fileSize / 1024).toStringAsFixed(0);
+          if (mounted) {
+            setState(() {
+              _isPickingMedia = false;
+              _fileSizeError = 'Photo is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please take another photo.';
+            });
+            _showFileSizeError();
+          }
+          return;
+        }
+        
+        if (mounted) {
+          setState(() {
+            _selectedImage = image;
+            _selectedVideo = null;
+            _isImage = true;
+            _isPickingMedia = false;
+            _fileSizeError = null;
+            _previewController?.dispose();
+            _previewController = null;
+          });
+          debugPrint('[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}');
+        }
+      } else {
+        debugPrint('[VideoRecorderSheet] No photo taken (user cancelled)');
+        if (mounted) {
+          setState(() {
+            _isPickingMedia = false;
+          });
+        }
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[VideoRecorderSheet] Error taking photo: $e');
+      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _isPickingMedia = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error taking photo: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
         );
       }
     }
   }
 
   Future<void> _uploadVideo() async {
-    if (_selectedVideo == null) {
+    if (_selectedVideo == null && _selectedImage == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No video selected'),
+            content: Text('No media selected'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -117,12 +369,13 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
     }
 
     // Check if file exists
-    final file = File(_selectedVideo!.path);
+    final filePath = _isImage ? _selectedImage!.path : _selectedVideo!.path;
+    final file = File(filePath);
     if (!await file.exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Video file not found. Please select again.'),
+          SnackBar(
+            content: Text('${_isImage ? "Image" : "Video"} file not found. Please select again.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -140,7 +393,12 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         : _selectedMoodTag;
 
     try {
-      final success = await ref.read(globalMirrorProvider.notifier).uploadVideo(
+      final success = _isImage
+          ? await ref.read(globalMirrorProvider.notifier).uploadImage(
+                imagePath: _selectedImage!.path,
+                moodTag: moodTag,
+              )
+          : await ref.read(globalMirrorProvider.notifier).uploadVideo(
             videoPath: _selectedVideo!.path,
             moodTag: moodTag,
           );
@@ -152,33 +410,66 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Video shared successfully! 🎉'),
+            SnackBar(
+              content: Text('${_isImage ? "Image" : "Video"} shared successfully! 🎉'),
               backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
+              duration: const Duration(seconds: 2),
             ),
           );
           Navigator.pop(context);
         } else {
           // Get error message from state if available
           final error = ref.read(globalMirrorProvider).error;
-          String errorMessage = error ?? 'Failed to upload video.';
+          String errorMessage = error ?? 'Failed to upload ${_isImage ? "image" : "video"}.';
           
-          // Provide helpful message for file size errors
-          if (errorMessage.contains('524288') || 
+          // Check for specific error types
+          bool isFileSizeError = errorMessage.contains('524288') || 
               errorMessage.contains('Request size exceeds') ||
               errorMessage.contains('512KB') ||
               errorMessage.contains('400KB') ||
-              errorMessage.contains('470KB') ||
-              errorMessage.contains('450KB')) {
-            errorMessage = 'Video is too large (max 400KB for upload). Please record a shorter video (8-10 seconds) or use a smaller file.';
+              errorMessage.contains('exceeds safe upload limit') ||
+              errorMessage.contains('too large');
+          
+          bool isMethodNotFound = errorMessage.contains('Method not found') ||
+              errorMessage.contains('statusCode = 400') ||
+              errorMessage.contains('Bad request');
+          
+          if (isFileSizeError) {
+            errorMessage = 'File is too large (max 400KB). Please ${_isImage ? "choose a smaller image" : "record a shorter video (8-10 seconds)"}.';
+          } else if (isMethodNotFound) {
+            errorMessage = 'Upload service is temporarily unavailable. Please try again in a moment.';
           }
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 4),
+              content: Row(
+                children: [
+                  FaIcon(
+                    isFileSizeError 
+                        ? FontAwesomeIcons.fileCircleExclamation
+                        : FontAwesomeIcons.triangleExclamation,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      errorMessage,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: isFileSizeError ? Colors.orange : Colors.red,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              duration: const Duration(seconds: 5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
@@ -235,7 +526,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Share Mood Video',
+                  'Share Mood Media',
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -247,9 +538,29 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Content
           Expanded(
-            child: _selectedVideo == null
-                ? _buildRecordOptions()
-                : _buildVideoPreview(),
+            child: _isPickingMedia
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ShimmerLoading(
+                          width: 50,
+                          height: 50,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Loading media...',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : (_selectedVideo == null && _selectedImage == null)
+                    ? _buildRecordOptions()
+                    : _buildMediaPreview(),
           ),
         ],
       ),
@@ -282,7 +593,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Videos are anonymous and expire in 24 hours',
+                    'Media is anonymous and expires in 24 hours',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: Colors.black87,
@@ -294,7 +605,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
           ),
           const SizedBox(height: 32),
 
-          // Record button
+          // Record video button
           _buildActionCard(
             icon: FontAwesomeIcons.video,
             title: 'Record New Video',
@@ -304,13 +615,33 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Pick from gallery
+          // Pick video from gallery
           _buildActionCard(
-            icon: FontAwesomeIcons.images,
-            title: 'Choose from Gallery',
+            icon: FontAwesomeIcons.film,
+            title: 'Choose Video from Gallery',
             description: 'Select video up to 400KB (8-10 seconds)',
             color: AppTheme.secondaryColor,
             onTap: _pickVideo,
+          ),
+          const SizedBox(height: 16),
+
+          // Take photo button
+          _buildActionCard(
+            icon: FontAwesomeIcons.camera,
+            title: 'Take Photo',
+            description: 'Capture a photo (400KB max)',
+            color: AppTheme.accentColor,
+            onTap: _takePhoto,
+          ),
+          const SizedBox(height: 16),
+
+          // Pick image from gallery
+          _buildActionCard(
+            icon: FontAwesomeIcons.image,
+            title: 'Choose Image from Gallery',
+            description: 'Select image up to 400KB',
+            color: Colors.purple,
+            onTap: _pickImage,
           ),
         ],
       ),
@@ -377,6 +708,83 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMediaPreview() {
+    debugPrint('[VideoRecorderSheet] Building media preview: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}, _selectedVideo=${_selectedVideo?.path}');
+    if (_isImage && _selectedImage != null) {
+      return _buildImagePreview();
+    } else if (_selectedVideo != null) {
+      return _buildVideoPreview();
+    } else {
+      // Fallback: should not happen, but show record options if no media selected
+      debugPrint('[VideoRecorderSheet] WARNING: No media selected but preview was requested');
+      return _buildRecordOptions();
+    }
+  }
+
+  Widget _buildImagePreview() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image preview
+          Container(
+            height: 300,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: _selectedImage != null
+                ? Image.file(
+                    File(_selectedImage!.path),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('[VideoRecorderSheet] Error loading image: $error');
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const FaIcon(
+                              FontAwesomeIcons.triangleExclamation,
+                              color: Colors.white70,
+                              size: 48,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading image',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : const Center(
+                    child: ShimmerLoading(
+                      width: 40,
+                      height: 40,
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 24),
+          // Rest of the preview UI (mood tags, upload button, etc.)
+          ..._buildPreviewControls(),
+        ],
       ),
     );
   }
@@ -451,7 +859,15 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                   ),
           ),
           const SizedBox(height: 24),
+          // Rest of the preview UI (mood tags, upload button, etc.)
+          ..._buildPreviewControls(),
+        ],
+      ),
+    );
+  }
 
+  List<Widget> _buildPreviewControls() {
+    return [
           // Mood tag selector
           Text(
             'Mood Tag',
@@ -461,7 +877,6 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             ),
           ),
           const SizedBox(height: 12),
-          
           // Custom tag option
           if (_isUsingCustomTag)
             Container(
@@ -586,7 +1001,6 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                 ),
               ],
             ),
-          
           if (!_isUsingCustomTag) ...[
             const SizedBox(height: 12),
             Wrap(
@@ -619,7 +1033,6 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             ),
           ],
           const SizedBox(height: 32),
-
           // Buttons
           Row(
             children: [
@@ -629,6 +1042,8 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                     await _previewController?.dispose();
                     setState(() {
                       _selectedVideo = null;
+                  _selectedImage = null;
+                  _isImage = false;
                       _previewController = null;
                       _isUsingCustomTag = false;
                       _customTagController.clear();
@@ -672,7 +1087,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                           highlightColor: Colors.white,
                         )
                       : Text(
-                          'Share Video',
+                          _isImage ? 'Share Image' : 'Share Video',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -682,8 +1097,6 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
               ),
             ],
           ),
-        ],
-      ),
-    );
+    ];
   }
 }

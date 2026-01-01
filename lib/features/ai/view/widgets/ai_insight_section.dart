@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/ai_insight_model.dart';
@@ -15,40 +16,99 @@ import 'prediction_card.dart';
 import 'suggestions_list.dart';
 import 'stress_detection_card.dart';
 
+/// Key for storing last triggered stress level
+const String _lastTriggeredStressLevelKey = 'last_triggered_stress_level';
+
 /// Section widget that displays AI insights on the dashboard
-class AiInsightSection extends ConsumerWidget {
+class AiInsightSection extends ConsumerStatefulWidget {
   const AiInsightSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AiInsightSection> createState() => _AiInsightSectionState();
+}
+
+class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
+  int? _lastTriggeredStressLevel;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastTriggeredStressLevel();
+  }
+
+  Future<void> _loadLastTriggeredStressLevel() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final level = prefs.getInt(_lastTriggeredStressLevelKey);
+      if (level != null) {
+        setState(() {
+          _lastTriggeredStressLevel = level;
+        });
+      }
+    } catch (e) {
+      debugPrint('[AiInsightSection] Error loading last stress level: $e');
+    }
+  }
+
+  Future<void> _saveLastTriggeredStressLevel(int level) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_lastTriggeredStressLevelKey, level);
+      setState(() {
+        _lastTriggeredStressLevel = level;
+      });
+    } catch (e) {
+      debugPrint('[AiInsightSection] Error saving last stress level: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final aiState = ref.watch(aiInsightProvider);
     final loggingState = ref.watch(loggingProvider);
     final theme = Theme.of(context);
 
     // Listen for insight changes and auto-navigate to breathing exercise when stress is detected
     ref.listen<AsyncValue<AiInsightModel?>>(aiInsightProvider, (previous, next) {
-      // Only trigger when we transition from loading/error/null to a valid insight with stress
-      if (previous?.value == null && next.value != null) {
-        final insight = next.value!;
+      // Trigger when:
+      // 1. Transitioning from null/loading/error to a valid insight
+      // 2. OR when stress level changes to a new value (different from last triggered)
+      final previousStressLevel = previous?.value?.stressLevel;
+      final currentStressLevel = next.value?.stressLevel;
+      
+      if (currentStressLevel != null) {
         debugPrint(
-          '[AiInsightSection] 📊 Insight generated - stressLevel: ${insight.stressLevel}',
+          '[AiInsightSection] 📊 Insight updated - stressLevel: $currentStressLevel, previous: $previousStressLevel, lastTriggered: $_lastTriggeredStressLevel',
         );
         
-        if (insight.stressLevel != null && insight.stressLevel! >= 3) {
+        // Only trigger if:
+        // 1. Stress level is >= 3
+        // 2. This is a NEW stress detection (different from last triggered)
+        // 3. Either this is a new insight OR the stress level changed
+        final isNewInsight = previous?.value == null;
+        final stressLevelChanged = previousStressLevel != currentStressLevel;
+        final isNewTrigger = currentStressLevel != _lastTriggeredStressLevel;
+        
+        if (currentStressLevel >= 3 && isNewTrigger && (isNewInsight || stressLevelChanged)) {
           // Small delay to let the UI render first
           Future.delayed(const Duration(milliseconds: 800), () {
             if (context.mounted) {
               debugPrint(
-                '[AiInsightSection] 🧘 Auto-navigating to breathing exercise (stress level: ${insight.stressLevel})',
+                '[AiInsightSection] 🧘 Auto-navigating to breathing exercise (stress level: $currentStressLevel)',
               );
+              _saveLastTriggeredStressLevel(currentStressLevel);
               context.push('/breathing');
             }
           });
-        } else if (insight.stressLevel == null) {
+        } else if (currentStressLevel >= 3 && currentStressLevel == _lastTriggeredStressLevel) {
           debugPrint(
-            '[AiInsightSection] ⚠️ Warning: Gemini did not return stressLevel. Server-side code may need to calculate stress from logs.',
+            '[AiInsightSection] ⏭️ Skipping breathing exercise trigger - already triggered for stress level $currentStressLevel',
           );
         }
+      } else if (currentStressLevel == null && next.value != null) {
+        debugPrint(
+          '[AiInsightSection] ⚠️ Warning: Gemini did not return stressLevel. Server-side code may need to calculate stress from logs.',
+        );
       }
     });
 
@@ -376,6 +436,11 @@ class AiInsightSection extends ConsumerWidget {
             ..sort((a, b) => b.date.compareTo(a.date));
 
       if (recentLogs.length >= 3) {
+        // Clear last triggered stress level when refreshing to allow new trigger
+        _lastTriggeredStressLevel = null;
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.remove(_lastTriggeredStressLevelKey);
+        });
         ref.read(aiInsightProvider.notifier).generateInsight(recentLogs);
       }
     }

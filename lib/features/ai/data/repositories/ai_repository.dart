@@ -1,6 +1,6 @@
 import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
-import '../../../../core/constants/api_constants.dart';
+import '../../../../core/services/serverpod_client_service.dart';
 import '../models/ai_insight_model.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
@@ -8,14 +8,13 @@ import '../../../logging/data/models/log_entry_model.dart';
 /// Handles all Serverpod backend calls for AI insights
 class AiRepository {
   AiRepository() {
-    debugPrint(
-      '[AiRepository] Initialized client -> ${ApiConstants.serverUrl}',
-    );
+    debugPrint('[AiRepository] Using shared client with persistent authentication');
   }
 
-  final Client _client = Client(ApiConstants.serverUrl);
+  Client get _client => ServerpodClientService.instance.client;
 
   /// Debug flag to force mock data (for testing without API key)
+  /// DISABLED - app uses real-time data only
   static const bool _useMockData = false;
 
   /// Generate AI insight based on recent logs
@@ -314,6 +313,35 @@ class AiRepository {
       // Re-throw the error instead of silently falling back to mock data
       debugPrint('[AiRepository] ❌ generateInsight error -> $e');
       debugPrint('[AiRepository] Throwing error instead of using mock data');
+      rethrow;
+    }
+  }
+  
+  /// Generate a free-form chat response using Gemini
+  /// This allows natural conversations without hardcoded responses
+  Future<String> generateChatResponse(String userMessage, {String? context}) async {
+    try {
+      debugPrint('[AiRepository] generateChatResponse -> "$userMessage"');
+      
+      final dynamic client = _client;
+      if (client == null) {
+        throw Exception('Client is null - cannot connect to server');
+      }
+      
+      debugPrint('[AiRepository] 🤖 Calling Gemini chat API...');
+      final response = await client.ai.generateChatResponse(
+        userMessage,
+        context,
+      ) as String;
+      
+      if (response.trim().isEmpty) {
+        throw Exception('Gemini returned empty response');
+      }
+      
+      debugPrint('[AiRepository] ✅ Received chat response from Gemini');
+      return response;
+    } catch (e) {
+      debugPrint('[AiRepository] ❌ generateChatResponse error -> $e');
       rethrow;
     }
   }

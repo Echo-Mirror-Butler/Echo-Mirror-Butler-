@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../data/models/ai_insight_model.dart';
 import '../../data/repositories/ai_repository.dart';
 import '../../../logging/data/models/log_entry_model.dart';
@@ -9,12 +11,45 @@ final aiRepositoryProvider = Provider<AiRepository>((ref) {
   return AiRepository();
 });
 
+/// SharedPreferences key for cached AI insight
+const String _cachedInsightKey = 'cached_ai_insight';
+
 /// AI insight state notifier
 class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
-  AiInsightNotifier(this._repository) : super(const AsyncValue.data(null));
+  AiInsightNotifier(this._repository) : super(const AsyncValue.data(null)) {
+    _loadCachedInsight();
+  }
 
   final AiRepository _repository;
   AiInsightModel? _cachedInsight;
+
+  /// Load cached insight from SharedPreferences
+  Future<void> _loadCachedInsight() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString(_cachedInsightKey);
+      if (cachedJson != null) {
+        final jsonMap = jsonDecode(cachedJson) as Map<String, dynamic>;
+        _cachedInsight = AiInsightModel.fromJson(jsonMap);
+        state = AsyncValue.data(_cachedInsight);
+        debugPrint('[AiInsightNotifier] ✅ Loaded cached insight from storage');
+      }
+    } catch (e) {
+      debugPrint('[AiInsightNotifier] Error loading cached insight: $e');
+    }
+  }
+
+  /// Save insight to SharedPreferences
+  Future<void> _saveCachedInsight(AiInsightModel insight) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = jsonEncode(insight.toJson());
+      await prefs.setString(_cachedInsightKey, jsonString);
+      debugPrint('[AiInsightNotifier] ✅ Saved insight to cache');
+    } catch (e) {
+      debugPrint('[AiInsightNotifier] Error saving cached insight: $e');
+    }
+  }
 
   /// Generate insight based on recent logs
   ///
@@ -32,19 +67,24 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
       debugPrint('[AiInsightNotifier] Generating insight with Gemini...');
       final insight = await _repository.generateInsight(recentLogs);
       _cachedInsight = insight;
+      await _saveCachedInsight(insight);
       debugPrint(
         '[AiInsightNotifier] ✅ Successfully generated insight from Gemini',
       );
       state = AsyncValue.data(insight);
     } catch (e, stackTrace) {
-      // Show error state instead of silently falling back to null
-      // This ensures users know when Gemini API is not working
+      // If error, try to restore cached insight
+      if (_cachedInsight != null) {
+        debugPrint('[AiInsightNotifier] ⚠️ Error generating new insight, using cached');
+        state = AsyncValue.data(_cachedInsight);
+      } else {
+        // Show error state if no cache available
       debugPrint(
         '[AiInsightNotifier] ❌ Error generating insight from Gemini: $e',
       );
       debugPrint('[AiInsightNotifier] Stack trace: $stackTrace');
-      // Set to error state so UI can show appropriate message
       state = AsyncValue.error(e, stackTrace);
+      }
     }
   }
 
@@ -55,6 +95,9 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
   void clearInsight() {
     _cachedInsight = null;
     state = const AsyncValue.data(null);
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.remove(_cachedInsightKey);
+    });
   }
 }
 

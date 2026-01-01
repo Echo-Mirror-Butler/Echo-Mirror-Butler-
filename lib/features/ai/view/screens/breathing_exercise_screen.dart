@@ -7,7 +7,6 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:lottie/lottie.dart';
 import '../../../../core/themes/app_theme.dart';
-import '../../viewmodel/providers/ai_provider.dart';
 import 'music_recommendations_screen.dart';
 
 /// Breathing exercise screen with guided breathing and animations
@@ -37,6 +36,7 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
   bool _isCompleted = false;
   bool _hasSpokenForPhase = false;
   bool _isMusicPlaying = true;
+  String? _selectedFeeling;
 
   // Calming ambient music URL (peaceful meditation/ambient track)
   // Using a reliable free ambient sound source
@@ -309,52 +309,6 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
                   ],
                 ),
               ),
-            ),
-            // Gemini calming message (if available)
-            Consumer(
-              builder: (context, ref, child) {
-                final aiState = ref.watch(aiInsightProvider);
-                final calmingMessage = aiState.value?.calmingMessage;
-                
-                if (calmingMessage != null && calmingMessage.isNotEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            FontAwesomeIcons.heart,
-                            color: Colors.white.withOpacity(0.8),
-                            size: 20,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              calmingMessage,
-                              style: GoogleFonts.playfairDisplay(
-                                fontSize: 14,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.white.withOpacity(0.9),
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
             ),
             // Progress indicator
             Padding(
@@ -665,7 +619,7 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
           ),
         ),
         child: SafeArea(
-        child: Padding(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -686,13 +640,35 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
               ),
               const SizedBox(height: 16),
               Text(
-                'You\'ve completed your breathing exercise. How do you feel?',
+                  'You\'ve completed your breathing exercise.\nHow did you feel after the breathing exercise?',
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   color: Colors.white.withOpacity(0.9),
                 ),
                 textAlign: TextAlign.center,
               ),
+                const SizedBox(height: 32),
+                
+                // Feeling options
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    _buildFeelingChip('😌', 'Calm', Colors.blue),
+                    _buildFeelingChip('😊', 'Happy', Colors.green),
+                    _buildFeelingChip('😐', 'Neutral', Colors.grey),
+                    _buildFeelingChip('😟', 'Anxious', Colors.orange),
+                    _buildFeelingChip('😔', 'Stressed', Colors.red),
+                  ],
+                ),
+                
+                // Recommendations based on selected feeling
+                if (_selectedFeeling != null) ...[
+                  const SizedBox(height: 32),
+                  _buildRecommendation(),
+                ],
+                
               const SizedBox(height: 48),
               ElevatedButton.icon(
                 icon: const Icon(FontAwesomeIcons.music),
@@ -731,6 +707,157 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
           ),
         ),
       ),
+      ),
+    );
+  }
+
+  Widget _buildFeelingChip(String emoji, String label, Color color) {
+    final isSelected = _selectedFeeling == label;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedFeeling = label),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? color.withOpacity(0.3)
+              : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: isSelected ? color : Colors.white.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              emoji,
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendation() {
+    final recommendations = {
+      'Calm': {
+        'title': '🌟 Wonderful!',
+        'message': 'Your breathing is working! To maintain this calm state:',
+        'tips': [
+          'Continue practicing deep breathing throughout the day',
+          'Try meditation or yoga to deepen relaxation',
+          'Listen to calming music or nature sounds'
+        ],
+      },
+      'Happy': {
+        'title': '🎉 Excellent!',
+        'message': 'You\'re feeling great! Keep up the positive momentum:',
+        'tips': [
+          'Share your happiness - connect with loved ones',
+          'Try energizing activities like dancing or walking',
+          'Journal about what made you feel this way'
+        ],
+      },
+      'Neutral': {
+        'title': '💙 That\'s okay!',
+        'message': 'Feeling neutral is normal. Try these to feel more energized:',
+        'tips': [
+          'Take a short walk outdoors for fresh air',
+          'Try another breathing exercise later',
+          'Listen to uplifting music or podcasts'
+        ],
+      },
+      'Anxious': {
+        'title': '🫂 We\'re here for you',
+        'message': 'Anxiety can be tough. Let\'s work through it together:',
+        'tips': [
+          'Repeat the breathing exercise - it helps!',
+          'Try progressive muscle relaxation',
+          'Write down your worries to process them',
+          'Consider talking to a professional if it persists'
+        ],
+      },
+      'Stressed': {
+        'title': '💚 Take it easy',
+        'message': 'Stress is challenging. Here\'s what can help:',
+        'tips': [
+          'Take breaks throughout your day',
+          'Practice the 4-7-8 breathing technique more often',
+          'Try gentle stretching or a warm bath',
+          'Reach out for professional support if needed'
+        ],
+      },
+    };
+
+    final rec = recommendations[_selectedFeeling]!;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            rec['title'] as String,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            rec['message'] as String,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...(rec['tips'] as List<String>).map((tip) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• ',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    tip,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.85),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
       ),
     );
   }
