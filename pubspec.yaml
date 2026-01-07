@@ -2,7 +2,7 @@ name: echomirror
 description: "EchoMirror Butler - A personal growth assistant with daily logging, AI predictions, and automated habit tweaks."
 publish_to: 'none'
 
-version: 1.0.0+4
+version: 1.0.0+8
 
 environment:
   sdk: ^3.10.0

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/log_entry_model.dart';
 import '../../data/repositories/logging_repository.dart';
+import '../../../../core/services/notification_service.dart';
 
 /// Logging repository provider
 final loggingRepositoryProvider = Provider<LoggingRepository>((ref) {
@@ -58,6 +59,11 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       final created = await _repository.createLogEntry(entry);
       final currentData = state.value ?? [];
       state = AsyncValue.data([...currentData, created]);
+      
+      // Cancel no-log-today notification since user has logged
+      final notificationService = NotificationService();
+      await notificationService.cancelNoLogTodayNotification();
+      
       return true;
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);

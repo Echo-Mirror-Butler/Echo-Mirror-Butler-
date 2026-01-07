@@ -316,7 +316,7 @@ class AiRepository {
       rethrow;
     }
   }
-  
+
   /// Generate a free-form chat response using Gemini
   /// This allows natural conversations without hardcoded responses
   Future<String> generateChatResponse(String userMessage, {String? context}) async {

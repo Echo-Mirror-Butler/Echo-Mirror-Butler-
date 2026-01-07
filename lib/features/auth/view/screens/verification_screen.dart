@@ -103,33 +103,13 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
-                      borderRadius: BorderRadius.circular(8),
+                  Text(
+                    'Check your inbox (and spam folder) for the code.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontStyle: FontStyle.italic,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          '💡 For development: Check server logs for the verification code',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontStyle: FontStyle.italic,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        if (kDebugMode)
-                          Text(
-                            'AccountRequestId: ${widget.accountRequestId.substring(0, 8)}...',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontSize: 10,
-                              fontFamily: 'monospace',
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                      ],
-                    ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
                   CustomTextField(

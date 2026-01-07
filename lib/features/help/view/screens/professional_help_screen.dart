@@ -254,7 +254,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           floatingActionButton: !_isChatOpen ? _buildChatButton() : null,
           appBar: AppBar(
         title: Text(
@@ -264,6 +264,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
+      resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -275,8 +276,12 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryColor.withOpacity(0.1),
-                    AppTheme.secondaryColor.withOpacity(0.1),
+                    Theme.of(context).colorScheme.primary.withOpacity(
+                      Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.1,
+                    ),
+                    Theme.of(context).colorScheme.secondary.withOpacity(
+                      Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.1,
+                    ),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
@@ -286,7 +291,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                   Icon(
                     FontAwesomeIcons.handHoldingHeart,
                     size: 48,
-                    color: AppTheme.primaryColor,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -294,7 +299,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -303,7 +308,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                     'Seeking help is a courageous step. We\'re here to connect you with professional support.',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.black87.withOpacity(0.7),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -319,7 +324,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 12),
@@ -345,12 +350,12 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                     decoration: BoxDecoration(
                       color: isSelected
                           ? categoryData['color']
-                          : Colors.white,
+                          : Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected
                             ? categoryData['color']
-                            : Colors.grey.shade300,
+                            : Theme.of(context).colorScheme.outline.withOpacity(0.3),
                         width: 2,
                       ),
                       boxShadow: isSelected
@@ -383,7 +388,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                                 isSelected ? FontWeight.w600 : FontWeight.w500,
                             color: isSelected
                                 ? Colors.white
-                                : Colors.black87,
+                                : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -399,15 +404,17 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                boxShadow: Theme.of(context).brightness == Brightness.dark
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,7 +424,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                       Icon(
                         FontAwesomeIcons.wandMagicSparkles,
                         size: 18,
-                        color: AppTheme.primaryColor,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -425,7 +432,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -443,7 +450,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                               'Loading personalized recommendations...',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.black87.withOpacity(0.8),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                             height: 1.5,
                           ),
                         ),
@@ -459,7 +466,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onBackground,
               ),
             ),
             const SizedBox(height: 12),
@@ -472,15 +479,23 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.red.shade900.withOpacity(0.3)
+                      : Colors.red.shade50,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
+                  border: Border.all(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.red.shade700
+                        : Colors.red.shade200,
+                  ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       FontAwesomeIcons.triangleExclamation,
-                      color: Colors.red.shade700,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.red.shade400
+                          : Colors.red.shade700,
                       size: 24,
                     ),
                     const SizedBox(width: 12),
@@ -489,7 +504,9 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                         'If you\'re in immediate danger, please call 911 or go to your nearest emergency room.',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: Colors.red.shade900,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.red.shade300
+                              : Colors.red.shade900,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -535,21 +552,24 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
         break;
       default:
         icon = FontAwesomeIcons.link;
-        iconColor = Colors.grey;
+        iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: theme.brightness == Brightness.dark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -564,7 +584,9 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.1),
+                    color: iconColor.withOpacity(
+                      theme.brightness == Brightness.dark ? 0.2 : 0.1,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -583,7 +605,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -591,7 +613,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                         resource['description']!,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: Colors.black87.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -600,7 +622,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                 Icon(
                   FontAwesomeIcons.chevronRight,
                   size: 16,
-                  color: Colors.black87.withOpacity(0.3),
+                  color: theme.colorScheme.onSurface.withOpacity(0.3),
                 ),
               ],
             ),
@@ -623,12 +645,15 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
           }
         });
       },
-      backgroundColor: AppTheme.primaryColor,
-      icon: const FaIcon(FontAwesomeIcons.commentDots, color: Colors.white),
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      icon: FaIcon(
+        FontAwesomeIcons.commentDots,
+        color: Theme.of(context).colorScheme.onPrimary,
+      ),
       label: Text(
         'Chat with AI Butler',
         style: GoogleFonts.poppins(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -636,21 +661,30 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
   }
   
   Widget _buildChatOverlay() {
+    final theme = Theme.of(context);
     return Material(
       color: Colors.black.withOpacity(0.5),
       child: SafeArea(
         child: Container(
           margin: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
+            boxShadow: theme.brightness == Brightness.dark
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.5),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -658,7 +692,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
+                  color: theme.colorScheme.primary,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: Row(
@@ -667,13 +701,13 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: theme.colorScheme.onPrimary.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Center(
+                      child: Center(
                         child: FaIcon(
                           FontAwesomeIcons.robot,
-                          color: Colors.white,
+                          color: theme.colorScheme.onPrimary,
                           size: 20,
                         ),
                       ),
@@ -688,21 +722,21 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: theme.colorScheme.onPrimary,
                             ),
                           ),
                           Text(
                             'Here to help you find support',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.8),
+                              color: theme.colorScheme.onPrimary.withOpacity(0.8),
                             ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: Icon(Icons.close, color: theme.colorScheme.onPrimary),
                       onPressed: () {
                         setState(() {
                           _isChatOpen = false;
@@ -717,7 +751,14 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
               Expanded(
                 child: ListView.builder(
                   controller: _chatScrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom > 0 
+                        ? MediaQuery.of(context).viewInsets.bottom + 8 
+                        : 16,
+                  ),
                   itemCount: _chatMessages.length,
                   itemBuilder: (context, index) {
                     final message = _chatMessages[index];
@@ -733,15 +774,17 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                         ),
                         decoration: BoxDecoration(
                           color: isUser
-                              ? AppTheme.primaryColor
-                              : Colors.grey.shade100,
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.surfaceVariant,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           message['content']!,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: isUser ? Colors.white : Colors.black87,
+                            color: isUser 
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -759,7 +802,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: theme.colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -771,7 +814,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                AppTheme.primaryColor,
+                                theme.colorScheme.primary,
                               ),
                             ),
                           ),
@@ -780,7 +823,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                             'Thinking...',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: Colors.black54,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -791,54 +834,101 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
               
               // Input field
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom > 0 
+                      ? MediaQuery.of(context).viewInsets.bottom + 8 
+                      : 16,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
                   border: Border(
-                    top: BorderSide(color: Colors.grey.shade200),
+                    top: BorderSide(
+                      color: theme.colorScheme.outline.withOpacity(0.2),
+                    ),
                   ),
                 ),
                 child: Row(
                   children: [
                     Expanded(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: TextField(
-                          controller: _chatController,
-                          decoration: InputDecoration(
+                      child: TextField(
+                        controller: _chatController,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        decoration: InputDecoration(
                           hintText: 'Type your message...',
                           hintStyle: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
                           ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide(
+                              color: AppTheme.primaryColor,
+                              width: 2,
+                            ),
+                          ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: theme.colorScheme.surface,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
                           ),
                         ),
                         maxLines: null,
-                          textCapitalization: TextCapitalization.sentences,
-                          onSubmitted: (_) => _sendChatMessage(_chatController.text),
-                        ),
+                        textCapitalization: TextCapitalization.sentences,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (value) {
+                          if (value.trim().isNotEmpty) {
+                            _sendChatMessage(value);
+                            FocusScope.of(context).unfocus();
+                          }
+                        },
+                        onTap: () {
+                          // Scroll to bottom when keyboard opens
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (_chatScrollController.hasClients) {
+                              _chatScrollController.animateTo(
+                                _chatScrollController.position.maxScrollExtent,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            }
+                          });
+                        },
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
+                        color: theme.colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.send, color: Colors.white),
+                        icon: Icon(
+                          Icons.send,
+                          color: theme.colorScheme.onPrimary,
+                        ),
                         onPressed: _isSendingMessage
                             ? null
-                            : () => _sendChatMessage(_chatController.text),
+                            : () {
+                                if (_chatController.text.trim().isNotEmpty) {
+                                  _sendChatMessage(_chatController.text);
+                                  FocusScope.of(context).unfocus();
+                                }
+                              },
                       ),
                     ),
                   ],

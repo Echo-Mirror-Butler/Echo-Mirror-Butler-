@@ -9,6 +9,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
+import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../../help/view/screens/professional_help_screen.dart';
 import '../../data/models/insight_model.dart';
@@ -66,6 +67,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         if (userId.isNotEmpty) {
           // Load logs first (needed for analytics and AI insights)
           await ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
+          
+          // Check daily log and schedule notification if needed
+          ref.read(dailyLogCheckProvider.future);
           
           // Load insights
           ref.read(dashboardProvider.notifier).loadInsights(
@@ -406,7 +410,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => context.go('/logging'),
+                    onTap: () {
+                      // Navigate directly to create entry screen
+                      context.push('/logging/create');
+                    },
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(

@@ -1,0 +1,13 @@
+# Email Configuration for Production Server
+# Add this to your production server's config/passwords.yaml under "production:" section
+
+  # Email Configuration for Gmail
+  emailSmtpHost: 'smtp.gmail.com'
+  emailSmtpPort: '587'
+  emailUsername: 'devhodaofficial@gmail.com'
+  emailPassword: 'bqslxjmmwvwbdqdd'
+  emailFromAddress: 'devhodaofficial@gmail.com'
+
+# After adding, restart your Serverpod server
+# The server will initialize email service automatically
+

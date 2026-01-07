@@ -18,6 +18,8 @@ class NotificationService {
   static const int _dailyReminderId = 1;
   static const int _eveningCheckInId = 2;
   static const int _inactiveNudgeId = 3;
+  static const int _noLogTodayId = 4;
+  static const int _activeSessionId = 5;
   static const int _scheduledSessionBaseId = 1000; // Base ID for scheduled sessions
   static const String _logNowActionId = 'log_now';
   static const String _snoozeActionId = 'snooze';
@@ -27,6 +29,8 @@ class NotificationService {
   static const String _keyReminderEnabled = 'reminder_enabled';
   static const String _keyReminderHour = 'reminder_hour';
   static const String _keyReminderMinute = 'reminder_minute';
+  static const String _keyLastLogCheckDate = 'last_log_check_date';
+  static const String _keyLastActiveSessionNotification = 'last_active_session_notification';
 
   /// Initialize the notification service
   Future<bool> initialize() async {
@@ -105,15 +109,24 @@ class NotificationService {
     // Handle actions
     if (response.actionId == _logNowActionId) {
       // Navigate to logging screen
-      // Note: We'll need to access the router from the app context
-      // This will be handled by the main app or a provider
       _navigateToLogging();
     } else if (response.actionId == _snoozeActionId) {
       // Snooze for 1 hour
       _snoozeReminder();
-    } else if (response.id == _dailyReminderId) {
-      // Regular tap on notification
+    } else if (response.actionId == _joinSessionActionId) {
+      // Navigate to socials screen
+      _navigateToSocials();
+    } else if (response.id == _dailyReminderId || 
+               response.id == _eveningCheckInId || 
+               response.id == _noLogTodayId) {
+      // Regular tap on logging-related notifications
       _navigateToLogging();
+    } else if (response.id == _activeSessionId) {
+      // Navigate to socials for active session notifications
+      _navigateToSocials();
+    } else if (response.payload != null && response.payload!.startsWith('scheduled_session:')) {
+      // Navigate to socials for scheduled session notifications
+      _navigateToSocials();
     }
   }
 
@@ -122,6 +135,16 @@ class NotificationService {
     // This will be set by the app router
     // For now, we'll use a callback pattern
     if (_onNotificationTap != null) {
+      _onNotificationTap!();
+    }
+  }
+
+  /// Navigate to socials screen
+  void _navigateToSocials() {
+    if (_onSocialsNotificationTap != null) {
+      _onSocialsNotificationTap!();
+    } else if (_onNotificationTap != null) {
+      // Fallback to main navigation if socials callback not set
       _onNotificationTap!();
     }
   }
@@ -143,10 +166,16 @@ class NotificationService {
 
   /// Callback for notification tap (set by app)
   VoidCallback? _onNotificationTap;
+  VoidCallback? _onSocialsNotificationTap;
 
-  /// Set callback for notification tap
+  /// Set callback for notification tap (logging)
   void setNotificationTapCallback(VoidCallback callback) {
     _onNotificationTap = callback;
+  }
+
+  /// Set callback for socials notification tap
+  void setSocialsNotificationTapCallback(VoidCallback callback) {
+    _onSocialsNotificationTap = callback;
   }
 
   /// Request notification permissions
@@ -348,13 +377,13 @@ class NotificationService {
       await scheduleDailyReminder(hour: time.hour, minute: time.minute);
     }
     
-    // Schedule evening check-in (8 PM default)
+    // Schedule evening check-in (9 PM default)
     await scheduleEveningCheckIn();
   }
 
   /// Schedule daily evening check-in notification
   Future<void> scheduleEveningCheckIn({
-    int hour = 20,
+    int hour = 21,
     int minute = 0,
   }) async {
     if (!_initialized) {
@@ -574,6 +603,172 @@ class NotificationService {
     );
 
     debugPrint('[NotificationService] Showed immediate notification for session $sessionId');
+  }
+
+  // ===== DAILY LOG CHECK NOTIFICATIONS =====
+
+  /// Check if user has logged today and schedule notification if not
+  /// This should be called daily, preferably in the afternoon (e.g., 2 PM)
+  Future<void> checkAndNotifyIfNoLogToday({
+    required bool hasLoggedToday,
+  }) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now();
+    final todayKey = '${today.year}-${today.month}-${today.day}';
+    final lastCheckDate = prefs.getString(_keyLastLogCheckDate);
+
+    // Only check once per day
+    if (lastCheckDate == todayKey) {
+      return;
+    }
+
+    // If user hasn't logged today, schedule a reminder for later today (e.g., 6 PM)
+    if (!hasLoggedToday) {
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduledDate = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        18, // 6 PM
+        0,
+      );
+
+      // If 6 PM has passed, schedule for tomorrow at 2 PM
+      if (scheduledDate.isBefore(now)) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+        scheduledDate = tz.TZDateTime(
+          tz.local,
+          scheduledDate.year,
+          scheduledDate.month,
+          scheduledDate.day,
+          14, // 2 PM
+          0,
+        );
+      }
+
+      await _scheduleNotification(
+        id: _noLogTodayId,
+        scheduledDate: scheduledDate,
+        title: 'Don\'t forget to log your day 📝',
+        body: 'Your future self is waiting to hear about today. Take a moment to reflect! 🌟',
+        repeatDaily: false,
+      );
+
+      // Mark that we've checked today
+      await prefs.setString(_keyLastLogCheckDate, todayKey);
+      debugPrint('[NotificationService] Scheduled no-log reminder for ${scheduledDate.toString()}');
+    } else {
+      // User has logged, cancel any pending no-log notifications
+      await _notifications.cancel(_noLogTodayId);
+      await prefs.setString(_keyLastLogCheckDate, todayKey);
+      debugPrint('[NotificationService] User has logged today, no reminder needed');
+    }
+  }
+
+  /// Cancel no-log-today notification
+  Future<void> cancelNoLogTodayNotification() async {
+    await _notifications.cancel(_noLogTodayId);
+    debugPrint('[NotificationService] Cancelled no-log-today notification');
+  }
+
+  // ===== ACTIVE SESSION NOTIFICATIONS =====
+
+  /// Notify user when there's an active session available
+  /// This should be called when active sessions are detected
+  Future<void> notifyActiveSessionAvailable({
+    required String sessionTitle,
+    required String hostName,
+    required int participantCount,
+  }) async {
+    if (!_initialized) {
+      await initialize();
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    final sessionKey = '$sessionTitle-$hostName';
+    final lastNotification = prefs.getString(_keyLastActiveSessionNotification);
+
+    // Don't spam notifications - only notify once per unique session per hour
+    if (lastNotification != null) {
+      final parts = lastNotification.split('|');
+      if (parts.length == 2) {
+        final lastSessionKey = parts[0];
+        final lastNotificationTime = DateTime.tryParse(parts[1]);
+        if (lastSessionKey == sessionKey && 
+            lastNotificationTime != null &&
+            now.difference(lastNotificationTime).inHours < 1) {
+          debugPrint('[NotificationService] Active session notification already sent recently');
+          return;
+        }
+      }
+    }
+
+    // Android notification details
+    final androidDetails = AndroidNotificationDetails(
+      'active_sessions_channel',
+      'Active Video Sessions',
+      channelDescription: 'Notifications when active video sessions are available',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+      playSound: true,
+      category: AndroidNotificationCategory.event,
+      actions: [
+        AndroidNotificationAction(
+          _joinSessionActionId,
+          'Join Session',
+          showsUserInterface: true,
+        ),
+      ],
+    );
+
+    // iOS notification details
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      categoryIdentifier: 'active_session',
+      interruptionLevel: InterruptionLevel.active,
+    );
+
+    // Notification details
+    final notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final participantText = participantCount == 1 
+        ? '1 person' 
+        : '$participantCount people';
+
+    await _notifications.show(
+      _activeSessionId,
+      'Active Session Available! 🎥',
+      '"$sessionTitle" with $hostName - $participantText online',
+      notificationDetails,
+      payload: 'active_session:$sessionTitle',
+    );
+
+    // Save notification timestamp
+    await prefs.setString(
+      _keyLastActiveSessionNotification,
+      '$sessionKey|${now.toIso8601String()}',
+    );
+
+    debugPrint('[NotificationService] Notified about active session: $sessionTitle');
+  }
+
+  /// Cancel active session notification
+  Future<void> cancelActiveSessionNotification() async {
+    await _notifications.cancel(_activeSessionId);
+    debugPrint('[NotificationService] Cancelled active session notification');
   }
 }
 
