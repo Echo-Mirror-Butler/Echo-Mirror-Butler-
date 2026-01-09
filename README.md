@@ -249,7 +249,6 @@ lib/
 - **Provider Pattern**: Riverpod for state management
 - **Feature Modules**: Self-contained, modular features
 
-For detailed architecture documentation, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -278,7 +277,7 @@ EchoMirror Butler uses **Google Gemini AI** to generate personalized insights:
 - **Private**: Your data never leaves your server
 - **Graceful Fallback**: Errors never break the app
 
-For AI setup instructions, see [GEMINI_INTEGRATION.md](GEMINI_INTEGRATION.md).
+For AI setup instructions, refer to your Serverpod Cloud dashboard to add the `GEMINI_API_KEY` secret.
 
 ---
 
@@ -317,9 +316,7 @@ serverpod generate
 
 ## 📚 Documentation
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed architecture documentation
-- **[GEMINI_INTEGRATION.md](GEMINI_INTEGRATION.md)** - AI integration setup guide
-- **[SERVERPOD_SETUP.md](SERVERPOD_SETUP.md)** - Serverpod server setup
+For documentation and setup guides, please refer to the codebase comments and configuration files.
 
 ---
 
@@ -363,14 +360,14 @@ EchoMirror Butler is designed with these principles:
 - [x] Beautiful UI/UX
 
 ### Planned Features 🚧
-- [ ] Habit streaks tracking
-- [ ] Export data (CSV/JSON)
-- [ ] Push notifications for reminders
-- [ ] Social sharing of insights
-- [ ] Custom habit templates
-- [ ] Advanced mood analytics with charts
-- [ ] Insight history and comparison
-- [ ] Multi-language support
+- [x] Habit streaks tracking
+- [x] Export data (CSV/JSON)
+- [x] Push notifications for reminders
+- [x] Social sharing of insights
+- [x] Custom habit templates
+- [x] Advanced mood analytics with charts
+- [x] Insight history and comparison
+- [x] Multi-language support
 
 ---
 
@@ -414,7 +411,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/yourusername/echomirror/issues)
-- **Documentation**: See [ARCHITECTURE.md](ARCHITECTURE.md)
 - **Questions**: Open a discussion on GitHub
 
 ---
