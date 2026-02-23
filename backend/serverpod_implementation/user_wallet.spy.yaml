@@ -1,9 +1,0 @@
-class: UserWallet
-table: user_wallet
-fields:
-  id: int, autoIncrement
-  userId: int
-  echoBalance: double
-  stellarPublicKey: String?, db
-  createdAt: DateTime
-  updatedAt: DateTime?
