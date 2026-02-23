@@ -154,7 +154,7 @@ serverpod generate
 | Method | Description |
 |---|---|
 | `createWallet()` | Generates a new Stellar keypair and funds via Friendbot |
-| `establishTrustline(publicKey, secretKey)` | Creates a trustline for the ECHO asset |
+| `establishTrustline(secretKey)` | Creates a trustline for the ECHO asset |
 | `sendEcho(senderSecret, recipientPublic, amount)` | Sends ECHO between wallets |
 | `getEchoBalance(publicKey)` | Fetches ECHO balance from Horizon |
 
