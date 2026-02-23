@@ -1,0 +1,12 @@
+class: GiftTransaction
+table: gift_transaction
+fields:
+  id: int, autoIncrement
+  senderUserId: int
+  recipientUserId: int
+  echoAmount: double
+  status: String
+  message: String?, db
+  stellarTxHash: String?, db
+  createdAt: DateTime
+  updatedAt: DateTime?
