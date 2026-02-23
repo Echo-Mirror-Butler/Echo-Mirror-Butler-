@@ -47,7 +47,7 @@ class StellarService {
       final userKeypair = KeyPair.fromSecretSeed(userSecret);
       final account = await _sdk.accounts.account(userKeypair.accountId);
 
-      final echoAsset = AssetTypeCreditAlphaNum12(
+      final echoAsset = AssetTypeCreditAlphaNum4(
         EchoToken.code,
         StellarConfig.issuerPublicKey,
       );
@@ -84,7 +84,7 @@ class StellarService {
       final senderKeypair = KeyPair.fromSecretSeed(senderSecret);
       final account = await _sdk.accounts.account(senderKeypair.accountId);
 
-      final echoAsset = AssetTypeCreditAlphaNum12(
+      final echoAsset = AssetTypeCreditAlphaNum4(
         EchoToken.code,
         StellarConfig.issuerPublicKey,
       );
