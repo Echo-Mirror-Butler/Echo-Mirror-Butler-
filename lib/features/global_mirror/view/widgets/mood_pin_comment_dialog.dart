@@ -7,6 +7,7 @@ import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
+import 'gift_button_widget.dart';
 
 /// Dialog for viewing and adding comments on a mood pin
 class MoodPinCommentDialog extends ConsumerStatefulWidget {
@@ -230,6 +231,11 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                       ],
                     ),
                   ),
+                  if (widget.pin.userId != null)
+                    GiftButtonWidget(
+                      recipientUserId: widget.pin.userId!,
+                      compact: true,
+                    ),
                   IconButton(
                     icon: const Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),

@@ -6,6 +6,8 @@ class MoodPinModel {
   final double gridLon; // Anonymized longitude (rounded to 0.1 degrees)
   final DateTime timestamp;
   final DateTime? expiresAt;
+  // Optional: non-null only when the pin owner has opted into gifting
+  final int? userId;
 
   MoodPinModel({
     required this.id,
@@ -14,6 +16,7 @@ class MoodPinModel {
     required this.gridLon,
     required this.timestamp,
     this.expiresAt,
+    this.userId,
   });
 
   factory MoodPinModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +31,7 @@ class MoodPinModel {
       expiresAt: json['expiresAt'] != null
           ? DateTime.parse(json['expiresAt'])
           : null,
+      userId: json['userId'] as int?,
     );
   }
 
@@ -39,6 +43,7 @@ class MoodPinModel {
       'gridLon': gridLon,
       'timestamp': timestamp.toIso8601String(),
       'expiresAt': expiresAt?.toIso8601String(),
+      if (userId != null) 'userId': userId,
     };
   }
 
@@ -54,6 +59,7 @@ class MoodPinModel {
     double? gridLon,
     DateTime? timestamp,
     DateTime? expiresAt,
+    int? userId,
   }) {
     return MoodPinModel(
       id: id ?? this.id,
@@ -62,6 +68,7 @@ class MoodPinModel {
       gridLon: gridLon ?? this.gridLon,
       timestamp: timestamp ?? this.timestamp,
       expiresAt: expiresAt ?? this.expiresAt,
+      userId: userId ?? this.userId,
     );
   }
 }

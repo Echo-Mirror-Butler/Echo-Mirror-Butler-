@@ -258,7 +258,7 @@ class NotificationService {
       repeatDaily: true,
     );
 
-    debugPrint('[NotificationService] Scheduled daily reminder at ${hour}:${minute.toString().padLeft(2, '0')}');
+    debugPrint('[NotificationService] Scheduled daily reminder at $hour:${minute.toString().padLeft(2, '0')}');
   }
 
   /// Schedule a notification
@@ -415,7 +415,7 @@ class NotificationService {
       repeatDaily: true,
     );
 
-    debugPrint('[NotificationService] Scheduled evening check-in at ${hour}:${minute.toString().padLeft(2, '0')}');
+    debugPrint('[NotificationService] Scheduled evening check-in at $hour:${minute.toString().padLeft(2, '0')}');
   }
 
   /// Schedule inactive nudge (2+ days without logs)
