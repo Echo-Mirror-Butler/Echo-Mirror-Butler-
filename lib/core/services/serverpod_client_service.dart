@@ -1,7 +1,6 @@
 import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:serverpod_client/serverpod_client.dart';
 import '../constants/api_constants.dart';
 
 /// Service for managing the Serverpod client with persistent authentication

@@ -45,12 +45,10 @@ app.*.map.json
 /android/app/release
 
 # Sensitive files - API keys, secrets, constants
-lib/core/constants/api_constants.dart
 **/local.properties
 **/.env
 **/.env.*
 **/*secret*
-**/*password*
 **/config/passwords.yaml
 
 # Documentation files (except README.md)

@@ -63,6 +63,9 @@ dependencies:
   flutter_globe_3d: ^1.0.0
   vector_math: ^2.1.4
 
+  # Stellar / ECHO Token
+  stellar_flutter_sdk: ^2.0.0
+
   # Video Calls (Agora)
   agora_rtc_engine: ^6.3.0
   wakelock_plus: ^1.2.8

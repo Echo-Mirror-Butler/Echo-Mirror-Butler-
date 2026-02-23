@@ -18,13 +18,14 @@ import '../../features/dashboard/view/screens/main_navigation_screen.dart';
 import '../../features/global_mirror/view/screens/mood_comment_notifications_screen.dart';
 import '../../features/ai/view/screens/breathing_exercise_screen.dart';
 import '../../features/ai/view/screens/music_recommendations_screen.dart';
+import '../../features/global_mirror/view/screens/gift_screen.dart';
 
 /// Refresh notifier for GoRouter
 class GoRouterRefreshNotifier extends ChangeNotifier {
   GoRouterRefreshNotifier(this.ref) {
     ref.listen(
       authProvider.select((state) => state.isAuthenticated),
-      (_, __) => notifyListeners(),
+      (_, _) => notifyListeners(),
     );
   }
 
@@ -197,6 +198,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/music-recommendations',
         name: 'music-recommendations',
         builder: (context, state) => const MusicRecommendationsScreen(),
+      ),
+      GoRoute(
+        path: '/gift/:userId',
+        name: 'gift',
+        builder: (context, state) => GiftScreen(
+          recipientUserId: int.parse(state.pathParameters['userId']!),
+        ),
       ),
     ],
   );
