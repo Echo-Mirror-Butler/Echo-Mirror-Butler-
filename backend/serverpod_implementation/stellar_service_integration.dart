@@ -19,10 +19,8 @@ class StellarConfig {
   static const String friendbotUrl = 'https://friendbot.stellar.org';
 
   /// Issuer public key — loaded from environment variable
-  static String get issuerPublicKey => const String.fromEnvironment(
-    'STELLAR_ISSUER_PUBLIC',
-    defaultValue: '',
-  );
+  static String get issuerPublicKey =>
+      const String.fromEnvironment('STELLAR_ISSUER_PUBLIC', defaultValue: '');
 
   /// Distributor public key (optional, for issuing ECHO)
   static String get distributorPublicKey => const String.fromEnvironment(
@@ -47,10 +45,10 @@ class EchoToken {
 }
 
 /// Serverpod-compatible Stellar service integration wrapper.
-/// 
+///
 /// This bridges the Stellar Flutter SDK with Serverpod endpoints,
 /// providing a clean API for wallet creation, trustlines, and payments.
-/// 
+///
 /// Usage flow:
 /// 1. Call [createWallet] to generate a keypair and fund via Friendbot
 /// 2. Call [establishTrustline] so the wallet can hold ECHO
@@ -63,9 +61,9 @@ class StellarServiceIntegration {
   static final Network _network = Network(StellarConfig.networkPassphrase);
 
   /// Generates a new Stellar keypair and funds it via Friendbot (testnet only).
-  /// 
+  ///
   /// Returns the [KeyPair] containing both public and secret keys.
-  /// 
+  ///
   /// SECURITY: The caller MUST store the secret key securely (never in database).
   static Future<KeyPair> createWallet() async {
     if (StellarConfig.issuerPublicKey.isEmpty) {
@@ -78,7 +76,9 @@ class StellarServiceIntegration {
     try {
       final keypair = KeyPair.random();
       await _fundViafriendbot(keypair.accountId);
-      debugPrint('[StellarServiceIntegration] Created wallet: ${keypair.accountId}');
+      debugPrint(
+        '[StellarServiceIntegration] Created wallet: ${keypair.accountId}',
+      );
       return keypair;
     } catch (e) {
       debugPrint('[StellarServiceIntegration] Wallet creation error: $e');
@@ -90,17 +90,17 @@ class StellarServiceIntegration {
   static Future<void> _fundViafriendbot(String publicKey) async {
     final url = '${StellarConfig.friendbotUrl}?addr=$publicKey';
     final response = await http.get(Uri.parse(url));
-    
+
     if (response.statusCode != 200) {
       throw Exception('Friendbot funding failed: ${response.body}');
     }
-    
+
     debugPrint('[StellarServiceIntegration] Funded $publicKey via Friendbot');
   }
 
   /// Establishes a trustline from [userSecret] wallet to the ECHO issuer,
   /// allowing the wallet to hold ECHO tokens.
-  /// 
+  ///
   /// Returns `true` if successful, `false` if the issuer is not configured
   /// (graceful degradation for DB-only mode).
   static Future<bool> establishTrustline(String userSecret) async {
@@ -128,11 +128,11 @@ class StellarServiceIntegration {
 
       transaction.sign(userKeypair, _network);
       final response = await _sdk.submitTransaction(transaction);
-      
+
       debugPrint(
         '[StellarServiceIntegration] Trustline established: ${response.success}',
       );
-      
+
       return response.success;
     } catch (e) {
       debugPrint('[StellarServiceIntegration] Trustline error: $e');
@@ -141,9 +141,9 @@ class StellarServiceIntegration {
   }
 
   /// Sends [amount] ECHO tokens from [senderSecret] to [recipientPublicKey].
-  /// 
+  ///
   /// Returns the Stellar transaction hash on success, null on failure.
-  /// 
+  ///
   /// Throws an exception if the issuer is not configured.
   static Future<String?> sendEcho({
     required String senderSecret,
@@ -166,14 +166,13 @@ class StellarServiceIntegration {
         StellarConfig.issuerPublicKey,
       );
 
-      final builder = TransactionBuilder(account)
-          .addOperation(
-            PaymentOperationBuilder(
-              recipientPublicKey,
-              echoAsset,
-              amount.toStringAsFixed(7),
-            ).build(),
-          );
+      final builder = TransactionBuilder(account).addOperation(
+        PaymentOperationBuilder(
+          recipientPublicKey,
+          echoAsset,
+          amount.toStringAsFixed(7),
+        ).build(),
+      );
 
       if (memo != null && memo.isNotEmpty) {
         // Stellar memo max length is 28 characters
@@ -186,15 +185,13 @@ class StellarServiceIntegration {
       transaction.sign(senderKeypair, _network);
 
       final response = await _sdk.submitTransaction(transaction);
-      
+
       if (response.success) {
         final hash = response.hash;
-        debugPrint(
-          '[StellarServiceIntegration] Sent $amount ECHO — tx: $hash',
-        );
+        debugPrint('[StellarServiceIntegration] Sent $amount ECHO — tx: $hash');
         return hash;
       }
-      
+
       debugPrint(
         '[StellarServiceIntegration] Send failed: ${response.extras?.resultCodes}',
       );
@@ -206,7 +203,7 @@ class StellarServiceIntegration {
   }
 
   /// Returns the ECHO balance for [publicKey], or 0.0 if none.
-  /// 
+  ///
   /// Queries Horizon for real-time balance accuracy.
   static Future<double> getEchoBalance(String publicKey) async {
     if (StellarConfig.issuerPublicKey.isEmpty) {
@@ -215,14 +212,14 @@ class StellarServiceIntegration {
 
     try {
       final account = await _sdk.accounts.account(publicKey);
-      
+
       for (final balance in account.balances) {
         if (balance.assetCode == EchoToken.code &&
             balance.assetIssuer == StellarConfig.issuerPublicKey) {
           return double.tryParse(balance.balance) ?? 0.0;
         }
       }
-      
+
       return 0.0;
     } catch (e) {
       debugPrint('[StellarServiceIntegration] Balance check error: $e');

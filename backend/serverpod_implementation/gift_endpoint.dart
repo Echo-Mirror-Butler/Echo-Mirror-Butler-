@@ -8,7 +8,7 @@ import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import './stellar_service_integration.dart';
 
 /// Serverpod endpoint for ECHO token gifting and wallet management.
-/// 
+///
 /// This endpoint integrates with Stellar blockchain to submit actual transactions
 /// when users send gifts. It falls back gracefully to database-only tracking if
 /// Stellar wallets are not configured.
@@ -21,16 +21,16 @@ class GiftEndpoint extends Endpoint {
       session,
       where: (w) => w.userId.equals(userId),
     );
-    
+
     if (wallet == null) {
       return 0.0;
     }
-    
+
     return wallet.echoBalance;
   }
 
   /// Transfers ECHO from the current user to [recipientUserId].
-  /// 
+  ///
   /// This method:
   /// 1. Looks up both sender and recipient wallets
   /// 2. Validates sufficient balance
@@ -45,12 +45,12 @@ class GiftEndpoint extends Endpoint {
     String? message,
   ) async {
     final senderId = session.userId;
-    
+
     // Validate amount
     if (amount <= 0) {
       throw Exception('Amount must be greater than 0');
     }
-    
+
     if (amount > 100) {
       throw Exception('Maximum gift amount is 100 ECHO');
     }
@@ -65,17 +65,16 @@ class GiftEndpoint extends Endpoint {
     }
 
     String? stellarTxHash;
-    
+
     // Attempt Stellar transaction if both wallets have Stellar keys
     if (senderWallet.stellarPublicKey != null &&
         senderWallet.stellarPublicKey!.isNotEmpty &&
         recipientWallet.stellarPublicKey != null &&
         recipientWallet.stellarPublicKey!.isNotEmpty) {
-      
       try {
         // Get sender's secret key securely from environment config
         final senderSecretKey = await _getSenderSecretKey(session, senderId);
-        
+
         if (senderSecretKey != null && senderSecretKey.isNotEmpty) {
           // Submit to Stellar network
           stellarTxHash = await StellarServiceIntegration.sendEcho(
@@ -84,7 +83,7 @@ class GiftEndpoint extends Endpoint {
             amount: amount,
             memo: message,
           );
-          
+
           if (stellarTxHash != null) {
             logging.info('[GiftEndpoint] Stellar tx submitted: $stellarTxHash');
           }
@@ -135,10 +134,11 @@ class GiftEndpoint extends Endpoint {
   /// (both sent and received transactions).
   Future<List<GiftTransaction>> getGiftHistory(Session session) async {
     final userId = session.userId;
-    
+
     final transactions = await GiftTransaction.db.find(
       session,
-      where: (t) => t.senderUserId.equals(userId) | t.recipientUserId.equals(userId),
+      where: (t) =>
+          t.senderUserId.equals(userId) | t.recipientUserId.equals(userId),
       orderBy: (t) => t.createdAt,
       orderDescending: true,
     );
@@ -166,7 +166,7 @@ class GiftEndpoint extends Endpoint {
   }
 
   /// Gets or creates a UserWallet for the given user.
-  /// 
+  ///
   /// If creating a new wallet:
   /// 1. Calls StellarService.createWallet() to generate a keypair
   /// 2. Calls StellarService.establishTrustline() to set up ECHO trustline
@@ -194,12 +194,13 @@ class GiftEndpoint extends Endpoint {
       stellarPublicKey = keypair.accountId;
       stellarSecretKey = keypair.secretSeed;
 
-      logging.info('[GiftEndpoint] Generated Stellar wallet: $stellarPublicKey');
+      logging.info(
+        '[GiftEndpoint] Generated Stellar wallet: $stellarPublicKey',
+      );
 
       // Step 2: Establish ECHO trustline
-      final trustlineSuccess = await StellarServiceIntegration.establishTrustline(
-        stellarSecretKey,
-      );
+      final trustlineSuccess =
+          await StellarServiceIntegration.establishTrustline(stellarSecretKey);
 
       if (!trustlineSuccess) {
         logging.warning(
@@ -242,30 +243,30 @@ class GiftEndpoint extends Endpoint {
   }
 
   /// Securely retrieves the sender's Stellar secret key.
-  /// 
+  ///
   /// **SECURITY NOTE**: In production, this should:
   /// 1. NOT fetch from the database
   /// 2. Use environment variables, a secrets manager (AWS Secrets Manager, HashiCorp Vault), or
   ///    key derivation functions
   /// 3. Implement access controls and audit logging
   /// 4. Never log the key value
-  /// 
+  ///
   /// For now, this is a placeholder that would use your secrets infrastructure.
   Future<String?> _getSenderSecretKey(Session session, int userId) async {
     // TODO: Implement secure secret key retrieval
     // Example (DO NOT use in production):
     //   return Platform.environment['SENDER_SECRET_KEY_$userId'];
-    
+
     // In production, you might:
     // 1. Store a key derivation seed in the database
     // 2. Use a secrets manager service
     // 3. Use Serverpod's config system with encrypted values
-    
+
     logging.warning(
       '[GiftEndpoint] Secret key retrieval not fully implemented. '
       'Please configure secure secrets management.',
     );
-    
+
     return null; // Placeholder — implement with your secrets infrastructure
   }
 }
