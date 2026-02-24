@@ -10,19 +10,11 @@ class AuthState {
   final bool isLoading;
   final String? error;
 
-  const AuthState({
-    this.user,
-    this.isLoading = false,
-    this.error,
-  });
+  const AuthState({this.user, this.isLoading = false, this.error});
 
   bool get isAuthenticated => user != null;
 
-  AuthState copyWith({
-    UserModel? user,
-    bool? isLoading,
-    String? error,
-  }) {
+  AuthState copyWith({UserModel? user, bool? isLoading, String? error}) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
@@ -53,10 +45,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       // Ensure client is initialized before checking auth
       await ServerpodClientService.instance.ensureInitialized();
-      
+
       final isAuth = await _repository.isAuthenticated();
       debugPrint('[AuthNotifier] Auth check result: $isAuth');
-      
+
       if (isAuth) {
         final userData = await _repository.getCurrentUser();
         if (userData != null) {
@@ -66,7 +58,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
             isLoading: false,
           );
         } else {
-          debugPrint('[AuthNotifier] ⚠️ Authenticated but no user data available');
+          debugPrint(
+            '[AuthNotifier] ⚠️ Authenticated but no user data available',
+          );
           state = state.copyWith(isLoading: false);
         }
       } else {
@@ -75,10 +69,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     } catch (e) {
       debugPrint('[AuthNotifier] Error checking auth status: $e');
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     } finally {
       _isCheckingAuth = false;
     }
@@ -100,16 +91,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         email: email,
         createdAt: DateTime.now(),
       );
-      state = state.copyWith(
-        user: user,
-        isLoading: false,
-      );
+      state = state.copyWith(user: user, isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -124,26 +109,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // This only starts registration - returns accountRequestId, not userId
       // User is NOT authenticated yet - they need to verify email first
       final accountRequestId = await _repository.signUp(email, password, name);
-      
-      debugPrint('[AuthNotifier] signUp received accountRequestId: $accountRequestId');
-      
+
+      debugPrint(
+        '[AuthNotifier] signUp received accountRequestId: $accountRequestId',
+      );
+
       // Don't update state here - let the UI handle it after navigation
       // This prevents the router from rebuilding and unmounting the widget
       // state = state.copyWith(isLoading: false);
-      
+
       // Return accountRequestId so the UI can navigate to verification screen
       return accountRequestId;
     } catch (e, stackTrace) {
       debugPrint('[AuthNotifier] signUp error: $e');
       debugPrint('[AuthNotifier] signUp stackTrace: $stackTrace');
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return null;
     }
   }
-  
+
   /// Clear loading state after navigation (call this after navigating to verify screen)
   void clearLoadingState() {
     state = state.copyWith(isLoading: false);
@@ -163,20 +147,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
         verificationCode: verificationCode,
         password: password,
       );
-      
+
       debugPrint('[AuthNotifier] completeSignUp server call succeeded');
-      
+
       // After successful verification, check auth status
       // Give it a moment for the auth key to be stored
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       final isAuth = await _repository.isAuthenticated();
       debugPrint('[AuthNotifier] isAuthenticated after verification: $isAuth');
-      
+
       if (isAuth) {
         // Try to get user data - if not available yet, create a placeholder user
         final userData = await _repository.getCurrentUser();
-        if (userData != null && userData['email'] != null && (userData['email'] as String).isNotEmpty) {
+        if (userData != null &&
+            userData['email'] != null &&
+            (userData['email'] as String).isNotEmpty) {
           state = state.copyWith(
             user: UserModel.fromJson(userData),
             isLoading: false,
@@ -186,26 +172,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
           // User is authenticated but we don't have full user data yet
           // This is okay - the user can still be considered authenticated
           // We'll fetch full user data later or create a minimal user
-          state = state.copyWith(
-            isLoading: false,
+          state = state.copyWith(isLoading: false);
+          debugPrint(
+            '[AuthNotifier] User authenticated but user data not yet available',
           );
-          debugPrint('[AuthNotifier] User authenticated but user data not yet available');
         }
       } else {
         state = state.copyWith(isLoading: false);
         debugPrint('[AuthNotifier] User not authenticated after verification');
       }
-      
+
       // Return true if server operation succeeded (no exception thrown)
       // The authentication key should be stored by Serverpod after finishRegistration
       return true;
     } catch (e, stackTrace) {
       debugPrint('[AuthNotifier] completeSignUp error: $e');
       debugPrint('[AuthNotifier] completeSignUp stackTrace: $stackTrace');
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -217,10 +200,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _repository.signOut();
       state = const AuthState();
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -232,10 +212,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false);
       return success;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -248,14 +225,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   ) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final success = await _repository.resetPassword(email, token, newPassword);
+      final success = await _repository.resetPassword(
+        email,
+        token,
+        newPassword,
+      );
       state = state.copyWith(isLoading: false);
       return success;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -267,14 +245,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   ) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final success = await _repository.changePassword(currentPassword, newPassword);
+      final success = await _repository.changePassword(
+        currentPassword,
+        newPassword,
+      );
       state = state.copyWith(isLoading: false);
       return success;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -285,4 +263,3 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return AuthNotifier(repository);
 });
-

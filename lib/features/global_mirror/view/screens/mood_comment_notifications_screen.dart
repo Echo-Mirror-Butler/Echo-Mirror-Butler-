@@ -52,22 +52,23 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final notifications = ref.watch(moodCommentNotificationProvider);
-    final unreadCount = ref.watch(moodCommentNotificationProvider.notifier).unreadCount;
+    final unreadCount = ref
+        .watch(moodCommentNotificationProvider.notifier)
+        .unreadCount;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Mood Support',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-          ),
+          style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w700),
         ),
         actions: [
           if (notifications.isNotEmpty)
             TextButton.icon(
               onPressed: () {
-                ref.read(moodCommentNotificationProvider.notifier).markAllAsRead();
+                ref
+                    .read(moodCommentNotificationProvider.notifier)
+                    .markAllAsRead();
               },
               icon: const Icon(FontAwesomeIcons.checkDouble, size: 16),
               label: const Text('Mark all read'),
@@ -83,7 +84,9 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text('Clear All Notifications?'),
-                    content: const Text('This will delete all notifications. This action cannot be undone.'),
+                    content: const Text(
+                      'This will delete all notifications. This action cannot be undone.',
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -91,10 +94,15 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                       ),
                       TextButton(
                         onPressed: () {
-                          ref.read(moodCommentNotificationProvider.notifier).clearAll();
+                          ref
+                              .read(moodCommentNotificationProvider.notifier)
+                              .clearAll();
                           Navigator.pop(context);
                         },
-                        child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+                        child: const Text(
+                          'Clear All',
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ),
                     ],
                   ),
@@ -139,7 +147,9 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
               itemCount: notifications.length,
               itemBuilder: (context, index) {
                 final notification = notifications[index];
-                final sentimentColor = _getSentimentColor(notification.sentiment);
+                final sentimentColor = _getSentimentColor(
+                  notification.sentiment,
+                );
 
                 return Dismissible(
                   key: Key(notification.id),
@@ -157,7 +167,9 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                     ),
                   ),
                   onDismissed: (direction) {
-                    ref.read(moodCommentNotificationProvider.notifier).deleteNotification(notification.id);
+                    ref
+                        .read(moodCommentNotificationProvider.notifier)
+                        .deleteNotification(notification.id);
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -207,7 +219,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.7),
                                       ),
                                     ),
                                   ),
@@ -229,7 +242,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                   color: theme.colorScheme.surface,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: theme.colorScheme.outline.withOpacity(0.1),
+                                    color: theme.colorScheme.outline
+                                        .withOpacity(0.1),
                                   ),
                                 ),
                                 child: Text(
@@ -247,12 +261,16 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                     _getTimeAgo(notification.timestamp),
                                     style: GoogleFonts.poppins(
                                       fontSize: 11,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.5),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: sentimentColor.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(8),
@@ -280,7 +298,9 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
       floatingActionButton: unreadCount > 0
           ? FloatingActionButton.extended(
               onPressed: () {
-                ref.read(moodCommentNotificationProvider.notifier).markAllAsRead();
+                ref
+                    .read(moodCommentNotificationProvider.notifier)
+                    .markAllAsRead();
               },
               icon: const Icon(FontAwesomeIcons.checkDouble),
               label: Text('Mark all read ($unreadCount)'),
@@ -291,4 +311,3 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
     );
   }
 }
-

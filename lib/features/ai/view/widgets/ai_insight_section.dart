@@ -69,18 +69,21 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
     final theme = Theme.of(context);
 
     // Listen for insight changes and auto-navigate to breathing exercise when stress is detected
-    ref.listen<AsyncValue<AiInsightModel?>>(aiInsightProvider, (previous, next) {
+    ref.listen<AsyncValue<AiInsightModel?>>(aiInsightProvider, (
+      previous,
+      next,
+    ) {
       // Trigger when:
       // 1. Transitioning from null/loading/error to a valid insight
       // 2. OR when stress level changes to a new value (different from last triggered)
       final previousStressLevel = previous?.value?.stressLevel;
       final currentStressLevel = next.value?.stressLevel;
-      
+
       if (currentStressLevel != null) {
         debugPrint(
           '[AiInsightSection] 📊 Insight updated - stressLevel: $currentStressLevel, previous: $previousStressLevel, lastTriggered: $_lastTriggeredStressLevel',
         );
-        
+
         // Only trigger if:
         // 1. Stress level is >= 3
         // 2. This is a NEW stress detection (different from last triggered)
@@ -88,8 +91,10 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
         final isNewInsight = previous?.value == null;
         final stressLevelChanged = previousStressLevel != currentStressLevel;
         final isNewTrigger = currentStressLevel != _lastTriggeredStressLevel;
-        
-        if (currentStressLevel >= 3 && isNewTrigger && (isNewInsight || stressLevelChanged)) {
+
+        if (currentStressLevel >= 3 &&
+            isNewTrigger &&
+            (isNewInsight || stressLevelChanged)) {
           // Small delay to let the UI render first
           Future.delayed(const Duration(milliseconds: 800), () {
             if (context.mounted) {
@@ -100,7 +105,8 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
               context.push('/breathing');
             }
           });
-        } else if (currentStressLevel >= 3 && currentStressLevel == _lastTriggeredStressLevel) {
+        } else if (currentStressLevel >= 3 &&
+            currentStressLevel == _lastTriggeredStressLevel) {
           debugPrint(
             '[AiInsightSection] ⏭️ Skipping breathing exercise trigger - already triggered for stress level $currentStressLevel',
           );
@@ -307,10 +313,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const ShimmerLoading(
-                width: 40,
-                height: 40,
-              ),
+              const ShimmerLoading(width: 40, height: 40),
               const SizedBox(height: 16),
               Text(
                 'Generating Insights...',
@@ -342,10 +345,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const ShimmerLoading(
-                width: 40,
-                height: 40,
-              ),
+              const ShimmerLoading(width: 40, height: 40),
               const SizedBox(height: 16),
               Text(
                 'Generating AI Insights with Gemini...',

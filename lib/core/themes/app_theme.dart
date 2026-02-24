@@ -8,12 +8,12 @@ class AppTheme {
   // Color Palette - Soft Pastels
   static const Color primaryColor = Color(0xFF6D5CE8); // Soft Purple
   static const Color secondaryColor = Color(0xFF8B5CF6); // Purple
-  static const Color accentColor = Color(0xFFEC4899); // Pink 
+  static const Color accentColor = Color(0xFFEC4899); // Pink
   static const Color backgroundColor = Color(0xFFF8FAFC);
   static const Color surfaceColor = Color(0xFFFFFFFF);
   static const Color errorColor = Color(0xFFEF4444);
   static const Color successColor = Color(0xFF10B981);
-  
+
   // Soft Pastel Accents
   static const Color pastelBlue = Color(0xFFA5B4FC);
   static const Color pastelPink = Color(0xFFF9A8D4);
@@ -62,9 +62,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 4,
         shadowColor: primaryColor.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: surfaceColor,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
@@ -101,12 +99,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: errorColor),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
-      iconTheme: const IconThemeData(
-        color: Colors.black87,
-        size: 24,
-      ),
+      iconTheme: const IconThemeData(color: Colors.black87, size: 24),
     );
   }
 
@@ -141,9 +139,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 4,
         shadowColor: darkPrimaryColor.withOpacity(0.2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: darkSurfaceColor,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
@@ -180,12 +176,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: errorColor),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
-      iconTheme: const IconThemeData(
-        color: Colors.white,
-        size: 24,
-      ),
+      iconTheme: const IconThemeData(color: Colors.white, size: 24),
     );
   }
 
@@ -291,4 +287,3 @@ class AppTheme {
     );
   }
 }
-

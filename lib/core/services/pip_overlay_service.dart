@@ -12,20 +12,20 @@ class PipOverlayService {
   OverlayEntry? _overlayEntry;
   bool _isShowing = false;
   RtcEngine? _engine;
-  
+
   // Getter for the engine instance and state
   RtcEngine? get engine => _engine;
   int? get remoteUid => _remoteUid;
   bool get remoteVideoEnabled => _remoteVideoEnabled;
   bool get isConnected => _remoteUid != null;
-  
+
   int? _remoteUid;
   String? _sessionId;
   String? _hostName;
   bool _remoteVideoEnabled = true;
   void Function(BuildContext)? _onTapToExpand;
   Function()? _onLeaveCall;
-  
+
   // Store navigation parameters to recreate the screen
   bool? _isHost;
   String? _sessionTitle;
@@ -59,11 +59,11 @@ class PipOverlayService {
     Overlay.of(context).insert(_overlayEntry!);
     _isShowing = true;
   }
-  
+
   /// Navigate back to video call screen (called when user taps overlay to expand)
   void navigateToVideoCallScreen(BuildContext context) {
     if (_sessionId == null) return;
-    
+
     // Import VideoCallScreen dynamically to avoid circular dependency
     // We'll use a callback instead
     if (_onTapToExpand != null) {
@@ -74,12 +74,12 @@ class PipOverlayService {
   /// Hide PiP overlay
   void hidePipOverlay() {
     if (!_isShowing || _overlayEntry == null) return;
-    
+
     _overlayEntry?.remove();
     _overlayEntry = null;
     _isShowing = false;
   }
-  
+
   /// Clean up and dispose the overlay (when ending the call)
   void disposeOverlay() {
     hidePipOverlay();
@@ -182,124 +182,121 @@ class _PipOverlayWidgetState extends State<_PipOverlayWidget> {
       child: Material(
         color: Colors.transparent,
         child: GestureDetector(
-        onPanUpdate: (details) {
-          setState(() {
-            _isDragging = true;
-            _position += details.delta;
-            // Keep within screen bounds
-            final screenWidth = MediaQuery.of(context).size.width;
-            final screenHeight = MediaQuery.of(context).size.height;
-            _position = Offset(
-              _position.dx.clamp(0.0, screenWidth - 150),
-              _position.dy.clamp(0.0, screenHeight - 200),
-            );
-          });
-        },
-        onPanEnd: (_) {
-          setState(() {
-            _isDragging = false;
-          });
-        },
-        onTap: () => widget.onTap(context),
-        child: Container(
-          key: _key,
-          width: 150,
-          height: 200,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white,
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              // Video or avatar
-              if (widget.remoteUid != null)
-                widget.remoteVideoEnabled
-                    ? AgoraVideoView(
-                        controller: VideoViewController.remote(
-                          rtcEngine: widget.engine,
-                          canvas: VideoCanvas(uid: widget.remoteUid),
-                          connection: RtcConnection(channelId: widget.sessionId),
-                        ),
-                      )
-                    : _buildCameraOffView()
-              else
-                Container(
-                  color: AppTheme.darkBackgroundColor,
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+          onPanUpdate: (details) {
+            setState(() {
+              _isDragging = true;
+              _position += details.delta;
+              // Keep within screen bounds
+              final screenWidth = MediaQuery.of(context).size.width;
+              final screenHeight = MediaQuery.of(context).size.height;
+              _position = Offset(
+                _position.dx.clamp(0.0, screenWidth - 150),
+                _position.dy.clamp(0.0, screenHeight - 200),
+              );
+            });
+          },
+          onPanEnd: (_) {
+            setState(() {
+              _isDragging = false;
+            });
+          },
+          onTap: () => widget.onTap(context),
+          child: Container(
+            key: _key,
+            width: 150,
+            height: 200,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 20,
+                  spreadRadius: 5,
                 ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                // Video or avatar
+                if (widget.remoteUid != null)
+                  widget.remoteVideoEnabled
+                      ? AgoraVideoView(
+                          controller: VideoViewController.remote(
+                            rtcEngine: widget.engine,
+                            canvas: VideoCanvas(uid: widget.remoteUid),
+                            connection: RtcConnection(
+                              channelId: widget.sessionId,
+                            ),
+                          ),
+                        )
+                      : _buildCameraOffView()
+                else
+                  Container(
+                    color: AppTheme.darkBackgroundColor,
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
 
-              // Tap to expand hint
-              if (!_isDragging)
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.6),
+                // Tap to expand hint
+                if (!_isDragging)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.6),
+                          ],
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'Tap to expand',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'Tap to expand',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ),
 
-              // Close button
-              Positioned(
-                top: 4,
-                right: 4,
-                child: GestureDetector(
-                  onTap: widget.onLeave,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 16,
+                // Close button
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: GestureDetector(
+                    onTap: widget.onLeave,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 16,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -308,7 +305,7 @@ class _PipOverlayWidgetState extends State<_PipOverlayWidget> {
     final firstLetter = widget.hostName.isNotEmpty
         ? widget.hostName[0].toUpperCase()
         : '?';
-    
+
     final colors = [
       const Color(0xFF4285F4),
       const Color(0xFF34A853),
@@ -367,4 +364,3 @@ class _PipOverlayWidgetState extends State<_PipOverlayWidget> {
     );
   }
 }
-

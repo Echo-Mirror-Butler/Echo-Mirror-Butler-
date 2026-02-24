@@ -29,15 +29,10 @@ class CustomButton extends StatelessWidget {
         backgroundColor: backgroundColor ?? AppTheme.primaryColor,
         foregroundColor: foregroundColor ?? Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: isLoading
-          ? const ShimmerLoading(
-              width: 20,
-              height: 20,
-            )
+          ? const ShimmerLoading(width: 20, height: 20)
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -51,4 +46,3 @@ class CustomButton extends StatelessWidget {
     );
   }
 }
-

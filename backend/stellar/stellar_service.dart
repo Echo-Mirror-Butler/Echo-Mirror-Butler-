@@ -47,7 +47,7 @@ class StellarService {
       final userKeypair = KeyPair.fromSecretSeed(userSecret);
       final account = await _sdk.accounts.account(userKeypair.accountId);
 
-      final echoAsset = AssetTypeCreditAlphaNum12(
+      final echoAsset = AssetTypeCreditAlphaNum4(
         EchoToken.code,
         StellarConfig.issuerPublicKey,
       );
@@ -84,22 +84,23 @@ class StellarService {
       final senderKeypair = KeyPair.fromSecretSeed(senderSecret);
       final account = await _sdk.accounts.account(senderKeypair.accountId);
 
-      final echoAsset = AssetTypeCreditAlphaNum12(
+      final echoAsset = AssetTypeCreditAlphaNum4(
         EchoToken.code,
         StellarConfig.issuerPublicKey,
       );
 
-      final builder = TransactionBuilder(account)
-          .addOperation(
-            PaymentOperationBuilder(
-              recipientPublicKey,
-              echoAsset,
-              amount.toStringAsFixed(7),
-            ).build(),
-          );
+      final builder = TransactionBuilder(account).addOperation(
+        PaymentOperationBuilder(
+          recipientPublicKey,
+          echoAsset,
+          amount.toStringAsFixed(7),
+        ).build(),
+      );
 
       if (memo != null && memo.isNotEmpty) {
-        builder.addMemo(MemoText(memo.length > 28 ? memo.substring(0, 28) : memo));
+        builder.addMemo(
+          MemoText(memo.length > 28 ? memo.substring(0, 28) : memo),
+        );
       }
 
       final transaction = builder.build();
@@ -111,7 +112,9 @@ class StellarService {
         debugPrint('[StellarService] Sent $amount ECHO — tx: $hash');
         return hash;
       }
-      debugPrint('[StellarService] Send failed: ${response.extras?.resultCodes}');
+      debugPrint(
+        '[StellarService] Send failed: ${response.extras?.resultCodes}',
+      );
       return null;
     } catch (e) {
       debugPrint('[StellarService] Send ECHO error: $e');

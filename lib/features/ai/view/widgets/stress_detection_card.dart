@@ -20,7 +20,7 @@ class StressDetectionCard extends StatelessWidget {
     if (insight.calmingMessage != null && insight.calmingMessage!.isNotEmpty) {
       return insight.calmingMessage!;
     }
-    
+
     final level = insight.stressLevel ?? 0;
     if (level >= 4) {
       return 'Hey, future you here—I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';

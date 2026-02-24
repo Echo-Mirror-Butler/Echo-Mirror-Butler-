@@ -1,16 +1,19 @@
 import 'package:flutter/foundation.dart';
-import 'package:echomirror_server_client/echomirror_server_client.dart';
-import '../../../../core/services/serverpod_client_service.dart';
 import '../models/gift_transaction_model.dart';
 
 /// Repository for ECHO token gifting operations.
+///
+/// Currently uses local stubs. Calls will be wired to the live
+/// Serverpod `client.gift.*` endpoint once `serverpod generate`
+/// has been run in the echomirror_server repo and the generated
+/// client code is available.
 class GiftRepository {
-  Client get _client => ServerpodClientService.instance.client;
-
   /// Returns the current user's ECHO balance.
   Future<double> getEchoBalance() async {
     try {
-      return await _client.gift.getEchoBalance();
+      // TODO: replace with `await _client.gift.getEchoBalance()`
+      // once serverpod generate has been run.
+      return 0.0;
     } catch (e) {
       debugPrint('[GiftRepository] getEchoBalance error: $e');
       return 0.0;
@@ -25,9 +28,18 @@ class GiftRepository {
     String? message,
   }) async {
     try {
-      final tx = await _client.gift.sendGift(recipientUserId, amount, message);
-      if (tx == null) return null;
-      return _mapTransaction(tx);
+      // TODO: replace with `await _client.gift.sendGift(...)` once
+      // serverpod generate has been run.
+      return GiftTransactionModel(
+        id: 0,
+        senderUserId: 0,
+        recipientUserId: recipientUserId,
+        echoAmount: amount,
+        createdAt: DateTime.now(),
+        status: 'completed',
+        stellarTxHash: null,
+        message: message,
+      );
     } catch (e) {
       debugPrint('[GiftRepository] sendGift error: $e');
       return null;
@@ -37,24 +49,12 @@ class GiftRepository {
   /// Returns the current user's gift history (sent + received).
   Future<List<GiftTransactionModel>> getGiftHistory() async {
     try {
-      final txs = await _client.gift.getGiftHistory();
-      return txs.map(_mapTransaction).toList();
+      // TODO: replace with `await _client.gift.getGiftHistory()` once
+      // serverpod generate has been run.
+      return [];
     } catch (e) {
       debugPrint('[GiftRepository] getGiftHistory error: $e');
       return [];
     }
-  }
-
-  GiftTransactionModel _mapTransaction(GiftTransaction tx) {
-    return GiftTransactionModel(
-      id: tx.id!,
-      senderUserId: tx.senderUserId,
-      recipientUserId: tx.recipientUserId,
-      echoAmount: tx.echoAmount,
-      createdAt: tx.createdAt,
-      status: tx.status,
-      stellarTxHash: tx.stellarTxHash,
-      message: tx.message,
-    );
   }
 }

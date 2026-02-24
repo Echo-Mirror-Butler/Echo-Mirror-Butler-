@@ -36,42 +36,45 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
     if (_isProcessingSignup) return; // Prevent multiple submissions
-    
+
     setState(() {
       _isProcessingSignup = true;
     });
-    
+
     debugPrint('[SignupScreen] Attempt signup -> ${_emailController.text}');
-    
+
     // Store values in local variables before async operation
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final name = _nameController.text.trim().isEmpty
         ? null
         : _nameController.text.trim();
-    
+
     // Get the router context before async operation
     final router = GoRouter.of(context);
-    
+
     try {
       // Perform signup - this returns accountRequestId
       final authNotifier = ref.read(authProvider.notifier);
       final accountRequestId = await authNotifier.signUp(email, password, name);
 
-      debugPrint('[SignupScreen] signUp returned -> accountRequestId: $accountRequestId');
-      
+      debugPrint(
+        '[SignupScreen] signUp returned -> accountRequestId: $accountRequestId',
+      );
+
       if (accountRequestId != null && accountRequestId.isNotEmpty) {
         // Build verification URL
         final encodedEmail = Uri.encodeComponent(email);
         final encodedPassword = Uri.encodeComponent(password);
         final encodedName = name != null ? Uri.encodeComponent(name) : '';
-        final verifyUrl = '/verify?email=$encodedEmail&accountRequestId=${Uri.encodeComponent(accountRequestId)}&password=$encodedPassword${name != null ? '&name=$encodedName' : ''}';
-        
+        final verifyUrl =
+            '/verify?email=$encodedEmail&accountRequestId=${Uri.encodeComponent(accountRequestId)}&password=$encodedPassword${name != null ? '&name=$encodedName' : ''}';
+
         debugPrint('[SignupScreen] Navigating to: $verifyUrl');
-        
+
         // Use the router instance we got before async operation
         router.go(verifyUrl);
-        
+
         // Clear loading state after navigation
         authNotifier.clearLoadingState();
         debugPrint('[SignupScreen] Navigation complete');
@@ -79,7 +82,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         // Signup failed
         final error = ref.read(authProvider).error;
         debugPrint('[SignupScreen] Signup failed. Error: $error');
-        
+
         if (mounted) {
           setState(() {
             _isProcessingSignup = false;
@@ -93,15 +96,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     } catch (e, stackTrace) {
       debugPrint('[SignupScreen] Signup error: $e');
       debugPrint('[SignupScreen] Stack trace: $stackTrace');
-      
+
       if (mounted) {
         setState(() {
           _isProcessingSignup = false;
         });
-        ErrorHandler.showError(
-          context,
-          'An error occurred. Please try again.',
-        );
+        ErrorHandler.showError(context, 'An error occurred. Please try again.');
       }
     }
   }
@@ -112,9 +112,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.signUp),
-      ),
+      appBar: AppBar(title: const Text(AppStrings.signUp)),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -196,7 +194,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                   const SizedBox(height: 24),
                   CustomButton(
-                    onPressed: (authState.isLoading || _isProcessingSignup) ? null : _handleSignup,
+                    onPressed: (authState.isLoading || _isProcessingSignup)
+                        ? null
+                        : _handleSignup,
                     text: AppStrings.signUp,
                     isLoading: authState.isLoading || _isProcessingSignup,
                     icon: FontAwesomeIcons.userPlus,
@@ -218,4 +218,3 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 }
-

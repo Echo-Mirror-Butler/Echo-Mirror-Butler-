@@ -36,7 +36,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
     // Check location permission on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-      ref.read(globalMirrorProvider.notifier).checkLocationPermission();
+        ref.read(globalMirrorProvider.notifier).checkLocationPermission();
       }
     });
   }
@@ -84,15 +84,14 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Global Mirror',
-          style: theme.textTheme.headlineSmall,
-        ),
+        title: Text('Global Mirror', style: theme.textTheme.headlineSmall),
         actions: [
           // Notifications button with badge
           Consumer(
             builder: (context, ref, child) {
-              final unreadCount = ref.watch(moodCommentNotificationProvider.notifier).unreadCount;
+              final unreadCount = ref
+                  .watch(moodCommentNotificationProvider.notifier)
+                  .unreadCount;
               return Stack(
                 children: [
                   IconButton(
@@ -133,14 +132,20 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
           ),
           // Toggle between 3D and 2D
           IconButton(
-            icon: FaIcon(_use3DGlobe && !_has3DError ? FontAwesomeIcons.map : FontAwesomeIcons.globe),
+            icon: FaIcon(
+              _use3DGlobe && !_has3DError
+                  ? FontAwesomeIcons.map
+                  : FontAwesomeIcons.globe,
+            ),
             onPressed: () {
               setState(() {
                 _use3DGlobe = !_use3DGlobe;
                 _has3DError = false; // Reset error when toggling
               });
             },
-            tooltip: _use3DGlobe && !_has3DError ? 'Switch to 2D Map' : 'Switch to 3D Globe',
+            tooltip: _use3DGlobe && !_has3DError
+                ? 'Switch to 2D Map'
+                : 'Switch to 3D Globe',
           ),
           IconButton(
             icon: const FaIcon(FontAwesomeIcons.circleInfo),
@@ -196,7 +201,9 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: pins.isNotEmpty ? Colors.green : Colors.orange,
+                                color: pins.isNotEmpty
+                                    ? Colors.green
+                                    : Colors.orange,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -210,22 +217,22 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                      Text(
-                        '${pins.length} worldwide',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      if (pins.length > 50) ...[
-                        const SizedBox(height: 4),
                         Text(
-                          'Showing first 50 pins',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.orange,
-                            fontStyle: FontStyle.italic,
+                          '${pins.length} worldwide',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: AppTheme.primaryColor,
                           ),
                         ),
-                      ],
+                        if (pins.length > 50) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Showing first 50 pins',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.orange,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
                         if (pins.isEmpty) ...[
                           const SizedBox(height: 8),
                           Text(
@@ -254,19 +261,13 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
               Positioned(
                 bottom: 16,
                 right: 16,
-                child: FadeInUp(
-                  child: _buildLegend(theme),
-                ),
+                child: FadeInUp(child: _buildLegend(theme)),
               ),
             ],
           );
         },
-        loading: () => const Center(
-          child: ShimmerLoading(
-            width: 40,
-            height: 40,
-          ),
-        ),
+        loading: () =>
+            const Center(child: ShimmerLoading(width: 40, height: 40)),
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -333,7 +334,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
           userAgentPackageName: 'com.example.echomirror',
           maxZoom: 19,
         ),
-        
+
         // Mood pins layer
         MarkerLayer(
           markers: pins.map((pin) {
@@ -378,32 +379,31 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Mood Legend',
-            style: theme.textTheme.titleSmall,
-          ),
+          Text('Mood Legend', style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
-          ...sentiments.map((sentiment) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: sentiment['color'] as Color,
-                        shape: BoxShape.circle,
-                      ),
+          ...sentiments.map(
+            (sentiment) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: sentiment['color'] as Color,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      sentiment['name'] as String,
-                      style: theme.textTheme.labelSmall,
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    sentiment['name'] as String,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

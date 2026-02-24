@@ -46,7 +46,8 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   final PipService _pipService = PipService();
   bool _isPipSupported = false;
   bool _isInPipMode = false;
-  bool _isNavigatingAway = false; // Track if we're navigating away to keep call alive
+  bool _isNavigatingAway =
+      false; // Track if we're navigating away to keep call alive
 
   @override
   void initState() {
@@ -122,7 +123,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           await socialsNotifier.joinSession(widget.sessionId);
           debugPrint('[VideoCallScreen] Joined session: ${widget.sessionId}');
         } catch (e) {
-          debugPrint('[VideoCallScreen] Error joining session (continuing anyway): $e');
+          debugPrint(
+            '[VideoCallScreen] Error joining session (continuing anyway): $e',
+          );
           // Continue even if joinSession fails - the Agora call can still work
         }
       }
@@ -145,10 +148,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
 
       // Create Agora engine
       _engine = createAgoraRtcEngine();
-      await _engine!.initialize(RtcEngineContext(
-        appId: _agoraAppId!,
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-      ));
+      await _engine!.initialize(
+        RtcEngineContext(
+          appId: _agoraAppId!,
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+        ),
+      );
 
       // Enable video
       debugPrint('[VideoCallScreen] Enabling video...');
@@ -156,7 +161,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       debugPrint('[VideoCallScreen] Video enabled, starting preview...');
       await _engine!.startPreview();
       debugPrint('[VideoCallScreen] Preview started');
-      
+
       // Ensure local video is enabled by default
       await _engine!.enableLocalVideo(true);
       debugPrint('[VideoCallScreen] Local video enabled');
@@ -166,7 +171,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
 
       // Join channel
       await _engine!.joinChannel(
-        token: (_agoraToken == null || _agoraToken!.isEmpty) ? '' : _agoraToken!,
+        token: (_agoraToken == null || _agoraToken!.isEmpty)
+            ? ''
+            : _agoraToken!,
         channelId: channelName,
         uid: uid,
         options: const ChannelMediaOptions(
@@ -206,7 +213,8 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           if (mounted) {
             setState(() {
               _remoteUid = remoteUid;
-              _remoteVideoEnabled = false; // Start with avatar until video is confirmed
+              _remoteVideoEnabled =
+                  false; // Start with avatar until video is confirmed
             });
           }
           // Update overlay if it's showing
@@ -214,33 +222,50 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
             PipOverlayService().updateRemoteUid(remoteUid);
           }
         },
-        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-          debugPrint('[VideoCallScreen] User offline: $remoteUid (reason: $reason)');
-          if (mounted) {
-            setState(() {
-              _remoteUid = null;
-              _remoteVideoEnabled = false;
-            });
-          }
-          // Update overlay if it's showing
-          if (PipOverlayService().isShowing) {
-            PipOverlayService().updateRemoteUid(null);
-          }
-        },
-        onRemoteVideoStateChanged: (RtcConnection connection, int remoteUid, RemoteVideoState state, RemoteVideoStateReason reason, int elapsed) {
-          debugPrint('[VideoCallScreen] Remote video state changed: $state, reason: $reason');
-          final videoEnabled = state == RemoteVideoState.remoteVideoStateStarting ||
-                              state == RemoteVideoState.remoteVideoStateDecoding;
-          if (mounted) {
-            setState(() {
-              _remoteVideoEnabled = videoEnabled;
-            });
-          }
-          // Update overlay if it's showing
-          if (PipOverlayService().isShowing) {
-            PipOverlayService().updateRemoteVideoState(videoEnabled);
-          }
-        },
+        onUserOffline:
+            (
+              RtcConnection connection,
+              int remoteUid,
+              UserOfflineReasonType reason,
+            ) {
+              debugPrint(
+                '[VideoCallScreen] User offline: $remoteUid (reason: $reason)',
+              );
+              if (mounted) {
+                setState(() {
+                  _remoteUid = null;
+                  _remoteVideoEnabled = false;
+                });
+              }
+              // Update overlay if it's showing
+              if (PipOverlayService().isShowing) {
+                PipOverlayService().updateRemoteUid(null);
+              }
+            },
+        onRemoteVideoStateChanged:
+            (
+              RtcConnection connection,
+              int remoteUid,
+              RemoteVideoState state,
+              RemoteVideoStateReason reason,
+              int elapsed,
+            ) {
+              debugPrint(
+                '[VideoCallScreen] Remote video state changed: $state, reason: $reason',
+              );
+              final videoEnabled =
+                  state == RemoteVideoState.remoteVideoStateStarting ||
+                  state == RemoteVideoState.remoteVideoStateDecoding;
+              if (mounted) {
+                setState(() {
+                  _remoteVideoEnabled = videoEnabled;
+                });
+              }
+              // Update overlay if it's showing
+              if (PipOverlayService().isShowing) {
+                PipOverlayService().updateRemoteVideoState(videoEnabled);
+              }
+            },
         onError: (ErrorCodeType err, String msg) {
           debugPrint('Agora error: $err - $msg');
         },
@@ -291,7 +316,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       final sessionTitle = widget.sessionTitle;
       final hostName = widget.hostName;
       final isHost = widget.isHost;
-      
+
       pipOverlay.showPipOverlay(
         context: context,
         engine: _engine!,
@@ -327,7 +352,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           try {
             await socialsNotifier.leaveSession(sessionId);
           } catch (e) {
-            debugPrint('[VideoCallScreen] Error leaving session from overlay: $e');
+            debugPrint(
+              '[VideoCallScreen] Error leaving session from overlay: $e',
+            );
           }
           PipOverlayService().disposeOverlay();
         },
@@ -360,7 +387,10 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('End Call', style: TextStyle(color: Colors.red)),
+                child: const Text(
+                  'End Call',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ],
           ),
@@ -382,29 +412,37 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
     try {
       // Check current state
       final currentState = await _pipService.isInPipMode();
-      
+
       if (!currentState) {
         // Enter PiP mode
         final success = await _pipService.enterPipMode();
         if (success) {
           if (Platform.isIOS) {
             // On iOS, PiP activates automatically when app backgrounds
-            debugPrint('[VideoCallScreen] PiP ready - will activate when app backgrounds');
+            debugPrint(
+              '[VideoCallScreen] PiP ready - will activate when app backgrounds',
+            );
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Press home button to activate Picture-in-Picture'),
+                  content: Text(
+                    'Press home button to activate Picture-in-Picture',
+                  ),
                   duration: Duration(seconds: 3),
                 ),
               );
             }
           } else {
             // Android - PiP is triggered immediately
-            debugPrint('[VideoCallScreen] Entered PiP mode - you can now navigate the app');
+            debugPrint(
+              '[VideoCallScreen] Entered PiP mode - you can now navigate the app',
+            );
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Call minimized to Picture-in-Picture. Navigate freely!'),
+                  content: Text(
+                    'Call minimized to Picture-in-Picture. Navigate freely!',
+                  ),
                   duration: Duration(seconds: 3),
                 ),
               );
@@ -423,7 +461,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
         }
       } else {
         // Already in PiP mode - user needs to tap the PiP window to exit
-        debugPrint('[VideoCallScreen] Already in PiP mode - tap the floating window to expand');
+        debugPrint(
+          '[VideoCallScreen] Already in PiP mode - tap the floating window to expand',
+        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -441,15 +481,15 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   Future<void> _leaveCall() async {
     try {
       WakelockPlus.disable(); // Allow screen to sleep when leaving call
-      
+
       // Clean up the PiP overlay and engine
       PipOverlayService().disposeOverlay();
-      
+
       await _engine?.leaveChannel();
       await _engine?.release();
-      
+
       await ref.read(socialsProvider.notifier).leaveSession(widget.sessionId);
-      
+
       // Check if we can pop before actually popping
       if (mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
@@ -465,8 +505,8 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
     // Only end the call if we're not navigating away (PiP mode)
     if (!_isNavigatingAway) {
       WakelockPlus.disable(); // Allow screen to sleep again
-    _engine?.leaveChannel();
-    _engine?.release();
+      _engine?.leaveChannel();
+      _engine?.release();
       // Clean up the overlay if it's showing
       if (PipOverlayService().isShowing) {
         PipOverlayService().disposeOverlay();
@@ -474,7 +514,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
     } else {
       // We're navigating away in PiP mode - keep the engine alive
       // The call will continue in the PiP window
-      debugPrint('[VideoCallScreen] Navigating away in PiP mode - keeping call active');
+      debugPrint(
+        '[VideoCallScreen] Navigating away in PiP mode - keeping call active',
+      );
     }
     super.dispose();
   }
@@ -487,309 +529,314 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
         return false; // Prevent default back behavior, we handle it manually
       },
       child: Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Remote video (main view)
-            if (_isConnected && _remoteUid != null)
-              Positioned.fill(
-                child: Stack(
-                  children: [
-                    // Show video only when remote video is enabled
-                    if (_remoteVideoEnabled)
-                      AgoraVideoView(
-                  controller: VideoViewController.remote(
-                    rtcEngine: _engine!,
-                    canvas: VideoCanvas(uid: _remoteUid),
-                    connection: RtcConnection(channelId: widget.sessionId),
-                  ),
-                      )
-                    else
-                      // Show colored box with name when camera is off (like Google Meet)
-                      _buildCameraOffView(),
-                  ],
-                ),
-              )
-            else if (_isConnected)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          color: AppTheme.primaryColor,
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Waiting for others to join...',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              // Remote video (main view)
+              if (_isConnected && _remoteUid != null)
+                Positioned.fill(
+                  child: Stack(
+                    children: [
+                      // Show video only when remote video is enabled
+                      if (_remoteVideoEnabled)
+                        AgoraVideoView(
+                          controller: VideoViewController.remote(
+                            rtcEngine: _engine!,
+                            canvas: VideoCanvas(uid: _remoteUid),
+                            connection: RtcConnection(
+                              channelId: widget.sessionId,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        )
+                      else
+                        // Show colored box with name when camera is off (like Google Meet)
+                        _buildCameraOffView(),
+                    ],
                   ),
-                ),
-              )
-            else
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          color: AppTheme.primaryColor,
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Connecting...',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-            // Local video (picture-in-picture)
-            if (_isInitialized)
-              Positioned(
-                top: 16,
-                right: 16,
-                child: FadeInDown(
+                )
+              else if (_isConnected)
+                Positioned.fill(
                   child: Container(
-                    width: 120,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2,
+                    color: Colors.black,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Waiting for others to join...',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: _isVideoEnabled
-                        ? AgoraVideoView(
-                      controller: VideoViewController(
-                        rtcEngine: _engine!,
-                        canvas: const VideoCanvas(uid: 0),
+                  ),
+                )
+              else
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator(
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Connecting...',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                          )
-                        : Container(
-                            color: AppTheme.darkBackgroundColor,
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 50,
-                                    height: 50,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        _currentUserName != null && _currentUserName!.isNotEmpty
-                                            ? _currentUserName![0].toUpperCase()
-                                            : 'Y',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
+                    ),
+                  ),
+                ),
+
+              // Local video (picture-in-picture)
+              if (_isInitialized)
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: FadeInDown(
+                    child: Container(
+                      width: 120,
+                      height: 160,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: _isVideoEnabled
+                          ? AgoraVideoView(
+                              controller: VideoViewController(
+                                rtcEngine: _engine!,
+                                canvas: const VideoCanvas(uid: 0),
+                              ),
+                            )
+                          : Container(
+                              color: AppTheme.darkBackgroundColor,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _currentUserName != null &&
+                                                  _currentUserName!.isNotEmpty
+                                              ? _currentUserName![0]
+                                                    .toUpperCase()
+                                              : 'Y',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _currentUserName ?? 'You',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _currentUserName ?? 'You',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                      ),
+                            ),
                     ),
                   ),
                 ),
-              ),
 
-            // Back button (top-left)
-            Positioned(
-              top: 16,
-              left: 16,
-              child: FadeInDown(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _handleBackButton,
-                    borderRadius: BorderRadius.circular(25),
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-            // Top bar with session info
-            Positioned(
-              top: 16,
-              left: 74, // Adjust to make room for back button
-              right: 140,
-              child: FadeInDown(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
+              // Back button (top-left)
+              Positioned(
+                top: 16,
+                left: 16,
+                child: FadeInDown(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _handleBackButton,
+                      borderRadius: BorderRadius.circular(25),
+                      child: Container(
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
-                          color: _isConnected ? Colors.green : Colors.red,
+                          color: Colors.black.withOpacity(0.6),
                           shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          widget.isHost ? 'Hosting Session' : 'In Session',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
                           ),
                         ),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // Bottom controls
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 32,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.8),
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildControlButton(
-                        icon: _isVideoEnabled
-                            ? FontAwesomeIcons.video
-                            : FontAwesomeIcons.videoSlash,
-                        label: _isVideoEnabled ? 'Video On' : 'Video Off',
-                        isActive: _isVideoEnabled,
-                        onTap: _toggleVideo,
-                      ),
-                      _buildControlButton(
-                        icon: _isAudioEnabled
-                            ? FontAwesomeIcons.microphone
-                            : FontAwesomeIcons.microphoneSlash,
-                        label: _isAudioEnabled ? 'Mic On' : 'Mic Off',
-                        isActive: _isAudioEnabled,
-                        onTap: _toggleAudio,
-                      ),
-                      _buildControlButton(
-                        icon: FontAwesomeIcons.rotate,
-                        label: 'Switch',
-                        isActive: true,
-                        onTap: _switchCamera,
-                      ),
-                      if (_isPipSupported)
-                        _buildControlButton(
-                          icon: _isInPipMode 
-                              ? FontAwesomeIcons.windowMaximize
-                              : FontAwesomeIcons.upRightAndDownLeftFromCenter,
-                          label: _isInPipMode ? 'Minimized' : 'Minimize',
-                          isActive: !_isInPipMode,
-                          onTap: _togglePipMode,
-                      ),
-                      _buildControlButton(
-                        icon: FontAwesomeIcons.phone,
-                        label: 'Leave',
-                        isActive: false,
-                        isDanger: true,
-                        onTap: _leaveCall,
-                      ),
-                    ],
+              // Top bar with session info
+              Positioned(
+                top: 16,
+                left: 74, // Adjust to make room for back button
+                right: 140,
+                child: FadeInDown(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _isConnected ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.isHost ? 'Hosting Session' : 'In Session',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+
+              // Bottom controls
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 32,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.8),
+                      ],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildControlButton(
+                          icon: _isVideoEnabled
+                              ? FontAwesomeIcons.video
+                              : FontAwesomeIcons.videoSlash,
+                          label: _isVideoEnabled ? 'Video On' : 'Video Off',
+                          isActive: _isVideoEnabled,
+                          onTap: _toggleVideo,
+                        ),
+                        _buildControlButton(
+                          icon: _isAudioEnabled
+                              ? FontAwesomeIcons.microphone
+                              : FontAwesomeIcons.microphoneSlash,
+                          label: _isAudioEnabled ? 'Mic On' : 'Mic Off',
+                          isActive: _isAudioEnabled,
+                          onTap: _toggleAudio,
+                        ),
+                        _buildControlButton(
+                          icon: FontAwesomeIcons.rotate,
+                          label: 'Switch',
+                          isActive: true,
+                          onTap: _switchCamera,
+                        ),
+                        if (_isPipSupported)
+                          _buildControlButton(
+                            icon: _isInPipMode
+                                ? FontAwesomeIcons.windowMaximize
+                                : FontAwesomeIcons.upRightAndDownLeftFromCenter,
+                            label: _isInPipMode ? 'Minimized' : 'Minimize',
+                            isActive: !_isInPipMode,
+                            onTap: _togglePipMode,
+                          ),
+                        _buildControlButton(
+                          icon: FontAwesomeIcons.phone,
+                          label: 'Leave',
+                          isActive: false,
+                          isDanger: true,
+                          onTap: _leaveCall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
   Widget _buildCameraOffView() {
-    final displayName = widget.hostName.isNotEmpty ? widget.hostName : 'Participant';
-    final firstLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-    
+    final displayName = widget.hostName.isNotEmpty
+        ? widget.hostName
+        : 'Participant';
+    final firstLetter = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : '?';
+
     // Generate a consistent color based on the name (like Google Meet)
     final colors = [
       const Color(0xFF4285F4), // Blue
@@ -847,10 +894,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
             ),
             const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
@@ -899,21 +943,15 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               color: isDanger
                   ? Colors.red
                   : (isActive
-                      ? Colors.white.withOpacity(0.2)
-                      : Colors.red.withOpacity(0.8)),
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.red.withOpacity(0.8)),
               shape: BoxShape.circle,
               border: Border.all(
                 color: Colors.white.withOpacity(0.3),
                 width: 2,
               ),
             ),
-            child: Center(
-              child: FaIcon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
+            child: Center(child: FaIcon(icon, color: Colors.white, size: 24)),
           ),
         ),
         const SizedBox(height: 8),

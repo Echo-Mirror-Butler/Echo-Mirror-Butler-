@@ -24,16 +24,11 @@ class ShimmerLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Shimmer.fromColors(
-      baseColor: baseColor ?? 
-          (isDark 
-              ? Colors.grey[800]! 
-              : Colors.grey[300]!),
-      highlightColor: highlightColor ?? 
-          (isDark 
-              ? Colors.grey[700]! 
-              : Colors.grey[100]!),
+      baseColor: baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+      highlightColor:
+          highlightColor ?? (isDark ? Colors.grey[700]! : Colors.grey[100]!),
       period: const Duration(milliseconds: 1500),
       child: Container(
         width: width ?? 20,
@@ -54,11 +49,7 @@ class ShimmerLoading extends StatelessWidget {
 
 /// Shimmer loading for buttons
 class ShimmerButton extends StatelessWidget {
-  const ShimmerButton({
-    super.key,
-    this.width,
-    this.height = 20,
-  });
+  const ShimmerButton({super.key, this.width, this.height = 20});
 
   final double? width;
   final double height;
@@ -67,7 +58,7 @@ class ShimmerButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -86,11 +77,7 @@ class ShimmerButton extends StatelessWidget {
 
 /// Shimmer loading for cards
 class ShimmerCard extends StatelessWidget {
-  const ShimmerCard({
-    super.key,
-    this.height,
-    this.padding,
-  });
+  const ShimmerCard({super.key, this.height, this.padding});
 
   final double? height;
   final EdgeInsets? padding;
@@ -99,7 +86,7 @@ class ShimmerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -133,7 +120,7 @@ class ShimmerText extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -150,8 +137,4 @@ class ShimmerText extends StatelessWidget {
   }
 }
 
-enum ShimmerShape {
-  circle,
-  rectangle,
-}
-
+enum ShimmerShape { circle, rectangle }
