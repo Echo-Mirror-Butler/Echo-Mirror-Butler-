@@ -78,7 +78,7 @@ void main() {
       return 0.0;
     }
 
-    // setup 
+    // setup
 
     setUpAll(() async {
       // 1. Create issuer and two user wallets
@@ -98,8 +98,7 @@ void main() {
       await establishTrustline(walletB);
 
       // 4. Issuer sends ECHO to wallet A so it has a balance to gift from
-      final issuerAccount =
-          await sdk.accounts.account(issuerKeypair.accountId);
+      final issuerAccount = await sdk.accounts.account(issuerKeypair.accountId);
       final issueTx = TransactionBuilder(issuerAccount)
           .addOperation(
             PaymentOperationBuilder(
@@ -118,7 +117,7 @@ void main() {
       );
     });
 
-    // tests 
+    // tests
 
     test('wallet A has ECHO balance before the gift', () async {
       final balance = await echoBalance(walletA.accountId);
@@ -131,8 +130,11 @@ void main() {
 
     test('wallet B starts with 0.0 ECHO before receiving gift', () async {
       final balance = await echoBalance(walletB.accountId);
-      expect(balance, 0.0,
-          reason: 'Wallet B should have no ECHO before the gift');
+      expect(
+        balance,
+        0.0,
+        reason: 'Wallet B should have no ECHO before the gift',
+      );
     });
 
     test(
@@ -142,11 +144,10 @@ void main() {
         final balanceABefore = await echoBalance(walletA.accountId);
         final balanceBBefore = await echoBalance(walletB.accountId);
 
-        //  replicate StellarService.sendEcho logic directly 
+        //  replicate StellarService.sendEcho logic directly
         // (We call the SDK directly so this test has zero dependency on env
         //  vars / StellarConfig, making it fully self-contained on testnet.)
-        final senderAccount =
-            await sdk.accounts.account(walletA.accountId);
+        final senderAccount = await sdk.accounts.account(walletA.accountId);
         final tx = TransactionBuilder(senderAccount)
             .addOperation(
               PaymentOperationBuilder(
@@ -161,8 +162,11 @@ void main() {
         final response = await sdk.submitTransaction(tx);
 
         // tx must succeed and return a non-empty hash
-        expect(response.success, isTrue,
-            reason: 'Gift transaction should succeed on testnet');
+        expect(
+          response.success,
+          isTrue,
+          reason: 'Gift transaction should succeed on testnet',
+        );
         expect(
           response.hash,
           isNotEmpty,
