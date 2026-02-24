@@ -56,6 +56,9 @@ ARCHITECTURE.md
 GEMINI_INTEGRATION.md
 SERVERPOD_SETUP.md
 
+# Local server repo clone (used by CI and local dev)
+.server/
+
 # Build and generated files
 build/
 .dart_tool/
