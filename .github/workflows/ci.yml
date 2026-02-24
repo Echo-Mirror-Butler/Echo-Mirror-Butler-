@@ -12,6 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The app depends on echomirror_server_client via a path dependency
+      # (../echomirror_server/echomirror_server_client). Clone the server repo
+      # next to this one so the path resolves on CI.
+      - name: Checkout server repo
+        uses: actions/checkout@v4
+        with:
+          repository: Echo-Mirror-Butler/echomirror_server
+          path: ../echomirror_server
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
