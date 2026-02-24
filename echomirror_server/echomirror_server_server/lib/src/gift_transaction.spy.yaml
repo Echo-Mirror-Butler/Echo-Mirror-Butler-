@@ -1,0 +1,37 @@
+# Serverpod model for GiftTransaction
+table: gift_transactions
+fields:
+  senderUserId:
+    type: int
+    nullable: false
+  recipientUserId:
+    type: int
+    nullable: false
+  echoAmount:
+    type: double
+    nullable: false
+  stellarTxHash:
+    type: String
+    nullable: true
+    length: 64
+  message:
+    type: String
+    nullable: true
+    length: 500
+  createdAt:
+    type: DateTime
+    nullable: false
+    default: 'now()'
+  status:
+    type: String
+    nullable: false
+    length: 20
+    default: 'pending'
+
+indexes:
+  - name: gift_transactions_sender_idx
+    fields: [senderUserId]
+  - name: gift_transactions_recipient_idx
+    fields: [recipientUserId]
+  - name: gift_transactions_created_idx
+    fields: [createdAt]
