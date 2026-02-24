@@ -42,9 +42,7 @@ class MoodChartWidget extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -76,9 +74,7 @@ class MoodChartWidget extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               height: 200,
-              child: LineChart(
-                _buildChartData(validPoints, theme),
-              ),
+              child: LineChart(_buildChartData(validPoints, theme)),
             ),
             const SizedBox(height: 16),
             _buildLegend(theme),
@@ -114,9 +110,7 @@ class MoodChartWidget extends StatelessWidget {
         rightTitles: const AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
-        topTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
@@ -164,9 +158,7 @@ class MoodChartWidget extends StatelessWidget {
       ),
       borderData: FlBorderData(
         show: true,
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
-        ),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
       ),
       minX: 0,
       maxX: (dataPoints.length - 1).toDouble(),
@@ -177,10 +169,7 @@ class MoodChartWidget extends StatelessWidget {
           spots: spots,
           isCurved: true,
           gradient: LinearGradient(
-            colors: [
-              AppTheme.accentColor,
-              AppTheme.primaryColor,
-            ],
+            colors: [AppTheme.accentColor, AppTheme.primaryColor],
           ),
           barWidth: 3,
           isStrokeCapRound: true,
@@ -235,20 +224,11 @@ class MoodChartWidget extends StatelessWidget {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontSize: 10,
-          ),
-        ),
+        Text(label, style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
       ],
     );
   }
 }
-

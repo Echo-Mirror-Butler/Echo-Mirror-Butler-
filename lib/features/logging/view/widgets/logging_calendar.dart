@@ -32,13 +32,11 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
   /// Get set of dates that have log entries
   /// Normalizes dates to local time to avoid timezone issues
   Set<DateTime> get _markedDates {
-    return widget.entries
-        .map((entry) {
-          // Convert UTC to local and normalize to date only
-          final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
-          return DateTime(localDate.year, localDate.month, localDate.day);
-        })
-        .toSet();
+    return widget.entries.map((entry) {
+      // Convert UTC to local and normalize to date only
+      final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
+      return DateTime(localDate.year, localDate.month, localDate.day);
+    }).toSet();
   }
 
   /// Check if a date has a log entry
@@ -51,14 +49,16 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
   LogEntryModel? _getEntryForDate(DateTime date) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
     try {
-      return widget.entries.firstWhere(
-        (entry) {
-          // Normalize entry date to local time for comparison
-          final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
-          final entryDate = DateTime(localDate.year, localDate.month, localDate.day);
-          return entryDate.isAtSameMomentAs(normalizedDate);
-        },
-      );
+      return widget.entries.firstWhere((entry) {
+        // Normalize entry date to local time for comparison
+        final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
+        final entryDate = DateTime(
+          localDate.year,
+          localDate.month,
+          localDate.day,
+        );
+        return entryDate.isAtSameMomentAs(normalizedDate);
+      });
     } catch (e) {
       return null;
     }
@@ -69,9 +69,7 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
     final theme = Theme.of(context);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(16),
         constraints: const BoxConstraints(maxWidth: 400),
@@ -127,9 +125,7 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
                   shape: BoxShape.circle,
                 ),
                 outsideDaysVisible: false,
-                weekendTextStyle: TextStyle(
-                  color: AppTheme.accentColor,
-                ),
+                weekendTextStyle: TextStyle(color: AppTheme.accentColor),
               ),
               headerStyle: HeaderStyle(
                 formatButtonVisible: false,
@@ -185,7 +181,11 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem(theme, 'Today', AppTheme.primaryColor.withOpacity(0.5)),
+                _buildLegendItem(
+                  theme,
+                  'Today',
+                  AppTheme.primaryColor.withOpacity(0.5),
+                ),
                 const SizedBox(width: 16),
                 _buildLegendItem(theme, 'Has Entry', AppTheme.accentColor),
                 const SizedBox(width: 16),
@@ -205,18 +205,11 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall,
-        ),
+        Text(label, style: theme.textTheme.bodySmall),
       ],
     );
   }
 }
-

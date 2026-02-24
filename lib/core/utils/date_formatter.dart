@@ -56,7 +56,7 @@ class DateFormatter {
         localDate.month == yesterday.month &&
         localDate.day == yesterday.day;
   }
-  
+
   /// Normalize a date to local date (year, month, day) for comparison
   /// This helps avoid timezone issues when comparing dates
   static DateTime normalizeToLocalDate(DateTime date) {
@@ -64,4 +64,3 @@ class DateFormatter {
     return DateTime(localDate.year, localDate.month, localDate.day);
   }
 }
-

@@ -22,10 +22,7 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppStrings.settings,
-          style: theme.textTheme.headlineSmall,
-        ),
+        title: Text(AppStrings.settings, style: theme.textTheme.headlineSmall),
         elevation: 0,
       ),
       body: ListView(
@@ -85,28 +82,21 @@ class SettingsScreen extends ConsumerWidget {
             color: AppTheme.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: FaIcon(
-            icon,
-            color: AppTheme.primaryColor,
-            size: 20,
-          ),
+          child: FaIcon(icon, color: AppTheme.primaryColor, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              Text(
-                title,
-                style: theme.textTheme.titleLarge,
-              ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: theme.textTheme.titleLarge),
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurface.withOpacity(0.6),
-                  ),
                 ),
+              ),
             ],
           ),
         ),
@@ -141,16 +131,19 @@ class SettingsScreen extends ConsumerWidget {
               iconColor: Colors.indigo,
               title: 'Dark Mode',
               subtitle: 'Switch to dark theme',
-                  trailing: Switch(
-                    value: themeMode == ThemeMode.dark,
-                    onChanged: (value) {
-                      ref.read(themeProvider.notifier).setThemeMode(
-                            value ? ThemeMode.dark : ThemeMode.light,
-                          );
-                    },
-                  ),
-                ),
-            Divider(height: 1, color: theme.colorScheme.outline.withOpacity(0.1)),
+              trailing: Switch(
+                value: themeMode == ThemeMode.dark,
+                onChanged: (value) {
+                  ref
+                      .read(themeProvider.notifier)
+                      .setThemeMode(value ? ThemeMode.dark : ThemeMode.light);
+                },
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withOpacity(0.1),
+            ),
             _buildModernListTile(
               context,
               theme,
@@ -161,11 +154,11 @@ class SettingsScreen extends ConsumerWidget {
               trailing: Switch(
                 value: themeMode == ThemeMode.system,
                 onChanged: (value) {
-                  ref.read(themeProvider.notifier).setThemeMode(
-                        value ? ThemeMode.system : ThemeMode.light,
-                      );
+                  ref
+                      .read(themeProvider.notifier)
+                      .setThemeMode(value ? ThemeMode.system : ThemeMode.light);
                 },
-                ),
+              ),
             ),
           ],
         ),
@@ -173,10 +166,14 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildNotificationsCard(BuildContext context, ThemeData theme, WidgetRef ref) {
-                    final notificationEnabled = ref.watch(notificationEnabledProvider);
-                    final notificationTime = ref.watch(notificationTimeProvider);
-                    final notificationService = ref.watch(notificationServiceProvider);
+  Widget _buildNotificationsCard(
+    BuildContext context,
+    ThemeData theme,
+    WidgetRef ref,
+  ) {
+    final notificationEnabled = ref.watch(notificationEnabledProvider);
+    final notificationTime = ref.watch(notificationTimeProvider);
+    final notificationService = ref.watch(notificationServiceProvider);
 
     return Card(
       elevation: 0,
@@ -188,90 +185,89 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
       child: notificationEnabled.when(
-                      data: (enabled) => notificationTime.when(
+        data: (enabled) => notificationTime.when(
           data: (time) => Padding(
             padding: const EdgeInsets.all(4),
             child: Column(
-                          children: [
+              children: [
                 _buildModernListTile(
                   context,
                   theme,
                   icon: FontAwesomeIcons.bell,
                   iconColor: Colors.orange,
                   title: 'Daily Reflection Reminder',
-                              subtitle: enabled
+                  subtitle: enabled
                       ? 'Reminder at ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
                       : 'Get reminded to log your daily reflections',
-                              trailing: Switch(
-                                value: enabled,
-                                onChanged: (value) async {
-                                  if (value) {
-                                    await notificationService.scheduleDailyReminder(
-                                      hour: time.hour,
-                                      minute: time.minute,
-                                    );
-                                  } else {
-                                    await notificationService.cancelDailyReminder();
-                                  }
-                                  ref.invalidate(notificationEnabledProvider);
-                                },
-                              ),
-                            ),
+                  trailing: Switch(
+                    value: enabled,
+                    onChanged: (value) async {
+                      if (value) {
+                        await notificationService.scheduleDailyReminder(
+                          hour: time.hour,
+                          minute: time.minute,
+                        );
+                      } else {
+                        await notificationService.cancelDailyReminder();
+                      }
+                      ref.invalidate(notificationEnabledProvider);
+                    },
+                  ),
+                ),
                 if (enabled) ...[
-                  Divider(height: 1, color: theme.colorScheme.outline.withOpacity(0.1)),
+                  Divider(
+                    height: 1,
+                    color: theme.colorScheme.outline.withOpacity(0.1),
+                  ),
                   _buildModernListTile(
                     context,
                     theme,
                     icon: FontAwesomeIcons.clock,
                     iconColor: Colors.teal,
                     title: 'Reminder Time',
-                    subtitle: '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                    subtitle:
+                        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
                     trailing: FaIcon(
                       FontAwesomeIcons.chevronRight,
                       size: 14,
                       color: theme.colorScheme.onSurface.withOpacity(0.4),
                     ),
-                                onTap: () async {
-                                  final TimeOfDay? picked = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay(
-                                      hour: time.hour,
-                                      minute: time.minute,
-                                    ),
-                                    builder: (context, child) {
-                                      return Theme(
-                                        data: Theme.of(context).copyWith(
-                                          colorScheme: ColorScheme.light(
-                                            primary: Theme.of(context).colorScheme.primary,
-                                          ),
-                                        ),
-                                        child: child!,
-                                      );
-                                    },
-                                  );
-
-                                  if (picked != null) {
-                                    await notificationService.scheduleDailyReminder(
-                                      hour: picked.hour,
-                                      minute: picked.minute,
-                                    );
-                                    ref.invalidate(notificationTimeProvider);
-                                  }
-                                },
+                    onTap: () async {
+                      final TimeOfDay? picked = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay(
+                          hour: time.hour,
+                          minute: time.minute,
+                        ),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.light(
+                                primary: Theme.of(context).colorScheme.primary,
                               ),
-                          ],
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+
+                      if (picked != null) {
+                        await notificationService.scheduleDailyReminder(
+                          hour: picked.hour,
+                          minute: picked.minute,
+                        );
+                        ref.invalidate(notificationTimeProvider);
+                      }
+                    },
+                  ),
+                ],
               ],
             ),
-                        ),
+          ),
           loading: () => Padding(
             padding: const EdgeInsets.all(20),
-            child: Center(
-              child: ShimmerLoading(
-                width: 24,
-                height: 24,
-              ),
-            ),
-                        ),
+            child: Center(child: ShimmerLoading(width: 24, height: 24)),
+          ),
           error: (_, __) => Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -280,14 +276,14 @@ class SettingsScreen extends ConsumerWidget {
                   FontAwesomeIcons.triangleExclamation,
                   color: theme.colorScheme.error,
                   size: 20,
-                        ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Error loading reminder time',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.error,
-                      ),
+                    ),
                   ),
                 ),
               ],
@@ -296,17 +292,12 @@ class SettingsScreen extends ConsumerWidget {
         ),
         loading: () => Padding(
           padding: const EdgeInsets.all(20),
-          child: Center(
-            child: ShimmerLoading(
-              width: 24,
-              height: 24,
-            ),
-          ),
+          child: Center(child: ShimmerLoading(width: 24, height: 24)),
         ),
         error: (_, __) => Padding(
           padding: const EdgeInsets.all(20),
           child: Row(
-              children: [
+            children: [
               FaIcon(
                 FontAwesomeIcons.triangleExclamation,
                 color: theme.colorScheme.error,
@@ -314,7 +305,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                  child: Text(
+                child: Text(
                   'Error loading reminder settings',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.error,
@@ -341,7 +332,7 @@ class SettingsScreen extends ConsumerWidget {
         side: BorderSide(
           color: theme.colorScheme.outline.withOpacity(0.1),
           width: 1,
-                  ),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(4),
@@ -356,9 +347,12 @@ class SettingsScreen extends ConsumerWidget {
                 title: 'Email',
                 subtitle: authState.user!.email,
                 trailing: null,
-                ),
-                if (authState.user != null)
-              Divider(height: 1, color: theme.colorScheme.outline.withOpacity(0.1)),
+              ),
+            if (authState.user != null)
+              Divider(
+                height: 1,
+                color: theme.colorScheme.outline.withOpacity(0.1),
+              ),
             _buildModernListTile(
               context,
               theme,
@@ -371,11 +365,14 @@ class SettingsScreen extends ConsumerWidget {
                 size: 14,
                 color: theme.colorScheme.onSurface.withOpacity(0.4),
               ),
-                  onTap: () {
-                    context.push('/settings/change-password');
-                  },
-                  ),
-            Divider(height: 1, color: theme.colorScheme.outline.withOpacity(0.1)),
+              onTap: () {
+                context.push('/settings/change-password');
+              },
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withOpacity(0.1),
+            ),
             _buildModernListTile(
               context,
               theme,
@@ -384,13 +381,13 @@ class SettingsScreen extends ConsumerWidget {
               title: AppStrings.logout,
               subtitle: 'Sign out of your account',
               trailing: null,
-                  onTap: () async {
-                    await ref.read(authProvider.notifier).signOut();
-                  },
-                ),
-              ],
+              onTap: () async {
+                await ref.read(authProvider.notifier).signOut();
+              },
             ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -419,21 +416,14 @@ class SettingsScreen extends ConsumerWidget {
                   color: iconColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: FaIcon(
-                  icon,
-                  color: iconColor,
-                  size: 18,
-                ),
+                child: FaIcon(icon, color: iconColor, size: 18),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium,
-                    ),
+                    Text(title, style: theme.textTheme.titleMedium),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
@@ -444,10 +434,7 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 12),
-                trailing,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 12), trailing],
             ],
           ),
         ),

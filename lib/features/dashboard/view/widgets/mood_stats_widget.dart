@@ -7,10 +7,7 @@ import '../../data/models/mood_analytics_model.dart';
 class MoodStatsWidget extends StatelessWidget {
   final MoodAnalyticsModel analytics;
 
-  const MoodStatsWidget({
-    super.key,
-    required this.analytics,
-  });
+  const MoodStatsWidget({super.key, required this.analytics});
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +33,7 @@ class MoodStatsWidget extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -103,7 +98,8 @@ class MoodStatsWidget extends StatelessWidget {
                         color: Colors.green,
                       ),
                     ),
-                  if (analytics.bestMoodDay != null && analytics.worstMoodDay != null)
+                  if (analytics.bestMoodDay != null &&
+                      analytics.worstMoodDay != null)
                     const SizedBox(width: 12),
                   if (analytics.worstMoodDay != null)
                     Expanded(
@@ -244,10 +240,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,4 +272,3 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-

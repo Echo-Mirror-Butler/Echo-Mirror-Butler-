@@ -47,10 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         } else {
           final error = ref.read(authProvider).error;
           debugPrint('[LoginScreen] Login failed -> $error');
-          ErrorHandler.showError(
-            context,
-            error ?? AppStrings.errorAuth,
-          );
+          ErrorHandler.showError(context, error ?? AppStrings.errorAuth);
         }
       }
     }
@@ -180,4 +177,3 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
-

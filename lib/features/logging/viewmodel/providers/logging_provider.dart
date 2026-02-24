@@ -26,7 +26,7 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       _currentUserId = userId;
       _hasLoaded = false;
     }
-    
+
     // If no userId, return empty list instead of staying in loading state
     if (_currentUserId == null || _currentUserId!.isEmpty) {
       state = const AsyncValue.data([]);
@@ -40,7 +40,9 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
 
     state = const AsyncValue.loading();
     try {
-      debugPrint('[LoggingNotifier] Loading log entries for userId: $_currentUserId');
+      debugPrint(
+        '[LoggingNotifier] Loading log entries for userId: $_currentUserId',
+      );
       final entries = await _repository.getLogEntries(_currentUserId!);
       debugPrint('[LoggingNotifier] ✅ Loaded ${entries.length} log entries');
       _hasLoaded = true;
@@ -59,11 +61,11 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       final created = await _repository.createLogEntry(entry);
       final currentData = state.value ?? [];
       state = AsyncValue.data([...currentData, created]);
-      
+
       // Cancel no-log-today notification since user has logged
       final notificationService = NotificationService();
       await notificationService.cancelNoLogTodayNotification();
-      
+
       return true;
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
@@ -118,8 +120,10 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
 }
 
 /// Logging provider
-final loggingProvider = StateNotifierProvider<LoggingNotifier, AsyncValue<List<LogEntryModel>>>((ref) {
-  final repository = ref.watch(loggingRepositoryProvider);
-  return LoggingNotifier(repository);
-});
-
+final loggingProvider =
+    StateNotifierProvider<LoggingNotifier, AsyncValue<List<LogEntryModel>>>((
+      ref,
+    ) {
+      final repository = ref.watch(loggingRepositoryProvider);
+      return LoggingNotifier(repository);
+    });

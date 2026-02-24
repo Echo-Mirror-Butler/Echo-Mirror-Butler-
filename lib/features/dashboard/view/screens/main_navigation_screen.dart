@@ -14,7 +14,8 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
 
   @override
-  ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  ConsumerState<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
@@ -127,7 +128,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     required bool isSelected,
   }) {
     final theme = Theme.of(context);
-    
+
     return Expanded(
       child: InkWell(
         onTap: () => _onTabChange(index),

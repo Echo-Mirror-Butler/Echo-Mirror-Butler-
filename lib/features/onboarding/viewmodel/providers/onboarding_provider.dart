@@ -11,7 +11,10 @@ final onboardingCompletedProvider = FutureProvider<bool>((ref) async {
 });
 
 /// Provider to mark onboarding as completed
-final completeOnboardingProvider = FutureProvider.family<void, bool>((ref, completed) async {
+final completeOnboardingProvider = FutureProvider.family<void, bool>((
+  ref,
+  completed,
+) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool(_onboardingCompletedKey, completed);
   ref.invalidate(onboardingCompletedProvider);
@@ -22,4 +25,3 @@ Future<void> markOnboardingCompleted() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setBool(_onboardingCompletedKey, true);
 }
-

@@ -46,10 +46,4 @@ class InsightModel {
   }
 }
 
-enum InsightType {
-  prediction,
-  habit,
-  mood,
-  general,
-}
-
+enum InsightType { prediction, habit, mood, general }

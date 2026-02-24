@@ -31,48 +31,61 @@ void main() {
       final issuerFund = await http.get(
         Uri.parse('$friendbotUrl?addr=${issuerKeypair.accountId}'),
       );
-      expect(issuerFund.statusCode, 200,
-          reason: 'Friendbot should fund the issuer account');
-    });
-
-    test('Step 1 — createWallet: generate keypair and fund via Friendbot',
-        () async {
-      userKeypair = KeyPair.random();
-      expect(userKeypair.accountId, startsWith('G'));
-      expect(userKeypair.secretSeed, startsWith('S'));
-
-      final response = await http.get(
-        Uri.parse('$friendbotUrl?addr=${userKeypair.accountId}'),
+      expect(
+        issuerFund.statusCode,
+        200,
+        reason: 'Friendbot should fund the issuer account',
       );
-      expect(response.statusCode, 200,
-          reason: 'Friendbot should fund the user account');
-
-      // Confirm account exists on Horizon
-      final account = await sdk.accounts.account(userKeypair.accountId);
-      expect(account.accountId, userKeypair.accountId);
     });
 
-    test('Step 2 — establishTrustline: add ECHO trustline to user wallet',
-        () async {
-      final account = await sdk.accounts.account(userKeypair.accountId);
+    test(
+      'Step 1 — createWallet: generate keypair and fund via Friendbot',
+      () async {
+        userKeypair = KeyPair.random();
+        expect(userKeypair.accountId, startsWith('G'));
+        expect(userKeypair.secretSeed, startsWith('S'));
 
-      // ECHO is 4 characters → must use AssetTypeCreditAlphaNum4
-      final echoAsset = AssetTypeCreditAlphaNum4(
-        assetCode,
-        issuerKeypair.accountId,
-      );
+        final response = await http.get(
+          Uri.parse('$friendbotUrl?addr=${userKeypair.accountId}'),
+        );
+        expect(
+          response.statusCode,
+          200,
+          reason: 'Friendbot should fund the user account',
+        );
 
-      final transaction = TransactionBuilder(account)
-          .addOperation(
-            ChangeTrustOperationBuilder(echoAsset, '1000000').build(),
-          )
-          .build();
+        // Confirm account exists on Horizon
+        final account = await sdk.accounts.account(userKeypair.accountId);
+        expect(account.accountId, userKeypair.accountId);
+      },
+    );
 
-      transaction.sign(userKeypair, network);
-      final result = await sdk.submitTransaction(transaction);
-      expect(result.success, isTrue,
-          reason: 'Trustline transaction should succeed');
-    });
+    test(
+      'Step 2 — establishTrustline: add ECHO trustline to user wallet',
+      () async {
+        final account = await sdk.accounts.account(userKeypair.accountId);
+
+        // ECHO is 4 characters → must use AssetTypeCreditAlphaNum4
+        final echoAsset = AssetTypeCreditAlphaNum4(
+          assetCode,
+          issuerKeypair.accountId,
+        );
+
+        final transaction = TransactionBuilder(account)
+            .addOperation(
+              ChangeTrustOperationBuilder(echoAsset, '1000000').build(),
+            )
+            .build();
+
+        transaction.sign(userKeypair, network);
+        final result = await sdk.submitTransaction(transaction);
+        expect(
+          result.success,
+          isTrue,
+          reason: 'Trustline transaction should succeed',
+        );
+      },
+    );
 
     test('Step 3 — verify trustline appears on the account', () async {
       final account = await sdk.accounts.account(userKeypair.accountId);
@@ -83,44 +96,56 @@ void main() {
             b.assetIssuer == issuerKeypair.accountId,
       );
 
-      expect(echoBalances, isNotEmpty,
-          reason: 'ECHO trustline should appear in account balances');
+      expect(
+        echoBalances,
+        isNotEmpty,
+        reason: 'ECHO trustline should appear in account balances',
+      );
       expect(echoBalances.first.assetCode, assetCode);
       expect(echoBalances.first.assetIssuer, issuerKeypair.accountId);
     });
 
-    test('Step 4 — getEchoBalance: should return 0.0 after trustline setup',
-        () async {
-      final account = await sdk.accounts.account(userKeypair.accountId);
+    test(
+      'Step 4 — getEchoBalance: should return 0.0 after trustline setup',
+      () async {
+        final account = await sdk.accounts.account(userKeypair.accountId);
 
-      double echoBalance = 0.0;
-      for (final balance in account.balances) {
-        if (balance.assetCode == assetCode &&
-            balance.assetIssuer == issuerKeypair.accountId) {
-          echoBalance = double.tryParse(balance.balance) ?? 0.0;
+        double echoBalance = 0.0;
+        for (final balance in account.balances) {
+          if (balance.assetCode == assetCode &&
+              balance.assetIssuer == issuerKeypair.accountId) {
+            echoBalance = double.tryParse(balance.balance) ?? 0.0;
+          }
         }
-      }
 
-      expect(echoBalance, 0.0,
-          reason: 'ECHO balance should be 0.0 before any tokens are issued');
-    });
+        expect(
+          echoBalance,
+          0.0,
+          reason: 'ECHO balance should be 0.0 before any tokens are issued',
+        );
+      },
+    );
 
     test(
-        'Step 5 — confirm AssetTypeCreditAlphaNum4 is used (not AlphaNum12)',
-        () {
-      // ECHO has 4 characters — must be AlphaNum4
-      expect(assetCode.length, lessThanOrEqualTo(4));
+      'Step 5 — confirm AssetTypeCreditAlphaNum4 is used (not AlphaNum12)',
+      () {
+        // ECHO has 4 characters — must be AlphaNum4
+        expect(assetCode.length, lessThanOrEqualTo(4));
 
-      final asset = AssetTypeCreditAlphaNum4(
-        assetCode,
-        issuerKeypair.accountId,
-      );
-      expect(asset.code, assetCode);
+        final asset = AssetTypeCreditAlphaNum4(
+          assetCode,
+          issuerKeypair.accountId,
+        );
+        expect(asset.code, assetCode);
 
-      // Verify AlphaNum12 would be wrong for a 4-char code
-      // AlphaNum12 is only for codes with 5-12 characters
-      expect(assetCode.length, lessThanOrEqualTo(4),
-          reason: 'ECHO is 4 chars, so AssetTypeCreditAlphaNum4 is correct');
-    });
+        // Verify AlphaNum12 would be wrong for a 4-char code
+        // AlphaNum12 is only for codes with 5-12 characters
+        expect(
+          assetCode.length,
+          lessThanOrEqualTo(4),
+          reason: 'ECHO is 4 chars, so AssetTypeCreditAlphaNum4 is correct',
+        );
+      },
+    );
   });
 }

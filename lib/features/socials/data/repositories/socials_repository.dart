@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/serverpod_client_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:echomirror_server_client/echomirror_server_client.dart' as serverpod;
+import 'package:echomirror_server_client/echomirror_server_client.dart'
+    as serverpod;
 import '../models/video_session_model.dart';
 import '../models/story_model.dart';
 
@@ -22,17 +23,13 @@ class SocialsRepository {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString('user_id') ?? 'anonymous_user';
       final userEmail = prefs.getString('user_email') ?? 'Anonymous';
-      
+
       // Extract name from email (part before @) or use email
-      final userName = userEmail.contains('@') 
-          ? userEmail.split('@')[0] 
+      final userName = userEmail.contains('@')
+          ? userEmail.split('@')[0]
           : userEmail;
-      
-      return {
-        'id': userId,
-        'name': userName,
-        'email': userEmail,
-      };
+
+      return {'id': userId, 'name': userName, 'email': userEmail};
     } catch (e) {
       debugPrint('[SocialsRepository] Error getting user info: $e');
       return {
@@ -47,10 +44,12 @@ class SocialsRepository {
   Future<List<VideoSessionModel>> getActiveSessions() async {
     try {
       debugPrint('[SocialsRepository] getActiveSessions');
-      
+
       final results = await _client.socials.getActiveSessions();
-      debugPrint('[SocialsRepository] Fetched ${results.length} active sessions from server');
-      
+      debugPrint(
+        '[SocialsRepository] Fetched ${results.length} active sessions from server',
+      );
+
       return results.map((session) => _convertToModel(session)).toList();
     } catch (e) {
       debugPrint('[SocialsRepository] getActiveSessions error -> $e');
@@ -64,12 +63,16 @@ class SocialsRepository {
     bool isVoiceOnly = false,
   }) async {
     try {
-      debugPrint('[SocialsRepository] createSession -> title: $title, voiceOnly: $isVoiceOnly');
-      
+      debugPrint(
+        '[SocialsRepository] createSession -> title: $title, voiceOnly: $isVoiceOnly',
+      );
+
       // Get current user info
       final userInfo = await _getCurrentUserInfo();
-      debugPrint('[SocialsRepository] Creating session as: ${userInfo['name']} (${userInfo['id']})');
-      
+      debugPrint(
+        '[SocialsRepository] Creating session as: ${userInfo['name']} (${userInfo['id']})',
+      );
+
       final result = await _client.socials.createSession(
         title,
         userInfo['id']!,
@@ -77,7 +80,7 @@ class SocialsRepository {
         null, // hostAvatarUrl - can be added later
         isVoiceOnly,
       );
-      
+
       debugPrint('[SocialsRepository] Created session: ${result.id}');
       return _convertToModel(result);
     } catch (e) {
@@ -90,13 +93,13 @@ class SocialsRepository {
   Future<bool> joinSession(String sessionId) async {
     try {
       debugPrint('[SocialsRepository] joinSession -> $sessionId');
-      
+
       final sessionIdInt = int.tryParse(sessionId);
       if (sessionIdInt == null) {
         debugPrint('[SocialsRepository] Invalid session ID format');
         return false;
       }
-      
+
       final success = await _client.socials.joinSession(sessionIdInt);
       debugPrint('[SocialsRepository] Join session result: $success');
       return success;
@@ -110,13 +113,13 @@ class SocialsRepository {
   Future<void> leaveSession(String sessionId) async {
     try {
       debugPrint('[SocialsRepository] leaveSession -> $sessionId');
-      
+
       final sessionIdInt = int.tryParse(sessionId);
       if (sessionIdInt == null) {
         debugPrint('[SocialsRepository] Invalid session ID format');
         return;
       }
-      
+
       await _client.socials.leaveSession(sessionIdInt);
       debugPrint('[SocialsRepository] Left session successfully');
     } catch (e) {
@@ -129,19 +132,19 @@ class SocialsRepository {
   Future<VideoSessionModel?> getSession(String sessionId) async {
     try {
       debugPrint('[SocialsRepository] getSession -> $sessionId');
-      
+
       final sessionIdInt = int.tryParse(sessionId);
       if (sessionIdInt == null) {
         debugPrint('[SocialsRepository] Invalid session ID format');
         return null;
       }
-      
+
       final result = await _client.socials.getSession(sessionIdInt);
       if (result == null) {
         debugPrint('[SocialsRepository] Session not found');
-      return null;
+        return null;
       }
-      
+
       return _convertToModel(result);
     } catch (e) {
       debugPrint('[SocialsRepository] getSession error -> $e');
@@ -155,14 +158,18 @@ class SocialsRepository {
     int userId,
   ) async {
     try {
-      debugPrint('[SocialsRepository] getAgoraCredentials -> sessionId: $sessionId, userId: $userId');
-      
+      debugPrint(
+        '[SocialsRepository] getAgoraCredentials -> sessionId: $sessionId, userId: $userId',
+      );
+
       final credentials = await _client.socials.getAgoraCredentials(
         sessionId,
         userId,
       );
-      
-      debugPrint('[SocialsRepository] Got Agora credentials: ${credentials['appId']}');
+
+      debugPrint(
+        '[SocialsRepository] Got Agora credentials: ${credentials['appId']}',
+      );
       return credentials;
     } catch (e) {
       debugPrint('[SocialsRepository] getAgoraCredentials error -> $e');
@@ -194,8 +201,11 @@ class SocialsRepository {
     try {
       debugPrint('[SocialsRepository] getActiveStories');
       // ignore: avoid_dynamic_calls
-      final stories = await (_client.socials as dynamic).getActiveStories() as List;
-      return stories.map((s) => StoryModel.fromServerpod(s as serverpod.Story)).toList();
+      final stories =
+          await (_client.socials as dynamic).getActiveStories() as List;
+      return stories
+          .map((s) => StoryModel.fromServerpod(s as serverpod.Story))
+          .toList();
     } catch (e) {
       debugPrint('[SocialsRepository] getActiveStories error -> $e');
       return [];
@@ -207,8 +217,11 @@ class SocialsRepository {
     try {
       debugPrint('[SocialsRepository] getUserStories -> $userId');
       // ignore: avoid_dynamic_calls
-      final stories = await (_client.socials as dynamic).getUserStories(userId) as List;
-      return stories.map((s) => StoryModel.fromServerpod(s as serverpod.Story)).toList();
+      final stories =
+          await (_client.socials as dynamic).getUserStories(userId) as List;
+      return stories
+          .map((s) => StoryModel.fromServerpod(s as serverpod.Story))
+          .toList();
     } catch (e) {
       debugPrint('[SocialsRepository] getUserStories error -> $e');
       return [];
@@ -219,40 +232,47 @@ class SocialsRepository {
   Future<String?> uploadStoryImage(File imageFile, String userId) async {
     try {
       debugPrint('[SocialsRepository] uploadStoryImage -> $userId');
-      
+
       // Check file size (400KB limit for Serverpod endpoints)
       final fileSize = await imageFile.length();
       const maxDirectUploadSize = 400 * 1024; // 400KB
-      
+
       if (fileSize > maxDirectUploadSize) {
-        debugPrint('[SocialsRepository] Image file exceeds 400KB limit: ${fileSize / 1024} KB');
-        throw Exception('Image file exceeds 400KB limit. Please choose a smaller image.');
+        debugPrint(
+          '[SocialsRepository] Image file exceeds 400KB limit: ${fileSize / 1024} KB',
+        );
+        throw Exception(
+          'Image file exceeds 400KB limit. Please choose a smaller image.',
+        );
       }
-      
+
       // Read file bytes
       final bytes = await imageFile.readAsBytes();
       final byteData = ByteData.view(bytes.buffer);
-      
+
       // Upload to server
       // ignore: avoid_dynamic_calls
-      final imageUrl = await (_client.socials as dynamic).uploadStoryImage(
-        byteData,
-        userId,
-      ) as String?;
-      
+      final imageUrl =
+          await (_client.socials as dynamic).uploadStoryImage(byteData, userId)
+              as String?;
+
       if (imageUrl != null && imageUrl.isNotEmpty) {
-        debugPrint('[SocialsRepository] Image uploaded successfully: $imageUrl');
+        debugPrint(
+          '[SocialsRepository] Image uploaded successfully: $imageUrl',
+        );
       } else {
-        debugPrint('[SocialsRepository] WARNING: Upload returned null or empty URL');
+        debugPrint(
+          '[SocialsRepository] WARNING: Upload returned null or empty URL',
+        );
       }
-      
+
       return imageUrl;
     } catch (e) {
       debugPrint('[SocialsRepository] uploadStoryImage error -> $e');
       rethrow;
     }
   }
-  
+
   /// Create a new story
   Future<StoryModel?> createStory({
     required String userId,
@@ -261,14 +281,18 @@ class SocialsRepository {
     required List<String> imageUrls,
   }) async {
     try {
-      debugPrint('[SocialsRepository] createStory -> $userName, ${imageUrls.length} images');
+      debugPrint(
+        '[SocialsRepository] createStory -> $userName, ${imageUrls.length} images',
+      );
       // ignore: avoid_dynamic_calls
-      final story = await (_client.socials as dynamic).createStory(
-        userId,
-        userName,
-        userAvatarUrl,
-        imageUrls,
-      ) as serverpod.Story;
+      final story =
+          await (_client.socials as dynamic).createStory(
+                userId,
+                userName,
+                userAvatarUrl,
+                imageUrls,
+              )
+              as serverpod.Story;
       return StoryModel.fromServerpod(story);
     } catch (e) {
       debugPrint('[SocialsRepository] createStory error -> $e');
@@ -292,11 +316,11 @@ class SocialsRepository {
     try {
       debugPrint('[SocialsRepository] deleteStory -> $storyId');
       // ignore: avoid_dynamic_calls
-      return await (_client.socials as dynamic).deleteStory(storyId, userId) as bool;
+      return await (_client.socials as dynamic).deleteStory(storyId, userId)
+          as bool;
     } catch (e) {
       debugPrint('[SocialsRepository] deleteStory error -> $e');
       return false;
     }
   }
 }
-

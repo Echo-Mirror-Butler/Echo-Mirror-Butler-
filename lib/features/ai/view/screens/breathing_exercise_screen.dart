@@ -18,7 +18,8 @@ class BreathingExerciseScreen extends ConsumerStatefulWidget {
       _BreathingExerciseScreenState();
 }
 
-class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScreen>
+class _BreathingExerciseScreenState
+    extends ConsumerState<BreathingExerciseScreen>
     with TickerProviderStateMixin {
   late AnimationController _breathController;
   late AnimationController _pulseController;
@@ -75,9 +76,10 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
       duration: const Duration(milliseconds: 800),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeIn));
 
     _initializeTts();
     _startBackgroundMusic();
@@ -87,16 +89,22 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
   Future<void> _startBackgroundMusic() async {
     try {
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      await _audioPlayer.setVolume(0.25); // Low volume so it doesn't overpower voice
-      
+      await _audioPlayer.setVolume(
+        0.25,
+      ); // Low volume so it doesn't overpower voice
+
       // Try to play the music, with timeout
-      await _audioPlayer.play(UrlSource(_ambientMusicUrl))
-          .timeout(const Duration(seconds: 5), onTimeout: () {
-        debugPrint('Music playback timed out - continuing without music');
-        setState(() => _isMusicPlaying = false);
-        throw TimeoutException('Music load timeout');
-      });
-      
+      await _audioPlayer
+          .play(UrlSource(_ambientMusicUrl))
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              debugPrint('Music playback timed out - continuing without music');
+              setState(() => _isMusicPlaying = false);
+              throw TimeoutException('Music load timeout');
+            },
+          );
+
       // Check if playback actually started
       final state = _audioPlayer.state;
       if (state == PlayerState.stopped || state == PlayerState.completed) {
@@ -116,7 +124,8 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
       try {
         await _audioPlayer.setReleaseMode(ReleaseMode.loop);
         await _audioPlayer.setVolume(0.25);
-        await _audioPlayer.play(UrlSource(_ambientMusicUrl))
+        await _audioPlayer
+            .play(UrlSource(_ambientMusicUrl))
             .timeout(const Duration(seconds: 3));
         setState(() => _isMusicPlaying = true);
       } catch (e) {
@@ -269,306 +278,343 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
               ),
             ),
             Column(
-          children: [
-            // Custom AppBar with music toggle
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {
-                        _audioPlayer.stop();
-                        Navigator.of(context).pop();
-                      },
+              children: [
+                // Custom AppBar with music toggle
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    Expanded(
-                      child: Text(
-                        'Breathing Exercise',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        _isMusicPlaying
-                            ? FontAwesomeIcons.volumeHigh
-                            : FontAwesomeIcons.volumeOff,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                      onPressed: _toggleMusic,
-                      tooltip: _isMusicPlaying ? 'Mute music' : 'Play music',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Progress indicator
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                children: List.generate(
-                  _totalCycles,
-                  (index) => Expanded(
-                    child: Container(
-                      height: 6,
-                      margin: EdgeInsets.only(
-                        right: index < _totalCycles - 1 ? 8 : 0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: index < _currentCycle
-                            ? AppTheme.primaryColor
-                            : index == _currentCycle
-                            ? AppTheme.primaryColor.withOpacity(0.5)
-                            : Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Breathing circle animation with text outside
-            Expanded(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Phase text above circle with smooth transitions
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0, 0.1),
-                                end: Offset.zero,
-                              ).animate(animation),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Text(
-                          _currentPhase,
-                          key: ValueKey<String>(_currentPhase),
-                          style: GoogleFonts.poppins(
-                            fontSize: 38,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 1.5,
-                            shadows: [
-                              Shadow(
-                                color: _getPhaseColor().withOpacity(0.5),
-                                blurRadius: 20,
-                              ),
-                            ],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                            SizedBox(height: constraints.maxHeight * 0.06),
-                      // Animated breathing circle with multiple rings
-                      AnimatedBuilder(
-                        animation: Listenable.merge([
-                          _breathAnimation,
-                          _pulseAnimation,
-                        ]),
-                        builder: (context, child) {
-                          final scale = _currentPhase == 'Breathe In'
-                              ? _breathAnimation.value
-                              : _currentPhase == 'Hold'
-                              ? 1.4
-                              : _currentPhase == 'Breathe Out'
-                              ? 1.4 - ((_breathAnimation.value - 0.7) * 0.7)
-                              : 0.9;
-
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Outer glow ring
-                              Container(
-                                width: 220 * scale * _pulseAnimation.value,
-                                height: 220 * scale * _pulseAnimation.value,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      _getPhaseColor().withOpacity(0.15),
-                                      _getPhaseColor().withOpacity(0.0),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Main circle
-                              Container(
-                                width: 180 * scale,
-                                height: 180 * scale,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      _getPhaseColor().withOpacity(0.9),
-                                      _getPhaseColor().withOpacity(0.6),
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _getPhaseColor().withOpacity(0.5),
-                                      blurRadius: 50 * scale,
-                                      spreadRadius: 8 * scale,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Inner highlight
-                              Container(
-                                width: 120 * scale,
-                                height: 120 * scale,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                            SizedBox(height: constraints.maxHeight * 0.06),
-                      // Instruction text below circle
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                          child: Text(
-                            _getInstructionText(),
-                            key: ValueKey<String>(_currentPhase),
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              color: Colors.white.withOpacity(0.9),
-                              fontWeight: FontWeight.w500,
-                              shadows: [
-                                const Shadow(
-                                  color: Colors.black26,
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                      ),
-                    ],
-                  ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            // Controls and progress
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Text(
-                      'Cycle ${_currentCycle + 1} of $_totalCycles',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Row(
                       children: [
-                        // Pause/Play button
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor,
-                            borderRadius: BorderRadius.circular(50),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryColor.withOpacity(0.3),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(50),
-                              onTap: _togglePause,
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Icon(
-                                  _isPaused
-                                      ? FontAwesomeIcons.play
-                                      : FontAwesomeIcons.pause,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 32),
-                        // Exit button
-                        TextButton(
                           onPressed: () {
                             _audioPlayer.stop();
                             Navigator.of(context).pop();
                           },
-                          style: TextButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onSurface.withOpacity(0.6),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Breathing Exercise',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                              color: Colors.white,
                             ),
+                            textAlign: TextAlign.center,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                FontAwesomeIcons.xmark,
-                                size: 18,
-                                color: Colors.white.withOpacity(0.9),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Exit',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white.withOpacity(0.9),
-                                ),
-                              ),
-                            ],
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            _isMusicPlaying
+                                ? FontAwesomeIcons.volumeHigh
+                                : FontAwesomeIcons.volumeOff,
+                            size: 20,
+                            color: Colors.white,
                           ),
+                          onPressed: _toggleMusic,
+                          tooltip: _isMusicPlaying
+                              ? 'Mute music'
+                              : 'Play music',
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
+                // Progress indicator
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  child: Row(
+                    children: List.generate(
+                      _totalCycles,
+                      (index) => Expanded(
+                        child: Container(
+                          height: 6,
+                          margin: EdgeInsets.only(
+                            right: index < _totalCycles - 1 ? 8 : 0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: index < _currentCycle
+                                ? AppTheme.primaryColor
+                                : index == _currentCycle
+                                ? AppTheme.primaryColor.withOpacity(0.5)
+                                : Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Breathing circle animation with text outside
+                Expanded(
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Phase text above circle with smooth transitions
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  transitionBuilder: (child, animation) {
+                                    return FadeTransition(
+                                      opacity: animation,
+                                      child: SlideTransition(
+                                        position: Tween<Offset>(
+                                          begin: const Offset(0, 0.1),
+                                          end: Offset.zero,
+                                        ).animate(animation),
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    _currentPhase,
+                                    key: ValueKey<String>(_currentPhase),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 38,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      letterSpacing: 1.5,
+                                      shadows: [
+                                        Shadow(
+                                          color: _getPhaseColor().withOpacity(
+                                            0.5,
+                                          ),
+                                          blurRadius: 20,
+                                        ),
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                SizedBox(height: constraints.maxHeight * 0.06),
+                                // Animated breathing circle with multiple rings
+                                AnimatedBuilder(
+                                  animation: Listenable.merge([
+                                    _breathAnimation,
+                                    _pulseAnimation,
+                                  ]),
+                                  builder: (context, child) {
+                                    final scale = _currentPhase == 'Breathe In'
+                                        ? _breathAnimation.value
+                                        : _currentPhase == 'Hold'
+                                        ? 1.4
+                                        : _currentPhase == 'Breathe Out'
+                                        ? 1.4 -
+                                              ((_breathAnimation.value - 0.7) *
+                                                  0.7)
+                                        : 0.9;
+
+                                    return Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        // Outer glow ring
+                                        Container(
+                                          width:
+                                              220 *
+                                              scale *
+                                              _pulseAnimation.value,
+                                          height:
+                                              220 *
+                                              scale *
+                                              _pulseAnimation.value,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: RadialGradient(
+                                              colors: [
+                                                _getPhaseColor().withOpacity(
+                                                  0.15,
+                                                ),
+                                                _getPhaseColor().withOpacity(
+                                                  0.0,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        // Main circle
+                                        Container(
+                                          width: 180 * scale,
+                                          height: 180 * scale,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: RadialGradient(
+                                              colors: [
+                                                _getPhaseColor().withOpacity(
+                                                  0.9,
+                                                ),
+                                                _getPhaseColor().withOpacity(
+                                                  0.6,
+                                                ),
+                                              ],
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: _getPhaseColor()
+                                                    .withOpacity(0.5),
+                                                blurRadius: 50 * scale,
+                                                spreadRadius: 8 * scale,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        // Inner highlight
+                                        Container(
+                                          width: 120 * scale,
+                                          height: 120 * scale,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white.withOpacity(
+                                              0.3,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                                SizedBox(height: constraints.maxHeight * 0.06),
+                                // Instruction text below circle
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 300),
+                                  child: Text(
+                                    _getInstructionText(),
+                                    key: ValueKey<String>(_currentPhase),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontWeight: FontWeight.w500,
+                                      shadows: [
+                                        const Shadow(
+                                          color: Colors.black26,
+                                          blurRadius: 8,
+                                        ),
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+                // Controls and progress
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Cycle ${_currentCycle + 1} of $_totalCycles',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Pause/Play button
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor,
+                                borderRadius: BorderRadius.circular(50),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor.withOpacity(
+                                      0.3,
+                                    ),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(50),
+                                  onTap: _togglePause,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Icon(
+                                      _isPaused
+                                          ? FontAwesomeIcons.play
+                                          : FontAwesomeIcons.pause,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 32),
+                            // Exit button
+                            TextButton(
+                              onPressed: () {
+                                _audioPlayer.stop();
+                                Navigator.of(context).pop();
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: theme.colorScheme.onSurface
+                                    .withOpacity(0.6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    FontAwesomeIcons.xmark,
+                                    size: 18,
+                                    color: Colors.white.withOpacity(0.9),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Exit',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white.withOpacity(0.9),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -620,35 +666,35 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                FontAwesomeIcons.circleCheck,
-                size: 80,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Great Job!',
-                style: GoogleFonts.poppins(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  FontAwesomeIcons.circleCheck,
+                  size: 80,
+                  color: AppTheme.primaryColor,
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
+                const SizedBox(height: 24),
+                Text(
+                  'Great Job!',
+                  style: GoogleFonts.poppins(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
                   'You\'ve completed your breathing exercise.\nHow did you feel after the breathing exercise?',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  color: Colors.white.withOpacity(0.9),
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
                 const SizedBox(height: 32),
-                
+
                 // Feeling options
                 Wrap(
                   spacing: 12,
@@ -662,51 +708,49 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
                     _buildFeelingChip('😔', 'Stressed', Colors.red),
                   ],
                 ),
-                
+
                 // Recommendations based on selected feeling
                 if (_selectedFeeling != null) ...[
                   const SizedBox(height: 32),
                   _buildRecommendation(),
                 ],
-                
-              const SizedBox(height: 48),
-              ElevatedButton.icon(
-                icon: const Icon(FontAwesomeIcons.music),
-                label: const Text('Listen to Relaxing Music'),
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const MusicRecommendationsScreen(),
+
+                const SizedBox(height: 48),
+                ElevatedButton.icon(
+                  icon: const Icon(FontAwesomeIcons.music),
+                  label: const Text('Listen to Relaxing Music'),
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const MusicRecommendationsScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white.withOpacity(0.8),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white.withOpacity(0.8),
+                  ),
+                  child: Text('Done', style: GoogleFonts.poppins(fontSize: 16)),
                 ),
-                child: Text(
-                  'Done',
-                  style: GoogleFonts.poppins(fontSize: 16),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -719,7 +763,7 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? color.withOpacity(0.3)
               : Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(25),
@@ -731,10 +775,7 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 24),
-            ),
+            Text(emoji, style: const TextStyle(fontSize: 24)),
             const SizedBox(width: 8),
             Text(
               label,
@@ -758,7 +799,7 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
         'tips': [
           'Continue practicing deep breathing throughout the day',
           'Try meditation or yoga to deepen relaxation',
-          'Listen to calming music or nature sounds'
+          'Listen to calming music or nature sounds',
         ],
       },
       'Happy': {
@@ -767,16 +808,17 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
         'tips': [
           'Share your happiness - connect with loved ones',
           'Try energizing activities like dancing or walking',
-          'Journal about what made you feel this way'
+          'Journal about what made you feel this way',
         ],
       },
       'Neutral': {
         'title': '💙 That\'s okay!',
-        'message': 'Feeling neutral is normal. Try these to feel more energized:',
+        'message':
+            'Feeling neutral is normal. Try these to feel more energized:',
         'tips': [
           'Take a short walk outdoors for fresh air',
           'Try another breathing exercise later',
-          'Listen to uplifting music or podcasts'
+          'Listen to uplifting music or podcasts',
         ],
       },
       'Anxious': {
@@ -786,7 +828,7 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
           'Repeat the breathing exercise - it helps!',
           'Try progressive muscle relaxation',
           'Write down your worries to process them',
-          'Consider talking to a professional if it persists'
+          'Consider talking to a professional if it persists',
         ],
       },
       'Stressed': {
@@ -796,21 +838,19 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
           'Take breaks throughout your day',
           'Practice the 4-7-8 breathing technique more often',
           'Try gentle stretching or a warm bath',
-          'Reach out for professional support if needed'
+          'Reach out for professional support if needed',
         ],
       },
     };
 
     final rec = recommendations[_selectedFeeling]!;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -832,31 +872,33 @@ class _BreathingExerciseScreenState extends ConsumerState<BreathingExerciseScree
             ),
           ),
           const SizedBox(height: 16),
-          ...(rec['tips'] as List<String>).map((tip) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '• ',
-                  style: TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    tip,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.white.withOpacity(0.85),
+          ...(rec['tips'] as List<String>).map(
+            (tip) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '• ',
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Text(
+                      tip,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.white.withOpacity(0.85),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
