@@ -63,7 +63,11 @@ class GiftNotifier extends StateNotifier<GiftState> {
     required double amount,
     String? message,
   }) async {
-    state = state.copyWith(isSending: true, clearError: true, clearLastTx: true);
+    state = state.copyWith(
+      isSending: true,
+      clearError: true,
+      clearLastTx: true,
+    );
     final tx = await _repo.sendGift(
       recipientUserId: recipientUserId,
       amount: amount,

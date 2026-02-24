@@ -7,10 +7,7 @@ import '../../../../core/themes/app_theme.dart';
 class StartSessionButton extends StatelessWidget {
   final VoidCallback onTap;
 
-  const StartSessionButton({
-    super.key,
-    required this.onTap,
-  });
+  const StartSessionButton({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -41,15 +38,10 @@ class StartSessionButton extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: FaIcon(
-              FontAwesomeIcons.plus,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: FaIcon(FontAwesomeIcons.plus, color: Colors.white, size: 32),
           ),
         ),
       ),
     );
   }
 }
-

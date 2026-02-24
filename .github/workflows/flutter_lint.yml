@@ -13,12 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout server repo
-        uses: actions/checkout@v4
-        with:
-          repository: Echo-Mirror-Butler/echomirror_server
-          path: .server
-
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -27,5 +21,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Only format Flutter/Dart app files — the server package (echomirror_server/)
+      # uses its own analysis_options and is not a Flutter project.
       - name: Check formatting
-        run: dart format --set-exit-if-changed .
+        run: dart format --set-exit-if-changed lib test backend

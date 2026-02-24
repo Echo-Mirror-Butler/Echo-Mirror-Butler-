@@ -7,7 +7,9 @@ import '../../../../core/services/serverpod_client_service.dart';
 /// This handles all Serverpod backend calls for auth
 class AuthRepository {
   AuthRepository() {
-    debugPrint('[AuthRepository] Initialized - client will be accessed when needed');
+    debugPrint(
+      '[AuthRepository] Initialized - client will be accessed when needed',
+    );
   }
 
   /// Get the client instance (lazy initialization)
@@ -16,8 +18,8 @@ class AuthRepository {
     if (!ServerpodClientService.instance.isInitialized) {
       throw StateError(
         'ServerpodClientService not initialized. Call ensureInitialized() in main() first.',
-    );
-  }
+      );
+    }
     return ServerpodClientService.instance.client;
   }
 
@@ -26,21 +28,23 @@ class AuthRepository {
   Future<String> signIn(String email, String password) async {
     try {
       debugPrint('[AuthRepository] signIn -> $email');
-      
+
       // Check if we have a key before login
       final keyBefore = await _client.authenticationKeyManager?.get();
-      debugPrint('[AuthRepository] Key before login: ${keyBefore != null ? "exists" : "null"}');
-      
+      debugPrint(
+        '[AuthRepository] Key before login: ${keyBefore != null ? "exists" : "null"}',
+      );
+
       // Login and get the response
       final authResult = await _client.emailIdp.login(
         email: email,
         password: password,
       );
-      
+
       // Extract the JWT token and user info from the AuthSuccess response
       final dynamic result = authResult;
       final String? token = result.token as String?;
-      
+
       // authUserId might be UuidValue or String, handle both
       String? authUserId;
       try {
@@ -60,18 +64,22 @@ class AuthRepository {
         debugPrint('[AuthRepository] Error extracting authUserId: $e');
         authUserId = null;
       }
-      
-      debugPrint('[AuthRepository] Login response - token: ${token != null ? "${token.length} chars" : "null"}, authUserId: $authUserId');
-      
+
+      debugPrint(
+        '[AuthRepository] Login response - token: ${token != null ? "${token.length} chars" : "null"}, authUserId: $authUserId',
+      );
+
       if (token == null || token.isEmpty) {
         debugPrint('[AuthRepository] ⚠️ No token found in login response');
         throw Exception('Login succeeded but no authentication token received');
       }
-      
+
       // Save the JWT token to SharedPreferences for persistence
-      debugPrint('[AuthRepository] Saving JWT authentication token (${token.length} chars)...');
+      debugPrint(
+        '[AuthRepository] Saving JWT authentication token (${token.length} chars)...',
+      );
       await _client.authenticationKeyManager?.put(token);
-      
+
       // Save user info (email and authUserId) to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', email);
@@ -84,16 +92,16 @@ class AuthRepository {
         await prefs.setString('user_id', fallbackUserId);
         debugPrint('[AuthRepository] Using fallback user ID: $fallbackUserId');
       }
-      
+
       // Verify the token was saved
       final savedToken = await _client.authenticationKeyManager?.get();
       if (savedToken == null || savedToken != token) {
         debugPrint('[AuthRepository] ❌ ERROR: Token was not saved correctly!');
         throw Exception('Failed to save authentication token');
       }
-      
+
       debugPrint('[AuthRepository] ✅ Authentication token and user info saved');
-      
+
       // Return the user ID (prefer server's authUserId, fallback to email hash)
       final userId = authUserId ?? 'user_${email.hashCode}';
       debugPrint('[AuthRepository] signIn success -> $email, userId: $userId');
@@ -114,12 +122,12 @@ class AuthRepository {
       final accountRequestId = await _client.emailIdp.startRegistration(
         email: email,
       );
-      
+
       // In a real app, you'd need to:
       // 1. Show a screen for the user to enter the verification code from email
       // 2. Call verifyRegistrationCode with the code
       // 3. Call finishRegistration with the token and password
-      
+
       // Convert UuidValue to string - use the uuid property for proper formatting
       final accountRequestIdString = accountRequestId.uuid;
       debugPrint(
@@ -132,7 +140,7 @@ class AuthRepository {
       throw Exception('Sign up failed: ${e.toString()}');
     }
   }
-  
+
   /// Verify registration code and complete signup
   Future<String> completeSignUp({
     required String accountRequestId,
@@ -143,32 +151,36 @@ class AuthRepository {
       debugPrint(
         '[AuthRepository] completeSignUp -> accountRequestId=$accountRequestId, verificationCode=$verificationCode',
       );
-      
+
       // Convert string back to UuidValue
       UuidValue uuidValue;
       try {
         uuidValue = UuidValue.fromString(accountRequestId);
-        debugPrint('[AuthRepository] Successfully parsed accountRequestId to UuidValue');
+        debugPrint(
+          '[AuthRepository] Successfully parsed accountRequestId to UuidValue',
+        );
       } catch (e) {
         debugPrint('[AuthRepository] Failed to parse accountRequestId: $e');
         throw Exception('Invalid accountRequestId format: $accountRequestId');
       }
-      
+
       // Step 2: Verify the code
       debugPrint('[AuthRepository] Calling verifyRegistrationCode...');
       final registrationToken = await _client.emailIdp.verifyRegistrationCode(
         accountRequestId: uuidValue,
         verificationCode: verificationCode,
       );
-      debugPrint('[AuthRepository] verifyRegistrationCode successful, got registrationToken');
-      
+      debugPrint(
+        '[AuthRepository] verifyRegistrationCode successful, got registrationToken',
+      );
+
       // Step 3: Finish registration
       debugPrint('[AuthRepository] Calling finishRegistration...');
       await _client.emailIdp.finishRegistration(
         registrationToken: registrationToken,
         password: password,
       );
-      
+
       // Registration complete - key is stored automatically
       debugPrint('[AuthRepository] completeSignUp success.');
       return accountRequestId;
@@ -186,7 +198,7 @@ class AuthRepository {
       // Clear the authentication key and user info
       debugPrint('[AuthRepository] signOut');
       await _client.authenticationKeyManager?.remove();
-      
+
       // Clear saved user info
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_email');
@@ -208,19 +220,21 @@ class AuthRepository {
         debugPrint('[AuthRepository] getCurrentUser: No authentication key');
         return null;
       }
-      
+
       // Retrieve saved user info from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final savedEmail = prefs.getString('user_email');
       final savedUserId = prefs.getString('user_id');
-      
+
       if (savedUserId == null) {
         debugPrint('[AuthRepository] getCurrentUser: No saved user ID found');
         return null;
       }
-      
-      debugPrint('[AuthRepository] getCurrentUser: Found saved user - id: $savedUserId, email: ${savedEmail ?? "not saved"}');
-      
+
+      debugPrint(
+        '[AuthRepository] getCurrentUser: Found saved user - id: $savedUserId, email: ${savedEmail ?? "not saved"}',
+      );
+
       return {
         'id': savedUserId,
         'email': savedEmail ?? '',
@@ -252,7 +266,8 @@ class AuthRepository {
       // Call the password reset endpoint
       // Note: This will be available after running 'serverpod generate'
       final dynamic client = _client;
-      final result = await client.passwordReset.requestPasswordReset(email) as bool;
+      final result =
+          await client.passwordReset.requestPasswordReset(email) as bool;
       debugPrint('[AuthRepository] requestPasswordReset success -> $result');
       return result;
     } catch (e) {
@@ -272,11 +287,9 @@ class AuthRepository {
       debugPrint('[AuthRepository] resetPassword -> $email');
       // Call the password reset endpoint
       final dynamic client = _client;
-      final result = await client.passwordReset.resetPassword(
-        email,
-        token,
-        newPassword,
-      ) as bool;
+      final result =
+          await client.passwordReset.resetPassword(email, token, newPassword)
+              as bool;
       debugPrint('[AuthRepository] resetPassword success -> $result');
       return result;
     } catch (e) {
@@ -294,10 +307,12 @@ class AuthRepository {
       debugPrint('[AuthRepository] changePassword');
       // Call the password reset endpoint
       final dynamic client = _client;
-      final result = await client.passwordReset.changePassword(
-        currentPassword,
-        newPassword,
-      ) as bool;
+      final result =
+          await client.passwordReset.changePassword(
+                currentPassword,
+                newPassword,
+              )
+              as bool;
       debugPrint('[AuthRepository] changePassword success -> $result');
       return result;
     } catch (e) {
@@ -306,4 +321,3 @@ class AuthRepository {
     }
   }
 }
-

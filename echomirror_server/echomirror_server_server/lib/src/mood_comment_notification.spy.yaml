@@ -1,0 +1,17 @@
+class: MoodCommentNotification
+table: mood_comment_notifications
+fields:
+  userId: int
+  moodPinId: int
+  commentId: int
+  commentText: String
+  sentiment: String
+  timestamp: DateTime
+  isRead: bool
+indexes:
+  mood_notification_user_idx:
+    fields: userId
+  mood_notification_unread_idx:
+    fields: userId, isRead
+  mood_notification_timestamp_idx:
+    fields: timestamp

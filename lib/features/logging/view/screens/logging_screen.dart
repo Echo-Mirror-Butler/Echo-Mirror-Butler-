@@ -58,10 +58,7 @@ class LoggingScreen extends ConsumerWidget {
                     color: theme.colorScheme.primary.withOpacity(0.5),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'No entries yet',
-                    style: theme.textTheme.titleLarge,
-                  ),
+                  Text('No entries yet', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 8),
                   Text(
                     'Start logging your daily mood and habits',
@@ -114,12 +111,8 @@ class LoggingScreen extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(
-          child: ShimmerLoading(
-            width: 40,
-            height: 40,
-          ),
-        ),
+        loading: () =>
+            const Center(child: ShimmerLoading(width: 40, height: 40)),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -130,10 +123,7 @@ class LoggingScreen extends ConsumerWidget {
                 color: AppTheme.errorColor,
               ),
               const SizedBox(height: 16),
-              Text(
-                'Error loading entries',
-                style: theme.textTheme.titleLarge,
-              ),
+              Text('Error loading entries', style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(
                 error.toString(),
@@ -176,7 +166,11 @@ class LoggingScreen extends ConsumerWidget {
     }
   }
 
-  void _showCalendar(BuildContext context, WidgetRef ref, List<LogEntryModel> entries) {
+  void _showCalendar(
+    BuildContext context,
+    WidgetRef ref,
+    List<LogEntryModel> entries,
+  ) {
     showDialog(
       context: context,
       builder: (context) => LoggingCalendar(
@@ -184,15 +178,17 @@ class LoggingScreen extends ConsumerWidget {
         onDateSelected: (date) {
           // Find entry for this date and navigate to it
           try {
-            final entry = entries.firstWhere(
-              (e) {
-                // Normalize entry date to local time for comparison
-                final localDate = e.date.isUtc ? e.date.toLocal() : e.date;
-                final entryDate = DateTime(localDate.year, localDate.month, localDate.day);
-                final selectedDate = DateTime(date.year, date.month, date.day);
-                return entryDate.isAtSameMomentAs(selectedDate);
-              },
-            );
+            final entry = entries.firstWhere((e) {
+              // Normalize entry date to local time for comparison
+              final localDate = e.date.isUtc ? e.date.toLocal() : e.date;
+              final entryDate = DateTime(
+                localDate.year,
+                localDate.month,
+                localDate.day,
+              );
+              final selectedDate = DateTime(date.year, date.month, date.day);
+              return entryDate.isAtSameMomentAs(selectedDate);
+            });
             if (context.mounted) {
               context.push('/logging/detail/${entry.id}', extra: entry);
             }
@@ -204,4 +200,3 @@ class LoggingScreen extends ConsumerWidget {
     );
   }
 }
-

@@ -52,10 +52,9 @@ class _StoriesBarState extends State<StoriesBar>
     final allItems = <_StoryItem>[];
 
     // Add "Your Story" button
-    allItems.add(_StoryItem(
-      type: _StoryItemType.addStory,
-      onTap: widget.onAddStory,
-    ));
+    allItems.add(
+      _StoryItem(type: _StoryItemType.addStory, onTap: widget.onAddStory),
+    );
 
     // Group stories by userId - only show one circle per user (like Instagram)
     final Map<String, StoryModel> storiesByUser = {};
@@ -69,20 +68,24 @@ class _StoriesBarState extends State<StoriesBar>
 
     // Add one story circle per user
     for (var story in storiesByUser.values) {
-      allItems.add(_StoryItem(
-        type: _StoryItemType.story,
-        story: story,
-        onTap: () => widget.onStoryTap?.call(story),
-      ));
+      allItems.add(
+        _StoryItem(
+          type: _StoryItemType.story,
+          story: story,
+          onTap: () => widget.onStoryTap?.call(story),
+        ),
+      );
     }
 
     // Add live sessions with pulsing animation
     for (var session in widget.liveSessions) {
-      allItems.add(_StoryItem(
-        type: _StoryItemType.liveSession,
-        session: session,
-        onTap: () => widget.onSessionTap?.call(session),
-      ));
+      allItems.add(
+        _StoryItem(
+          type: _StoryItemType.liveSession,
+          session: session,
+          onTap: () => widget.onSessionTap?.call(session),
+        ),
+      );
     }
 
     // Always show the stories bar, even if only "Your Story" button exists
@@ -135,7 +138,11 @@ class _StoriesBarState extends State<StoriesBar>
     );
   }
 
-  Widget _buildStoryCircle(BuildContext context, ThemeData theme, _StoryItem item) {
+  Widget _buildStoryCircle(
+    BuildContext context,
+    ThemeData theme,
+    _StoryItem item,
+  ) {
     switch (item.type) {
       case _StoryItemType.addStory:
         return _buildAddStoryCircle(theme);
@@ -163,18 +170,15 @@ class _StoriesBarState extends State<StoriesBar>
           shape: BoxShape.circle,
           color: theme.colorScheme.surface,
         ),
-        child: Icon(
-          Icons.add,
-          color: AppTheme.primaryColor,
-          size: 28,
-        ),
+        child: Icon(Icons.add, color: AppTheme.primaryColor, size: 28),
       ),
     );
   }
 
   Widget _buildStoryCircleWidget(ThemeData theme, StoryModel story) {
-    final hasViewed = story.viewCount > 0; // Simplified - should check if current user viewed
-    
+    final hasViewed =
+        story.viewCount > 0; // Simplified - should check if current user viewed
+
     return Container(
       width: 70,
       height: 70,
@@ -190,9 +194,7 @@ class _StoriesBarState extends State<StoriesBar>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-        color: hasViewed
-            ? theme.colorScheme.onSurface.withOpacity(0.2)
-            : null,
+        color: hasViewed ? theme.colorScheme.onSurface.withOpacity(0.2) : null,
       ),
       child: Container(
         margin: const EdgeInsets.all(3),
@@ -209,7 +211,9 @@ class _StoriesBarState extends State<StoriesBar>
         child: story.userAvatarUrl == null
             ? Center(
                 child: Text(
-                  story.userName.isNotEmpty ? story.userName[0].toUpperCase() : '?',
+                  story.userName.isNotEmpty
+                      ? story.userName[0].toUpperCase()
+                      : '?',
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -232,16 +236,15 @@ class _StoriesBarState extends State<StoriesBar>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [
-                Colors.red,
-                Colors.red.withOpacity(0.6),
-              ],
+              colors: [Colors.red, Colors.red.withOpacity(0.6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.red.withOpacity(0.3 + (_pulseController.value * 0.3)),
+                color: Colors.red.withOpacity(
+                  0.3 + (_pulseController.value * 0.3),
+                ),
                 blurRadius: 10 + (_pulseController.value * 10),
                 spreadRadius: 2 + (_pulseController.value * 2),
               ),
@@ -296,11 +299,5 @@ class _StoryItem {
   final VideoSessionModel? session;
   final VoidCallback? onTap;
 
-  _StoryItem({
-    required this.type,
-    this.story,
-    this.session,
-    this.onTap,
-  });
+  _StoryItem({required this.type, this.story, this.session, this.onTap});
 }
-

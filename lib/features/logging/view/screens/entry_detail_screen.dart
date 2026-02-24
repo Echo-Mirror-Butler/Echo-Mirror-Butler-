@@ -12,10 +12,7 @@ import '../../viewmodel/providers/logging_provider.dart';
 class EntryDetailScreen extends ConsumerWidget {
   final LogEntryModel entry;
 
-  const EntryDetailScreen({
-    super.key,
-    required this.entry,
-  });
+  const EntryDetailScreen({super.key, required this.entry});
 
   IconData _getMoodIcon(int mood) {
     switch (mood) {
@@ -56,9 +53,7 @@ class EntryDetailScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Entry'),
-      ),
+      appBar: AppBar(title: const Text('Log Entry')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -94,7 +89,9 @@ class EntryDetailScreen extends ConsumerWidget {
                           Text(
                             'Date',
                             style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.6,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -127,8 +124,7 @@ class EntryDetailScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _getMoodColor(entry.mood!)
-                              .withOpacity(0.1),
+                          color: _getMoodColor(entry.mood!).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -145,8 +141,9 @@ class EntryDetailScreen extends ConsumerWidget {
                             Text(
                               'Mood',
                               style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.6),
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -217,8 +214,8 @@ class EntryDetailScreen extends ConsumerWidget {
                         children: entry.habits.map((habit) {
                           return Chip(
                             label: Text(habit),
-                            backgroundColor:
-                                AppTheme.secondaryColor.withOpacity(0.1),
+                            backgroundColor: AppTheme.secondaryColor
+                                .withOpacity(0.1),
                             labelStyle: TextStyle(
                               color: AppTheme.secondaryColor,
                               fontWeight: FontWeight.w600,
@@ -276,10 +273,7 @@ class EntryDetailScreen extends ConsumerWidget {
                         ),
                       )
                     else
-                      Text(
-                        entry.notes!,
-                        style: theme.textTheme.bodyLarge,
-                      ),
+                      Text(entry.notes!, style: theme.textTheme.bodyLarge),
                   ],
                 ),
               ),
@@ -344,9 +338,7 @@ class EntryDetailScreen extends ConsumerWidget {
                 }
               }
             },
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.errorColor,
-            ),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
             child: const Text('Delete'),
           ),
         ],
@@ -354,4 +346,3 @@ class EntryDetailScreen extends ConsumerWidget {
     );
   }
 }
-

@@ -39,7 +39,7 @@ class MoodAnalyticsModel {
     final average = moodsWithValues.isEmpty
         ? 0.0
         : moodsWithValues.map((e) => e.mood!).reduce((a, b) => a + b) /
-            moodsWithValues.length;
+              moodsWithValues.length;
 
     // Calculate mood distribution
     final distribution = <int, int>{};
@@ -53,22 +53,38 @@ class MoodAnalyticsModel {
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
     // Weekly trend (last 7 days)
-    final weeklyEntries = entries
-        .where((e) => e.date.isAfter(sevenDaysAgo) || e.date.isAtSameMomentAs(sevenDaysAgo))
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final weeklyEntries =
+        entries
+            .where(
+              (e) =>
+                  e.date.isAfter(sevenDaysAgo) ||
+                  e.date.isAtSameMomentAs(sevenDaysAgo),
+            )
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
     final weeklyTrend = _calculateTrend(weeklyEntries, 7);
 
     // Monthly trend (last 30 days)
-    final monthlyEntries = entries
-        .where((e) => e.date.isAfter(thirtyDaysAgo) || e.date.isAtSameMomentAs(thirtyDaysAgo))
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final monthlyEntries =
+        entries
+            .where(
+              (e) =>
+                  e.date.isAfter(thirtyDaysAgo) ||
+                  e.date.isAtSameMomentAs(thirtyDaysAgo),
+            )
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
     final monthlyTrend = _calculateTrend(monthlyEntries, 30);
 
     // Calculate weekly and monthly averages
-    final weeklyMoods = weeklyEntries.where((e) => e.mood != null).map((e) => e.mood!).toList();
-    final monthlyMoods = monthlyEntries.where((e) => e.mood != null).map((e) => e.mood!).toList();
+    final weeklyMoods = weeklyEntries
+        .where((e) => e.mood != null)
+        .map((e) => e.mood!)
+        .toList();
+    final monthlyMoods = monthlyEntries
+        .where((e) => e.mood != null)
+        .map((e) => e.mood!)
+        .toList();
 
     final weeklyAvg = weeklyMoods.isEmpty
         ? null
@@ -81,8 +97,12 @@ class MoodAnalyticsModel {
     int? bestMood;
     int? worstMood;
     if (moodsWithValues.isNotEmpty) {
-      bestMood = moodsWithValues.map((e) => e.mood!).reduce((a, b) => a > b ? a : b);
-      worstMood = moodsWithValues.map((e) => e.mood!).reduce((a, b) => a < b ? a : b);
+      bestMood = moodsWithValues
+          .map((e) => e.mood!)
+          .reduce((a, b) => a > b ? a : b);
+      worstMood = moodsWithValues
+          .map((e) => e.mood!)
+          .reduce((a, b) => a < b ? a : b);
     }
 
     return MoodAnalyticsModel(
@@ -107,23 +127,20 @@ class MoodAnalyticsModel {
     final now = DateTime.now();
 
     for (int i = days - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: i));
+      final date = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: i));
       final normalizedDate = DateTime(date.year, date.month, date.day);
 
       // Find entry for this date
-      final entry = entries.firstWhere(
-        (e) {
-          final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
-          return entryDate.isAtSameMomentAs(normalizedDate);
-        },
-        orElse: () => MoodEntry(date: normalizedDate, mood: null),
-      );
+      final entry = entries.firstWhere((e) {
+        final entryDate = DateTime(e.date.year, e.date.month, e.date.day);
+        return entryDate.isAtSameMomentAs(normalizedDate);
+      }, orElse: () => MoodEntry(date: normalizedDate, mood: null));
 
-      trend.add(MoodDataPoint(
-        date: normalizedDate,
-        mood: entry.mood,
-      ));
+      trend.add(MoodDataPoint(date: normalizedDate, mood: entry.mood));
     }
 
     return trend;
@@ -135,10 +152,7 @@ class MoodDataPoint {
   final DateTime date;
   final int? mood;
 
-  const MoodDataPoint({
-    required this.date,
-    this.mood,
-  });
+  const MoodDataPoint({required this.date, this.mood});
 }
 
 /// Entry with mood value for analytics
@@ -146,9 +160,5 @@ class MoodEntry {
   final DateTime date;
   final int? mood;
 
-  const MoodEntry({
-    required this.date,
-    this.mood,
-  });
+  const MoodEntry({required this.date, this.mood});
 }
-

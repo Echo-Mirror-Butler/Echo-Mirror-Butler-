@@ -9,11 +9,7 @@ class InsightCard extends StatelessWidget {
   final InsightModel insight;
   final VoidCallback? onTap;
 
-  const InsightCard({
-    super.key,
-    required this.insight,
-    this.onTap,
-  });
+  const InsightCard({super.key, required this.insight, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -28,20 +24,11 @@ class InsightCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [
-                  color.withOpacity(0.15),
-                  color.withOpacity(0.05),
-                ]
-              : [
-                  Colors.white,
-                  color.withOpacity(0.03),
-                ],
+              ? [color.withOpacity(0.15), color.withOpacity(0.05)]
+              : [Colors.white, color.withOpacity(0.03)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: isDark
@@ -71,10 +58,7 @@ class InsightCard extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            color,
-                            color.withOpacity(0.7),
-                          ],
+                          colors: [color, color.withOpacity(0.7)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
@@ -110,7 +94,9 @@ class InsightCard extends StatelessWidget {
                           Text(
                             DateFormatter.formatDate(insight.date),
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.5),
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.5,
+                              ),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
