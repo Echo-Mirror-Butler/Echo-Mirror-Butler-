@@ -1,0 +1,18 @@
+gift:
+  - getEchoBalance:
+  - sendGift:
+  - getGiftHistory:
+  - awardEcho:
+global:
+  - streamMoodPins:
+  - addMoodPin:
+  - uploadVideo:
+  - uploadImage:
+  - getVideoFeed:
+  - addComment:
+  - getCommentsForPin:
+  - generateClusterEncouragement:
+passwordReset:
+  - requestPasswordReset:
+  - resetPassword:
+  - changePassword:

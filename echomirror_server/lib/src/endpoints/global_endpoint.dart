@@ -3,8 +3,12 @@ import 'dart:typed_data';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 
-/// Endpoint for Global Mirror feature - mood pins, videos, comments
 class GlobalEndpoint extends Endpoint {
+  int? _getUserId(Session session) {
+    final userIdentifier = session.authenticated?.userIdentifier;
+    if (userIdentifier == null) return null;
+    return userIdentifier.hashCode.abs();
+  }
   /// Stream mood pins in real-time
   Stream<List<MoodPin>> streamMoodPins(Session session) async* {
     // Initial fetch
@@ -23,7 +27,7 @@ class GlobalEndpoint extends Endpoint {
     final now = DateTime.now();
     return await MoodPin.db.find(
       session,
-      where: (t) => t.expiresAt.greaterThan(now),
+      where: (t) => t.expiresAt > now,
       orderBy: (t) => t.timestamp,
       orderDescending: true,
       limit: 100,
@@ -41,7 +45,7 @@ class GlobalEndpoint extends Endpoint {
     final gridLat = (latitude * 100).round() / 100.0;
     final gridLon = (longitude * 100).round() / 100.0;
 
-    final userId = await session.auth.authenticatedUserId;
+    final userId = _getUserId(session);
 
     final pin = MoodPin(
       sentiment: sentiment,
@@ -68,7 +72,7 @@ class GlobalEndpoint extends Endpoint {
     ByteData videoData,
     String moodTag,
   ) async {
-    final userId = await session.auth.authenticatedUserId;
+    final userId = _getUserId(session);
 
     // Store video (in production, use cloud storage)
     final bytes = videoData.buffer.asUint8List();
@@ -102,7 +106,7 @@ class GlobalEndpoint extends Endpoint {
     ByteData imageData,
     String moodTag,
   ) async {
-    final userId = await session.auth.authenticatedUserId;
+    final userId = _getUserId(session);
 
     final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final imageUrl = 'local://$fileName';
@@ -134,7 +138,7 @@ class GlobalEndpoint extends Endpoint {
     final now = DateTime.now();
     return await VideoPost.db.find(
       session,
-      where: (t) => t.expiresAt.greaterThan(now),
+      where: (t) => t.expiresAt > now,
       orderBy: (t) => t.timestamp,
       orderDescending: true,
       offset: offset,
@@ -148,7 +152,7 @@ class GlobalEndpoint extends Endpoint {
     int moodPinId,
     String text,
   ) async {
-    final userId = await session.auth.authenticatedUserId;
+    final userId = _getUserId(session);
 
     final comment = MoodPinComment(
       moodPinId: moodPinId,
@@ -221,7 +225,7 @@ class GlobalEndpoint extends Endpoint {
       );
       await EchoWallet.db.insertRow(session, wallet);
     } else {
-      wallet.balance += amount;
+      wallet = wallet.copyWith(balance: wallet.balance + amount);
       await EchoWallet.db.updateRow(session, wallet);
     }
   }
