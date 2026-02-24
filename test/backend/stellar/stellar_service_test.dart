@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../backend/stellar/stellar_service.dart';
 import '../../../backend/stellar/echo_token.dart';
 
+@Tags(['integration'])
 /// Unit tests for [StellarService] on Stellar testnet.
 ///
 /// These tests verify the core Stellar logic works correctly:
