@@ -1,0 +1,22 @@
+# AiInsight model for Gemini AI insights
+class: AiInsight
+
+# This class represents AI-generated insights (not a database table)
+# It's a serializable class that can be returned from endpoints
+fields:
+  ### The prediction text about future outcomes
+  prediction: String
+  ### List of actionable habit suggestions
+  suggestions: List<String>
+  ### A motivational letter from "future me"
+  futureLetter: String
+  ### When this insight was generated
+  generatedAt: DateTime
+  ### Stress level detected (0-5, where 0=no stress, 5=high stress)
+  ### Based on patterns like excessive working without rest/sleep
+  stressLevel: int?
+  ### Personalized calming message from future self for stress detection
+  calmingMessage: String?
+  ### Music recommendations with vibe descriptions
+  musicRecommendations: List<String>?
+

@@ -1,0 +1,23 @@
+class: ScheduledSession
+table: scheduled_sessions
+fields:
+  hostId: String
+  hostName: String
+  hostAvatarUrl: String?
+  title: String
+  description: String?
+  scheduledTime: DateTime
+  createdAt: DateTime
+  isVideoEnabled: bool
+  isVoiceOnly: bool
+  isNotified: bool, default=false
+  isCancelled: bool, default=false
+  actualSessionId: String?
+indexes:
+  scheduled_time_idx:
+    fields: scheduledTime
+  scheduled_host_id_idx:
+    fields: hostId
+  is_notified_idx:
+    fields: isNotified
+
