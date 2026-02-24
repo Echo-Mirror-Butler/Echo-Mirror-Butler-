@@ -1,0 +1,14 @@
+class: UserMoodPin
+table: user_mood_pins
+fields:
+  userId: int
+  moodPinId: int
+  createdAt: DateTime
+indexes:
+  user_mood_pin_user_idx:
+    fields: userId
+  user_mood_pin_mood_pin_idx:
+    fields: moodPinId
+  user_mood_pin_unique_idx:
+    unique: true
+    fields: userId, moodPinId
