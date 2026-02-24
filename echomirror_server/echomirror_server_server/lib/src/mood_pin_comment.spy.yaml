@@ -1,0 +1,14 @@
+class: MoodPinComment
+table: mood_pin_comments
+fields:
+  moodPinId: int
+  userId: int?
+  text: String
+  timestamp: DateTime
+indexes:
+  mood_pin_comment_mood_pin_idx:
+    fields: moodPinId
+  mood_pin_comment_user_idx:
+    fields: userId
+  mood_pin_comment_timestamp_idx:
+    fields: timestamp

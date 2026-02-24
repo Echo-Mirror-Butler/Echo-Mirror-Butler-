@@ -1,0 +1,13 @@
+class: MoodPin
+table: mood_pins
+fields:
+  sentiment: String
+  gridLat: double
+  gridLon: double
+  timestamp: DateTime
+  expiresAt: DateTime?
+indexes:
+  mood_pin_timestamp_idx:
+    fields: timestamp
+  mood_pin_expires_idx:
+    fields: expiresAt
