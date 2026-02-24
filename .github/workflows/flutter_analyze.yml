@@ -16,7 +16,7 @@ jobs:
       - name: Checkout server repo
         uses: actions/checkout@v4
         with:
-          repository: Echo-Mirror-Butler/echomirror_server
+          repository: akintewe/echomirror-server
           path: .server
 
       - uses: subosito/flutter-action@v2

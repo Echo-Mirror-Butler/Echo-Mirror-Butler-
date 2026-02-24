@@ -51,7 +51,7 @@ You must clone the server repo into `.server/` inside the app repo before runnin
 ```bash
 git clone https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-.git
 cd Echo-Mirror-Butler-
-git clone https://github.com/Echo-Mirror-Butler/echomirror_server .server
+git clone https://github.com/akintewe/echomirror-server .server
 flutter pub get
 ```
 
