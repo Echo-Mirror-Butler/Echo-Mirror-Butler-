@@ -12,9 +12,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The app depends on echomirror_server_client via a path dependency
+      # (.server/echomirror_server_client). Clone the server repo into .server/
+      # so the path resolves on CI. Locally, symlink or clone there too:
+      #   git clone https://github.com/akintewe/echomirror-server .server
+      - name: Checkout server repo
+        uses: actions/checkout@v4
+        with:
+          repository: akintewe/echomirror-server
+          path: .server
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.8'
           channel: stable
           cache: true
 
