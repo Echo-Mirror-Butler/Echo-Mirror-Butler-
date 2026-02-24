@@ -1,0 +1,27 @@
+# Serverpod model for UserWallet
+table: user_wallets
+fields:
+  userId:
+    type: int
+    nullable: false
+  echoBalance:
+    type: double
+    nullable: false
+    default: 0.0
+  stellarPublicKey:
+    type: String
+    nullable: true
+    length: 56
+  createdAt:
+    type: DateTime
+    nullable: false
+    default: 'now()'
+  updatedAt:
+    type: DateTime
+    nullable: false
+    default: 'now()'
+
+indexes:
+  - name: user_wallets_user_id_idx
+    fields: [userId]
+    unique: true

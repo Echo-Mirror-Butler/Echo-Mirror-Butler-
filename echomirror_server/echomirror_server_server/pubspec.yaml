@@ -1,0 +1,14 @@
+name: echomirror_server_server
+description: EchoMirror Serverpod server
+version: 1.0.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  serverpod: ^3.0.0
+  serverpod_auth_server: ^3.0.0
+
+dev_dependencies:
+  serverpod_cli: ^3.0.0
+  lints: ^3.0.0
