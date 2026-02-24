@@ -1,0 +1,11 @@
+name: echomirror_server_client
+description: Client package for echomirror_server
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  serverpod_client: ^3.0.1
+  serverpod_auth_idp_client: ^3.0.1
