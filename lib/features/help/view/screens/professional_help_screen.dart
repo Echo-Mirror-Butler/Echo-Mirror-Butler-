@@ -11,21 +11,23 @@ class ProfessionalHelpScreen extends ConsumerStatefulWidget {
   const ProfessionalHelpScreen({super.key});
 
   @override
-  ConsumerState<ProfessionalHelpScreen> createState() => _ProfessionalHelpScreenState();
+  ConsumerState<ProfessionalHelpScreen> createState() =>
+      _ProfessionalHelpScreenState();
 }
 
-class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen> {
+class _ProfessionalHelpScreenState
+    extends ConsumerState<ProfessionalHelpScreen> {
   String _selectedCategory = 'general';
   bool _isLoadingRecommendations = false;
   String? _aiRecommendation;
-  
+
   // AI Chat Butler
   bool _isChatOpen = false;
   final List<Map<String, String>> _chatMessages = [];
   final TextEditingController _chatController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
   bool _isSendingMessage = false;
-  
+
   @override
   void dispose() {
     _chatController.dispose();
@@ -139,35 +141,39 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
 
     try {
       // Provide personalized recommendations based on category
-      final response = 'Seeking professional help is a sign of strength. '
+      final response =
+          'Seeking professional help is a sign of strength. '
           'A mental health professional can provide personalized support and '
           'evidence-based treatments tailored to your specific needs.';
-      
+
       setState(() {
         _aiRecommendation = response;
         _isLoadingRecommendations = false;
       });
     } catch (e) {
-      debugPrint('[ProfessionalHelpScreen] Error getting AI recommendations: $e');
+      debugPrint(
+        '[ProfessionalHelpScreen] Error getting AI recommendations: $e',
+      );
       setState(() {
-        _aiRecommendation = 'Seeking professional help is a sign of strength. '
+        _aiRecommendation =
+            'Seeking professional help is a sign of strength. '
             'A mental health professional can provide personalized support and '
             'evidence-based treatments tailored to your specific needs.';
         _isLoadingRecommendations = false;
       });
     }
   }
-  
+
   Future<void> _sendChatMessage(String message) async {
     if (message.trim().isEmpty) return;
-    
+
     setState(() {
       _chatMessages.add({'role': 'user', 'content': message});
       _isSendingMessage = true;
     });
-    
+
     _chatController.clear();
-    
+
     // Scroll to bottom
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_chatScrollController.hasClients) {
@@ -178,23 +184,27 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
         );
       }
     });
-    
+
     try {
       // Get AI repository and generate response using Gemini
       final aiRepository = ref.read(aiRepositoryProvider);
-      
+
       // Create context about the current category
-      final context = 'The user is viewing the ${_helpCategories[_selectedCategory]!['title']} category on the Need Help screen. '
+      final context =
+          'The user is viewing the ${_helpCategories[_selectedCategory]!['title']} category on the Need Help screen. '
           'They have access to professional mental health resources including hotlines, therapy platforms, and support services.';
-      
+
       // Call Gemini to generate a free-form response
-      final response = await aiRepository.generateChatResponse(message, context: context);
-      
+      final response = await aiRepository.generateChatResponse(
+        message,
+        context: context,
+      );
+
       setState(() {
         _chatMessages.add({'role': 'assistant', 'content': response});
         _isSendingMessage = false;
       });
-      
+
       // Scroll to bottom after AI response
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_chatScrollController.hasClients) {
@@ -210,9 +220,10 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
       setState(() {
         _chatMessages.add({
           'role': 'assistant',
-          'content': 'I apologize, but I\'m having trouble responding right now. '
+          'content':
+              'I apologize, but I\'m having trouble responding right now. '
               'Please try again in a moment, or reach out to one of the crisis hotlines '
-              'listed above if you need immediate support.'
+              'listed above if you need immediate support.',
         });
         _isSendingMessage = false;
       });
@@ -234,9 +245,9 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
     } catch (e) {
       debugPrint('[ProfessionalHelpScreen] Error launching URL: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error opening resource')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Error opening resource')));
       }
     }
   }
@@ -257,267 +268,280 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
           backgroundColor: Theme.of(context).colorScheme.surface,
           floatingActionButton: !_isChatOpen ? _buildChatButton() : null,
           appBar: AppBar(
-        title: Text(
-          'Need Help?',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      resizeToAvoidBottomInset: true,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with message
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(
-                      Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.1,
-                    ),
-                    Theme.of(context).colorScheme.secondary.withOpacity(
-                      Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.1,
-                    ),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    FontAwesomeIcons.handHoldingHeart,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'You\'re Not Alone',
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Seeking help is a courageous step. We\'re here to connect you with professional support.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+            title: Text(
+              'Need Help?',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
-
-            const SizedBox(height: 24),
-
-            // Category selection
-            Text(
-              'What do you need help with?',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: _helpCategories.entries.map((entry) {
-                final isSelected = _selectedCategory == entry.key;
-                final categoryData = entry.value;
-                
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedCategory = entry.key);
-                    _getAIRecommendations();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? categoryData['color']
-                          : Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? categoryData['color']
-                            : Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                        width: 2,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: (categoryData['color'] as Color)
-                                    .withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          categoryData['icon'] as IconData,
-                          color: isSelected
-                              ? Colors.white
-                              : categoryData['color'],
-                          size: 20,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+          ),
+          resizeToAvoidBottomInset: true,
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with message
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).colorScheme.primary.withOpacity(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? 0.2
+                              : 0.1,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          categoryData['title'] as String,
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w500,
-                            color: isSelected
-                                ? Colors.white
-                                : Theme.of(context).colorScheme.onSurface,
-                          ),
+                        Theme.of(context).colorScheme.secondary.withOpacity(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? 0.2
+                              : 0.1,
                         ),
                       ],
                     ),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 24),
-
-            // AI Recommendations
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: Theme.of(context).brightness == Brightness.dark
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                  child: Column(
                     children: [
                       Icon(
-                        FontAwesomeIcons.wandMagicSparkles,
-                        size: 18,
+                        FontAwesomeIcons.handHoldingHeart,
+                        size: 48,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(height: 16),
                       Text(
-                        'AI-Powered Recommendation',
+                        'You\'re Not Alone',
                         style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Seeking help is a courageous step. We\'re here to connect you with professional support.',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  _isLoadingRecommendations
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      : Text(
-                          _aiRecommendation ??
-                              'Loading personalized recommendations...',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                            height: 1.5,
-                          ),
-                        ),
-                ],
-              ),
-            ),
+                ),
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-            // Resources list
-            Text(
-              'Recommended Resources',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onBackground,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            ...resources.map((resource) => _buildResourceCard(resource)),
-
-            // Emergency notice
-            if (_selectedCategory == 'crisis') ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.red.shade900.withOpacity(0.3)
-                      : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.red.shade700
-                        : Colors.red.shade200,
+                // Category selection
+                Text(
+                  'What do you need help with?',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onBackground,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      FontAwesomeIcons.triangleExclamation,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.red.shade400
-                          : Colors.red.shade700,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'If you\'re in immediate danger, please call 911 or go to your nearest emergency room.',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.red.shade300
-                              : Colors.red.shade900,
-                          fontWeight: FontWeight.w500,
+                const SizedBox(height: 12),
+
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: _helpCategories.entries.map((entry) {
+                    final isSelected = _selectedCategory == entry.key;
+                    final categoryData = entry.value;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedCategory = entry.key);
+                        _getAIRecommendations();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? categoryData['color']
+                              : Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? categoryData['color']
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.outline.withOpacity(0.3),
+                            width: 2,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: (categoryData['color'] as Color)
+                                        .withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              categoryData['icon'] as IconData,
+                              color: isSelected
+                                  ? Colors.white
+                                  : categoryData['color'],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              categoryData['title'] as String,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
-              ),
-            ],
-          ],
-        ),
-      ),
+
+                const SizedBox(height: 24),
+
+                // AI Recommendations
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: Theme.of(context).brightness == Brightness.dark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            FontAwesomeIcons.wandMagicSparkles,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'AI-Powered Recommendation',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _isLoadingRecommendations
+                          ? const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          : Text(
+                              _aiRecommendation ??
+                                  'Loading personalized recommendations...',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.8),
+                                height: 1.5,
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Resources list
+                Text(
+                  'Recommended Resources',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                ...resources.map((resource) => _buildResourceCard(resource)),
+
+                // Emergency notice
+                if (_selectedCategory == 'crisis') ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.red.shade900.withOpacity(0.3)
+                          : Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.red.shade700
+                            : Colors.red.shade200,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          FontAwesomeIcons.triangleExclamation,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.red.shade400
+                              : Colors.red.shade700,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'If you\'re in immediate danger, please call 911 or go to your nearest emergency room.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.red.shade300
+                                  : Colors.red.shade900,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
         // Chat overlay
         if (_isChatOpen) _buildChatOverlay(),
@@ -589,11 +613,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: 24,
-                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -631,7 +651,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
       ),
     );
   }
-  
+
   Widget _buildChatButton() {
     return FloatingActionButton.extended(
       onPressed: () {
@@ -640,7 +660,8 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
           if (_chatMessages.isEmpty) {
             _chatMessages.add({
               'role': 'assistant',
-              'content': 'Hello! I\'m your EchoMirror AI assistant. I\'m here to help you find the right mental health support. How can I assist you today?'
+              'content':
+                  'Hello! I\'m your EchoMirror AI assistant. I\'m here to help you find the right mental health support. How can I assist you today?',
             });
           }
         });
@@ -659,7 +680,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
       ),
     );
   }
-  
+
   Widget _buildChatOverlay() {
     final theme = Theme.of(context);
     return Material(
@@ -693,7 +714,9 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -729,14 +752,19 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                             'Here to help you find support',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                              color: theme.colorScheme.onPrimary.withOpacity(
+                                0.8,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, color: theme.colorScheme.onPrimary),
+                      icon: Icon(
+                        Icons.close,
+                        color: theme.colorScheme.onPrimary,
+                      ),
                       onPressed: () {
                         setState(() {
                           _isChatOpen = false;
@@ -746,7 +774,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                   ],
                 ),
               ),
-              
+
               // Chat messages
               Expanded(
                 child: ListView.builder(
@@ -755,20 +783,25 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                     left: 16,
                     right: 16,
                     top: 16,
-                    bottom: MediaQuery.of(context).viewInsets.bottom > 0 
-                        ? MediaQuery.of(context).viewInsets.bottom + 8 
+                    bottom: MediaQuery.of(context).viewInsets.bottom > 0
+                        ? MediaQuery.of(context).viewInsets.bottom + 8
                         : 16,
                   ),
                   itemCount: _chatMessages.length,
                   itemBuilder: (context, index) {
                     final message = _chatMessages[index];
                     final isUser = message['role'] == 'user';
-                    
+
                     return Align(
-                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: isUser
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.7,
                         ),
@@ -782,7 +815,7 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                           message['content']!,
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: isUser 
+                            color: isUser
                                 ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
@@ -792,15 +825,21 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                   },
                 ),
               ),
-              
+
               // Typing indicator
               if (_isSendingMessage)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(16),
@@ -831,15 +870,15 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
                     ),
                   ),
                 ),
-              
+
               // Input field
               Container(
                 padding: EdgeInsets.only(
                   left: 16,
                   right: 16,
                   top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom > 0 
-                      ? MediaQuery.of(context).viewInsets.bottom + 8 
+                  bottom: MediaQuery.of(context).viewInsets.bottom > 0
+                      ? MediaQuery.of(context).viewInsets.bottom + 8
                       : 16,
                 ),
                 decoration: BoxDecoration(
@@ -941,4 +980,3 @@ class _ProfessionalHelpScreenState extends ConsumerState<ProfessionalHelpScreen>
     );
   }
 }
-

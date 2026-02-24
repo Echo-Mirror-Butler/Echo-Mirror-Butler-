@@ -19,7 +19,8 @@ class SocialsScreen extends ConsumerStatefulWidget {
   ConsumerState<SocialsScreen> createState() => _SocialsScreenState();
 }
 
-class _SocialsScreenState extends ConsumerState<SocialsScreen> with WidgetsBindingObserver {
+class _SocialsScreenState extends ConsumerState<SocialsScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -101,17 +102,21 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen> with WidgetsBindi
                 },
                 onStoryTap: (story) {
                   // Filter stories to show only this user's stories (like Instagram)
-                  final userStories = socialsState.stories
-                      .where((s) => s.userId == story.userId)
-                      .toList()
-                    ..sort((a, b) => b.createdAt.compareTo(a.createdAt)); // Most recent first
-                  
+                  final userStories =
+                      socialsState.stories
+                          .where((s) => s.userId == story.userId)
+                          .toList()
+                        ..sort(
+                          (a, b) => b.createdAt.compareTo(a.createdAt),
+                        ); // Most recent first
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => StoryViewerScreen(
                         stories: userStories,
-                        initialIndex: 0, // Always start at the first (most recent) story
+                        initialIndex:
+                            0, // Always start at the first (most recent) story
                       ),
                     ),
                   ).then((_) {
@@ -224,9 +229,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen> with WidgetsBindi
           ),
           const SizedBox(height: 16),
           ...state.activeSessions.map((session) {
-            return FadeInUp(
-              child: _buildSessionCard(session, theme),
-            );
+            return FadeInUp(child: _buildSessionCard(session, theme));
           }).toList(),
         ],
       ),
@@ -237,9 +240,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen> with WidgetsBindi
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -311,7 +312,10 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen> with WidgetsBindi
               ),
               // Join Button
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor,
                   borderRadius: BorderRadius.circular(20),
@@ -377,9 +381,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen> with WidgetsBindi
 class _StartSessionBottomSheet extends StatefulWidget {
   final Function(String title, bool isVoiceOnly) onCreateSession;
 
-  const _StartSessionBottomSheet({
-    required this.onCreateSession,
-  });
+  const _StartSessionBottomSheet({required this.onCreateSession});
 
   @override
   State<_StartSessionBottomSheet> createState() =>
@@ -598,9 +600,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.primaryColor,
-                  ),
+                  border: Border.all(color: AppTheme.primaryColor),
                 ),
                 child: Row(
                   children: [
@@ -644,7 +644,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                   );
                   return;
                 }
-                
+
                 if (_scheduleForLater && _scheduledTime == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -661,7 +661,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                   // TODO: Call schedule session endpoint
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Session scheduled for ${_scheduledTime!.day}/${_scheduledTime!.month} at ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}'),
+                      content: Text(
+                        'Session scheduled for ${_scheduledTime!.day}/${_scheduledTime!.month} at ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                      ),
                       backgroundColor: AppTheme.successColor,
                     ),
                   );
@@ -696,4 +698,3 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
     );
   }
 }
-

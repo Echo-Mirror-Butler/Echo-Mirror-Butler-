@@ -31,9 +31,9 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking images: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking images: $e')));
       }
     }
   }
@@ -48,9 +48,9 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error taking photo: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error taking photo: $e')));
       }
     }
   }
@@ -81,7 +81,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       // Upload images to server first
       final repository = ref.read(socialsRepositoryProvider);
       final List<String> imageUrls = [];
-      
+
       for (var imageFile in _selectedImages) {
         try {
           final imageUrl = await repository.uploadStoryImage(imageFile, userId);
@@ -103,7 +103,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
           return; // Stop if any image fails to upload
         }
       }
-      
+
       if (imageUrls.isEmpty) {
         throw Exception('No images were successfully uploaded');
       }
@@ -248,10 +248,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
           Text(
             'Select multiple images from your gallery\nor take a photo with your camera',
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.black54,
-            ),
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.black54),
           ),
         ],
       ),
@@ -290,11 +287,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 16),
                 ),
               ),
             ),
@@ -337,4 +330,3 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
     );
   }
 }
-

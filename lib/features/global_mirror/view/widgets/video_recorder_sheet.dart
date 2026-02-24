@@ -57,9 +57,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error recording video: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error recording video: $e')));
       }
     }
   }
@@ -68,27 +68,31 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
     debugPrint('[VideoRecorderSheet] Loading video preview: ${video.path}');
     // Dispose previous controller if any
     await _previewController?.dispose();
-    
+
     if (mounted) {
-    setState(() {
-      _selectedVideo = video;
+      setState(() {
+        _selectedVideo = video;
         _selectedImage = null; // Clear any selected image
         _isImage = false; // Mark as video
-      _previewController = null;
-    });
-      debugPrint('[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedVideo=${_selectedVideo?.path}');
+        _previewController = null;
+      });
+      debugPrint(
+        '[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedVideo=${_selectedVideo?.path}',
+      );
     }
 
     // Initialize video player for preview
     try {
       final controller = VideoPlayerController.file(File(video.path));
       await controller.initialize();
-      
+
       if (mounted) {
         setState(() {
           _previewController = controller;
         });
-        debugPrint('[VideoRecorderSheet] Video preview initialized successfully');
+        debugPrint(
+          '[VideoRecorderSheet] Video preview initialized successfully',
+        );
       }
     } catch (e, stackTrace) {
       debugPrint('[VideoRecorderSheet] Error loading video preview: $e');
@@ -122,35 +126,36 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
       if (video != null) {
         debugPrint('[VideoRecorderSheet] Video selected: ${video.path}');
-        
+
         // Check file size before loading preview
         final file = File(video.path);
         final fileSize = await file.length();
         const maxSize = 400 * 1024; // 400KB
-        
+
         if (fileSize > maxSize) {
           final sizeMB = (fileSize / (1024 * 1024)).toStringAsFixed(2);
           final sizeKB = (fileSize / 1024).toStringAsFixed(0);
           if (mounted) {
             setState(() {
               _isPickingMedia = false;
-              _fileSizeError = 'Video is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please choose a shorter video (8-10 seconds).';
+              _fileSizeError =
+                  'Video is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please choose a shorter video (8-10 seconds).';
             });
             _showFileSizeError();
           }
           return;
         }
-        
+
         await _loadVideoPreview(video);
         if (mounted) {
           setState(() {
             _isPickingMedia = false;
             _fileSizeError = null;
           });
-      }
+        }
       } else {
         debugPrint('[VideoRecorderSheet] No video selected (user cancelled)');
-      if (mounted) {
+        if (mounted) {
           setState(() {
             _isPickingMedia = false;
           });
@@ -188,28 +193,29 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       );
 
       debugPrint('[VideoRecorderSheet] Image picker returned: ${image?.path}');
-      
+
       if (image != null) {
         debugPrint('[VideoRecorderSheet] Image selected: ${image.path}');
-        
+
         // Check file size before setting state
         final file = File(image.path);
         final fileSize = await file.length();
         const maxSize = 400 * 1024; // 400KB
-        
+
         if (fileSize > maxSize) {
           final sizeMB = (fileSize / (1024 * 1024)).toStringAsFixed(2);
           final sizeKB = (fileSize / 1024).toStringAsFixed(0);
           if (mounted) {
             setState(() {
               _isPickingMedia = false;
-              _fileSizeError = 'Image is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please choose a smaller image.';
+              _fileSizeError =
+                  'Image is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please choose a smaller image.';
             });
             _showFileSizeError();
           }
           return;
         }
-        
+
         if (mounted) {
           setState(() {
             _selectedImage = image;
@@ -220,7 +226,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             _previewController?.dispose();
             _previewController = null;
           });
-          debugPrint('[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}');
+          debugPrint(
+            '[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}',
+          );
         }
       } else {
         debugPrint('[VideoRecorderSheet] No image selected (user cancelled)');
@@ -274,9 +282,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 5),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -295,28 +301,29 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       );
 
       debugPrint('[VideoRecorderSheet] Camera returned: ${image?.path}');
-      
+
       if (image != null) {
         debugPrint('[VideoRecorderSheet] Photo taken: ${image.path}');
-        
+
         // Check file size before setting state
         final file = File(image.path);
         final fileSize = await file.length();
         const maxSize = 400 * 1024; // 400KB
-        
+
         if (fileSize > maxSize) {
           final sizeMB = (fileSize / (1024 * 1024)).toStringAsFixed(2);
           final sizeKB = (fileSize / 1024).toStringAsFixed(0);
           if (mounted) {
             setState(() {
               _isPickingMedia = false;
-              _fileSizeError = 'Photo is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please take another photo.';
+              _fileSizeError =
+                  'Photo is too large ($sizeMB MB / $sizeKB KB). Maximum size is 400KB. Please take another photo.';
             });
             _showFileSizeError();
           }
           return;
         }
-        
+
         if (mounted) {
           setState(() {
             _selectedImage = image;
@@ -327,7 +334,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             _previewController?.dispose();
             _previewController = null;
           });
-          debugPrint('[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}');
+          debugPrint(
+            '[VideoRecorderSheet] State updated: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}',
+          );
         }
       } else {
         debugPrint('[VideoRecorderSheet] No photo taken (user cancelled)');
@@ -375,7 +384,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_isImage ? "Image" : "Video"} file not found. Please select again.'),
+            content: Text(
+              '${_isImage ? "Image" : "Video"} file not found. Please select again.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -388,20 +399,19 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
     });
 
     // Get the mood tag (custom or selected)
-    final moodTag = _isUsingCustomTag && _customTagController.text.trim().isNotEmpty
+    final moodTag =
+        _isUsingCustomTag && _customTagController.text.trim().isNotEmpty
         ? _customTagController.text.trim().toLowerCase()
         : _selectedMoodTag;
 
     try {
       final success = _isImage
-          ? await ref.read(globalMirrorProvider.notifier).uploadImage(
-                imagePath: _selectedImage!.path,
-                moodTag: moodTag,
-              )
-          : await ref.read(globalMirrorProvider.notifier).uploadVideo(
-            videoPath: _selectedVideo!.path,
-            moodTag: moodTag,
-          );
+          ? await ref
+                .read(globalMirrorProvider.notifier)
+                .uploadImage(imagePath: _selectedImage!.path, moodTag: moodTag)
+          : await ref
+                .read(globalMirrorProvider.notifier)
+                .uploadVideo(videoPath: _selectedVideo!.path, moodTag: moodTag);
 
       setState(() {
         _isUploading = false;
@@ -411,7 +421,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${_isImage ? "Image" : "Video"} shared successfully! 🎉'),
+              content: Text(
+                '${_isImage ? "Image" : "Video"} shared successfully! 🎉',
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
             ),
@@ -420,32 +432,37 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         } else {
           // Get error message from state if available
           final error = ref.read(globalMirrorProvider).error;
-          String errorMessage = error ?? 'Failed to upload ${_isImage ? "image" : "video"}.';
-          
+          String errorMessage =
+              error ?? 'Failed to upload ${_isImage ? "image" : "video"}.';
+
           // Check for specific error types
-          bool isFileSizeError = errorMessage.contains('524288') || 
+          bool isFileSizeError =
+              errorMessage.contains('524288') ||
               errorMessage.contains('Request size exceeds') ||
               errorMessage.contains('512KB') ||
               errorMessage.contains('400KB') ||
               errorMessage.contains('exceeds safe upload limit') ||
               errorMessage.contains('too large');
-          
-          bool isMethodNotFound = errorMessage.contains('Method not found') ||
+
+          bool isMethodNotFound =
+              errorMessage.contains('Method not found') ||
               errorMessage.contains('statusCode = 400') ||
               errorMessage.contains('Bad request');
-          
+
           if (isFileSizeError) {
-            errorMessage = 'File is too large (max 400KB). Please ${_isImage ? "choose a smaller image" : "record a shorter video (8-10 seconds)"}.';
+            errorMessage =
+                'File is too large (max 400KB). Please ${_isImage ? "choose a smaller image" : "record a shorter video (8-10 seconds)"}.';
           } else if (isMethodNotFound) {
-            errorMessage = 'Upload service is temporarily unavailable. Please try again in a moment.';
+            errorMessage =
+                'Upload service is temporarily unavailable. Please try again in a moment.';
           }
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
                 children: [
                   FaIcon(
-                    isFileSizeError 
+                    isFileSizeError
                         ? FontAwesomeIcons.fileCircleExclamation
                         : FontAwesomeIcons.triangleExclamation,
                     color: Colors.white,
@@ -478,7 +495,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       setState(() {
         _isUploading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -543,24 +560,18 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ShimmerLoading(
-                          width: 50,
-                          height: 50,
-                        ),
+                        ShimmerLoading(width: 50, height: 50),
                         SizedBox(height: 16),
                         Text(
                           'Loading media...',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
                         ),
                       ],
                     ),
                   )
                 : (_selectedVideo == null && _selectedImage == null)
-                    ? _buildRecordOptions()
-                    : _buildMediaPreview(),
+                ? _buildRecordOptions()
+                : _buildMediaPreview(),
           ),
         ],
       ),
@@ -663,10 +674,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.3),
-            width: 2,
-          ),
+          border: Border.all(color: color.withOpacity(0.3), width: 2),
         ),
         child: Row(
           children: [
@@ -701,11 +709,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                 ],
               ),
             ),
-            FaIcon(
-              FontAwesomeIcons.chevronRight,
-              color: color,
-              size: 20,
-            ),
+            FaIcon(FontAwesomeIcons.chevronRight, color: color, size: 20),
           ],
         ),
       ),
@@ -713,14 +717,18 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
   }
 
   Widget _buildMediaPreview() {
-    debugPrint('[VideoRecorderSheet] Building media preview: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}, _selectedVideo=${_selectedVideo?.path}');
+    debugPrint(
+      '[VideoRecorderSheet] Building media preview: _isImage=$_isImage, _selectedImage=${_selectedImage?.path}, _selectedVideo=${_selectedVideo?.path}',
+    );
     if (_isImage && _selectedImage != null) {
       return _buildImagePreview();
     } else if (_selectedVideo != null) {
       return _buildVideoPreview();
     } else {
       // Fallback: should not happen, but show record options if no media selected
-      debugPrint('[VideoRecorderSheet] WARNING: No media selected but preview was requested');
+      debugPrint(
+        '[VideoRecorderSheet] WARNING: No media selected but preview was requested',
+      );
       return _buildRecordOptions();
     }
   }
@@ -751,7 +759,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                     File(_selectedImage!.path),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      debugPrint('[VideoRecorderSheet] Error loading image: $error');
+                      debugPrint(
+                        '[VideoRecorderSheet] Error loading image: $error',
+                      );
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -774,12 +784,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                       );
                     },
                   )
-                : const Center(
-                    child: ShimmerLoading(
-                      width: 40,
-                      height: 40,
-                    ),
-                  ),
+                : const Center(child: ShimmerLoading(width: 40, height: 40)),
           ),
           const SizedBox(height: 24),
           // Rest of the preview UI (mood tags, upload button, etc.)
@@ -810,7 +815,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
               ],
             ),
             clipBehavior: Clip.antiAlias,
-            child: _previewController != null && _previewController!.value.isInitialized
+            child:
+                _previewController != null &&
+                    _previewController!.value.isInitialized
                 ? Stack(
                     fit: StackFit.expand,
                     children: [
@@ -868,235 +875,226 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
   List<Widget> _buildPreviewControls() {
     return [
-          // Mood tag selector
-          Text(
-            'Mood Tag',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+      // Mood tag selector
+      Text(
+        'Mood Tag',
+        style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 12),
+      // Custom tag option
+      if (_isUsingCustomTag)
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+              width: 2,
             ),
           ),
-          const SizedBox(height: 12),
-          // Custom tag option
-          if (_isUsingCustomTag)
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
-                  width: 2,
+          child: TextField(
+            controller: _customTagController,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: 'Type your mood tag...',
+              hintStyle: GoogleFonts.poppins(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: FaIcon(
+                  FontAwesomeIcons.hashtag,
+                  color: AppTheme.primaryColor,
+                  size: 18,
                 ),
               ),
-              child: TextField(
-                controller: _customTagController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'Type your mood tag...',
-                  hintStyle: GoogleFonts.poppins(
-                    color: Colors.grey[500],
-                    fontSize: 14,
-                  ),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: FaIcon(
-                      FontAwesomeIcons.hashtag,
-                      color: AppTheme.primaryColor,
-                      size: 18,
-                    ),
-                  ),
-                  suffixIcon: IconButton(
-                    icon: const FaIcon(FontAwesomeIcons.xmark, size: 16),
-                    color: Colors.grey[600],
-                    onPressed: () {
-                      setState(() {
-                        _isUsingCustomTag = false;
-                        _customTagController.clear();
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: AppTheme.primaryColor,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: Colors.transparent,
-                  contentPadding: const EdgeInsets.symmetric(
+              suffixIcon: IconButton(
+                icon: const FaIcon(FontAwesomeIcons.xmark, size: 16),
+                color: Colors.grey[600],
+                onPressed: () {
+                  setState(() {
+                    _isUsingCustomTag = false;
+                    _customTagController.clear();
+                  });
+                },
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+              ),
+              filled: true,
+              fillColor: Colors.transparent,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            textCapitalization: TextCapitalization.none,
+            onChanged: (value) {
+              setState(() {});
+            },
+          ),
+        )
+      else
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _isUsingCustomTag = true;
+                  });
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
                   ),
-                ),
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-                textCapitalization: TextCapitalization.none,
-                onChanged: (value) {
-                  setState(() {});
-                },
-              ),
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        _isUsingCustomTag = true;
-                      });
-                    },
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
+                    border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.hashtag,
+                        color: Colors.grey[600],
+                        size: 18,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1.5,
+                      const SizedBox(width: 12),
+                      Text(
+                        'Or type your own tag...',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.hashtag,
-                            color: Colors.grey[600],
-                            size: 18,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Or type your own tag...',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                          const Spacer(),
-                          FaIcon(
-                            FontAwesomeIcons.pencil,
-                            color: Colors.grey[600],
-                            size: 16,
-                          ),
-                        ],
+                      const Spacer(),
+                      FaIcon(
+                        FontAwesomeIcons.pencil,
+                        color: Colors.grey[600],
+                        size: 16,
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          if (!_isUsingCustomTag) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: _moodTags.map((tag) {
-                final isSelected = tag == _selectedMoodTag;
-                return ChoiceChip(
-                  label: Text(
-                    '#$tag',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() {
-                        _selectedMoodTag = tag;
-                        _isUsingCustomTag = false;
-                        _customTagController.clear();
-                      });
-                    }
-                  },
-                  selectedColor: AppTheme.primaryColor,
-                  backgroundColor: Colors.grey[200],
-                );
-              }).toList(),
+              ),
             ),
           ],
-          const SizedBox(height: 32),
-          // Buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () async {
-                    await _previewController?.dispose();
-                    setState(() {
-                      _selectedVideo = null;
+        ),
+      if (!_isUsingCustomTag) ...[
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: _moodTags.map((tag) {
+            final isSelected = tag == _selectedMoodTag;
+            return ChoiceChip(
+              label: Text(
+                '#$tag',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : Colors.black87,
+                ),
+              ),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _selectedMoodTag = tag;
+                    _isUsingCustomTag = false;
+                    _customTagController.clear();
+                  });
+                }
+              },
+              selectedColor: AppTheme.primaryColor,
+              backgroundColor: Colors.grey[200],
+            );
+          }).toList(),
+        ),
+      ],
+      const SizedBox(height: 32),
+      // Buttons
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () async {
+                await _previewController?.dispose();
+                setState(() {
+                  _selectedVideo = null;
                   _selectedImage = null;
                   _isImage = false;
-                      _previewController = null;
-                      _isUsingCustomTag = false;
-                      _customTagController.clear();
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: Colors.grey[400]!),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                    ),
-                  ),
+                  _previewController = null;
+                  _isUsingCustomTag = false;
+                  _customTagController.clear();
+                });
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                side: BorderSide(color: Colors.grey[400]!),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: _isUploading ? null : _uploadVideo,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isUploading
-                      ? const ShimmerLoading(
-                          width: 20,
-                          height: 20,
-                          baseColor: Colors.white70,
-                          highlightColor: Colors.white,
-                        )
-                      : Text(
-                          _isImage ? 'Share Image' : 'Share Video',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
                 ),
               ),
-            ],
+            ),
           ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton(
+              onPressed: _isUploading ? null : _uploadVideo,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isUploading
+                  ? const ShimmerLoading(
+                      width: 20,
+                      height: 20,
+                      baseColor: Colors.white70,
+                      highlightColor: Colors.white,
+                    )
+                  : Text(
+                      _isImage ? 'Share Image' : 'Share Video',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
     ];
   }
 }

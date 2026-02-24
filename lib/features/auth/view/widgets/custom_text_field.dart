@@ -36,12 +36,9 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, size: 18)
-            : null,
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18) : null,
         suffixIcon: suffixIcon,
       ),
     );
   }
 }
-

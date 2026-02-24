@@ -8,15 +8,11 @@ import 'core/services/serverpod_client_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Serverpod client service with persistent authentication
   await ServerpodClientService.instance.ensureInitialized();
-  
-  runApp(
-    const ProviderScope(
-      child: EchoMirrorApp(),
-    ),
-  );
+
+  runApp(const ProviderScope(child: EchoMirrorApp()));
 }
 
 class EchoMirrorApp extends ConsumerStatefulWidget {

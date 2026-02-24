@@ -6,7 +6,8 @@ class AiInsightModel {
   final DateTime generatedAt;
   final int? stressLevel; // 0-5, where 0=no stress, 5=high stress
   final String? calmingMessage; // Personalized calming message from future self
-  final List<String>? musicRecommendations; // Music recommendations with vibe descriptions
+  final List<String>?
+  musicRecommendations; // Music recommendations with vibe descriptions
 
   const AiInsightModel({
     required this.prediction,

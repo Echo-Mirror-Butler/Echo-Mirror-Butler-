@@ -8,7 +8,9 @@ import '../models/log_entry_model.dart';
 /// Handles all Serverpod backend calls for daily logging
 class LoggingRepository {
   LoggingRepository() {
-    debugPrint('[LoggingRepository] Using shared client with persistent authentication');
+    debugPrint(
+      '[LoggingRepository] Using shared client with persistent authentication',
+    );
   }
 
   Client get _client => ServerpodClientService.instance.client;
@@ -19,16 +21,19 @@ class LoggingRepository {
       return error.statusCode == 404;
     }
     final errorString = error.toString();
-    return errorString.contains('404') || 
-           errorString.contains('Not found') ||
-           errorString.contains('statusCode = 404');
+    return errorString.contains('404') ||
+        errorString.contains('Not found') ||
+        errorString.contains('statusCode = 404');
   }
 
   /// Check if a string is a UUID format
   bool _isUuid(String? str) {
     if (str == null || str.isEmpty) return false;
     // UUID format: 8-4-4-4-12 hex digits
-    final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
+    final uuidRegex = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
     return uuidRegex.hasMatch(str);
   }
 
@@ -36,7 +41,7 @@ class LoggingRepository {
   Future<LogEntryModel> createLogEntry(LogEntryModel entry) async {
     try {
       debugPrint('[LoggingRepository] createLogEntry -> ${entry.toJson()}');
-      
+
       // Call Serverpod endpoint
       final result = await _client.logging.createEntry(
         entry.userId,
@@ -45,12 +50,14 @@ class LoggingRepository {
         entry.habits,
         entry.notes,
       );
-      
+
       debugPrint('[LoggingRepository] createLogEntry success -> $result');
-      
+
       // Convert Serverpod LogEntry to LogEntryModel
       return LogEntryModel(
-        id: result.id?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id:
+            result.id?.toString() ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         userId: result.userId,
         date: result.date,
         mood: result.mood,
@@ -70,7 +77,9 @@ class LoggingRepository {
         );
       }
       debugPrint('[LoggingRepository] createLogEntry error -> $e');
-      debugPrint('[LoggingRepository] createLogEntry stackTrace -> $stackTrace');
+      debugPrint(
+        '[LoggingRepository] createLogEntry stackTrace -> $stackTrace',
+      );
       throw Exception('Failed to create log entry: ${e.toString()}');
     }
   }
@@ -79,12 +88,12 @@ class LoggingRepository {
   Future<LogEntryModel> updateLogEntry(LogEntryModel entry) async {
     try {
       debugPrint('[LoggingRepository] updateLogEntry -> ${entry.id}');
-      
+
       // Ensure date is in UTC format
-      final utcDate = entry.date.isUtc 
-          ? entry.date 
+      final utcDate = entry.date.isUtc
+          ? entry.date
           : DateTime.utc(entry.date.year, entry.date.month, entry.date.day);
-      
+
       final result = await _client.logging.updateEntry(
         entry.userId,
         int.parse(entry.id),
@@ -93,9 +102,9 @@ class LoggingRepository {
         entry.habits,
         entry.notes,
       );
-      
+
       debugPrint('[LoggingRepository] updateLogEntry success -> $result');
-      
+
       return LogEntryModel(
         id: result.id?.toString() ?? entry.id,
         userId: result.userId,
@@ -117,29 +126,36 @@ class LoggingRepository {
         );
       }
       debugPrint('[LoggingRepository] updateLogEntry error -> $e');
-      debugPrint('[LoggingRepository] updateLogEntry stackTrace -> $stackTrace');
+      debugPrint(
+        '[LoggingRepository] updateLogEntry stackTrace -> $stackTrace',
+      );
       throw Exception('Failed to update log entry: ${e.toString()}');
     }
   }
 
   /// Get log entry for a specific date
-  Future<LogEntryModel?> getLogEntryForDate(DateTime date, String userId) async {
+  Future<LogEntryModel?> getLogEntryForDate(
+    DateTime date,
+    String userId,
+  ) async {
     try {
       // Normalize date to UTC to match how dates are stored
-      final utcDate = date.isUtc 
-          ? date 
+      final utcDate = date.isUtc
+          ? date
           : DateTime.utc(date.year, date.month, date.day);
-      debugPrint('[LoggingRepository] getLogEntryForDate -> date: $utcDate, userId: $userId');
-      
+      debugPrint(
+        '[LoggingRepository] getLogEntryForDate -> date: $utcDate, userId: $userId',
+      );
+
       final result = await _client.logging.getEntryForDate(userId, utcDate);
-      
+
       if (result == null) {
         debugPrint('[LoggingRepository] getLogEntryForDate -> no entry found');
         return null;
       }
-      
+
       debugPrint('[LoggingRepository] getLogEntryForDate success -> $result');
-      
+
       return LogEntryModel(
         id: result.id?.toString() ?? '',
         userId: result.userId,
@@ -158,73 +174,102 @@ class LoggingRepository {
         return null;
       }
       debugPrint('[LoggingRepository] getLogEntryForDate error -> $e');
-      debugPrint('[LoggingRepository] getLogEntryForDate stackTrace -> $stackTrace');
+      debugPrint(
+        '[LoggingRepository] getLogEntryForDate stackTrace -> $stackTrace',
+      );
       return null;
     }
   }
 
   /// Get all log entries for a user
-  Future<List<LogEntryModel>> getLogEntries(String userId, {DateTime? startDate, DateTime? endDate}) async {
+  Future<List<LogEntryModel>> getLogEntries(
+    String userId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
       debugPrint('[LoggingRepository] getLogEntries -> userId: $userId');
-      
+
       // Check authentication before making the call
       final authKey = await _client.authenticationKeyManager?.get();
       if (authKey == null) {
-        debugPrint('[LoggingRepository] ⚠️ WARNING: No authentication key found!');
+        debugPrint(
+          '[LoggingRepository] ⚠️ WARNING: No authentication key found!',
+        );
       } else {
-        debugPrint('[LoggingRepository] ✅ Authentication key found (${authKey.length} chars)');
+        debugPrint(
+          '[LoggingRepository] ✅ Authentication key found (${authKey.length} chars)',
+        );
       }
-      
-      final headerValue = await _client.authenticationKeyManager?.getHeaderValue();
-      debugPrint('[LoggingRepository] Header value: ${headerValue != null ? "${headerValue.length} chars" : "null"}');
-      
+
+      final headerValue = await _client.authenticationKeyManager
+          ?.getHeaderValue();
+      debugPrint(
+        '[LoggingRepository] Header value: ${headerValue != null ? "${headerValue.length} chars" : "null"}',
+      );
+
       // Try with the provided userId first (usually UUID from server)
       var results = await _client.logging.getEntries(
         userId,
         startDate: startDate,
         endDate: endDate,
       );
-      
-      debugPrint('[LoggingRepository] getLogEntries with UUID -> ${results.length} entries');
-      
+
+      debugPrint(
+        '[LoggingRepository] getLogEntries with UUID -> ${results.length} entries',
+      );
+
       // Always try fallback to old format if userId is a UUID (for backward compatibility)
       // This ensures we get all entries regardless of which format they were created with
       if (_isUuid(userId)) {
-        debugPrint('[LoggingRepository] UUID detected, checking for entries with old format...');
-        
+        debugPrint(
+          '[LoggingRepository] UUID detected, checking for entries with old format...',
+        );
+
         // Get email from SharedPreferences to generate old format userId
         final prefs = await SharedPreferences.getInstance();
         final email = prefs.getString('user_email');
-        
+
         if (email != null && email.isNotEmpty) {
           final fallbackUserId = 'user_${email.hashCode}';
-          debugPrint('[LoggingRepository] Trying fallback userId: $fallbackUserId');
-          
+          debugPrint(
+            '[LoggingRepository] Trying fallback userId: $fallbackUserId',
+          );
+
           try {
             final fallbackResults = await _client.logging.getEntries(
               fallbackUserId,
               startDate: startDate,
               endDate: endDate,
             );
-            
-            debugPrint('[LoggingRepository] getLogEntries with fallback userId -> ${fallbackResults.length} entries');
-            
+
+            debugPrint(
+              '[LoggingRepository] getLogEntries with fallback userId -> ${fallbackResults.length} entries',
+            );
+
             if (fallbackResults.isNotEmpty) {
-              debugPrint('[LoggingRepository] ✅ Found ${fallbackResults.length} entries with fallback userId format');
-              
+              debugPrint(
+                '[LoggingRepository] ✅ Found ${fallbackResults.length} entries with fallback userId format',
+              );
+
               // Merge results from both queries, avoiding duplicates by entry ID
-              final existingIds = results.map((e) => e.id?.toString() ?? '').toSet();
+              final existingIds = results
+                  .map((e) => e.id?.toString() ?? '')
+                  .toSet();
               final newEntries = fallbackResults.where((e) {
                 final entryId = e.id?.toString() ?? '';
                 return entryId.isNotEmpty && !existingIds.contains(entryId);
               }).toList();
-              
+
               if (newEntries.isNotEmpty) {
-                debugPrint('[LoggingRepository] Merging ${newEntries.length} additional entries from fallback format');
+                debugPrint(
+                  '[LoggingRepository] Merging ${newEntries.length} additional entries from fallback format',
+                );
                 results = [...results, ...newEntries];
               } else {
-                debugPrint('[LoggingRepository] All fallback entries are duplicates, not merging');
+                debugPrint(
+                  '[LoggingRepository] All fallback entries are duplicates, not merging',
+                );
               }
             }
           } catch (e) {
@@ -232,9 +277,11 @@ class LoggingRepository {
           }
         }
       }
-      
-      debugPrint('[LoggingRepository] getLogEntries success -> ${results.length} entries');
-      
+
+      debugPrint(
+        '[LoggingRepository] getLogEntries success -> ${results.length} entries',
+      );
+
       return results.map((result) {
         return LogEntryModel(
           id: result.id?.toString() ?? '',
@@ -270,9 +317,9 @@ class LoggingRepository {
   Future<void> deleteLogEntry(String entryId, String userId) async {
     try {
       debugPrint('[LoggingRepository] deleteLogEntry -> $entryId');
-      
+
       await _client.logging.deleteEntry(userId, int.parse(entryId));
-      
+
       debugPrint('[LoggingRepository] deleteLogEntry success');
     } catch (e, stackTrace) {
       if (_isNotFoundError(e)) {
@@ -285,7 +332,9 @@ class LoggingRepository {
         );
       }
       debugPrint('[LoggingRepository] deleteLogEntry error -> $e');
-      debugPrint('[LoggingRepository] deleteLogEntry stackTrace -> $stackTrace');
+      debugPrint(
+        '[LoggingRepository] deleteLogEntry stackTrace -> $stackTrace',
+      );
       throw Exception('Failed to delete log entry: ${e.toString()}');
     }
   }

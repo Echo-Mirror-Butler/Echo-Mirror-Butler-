@@ -8,11 +8,7 @@ class MoodPinWidget extends StatefulWidget {
   final MoodPinModel pin;
   final Color color;
 
-  const MoodPinWidget({
-    super.key,
-    required this.pin,
-    required this.color,
-  });
+  const MoodPinWidget({super.key, required this.pin, required this.color});
 
   @override
   State<MoodPinWidget> createState() => _MoodPinWidgetState();
@@ -31,9 +27,10 @@ class _MoodPinWidgetState extends State<MoodPinWidget>
       vsync: this,
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.5).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.5,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -61,7 +58,9 @@ class _MoodPinWidgetState extends State<MoodPinWidget>
                   height: 24 * _pulseAnimation.value,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: widget.color.withOpacity(0.3 / _pulseAnimation.value),
+                    color: widget.color.withOpacity(
+                      0.3 / _pulseAnimation.value,
+                    ),
                   ),
                 );
               },
@@ -73,10 +72,7 @@ class _MoodPinWidgetState extends State<MoodPinWidget>
               decoration: BoxDecoration(
                 color: widget.color,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
-                ),
+                border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: widget.color.withOpacity(0.5),
@@ -99,5 +95,4 @@ class _MoodPinWidgetState extends State<MoodPinWidget>
       builder: (context) => MoodPinCommentDialog(pin: widget.pin),
     );
   }
-
 }

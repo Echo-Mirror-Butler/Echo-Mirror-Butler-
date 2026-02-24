@@ -7,14 +7,13 @@ import '../../data/models/insight_model.dart';
 class DashboardStats extends StatelessWidget {
   final List<InsightModel> insights;
 
-  const DashboardStats({
-    super.key,
-    required this.insights,
-  });
+  const DashboardStats({super.key, required this.insights});
 
   @override
   Widget build(BuildContext context) {
-    final predictions = insights.where((i) => i.type == InsightType.prediction).length;
+    final predictions = insights
+        .where((i) => i.type == InsightType.prediction)
+        .length;
     final habits = insights.where((i) => i.type == InsightType.habit).length;
     final moods = insights.where((i) => i.type == InsightType.mood).length;
 
@@ -30,10 +29,7 @@ class DashboardStats extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.secondaryColor,
-                  Color(0xFF7C3AED),
-                ],
+                colors: [AppTheme.secondaryColor, Color(0xFF7C3AED)],
               ),
             ),
           ),
@@ -46,10 +42,7 @@ class DashboardStats extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryColor,
-                  Color(0xFF4F46E5),
-                ],
+                colors: [AppTheme.primaryColor, Color(0xFF4F46E5)],
               ),
             ),
           ),
@@ -62,10 +55,7 @@ class DashboardStats extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.accentColor,
-                  Color(0xFFDB2777),
-                ],
+                colors: [AppTheme.accentColor, Color(0xFFDB2777)],
               ),
             ),
           ),
@@ -115,11 +105,7 @@ class _StatCard extends StatelessWidget {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
             const SizedBox(height: 12),
             Text(

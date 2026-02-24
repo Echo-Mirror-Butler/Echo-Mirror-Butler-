@@ -46,21 +46,13 @@ class _AnimatedCardState extends State<AnimatedCard>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.animationCurve,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: widget.animationCurve),
+    );
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.9,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: widget.animationCurve,
-    ));
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: widget.animationCurve),
+    );
 
     // Start animation
     _controller.forward();
@@ -85,13 +77,10 @@ class _AnimatedCardState extends State<AnimatedCard>
         child: Card(
           elevation: cardElevation,
           shadowColor: AppTheme.primaryColor.withOpacity(0.15),
-          shape: RoundedRectangleBorder(
-            borderRadius: borderRadius,
-          ),
-          margin: widget.margin ?? const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: borderRadius),
+          margin:
+              widget.margin ??
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: InkWell(
             onTap: widget.onTap,
             borderRadius: borderRadius,
@@ -118,4 +107,3 @@ class _AnimatedCardState extends State<AnimatedCard>
     );
   }
 }
-
