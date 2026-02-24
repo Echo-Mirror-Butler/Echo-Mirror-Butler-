@@ -587,10 +587,10 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.3),
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -672,9 +672,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3), width: 2),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
         ),
         child: Row(
           children: [
@@ -747,7 +747,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -808,7 +808,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -841,7 +841,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                               shape: BoxShape.circle,
                             ),
                             child: FaIcon(
@@ -885,10 +885,10 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       if (_isUsingCustomTag)
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.05),
+            color: AppTheme.primaryColor.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
               width: 2,
             ),
           ),

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -187,7 +186,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
             }
           }
 
-          context.pop();
+          if (mounted) {
+            context.pop();
+          }
         } else {
           // Get error message from provider state
           final loggingState = ref.read(loggingProvider);
@@ -243,7 +244,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -273,7 +274,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withOpacity(0.1),
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -292,7 +293,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                       style: theme.textTheme.labelMedium
                                           ?.copyWith(
                                             color: theme.colorScheme.onSurface
-                                                .withOpacity(0.6),
+                                                .withValues(alpha: 0.6),
                                           ),
                                     ),
                                     const SizedBox(height: 4),
@@ -311,7 +312,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               Icon(
                                 FontAwesomeIcons.chevronRight,
                                 size: 16,
-                                color: theme.colorScheme.onSurface.withOpacity(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 
                                   0.5,
                                 ),
                               ),
@@ -353,13 +354,13 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                 height: 56,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? AppTheme.accentColor.withOpacity(0.2)
+                                      ? AppTheme.accentColor.withValues(alpha: 0.2)
                                       : theme.colorScheme.surface,
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: isSelected
                                         ? AppTheme.accentColor
-                                        : theme.colorScheme.outline.withOpacity(
+                                        : theme.colorScheme.outline.withValues(alpha: 
                                             0.3,
                                           ),
                                     width: isSelected ? 2 : 1,
@@ -370,7 +371,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                   size: 28,
                                   color: isSelected
                                       ? AppTheme.accentColor
-                                      : theme.colorScheme.onSurface.withOpacity(
+                                      : theme.colorScheme.onSurface.withValues(alpha: 
                                           0.6,
                                         ),
                                 ),
@@ -446,7 +447,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               FontAwesomeIcons.xmark,
                               size: 16,
                             ),
-                            backgroundColor: AppTheme.primaryColor.withOpacity(
+                            backgroundColor: AppTheme.primaryColor.withValues(alpha: 
                               0.1,
                             ),
                             labelStyle: TextStyle(
@@ -515,15 +516,15 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.primaryColor.withOpacity(0.5),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.5),
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              color: AppTheme.primaryColor.withValues(alpha: 0.1),
                               blurRadius: 8,
                               spreadRadius: 2,
                             ),
@@ -569,7 +570,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                     'Help the global community by sharing your mood anonymously. Your location is anonymized (~11km) and data expires in 24 hours.',
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: theme.colorScheme.onSurface
-                                          .withOpacity(0.7),
+                                          .withValues(alpha: 0.7),
                                     ),
                                   ),
                                 ],

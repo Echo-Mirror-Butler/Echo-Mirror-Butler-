@@ -130,32 +130,77 @@ dart format --set-exit-if-changed .
 
 ---
 
-## Serverpod Gift Endpoint
+## Serverpod Integration with Stellar
 
-The gift feature lives in the server repo at:
-```
-lib/src/endpoints/gift_endpoint.dart
-```
+The ECHO gift feature requires Stellar blockchain integration for real transactions. This section covers the server-side implementation.
 
-Methods:
+### Implementation Files
+
+**In echomirror_server repo:**
+- `lib/src/endpoints/gift_endpoint.dart` — Main endpoint (see `backend/serverpod_implementation/gift_endpoint.dart` for reference implementation)
+- Models:
+  - `lib/src/models/user_wallet.spy.yaml` — Stores public wallet keys and ECHO balances
+  - `lib/src/models/gift_transaction.spy.yaml` — Records all gift transactions with Stellar tx hashes
+
+**In Echo-Mirror-Butler- repo (reference implementations):**
+- `backend/serverpod_implementation/gift_endpoint.dart` — Source code for GiftEndpoint (copy to server repo)
+- `backend/serverpod_implementation/stellar_service_integration.dart` — Stellar operations wrapper
+
+### GiftEndpoint Methods
+
 | Method | Description |
 |---|---|
-| `getEchoBalance()` | Returns the current user's ECHO balance |
-| `sendGift(recipientUserId, amount, message)` | Transfers ECHO from sender to recipient |
-| `getGiftHistory()` | Returns the current user's gift transaction history |
-| `awardEcho(userId, amount, reason)` | Server-side ECHO award (mood pins, videos, etc.) |
+| `getEchoBalance()` | Returns user's ECHO balance from database |
+| `sendGift(recipientUserId, amount, message)` | Submits Stellar payment if both wallets configured; updates DB balance |
+| `getGiftHistory()` | Returns user's sent + received gift transactions |
+| `awardEcho(userId, amount, reason)` | Server-side ECHO award for participation |
 
-After modifying any Serverpod endpoint or YAML model, regenerate the client:
+### Integration Flow
+
+When user sends a gift:
+
+```
+1. Lookup sender and recipient UserWallet records
+2. Validate sender has sufficient ECHO balance
+3. If both have Stellar public keys:
+   ├─ Retrieve sender's secret key securely (from env/secrets manager)
+   ├─ Call StellarService.sendEcho()
+   ├─ Store returned transaction hash in GiftTransaction.stellarTxHash
+4. If Stellar unavailable → fallback to DB-only transfer
+5. Update both wallets' ECHO balances
+6. Return GiftTransaction with stellarTxHash (or null)
+```
+
+When new wallet is created:
+
+```
+1. Call StellarService.createWallet()
+   ├─ Generate Stellar keypair
+   ├─ Fund via Friendbot (testnet)
+2. Call StellarService.establishTrustline()
+   ├─ Sign with user's secret key
+   ├─ Enable ECHO asset holding
+3. Store PUBLIC key in UserWallet.stellarPublicKey
+4. ⚠️  NEVER store secret key in database
+5. Initialize balance with welcome bonus (10 ECHO)
+```
+
+### After Endpoint Changes
+
+Always regenerate Serverpod client:
+
 ```bash
 cd echomirror_server
 serverpod generate
 ```
 
+The client and server models auto-sync.
+
 ---
 
 ## Stellar Service API
 
-`backend/stellar/stellar_service.dart` exposes:
+Available in `backend/serverpod_implementation/stellar_service_integration.dart`:
 
 | Method | Description |
 |---|---|

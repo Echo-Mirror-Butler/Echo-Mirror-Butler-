@@ -49,7 +49,7 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
   final SocialsRepository _repository;
   final NotificationService _notificationService = NotificationService();
   Timer? _refreshTimer;
-  List<String> _notifiedSessions =
+  final List<String> _notifiedSessions =
       []; // Track sessions we've already notified about
 
   /// Start auto-refresh timer (every 5 seconds)

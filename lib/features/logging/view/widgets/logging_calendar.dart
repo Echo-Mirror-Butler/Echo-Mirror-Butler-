@@ -113,7 +113,7 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
               startingDayOfWeek: StartingDayOfWeek.monday,
               calendarStyle: CalendarStyle(
                 todayDecoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: BoxDecoration(
@@ -184,7 +184,7 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
                 _buildLegendItem(
                   theme,
                   'Today',
-                  AppTheme.primaryColor.withOpacity(0.5),
+                  AppTheme.primaryColor.withValues(alpha: 0.5),
                 ),
                 const SizedBox(width: 16),
                 _buildLegendItem(theme, 'Has Entry', AppTheme.accentColor),

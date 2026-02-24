@@ -76,7 +76,7 @@ class _AnimatedCardState extends State<AnimatedCard>
         scale: _scaleAnimation,
         child: Card(
           elevation: cardElevation,
-          shadowColor: AppTheme.primaryColor.withOpacity(0.15),
+          shadowColor: AppTheme.primaryColor.withValues(alpha: 0.15),
           shape: RoundedRectangleBorder(borderRadius: borderRadius),
           margin:
               widget.margin ??
@@ -92,7 +92,7 @@ class _AnimatedCardState extends State<AnimatedCard>
                 gradient: widget.gradient,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                     spreadRadius: 0,

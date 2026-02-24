@@ -109,7 +109,7 @@ class AiRepository {
       }
 
       debugPrint(
-        '[AiRepository] Converting log ${log.id}: mood=${convertedHasMood}, habits=${convertedHasHabits} (${serverpodLog.habits.length} items), notes=${convertedHasNotes}',
+        '[AiRepository] Converting log ${log.id}: mood=$convertedHasMood, habits=$convertedHasHabits (${serverpodLog.habits.length} items), notes=$convertedHasNotes',
       );
 
       return serverpodLog;
@@ -406,8 +406,9 @@ class AiRepository {
       final log = logs[i];
       buffer.write('  ${i + 1}. ${log.date.toString().split(' ')[0]}: ');
       if (log.mood != null) buffer.write('Mood ${log.mood}/5, ');
-      if (log.habits.isNotEmpty)
+      if (log.habits.isNotEmpty) {
         buffer.write('Habits: ${log.habits.join(", ")}, ');
+      }
       if (log.notes != null && log.notes!.isNotEmpty) {
         final notePreview = log.notes!.length > 60
             ? '${log.notes!.substring(0, 60)}...'

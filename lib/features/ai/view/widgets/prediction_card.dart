@@ -58,10 +58,10 @@ class PredictionCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withOpacity(0.1),
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.secondaryColor.withOpacity(0.3),
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -82,7 +82,7 @@ class PredictionCard extends StatelessWidget {
                           textStyle: GoogleFonts.poppins(
                             fontSize: 15,
                             height: 1.6,
-                            color: theme.colorScheme.onSurface.withOpacity(0.9),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
                             letterSpacing: 0.2,
                           ),
                           speed: const Duration(milliseconds: 30),

@@ -160,7 +160,7 @@ class _StoriesBarState extends State<StoriesBar>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(0.3),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -189,12 +189,12 @@ class _StoriesBarState extends State<StoriesBar>
             : LinearGradient(
                 colors: [
                   AppTheme.primaryColor,
-                  AppTheme.primaryColor.withOpacity(0.6),
+                  AppTheme.primaryColor.withValues(alpha: 0.6),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-        color: hasViewed ? theme.colorScheme.onSurface.withOpacity(0.2) : null,
+        color: hasViewed ? theme.colorScheme.onSurface.withValues(alpha: 0.2) : null,
       ),
       child: Container(
         margin: const EdgeInsets.all(3),
@@ -236,13 +236,13 @@ class _StoriesBarState extends State<StoriesBar>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [Colors.red, Colors.red.withOpacity(0.6)],
+              colors: [Colors.red, Colors.red.withValues(alpha: 0.6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.red.withOpacity(
+                color: Colors.red.withValues(alpha: 
                   0.3 + (_pulseController.value * 0.3),
                 ),
                 blurRadius: 10 + (_pulseController.value * 10),

@@ -162,7 +162,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                           decoration: BoxDecoration(
                             color: index <= _currentImageIndex
                                 ? Colors.white
-                                : Colors.white.withOpacity(0.3),
+                                : Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(1),
                           ),
                         ),
@@ -208,7 +208,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                               '${_formatTime(story.createdAt)} • ${story.viewCount} views',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
                           ],

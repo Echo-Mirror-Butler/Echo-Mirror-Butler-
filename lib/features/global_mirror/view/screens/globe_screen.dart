@@ -182,11 +182,11 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(0.9),
+                      color: theme.colorScheme.surface.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),
@@ -365,11 +365,11 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.9),
+        color: theme.colorScheme.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             spreadRadius: 2,
           ),

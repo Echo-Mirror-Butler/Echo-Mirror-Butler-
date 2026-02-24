@@ -49,8 +49,8 @@ class StressDetectionCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.orange.withOpacity(0.1),
-              Colors.red.withOpacity(0.1),
+              Colors.orange.withValues(alpha: 0.1),
+              Colors.red.withValues(alpha: 0.1),
             ],
           ),
         ),
@@ -64,7 +64,7 @@ class StressDetectionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.2),
+                      color: Colors.orange.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -91,7 +91,7 @@ class StressDetectionCard extends StatelessWidget {
                 _stressMessage,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   height: 1.5,
                 ),
               ),

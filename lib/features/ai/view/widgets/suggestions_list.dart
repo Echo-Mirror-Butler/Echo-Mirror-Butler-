@@ -84,10 +84,10 @@ class SuggestionsList extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.accentColor.withOpacity(0.1),
+        color: AppTheme.accentColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.accentColor.withOpacity(0.3),
+          color: AppTheme.accentColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -123,7 +123,7 @@ class SuggestionsList extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 height: 1.5,
-                color: theme.colorScheme.onSurface.withOpacity(0.9),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
                 letterSpacing: 0.2,
               ),
             ),
