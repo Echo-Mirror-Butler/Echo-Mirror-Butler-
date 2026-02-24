@@ -1,0 +1,20 @@
+class: Story
+table: stories
+fields:
+  userId: String
+  userName: String
+  userAvatarUrl: String?
+  imageUrls: List<String>
+  createdAt: DateTime
+  expiresAt: DateTime
+  viewCount: int, default=0
+  viewedBy: List<String>
+  isActive: bool, default=true
+indexes:
+  story_user_id_idx:
+    fields: userId
+  story_expires_at_idx:
+    fields: expiresAt
+  story_is_active_idx:
+    fields: isActive
+

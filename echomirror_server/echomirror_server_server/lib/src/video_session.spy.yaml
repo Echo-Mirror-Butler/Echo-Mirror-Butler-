@@ -1,0 +1,22 @@
+class: VideoSession
+table: video_sessions
+fields:
+  hostId: String
+  hostName: String
+  hostAvatarUrl: String?
+  title: String
+  createdAt: DateTime
+  expiresAt: DateTime
+  participantCount: int
+  isVideoEnabled: bool
+  isVoiceOnly: bool
+  isActive: bool
+indexes:
+  created_at_idx:
+    fields: createdAt
+  expires_at_idx:
+    fields: expiresAt
+  is_active_idx:
+    fields: isActive
+  host_id_idx:
+    fields: hostId
