@@ -1,0 +1,13 @@
+class: VideoPost
+table: video_posts
+fields:
+  videoUrl: String
+  moodTag: String
+  timestamp: DateTime
+  expiresAt: DateTime
+  userId: int?
+indexes:
+  video_post_expires_idx:
+    fields: expiresAt
+  video_post_user_idx:
+    fields: userId
