@@ -20,7 +20,8 @@ class VideoFeedScreen extends ConsumerStatefulWidget {
   ConsumerState<VideoFeedScreen> createState() => _VideoFeedScreenState();
 }
 
-class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen> with WidgetsBindingObserver {
+class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
+    with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _hasLoadedInitial = false;
@@ -60,7 +61,6 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen> with WidgetsB
       ref.read(globalMirrorProvider.notifier).loadVideoFeed(refresh: true);
     }
   }
-
 
   void _showRecorder() {
     showModalBottomSheet(
@@ -158,11 +158,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen> with WidgetsB
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(
-              FontAwesomeIcons.video,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            FaIcon(FontAwesomeIcons.video, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 24),
             Text(
               'No Videos Yet',
@@ -175,10 +171,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen> with WidgetsB
             const SizedBox(height: 8),
             Text(
               'Be the first to share a mood video!',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: Colors.grey[500],
-              ),
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[500]),
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
@@ -186,7 +179,10 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen> with WidgetsB
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -212,11 +208,7 @@ class VideoReelItem extends StatefulWidget {
   final dynamic video;
   final bool isActive;
 
-  const VideoReelItem({
-    super.key,
-    required this.video,
-    required this.isActive,
-  });
+  const VideoReelItem({super.key, required this.video, required this.isActive});
 
   @override
   State<VideoReelItem> createState() => _VideoReelItemState();
@@ -250,42 +242,49 @@ class _VideoReelItemState extends State<VideoReelItem> {
     try {
       // Check if this is an image or video
       if (widget.video.isImage) {
-        debugPrint('[VideoReelItem] Detected image, skipping video initialization: ${widget.video.videoUrl}');
+        debugPrint(
+          '[VideoReelItem] Detected image, skipping video initialization: ${widget.video.videoUrl}',
+        );
         if (mounted) {
           setState(() {
-            _isInitialized = true; // Mark as initialized so image can be displayed
+            _isInitialized =
+                true; // Mark as initialized so image can be displayed
           });
         }
         return;
       }
 
-      debugPrint('[VideoReelItem] Initializing video: ${widget.video.videoUrl}');
-      
+      debugPrint(
+        '[VideoReelItem] Initializing video: ${widget.video.videoUrl}',
+      );
+
       // Download video first to avoid byte range issues with Serverpod Cloud Storage
       final videoUrl = widget.video.videoUrl;
       final response = await http.get(Uri.parse(videoUrl));
-      
+
       if (response.statusCode == 200) {
         final directory = await getTemporaryDirectory();
         final filePath = '${directory.path}/video_${widget.video.id}.mp4';
         final file = File(filePath);
         await file.writeAsBytes(response.bodyBytes);
-        
+
         _localVideoFile = file;
         _controller = VideoPlayerController.file(file);
         await _controller!.initialize();
         await _controller!.setLooping(true);
-        
+
         if (mounted) {
           setState(() {
             _isInitialized = true;
           });
-          
+
           if (widget.isActive) {
             _controller!.play();
           }
         }
-        debugPrint('[VideoReelItem] Video initialized successfully from local file');
+        debugPrint(
+          '[VideoReelItem] Video initialized successfully from local file',
+        );
       } else {
         throw Exception('Failed to download video: ${response.statusCode}');
       }
@@ -318,7 +317,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
   @override
   Widget build(BuildContext context) {
     final isImage = widget.video.isImage;
-    
+
     return Container(
       color: Colors.black,
       child: Stack(
@@ -344,7 +343,9 @@ class _VideoReelItemState extends State<VideoReelItem> {
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
-                        debugPrint('[VideoReelItem] Error loading image: $error');
+                        debugPrint(
+                          '[VideoReelItem] Error loading image: $error',
+                        );
                         return Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -377,36 +378,36 @@ class _VideoReelItemState extends State<VideoReelItem> {
                     ),
                   )
           else
-            // Display video
-            if (_isInitialized && _controller != null)
-              Center(
-                child: AspectRatio(
-                  aspectRatio: _controller!.value.aspectRatio,
-                  child: VideoPlayer(_controller!),
-                ),
-              )
-            else
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const ShimmerLoading(
-                      width: 40,
-                      height: 40,
-                      baseColor: Colors.white24,
-                      highlightColor: Colors.white70,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading video...',
-                      style: GoogleFonts.poppins(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+          // Display video
+          if (_isInitialized && _controller != null)
+            Center(
+              child: AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio,
+                child: VideoPlayer(_controller!),
               ),
+            )
+          else
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const ShimmerLoading(
+                    width: 40,
+                    height: 40,
+                    baseColor: Colors.white24,
+                    highlightColor: Colors.white70,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Loading video...',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // Video info overlay
           Positioned(
@@ -419,7 +420,10 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 children: [
                   // Mood tag
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor,
                       borderRadius: BorderRadius.circular(20),
@@ -473,7 +477,10 @@ class _VideoReelItemState extends State<VideoReelItem> {
             ),
 
           // Play/pause indicator (only for videos)
-          if (!isImage && _controller != null && !_controller!.value.isPlaying && _isInitialized)
+          if (!isImage &&
+              _controller != null &&
+              !_controller!.value.isPlaying &&
+              _isInitialized)
             Center(
               child: FadeIn(
                 child: Container(
@@ -490,14 +497,17 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 ),
               ),
             ),
-          
+
           // Image indicator badge
           if (isImage && _isInitialized)
             Positioned(
               top: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(20),

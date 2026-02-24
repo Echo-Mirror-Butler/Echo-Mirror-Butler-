@@ -73,11 +73,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
-            FontAwesomeIcons.lock,
-            size: 64,
-            color: AppTheme.primaryColor,
-          ),
+          Icon(FontAwesomeIcons.lock, size: 64, color: AppTheme.primaryColor),
           const SizedBox(height: 24),
           Text(
             'Reset your password',

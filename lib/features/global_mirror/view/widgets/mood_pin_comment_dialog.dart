@@ -13,13 +13,11 @@ import 'gift_button_widget.dart';
 class MoodPinCommentDialog extends ConsumerStatefulWidget {
   final MoodPinModel pin;
 
-  const MoodPinCommentDialog({
-    super.key,
-    required this.pin,
-  });
+  const MoodPinCommentDialog({super.key, required this.pin});
 
   @override
-  ConsumerState<MoodPinCommentDialog> createState() => _MoodPinCommentDialogState();
+  ConsumerState<MoodPinCommentDialog> createState() =>
+      _MoodPinCommentDialogState();
 }
 
 class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
@@ -43,13 +41,14 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
       // Count nearby pins with same sentiment (simplified - count all pins with same sentiment)
       final allPinsAsync = ref.read(moodPinsStreamProvider);
       final allPins = allPinsAsync.value ?? [];
-      final nearbyCount = allPins.where((p) => p.sentiment == widget.pin.sentiment).length;
-      
-      final encouragement = await ref.read(globalMirrorProvider.notifier).generateClusterEncouragement(
-        widget.pin.sentiment,
-        nearbyCount,
-      );
-      
+      final nearbyCount = allPins
+          .where((p) => p.sentiment == widget.pin.sentiment)
+          .length;
+
+      final encouragement = await ref
+          .read(globalMirrorProvider.notifier)
+          .generateClusterEncouragement(widget.pin.sentiment, nearbyCount);
+
       if (mounted) {
         setState(() {
           _clusterEncouragement = encouragement;
@@ -72,7 +71,9 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
   Future<void> _loadComments() async {
     setState(() => _isLoading = true);
     try {
-      final comments = await ref.read(globalMirrorProvider.notifier).getCommentsForPin(widget.pin.id);
+      final comments = await ref
+          .read(globalMirrorProvider.notifier)
+          .getCommentsForPin(widget.pin.id);
       if (mounted) {
         setState(() {
           _comments.clear();
@@ -93,11 +94,9 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
 
     setState(() => _isSubmitting = true);
     try {
-      final success = await ref.read(globalMirrorProvider.notifier).addComment(
-        moodPinId: widget.pin.id,
-        text: text,
-        ref: ref,
-      );
+      final success = await ref
+          .read(globalMirrorProvider.notifier)
+          .addComment(moodPinId: widget.pin.id, text: text, ref: ref);
 
       if (mounted) {
         if (success) {
@@ -180,9 +179,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
     final sentimentColor = _getSentimentColor(widget.pin.sentiment);
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         constraints: const BoxConstraints(maxHeight: 600, maxWidth: 400),
         child: Column(
@@ -245,7 +242,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
             ),
 
             // Cluster encouragement message (if available)
-            if (_clusterEncouragement != null && _clusterEncouragement!.isNotEmpty)
+            if (_clusterEncouragement != null &&
+                _clusterEncouragement!.isNotEmpty)
               Container(
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
@@ -288,100 +286,102 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                   height: 40,
                   shape: ShimmerShape.rectangle,
                   radius: 12,
+                ),
               ),
-            ),
 
             // Comments list
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: ShimmerLoading(
-                        width: 40,
-                        height: 40,
-                      ),
-                    )
+                  ? const Center(child: ShimmerLoading(width: 40, height: 40))
                   : _comments.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  FontAwesomeIcons.heart,
-                                  size: 48,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.3),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No comments yet',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Be the first to send support!',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                                  ),
-                                ),
-                              ],
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              FontAwesomeIcons.heart,
+                              size: 48,
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.3,
+                              ),
                             ),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _comments.length,
-                          itemBuilder: (context, index) {
-                            final comment = _comments[index];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surface,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: theme.colorScheme.outline.withOpacity(0.2),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No comments yet',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
                                 ),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Be the first to send support!',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _comments.length,
+                      itemBuilder: (context, index) {
+                        final comment = _comments[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: theme.colorScheme.outline.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        FontAwesomeIcons.heart,
-                                        size: 14,
-                                        color: AppTheme.primaryColor,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          comment.text,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  Icon(
+                                    FontAwesomeIcons.heart,
+                                    size: 14,
+                                    color: AppTheme.primaryColor,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    _getTimeAgo(comment.timestamp),
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      comment.text,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: theme.colorScheme.onSurface,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _getTimeAgo(comment.timestamp),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
 
             // Comment input
@@ -404,7 +404,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                       minLines: 1,
                       maxLength: 200,
                       decoration: InputDecoration(
-                        hintText: 'Send support... (e.g., "How are you?", "You\'re not alone")',
+                        hintText:
+                            'Send support... (e.g., "How are you?", "You\'re not alone")',
                         hintStyle: GoogleFonts.poppins(
                           fontSize: 13,
                           color: theme.colorScheme.onSurface.withOpacity(0.5),
@@ -455,4 +456,3 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
     );
   }
 }
-

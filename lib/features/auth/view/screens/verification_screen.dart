@@ -58,10 +58,7 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
         } else {
           final error = ref.read(authProvider).error;
           debugPrint('[VerificationScreen] Verification failed -> $error');
-          ErrorHandler.showError(
-            context,
-            error ?? 'Verification failed',
-          );
+          ErrorHandler.showError(context, error ?? 'Verification failed');
         }
       }
     }
@@ -73,9 +70,7 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verify Email'),
-      ),
+      appBar: AppBar(title: const Text('Verify Email')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -152,4 +147,3 @@ class _VerificationScreenState extends ConsumerState<VerificationScreen> {
     );
   }
 }
-

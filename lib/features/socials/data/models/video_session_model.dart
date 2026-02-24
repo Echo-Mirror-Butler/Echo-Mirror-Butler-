@@ -88,4 +88,3 @@ class VideoSessionModel {
     );
   }
 }
-

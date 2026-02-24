@@ -9,11 +9,7 @@ class Globe3DWidget extends StatefulWidget {
   final List<MoodPinModel> pins;
   final Function(MoodPinModel)? onPinTap;
 
-  const Globe3DWidget({
-    super.key,
-    required this.pins,
-    this.onPinTap,
-  });
+  const Globe3DWidget({super.key, required this.pins, this.onPinTap});
 
   @override
   State<Globe3DWidget> createState() => _Globe3DWidgetState();
@@ -42,7 +38,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
           },
           onPageFinished: (String url) {
             debugPrint('[Globe3DWidget] Page finished loading: $url');
-            
+
             // Inject console logging to capture JavaScript errors
             _controller.runJavaScript('''
               (function() {
@@ -70,7 +66,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
                 });
               })();
             ''');
-            
+
             setState(() {
               _isLoading = false;
             });
@@ -80,7 +76,9 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
             });
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint('[Globe3DWidget] Web resource error: ${error.description}');
+            debugPrint(
+              '[Globe3DWidget] Web resource error: ${error.description}',
+            );
             debugPrint('[Globe3DWidget] Error code: ${error.errorCode}');
             debugPrint('[Globe3DWidget] Error type: ${error.errorType}');
           },
@@ -102,14 +100,17 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
       debugPrint('[Globe3DWidget] Skipping pin update, still loading');
       return;
     }
-    
+
     try {
       if (widget.pins.isNotEmpty) {
         // Build JSON array manually for JavaScript
-        final pinsJson = widget.pins.map((pin) => 
-          '{lat: ${pin.gridLat}, lon: ${pin.gridLon}, sentiment: "${pin.sentiment}"}'
-        ).join(',');
-        
+        final pinsJson = widget.pins
+            .map(
+              (pin) =>
+                  '{lat: ${pin.gridLat}, lon: ${pin.gridLon}, sentiment: "${pin.sentiment}"}',
+            )
+            .join(',');
+
         _controller.runJavaScript('''
           try {
             if (typeof window.updatePins === 'function') {
@@ -459,7 +460,11 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.orange),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.orange,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         '3D Globe unavailable',
@@ -501,9 +506,9 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
                   const SizedBox(height: 16),
                   Text(
                     'Loading 3D Globe...',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: Colors.white),
                   ),
                 ],
               ),

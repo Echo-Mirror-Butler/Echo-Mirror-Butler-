@@ -42,7 +42,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   }
 
   Future<void> _handleSend() async {
-    final success = await ref.read(giftProvider.notifier).sendGift(
+    final success = await ref
+        .read(giftProvider.notifier)
+        .sendGift(
           recipientUserId: widget.recipientUserId,
           amount: _selectedAmount,
           message: _messageController.text.trim().isEmpty
@@ -119,7 +121,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
                 // Send button
                 FilledButton.icon(
-                  onPressed: giftState.isSending ||
+                  onPressed:
+                      giftState.isSending ||
                           _selectedAmount > giftState.echoBalance
                       ? null
                       : _handleSend,

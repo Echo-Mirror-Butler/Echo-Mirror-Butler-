@@ -45,4 +45,3 @@ class UserMoodPinsService {
     await prefs.remove(_key);
   }
 }
-

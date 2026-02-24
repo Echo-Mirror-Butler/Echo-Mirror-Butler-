@@ -46,7 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Wait for auth check to complete
         await ref.read(authProvider.notifier).checkAuthStatus();
       }
-      
+
       final updatedAuthState = ref.read(authProvider);
       final isAuthenticated = updatedAuthState.isAuthenticated;
       final isOnboarding = state.matchedLocation == '/onboarding';

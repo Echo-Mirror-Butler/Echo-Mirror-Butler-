@@ -30,18 +30,18 @@ class MoodAnalyticsScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mood Analytics'),
-      ),
+      appBar: AppBar(title: const Text('Mood Analytics')),
       body: loggingState.when(
         data: (entries) {
           // Filter entries with mood data
           final moodEntries = entries
               .where((e) => e.mood != null)
-              .map((e) => MoodEntry(
-                    date: e.date.isUtc ? e.date.toLocal() : e.date,
-                    mood: e.mood,
-                  ))
+              .map(
+                (e) => MoodEntry(
+                  date: e.date.isUtc ? e.date.toLocal() : e.date,
+                  mood: e.mood,
+                ),
+              )
               .toList();
 
           if (moodEntries.isEmpty) {
@@ -54,9 +54,9 @@ class MoodAnalyticsScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async {
               if (authState.isAuthenticated && authState.user != null) {
-                await ref.read(loggingProvider.notifier).loadLogEntries(
-                      userId: authState.user!.id,
-                    );
+                await ref
+                    .read(loggingProvider.notifier)
+                    .loadLogEntries(userId: authState.user!.id);
               }
             },
             child: SingleChildScrollView(
@@ -86,12 +86,8 @@ class MoodAnalyticsScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(
-          child: ShimmerLoading(
-            width: 40,
-            height: 40,
-          ),
-        ),
+        loading: () =>
+            const Center(child: ShimmerLoading(width: 40, height: 40)),
         error: (error, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -134,10 +130,7 @@ class MoodAnalyticsScreen extends ConsumerWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.accentColor,
-                      AppTheme.primaryColor,
-                    ],
+                    colors: [AppTheme.accentColor, AppTheme.primaryColor],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
@@ -181,4 +174,3 @@ class MoodAnalyticsScreen extends ConsumerWidget {
     );
   }
 }
-

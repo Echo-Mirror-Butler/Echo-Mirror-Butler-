@@ -20,7 +20,8 @@ class NotificationService {
   static const int _inactiveNudgeId = 3;
   static const int _noLogTodayId = 4;
   static const int _activeSessionId = 5;
-  static const int _scheduledSessionBaseId = 1000; // Base ID for scheduled sessions
+  static const int _scheduledSessionBaseId =
+      1000; // Base ID for scheduled sessions
   static const String _logNowActionId = 'log_now';
   static const String _snoozeActionId = 'snooze';
   static const String _joinSessionActionId = 'join_session';
@@ -30,7 +31,8 @@ class NotificationService {
   static const String _keyReminderHour = 'reminder_hour';
   static const String _keyReminderMinute = 'reminder_minute';
   static const String _keyLastLogCheckDate = 'last_log_check_date';
-  static const String _keyLastActiveSessionNotification = 'last_active_session_notification';
+  static const String _keyLastActiveSessionNotification =
+      'last_active_session_notification';
 
   /// Initialize the notification service
   Future<bool> initialize() async {
@@ -43,7 +45,9 @@ class NotificationService {
       tz.setLocalLocation(tz.getLocation(locationName));
 
       // Android initialization settings
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
 
       // iOS initialization settings
       const iosSettings = DarwinInitializationSettings(
@@ -69,7 +73,8 @@ class NotificationService {
         if (defaultTargetPlatform == TargetPlatform.iOS) {
           final iosImplementation = _notifications
               .resolvePlatformSpecificImplementation<
-                  IOSFlutterLocalNotificationsPlugin>();
+                IOSFlutterLocalNotificationsPlugin
+              >();
           if (iosImplementation != null) {
             await iosImplementation.requestPermissions(
               alert: true,
@@ -83,7 +88,8 @@ class NotificationService {
         if (defaultTargetPlatform == TargetPlatform.android) {
           final androidImplementation = _notifications
               .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin>();
+                AndroidFlutterLocalNotificationsPlugin
+              >();
           if (androidImplementation != null) {
             await androidImplementation.requestNotificationsPermission();
           }
@@ -104,7 +110,9 @@ class NotificationService {
 
   /// Handle notification tap/action
   void _handleNotificationResponse(NotificationResponse response) {
-    debugPrint('[NotificationService] Notification response: ${response.id}, action: ${response.actionId}');
+    debugPrint(
+      '[NotificationService] Notification response: ${response.id}, action: ${response.actionId}',
+    );
 
     // Handle actions
     if (response.actionId == _logNowActionId) {
@@ -116,15 +124,16 @@ class NotificationService {
     } else if (response.actionId == _joinSessionActionId) {
       // Navigate to socials screen
       _navigateToSocials();
-    } else if (response.id == _dailyReminderId || 
-               response.id == _eveningCheckInId || 
-               response.id == _noLogTodayId) {
+    } else if (response.id == _dailyReminderId ||
+        response.id == _eveningCheckInId ||
+        response.id == _noLogTodayId) {
       // Regular tap on logging-related notifications
       _navigateToLogging();
     } else if (response.id == _activeSessionId) {
       // Navigate to socials for active session notifications
       _navigateToSocials();
-    } else if (response.payload != null && response.payload!.startsWith('scheduled_session:')) {
+    } else if (response.payload != null &&
+        response.payload!.startsWith('scheduled_session:')) {
       // Navigate to socials for scheduled session notifications
       _navigateToSocials();
     }
@@ -188,7 +197,8 @@ class NotificationService {
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         final iosImplementation = _notifications
             .resolvePlatformSpecificImplementation<
-                IOSFlutterLocalNotificationsPlugin>();
+              IOSFlutterLocalNotificationsPlugin
+            >();
         if (iosImplementation != null) {
           final result = await iosImplementation.requestPermissions(
             alert: true,
@@ -201,9 +211,11 @@ class NotificationService {
       } else if (defaultTargetPlatform == TargetPlatform.android) {
         final androidImplementation = _notifications
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>();
+              AndroidFlutterLocalNotificationsPlugin
+            >();
         if (androidImplementation != null) {
-          final result = await androidImplementation.requestNotificationsPermission();
+          final result = await androidImplementation
+              .requestNotificationsPermission();
           return result ?? false;
         }
         return false;
@@ -216,10 +228,7 @@ class NotificationService {
   }
 
   /// Schedule daily reminder notification
-  Future<void> scheduleDailyReminder({
-    int hour = 20,
-    int minute = 0,
-  }) async {
+  Future<void> scheduleDailyReminder({int hour = 20, int minute = 0}) async {
     if (!_initialized) {
       await initialize();
     }
@@ -258,7 +267,9 @@ class NotificationService {
       repeatDaily: true,
     );
 
-    debugPrint('[NotificationService] Scheduled daily reminder at $hour:${minute.toString().padLeft(2, '0')}');
+    debugPrint(
+      '[NotificationService] Scheduled daily reminder at $hour:${minute.toString().padLeft(2, '0')}',
+    );
   }
 
   /// Schedule a notification
@@ -273,7 +284,8 @@ class NotificationService {
     const androidDetails = AndroidNotificationDetails(
       'daily_reminder_channel',
       'Daily Reflection Reminders',
-      channelDescription: 'Notifications to remind you to log your daily reflections',
+      channelDescription:
+          'Notifications to remind you to log your daily reflections',
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
@@ -286,10 +298,7 @@ class NotificationService {
           'Log Now',
           showsUserInterface: true,
         ),
-        AndroidNotificationAction(
-          _snoozeActionId,
-          'Snooze',
-        ),
+        AndroidNotificationAction(_snoozeActionId, 'Snooze'),
       ],
     );
 
@@ -338,7 +347,7 @@ class NotificationService {
   /// Cancel daily reminder
   Future<void> cancelDailyReminder() async {
     await _notifications.cancel(_dailyReminderId);
-    
+
     // Cancel any snoozed reminders
     for (int i = 1001; i <= 1010; i++) {
       await _notifications.cancel(i);
@@ -376,16 +385,13 @@ class NotificationService {
       final time = await getReminderTime();
       await scheduleDailyReminder(hour: time.hour, minute: time.minute);
     }
-    
+
     // Schedule evening check-in (9 PM default)
     await scheduleEveningCheckIn();
   }
 
   /// Schedule daily evening check-in notification
-  Future<void> scheduleEveningCheckIn({
-    int hour = 21,
-    int minute = 0,
-  }) async {
+  Future<void> scheduleEveningCheckIn({int hour = 21, int minute = 0}) async {
     if (!_initialized) {
       await initialize();
     }
@@ -415,14 +421,14 @@ class NotificationService {
       repeatDaily: true,
     );
 
-    debugPrint('[NotificationService] Scheduled evening check-in at $hour:${minute.toString().padLeft(2, '0')}');
+    debugPrint(
+      '[NotificationService] Scheduled evening check-in at $hour:${minute.toString().padLeft(2, '0')}',
+    );
   }
 
   /// Schedule inactive nudge (2+ days without logs)
   /// This should be called when app detects no logs for 2+ days
-  Future<void> scheduleInactiveNudge({
-    String? geminiMessage,
-  }) async {
+  Future<void> scheduleInactiveNudge({String? geminiMessage}) async {
     if (!_initialized) {
       await initialize();
     }
@@ -442,7 +448,8 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    final message = geminiMessage ?? 
+    final message =
+        geminiMessage ??
         'Hey, future you here—I noticed you haven\'t logged in a while. Let\'s reconnect and see how you\'re doing.';
 
     await _scheduleNotification(
@@ -486,7 +493,7 @@ class NotificationService {
     }
 
     final scheduledDate = tz.TZDateTime.from(notificationTime, tz.local);
-    
+
     // Android notification details
     final androidDetails = AndroidNotificationDetails(
       'scheduled_sessions_channel',
@@ -537,14 +544,18 @@ class NotificationService {
       payload: 'scheduled_session:$sessionId',
     );
 
-    debugPrint('[NotificationService] Scheduled session notification for session $sessionId at $scheduledDate');
+    debugPrint(
+      '[NotificationService] Scheduled session notification for session $sessionId at $scheduledDate',
+    );
   }
 
   /// Cancel scheduled session notification
   Future<void> cancelSessionNotification(int sessionId) async {
     final notificationId = _scheduledSessionBaseId + sessionId;
     await _notifications.cancel(notificationId);
-    debugPrint('[NotificationService] Cancelled session notification for session $sessionId');
+    debugPrint(
+      '[NotificationService] Cancelled session notification for session $sessionId',
+    );
   }
 
   /// Show immediate notification for session starting now
@@ -602,7 +613,9 @@ class NotificationService {
       payload: 'scheduled_session:$sessionId',
     );
 
-    debugPrint('[NotificationService] Showed immediate notification for session $sessionId');
+    debugPrint(
+      '[NotificationService] Showed immediate notification for session $sessionId',
+    );
   }
 
   // ===== DAILY LOG CHECK NOTIFICATIONS =====
@@ -655,18 +668,23 @@ class NotificationService {
         id: _noLogTodayId,
         scheduledDate: scheduledDate,
         title: 'Don\'t forget to log your day 📝',
-        body: 'Your future self is waiting to hear about today. Take a moment to reflect! 🌟',
+        body:
+            'Your future self is waiting to hear about today. Take a moment to reflect! 🌟',
         repeatDaily: false,
       );
 
       // Mark that we've checked today
       await prefs.setString(_keyLastLogCheckDate, todayKey);
-      debugPrint('[NotificationService] Scheduled no-log reminder for ${scheduledDate.toString()}');
+      debugPrint(
+        '[NotificationService] Scheduled no-log reminder for ${scheduledDate.toString()}',
+      );
     } else {
       // User has logged, cancel any pending no-log notifications
       await _notifications.cancel(_noLogTodayId);
       await prefs.setString(_keyLastLogCheckDate, todayKey);
-      debugPrint('[NotificationService] User has logged today, no reminder needed');
+      debugPrint(
+        '[NotificationService] User has logged today, no reminder needed',
+      );
     }
   }
 
@@ -700,10 +718,12 @@ class NotificationService {
       if (parts.length == 2) {
         final lastSessionKey = parts[0];
         final lastNotificationTime = DateTime.tryParse(parts[1]);
-        if (lastSessionKey == sessionKey && 
+        if (lastSessionKey == sessionKey &&
             lastNotificationTime != null &&
             now.difference(lastNotificationTime).inHours < 1) {
-          debugPrint('[NotificationService] Active session notification already sent recently');
+          debugPrint(
+            '[NotificationService] Active session notification already sent recently',
+          );
           return;
         }
       }
@@ -713,7 +733,8 @@ class NotificationService {
     final androidDetails = AndroidNotificationDetails(
       'active_sessions_channel',
       'Active Video Sessions',
-      channelDescription: 'Notifications when active video sessions are available',
+      channelDescription:
+          'Notifications when active video sessions are available',
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
@@ -744,8 +765,8 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    final participantText = participantCount == 1 
-        ? '1 person' 
+    final participantText = participantCount == 1
+        ? '1 person'
         : '$participantCount people';
 
     await _notifications.show(
@@ -762,7 +783,9 @@ class NotificationService {
       '$sessionKey|${now.toIso8601String()}',
     );
 
-    debugPrint('[NotificationService] Notified about active session: $sessionTitle');
+    debugPrint(
+      '[NotificationService] Notified about active session: $sessionTitle',
+    );
   }
 
   /// Cancel active session notification
@@ -771,5 +794,3 @@ class NotificationService {
     debugPrint('[NotificationService] Cancelled active session notification');
   }
 }
-
-

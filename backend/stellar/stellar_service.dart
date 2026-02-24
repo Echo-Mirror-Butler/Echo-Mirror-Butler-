@@ -89,17 +89,18 @@ class StellarService {
         StellarConfig.issuerPublicKey,
       );
 
-      final builder = TransactionBuilder(account)
-          .addOperation(
-            PaymentOperationBuilder(
-              recipientPublicKey,
-              echoAsset,
-              amount.toStringAsFixed(7),
-            ).build(),
-          );
+      final builder = TransactionBuilder(account).addOperation(
+        PaymentOperationBuilder(
+          recipientPublicKey,
+          echoAsset,
+          amount.toStringAsFixed(7),
+        ).build(),
+      );
 
       if (memo != null && memo.isNotEmpty) {
-        builder.addMemo(MemoText(memo.length > 28 ? memo.substring(0, 28) : memo));
+        builder.addMemo(
+          MemoText(memo.length > 28 ? memo.substring(0, 28) : memo),
+        );
       }
 
       final transaction = builder.build();
@@ -111,7 +112,9 @@ class StellarService {
         debugPrint('[StellarService] Sent $amount ECHO — tx: $hash');
         return hash;
       }
-      debugPrint('[StellarService] Send failed: ${response.extras?.resultCodes}');
+      debugPrint(
+        '[StellarService] Send failed: ${response.extras?.resultCodes}',
+      );
       return null;
     } catch (e) {
       debugPrint('[StellarService] Send ECHO error: $e');

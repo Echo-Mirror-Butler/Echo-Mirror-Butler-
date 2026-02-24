@@ -20,11 +20,9 @@ class MoodTrendChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Filter logs with mood values and sort by date
-    final logsWithMood = recentLogs
-        .where((log) => log.mood != null)
-        .toList()
+    final logsWithMood = recentLogs.where((log) => log.mood != null).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 
     if (logsWithMood.isEmpty) {
@@ -33,7 +31,7 @@ class MoodTrendChart extends StatelessWidget {
 
     // Prepare chart data
     final chartData = _prepareChartData(logsWithMood);
-    
+
     if (chartData.isEmpty) {
       return _buildEmptyState(context, theme);
     }
@@ -41,9 +39,7 @@ class MoodTrendChart extends StatelessWidget {
     return Card(
       elevation: 4,
       shadowColor: AppTheme.primaryColor.withOpacity(0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
@@ -70,10 +66,7 @@ class MoodTrendChart extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppTheme.accentColor,
-                        AppTheme.primaryColor,
-                      ],
+                      colors: [AppTheme.accentColor, AppTheme.primaryColor],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -100,9 +93,7 @@ class MoodTrendChart extends StatelessWidget {
             // Chart
             SizedBox(
               height: 220,
-              child: LineChart(
-                _buildLineChartData(chartData, theme),
-              ),
+              child: LineChart(_buildLineChartData(chartData, theme)),
             ),
             const SizedBox(height: 16),
             // Legend
@@ -127,19 +118,24 @@ class MoodTrendChart extends StatelessWidget {
 
     // Generate data points for the last N days
     for (int i = daysToShow - 1; i >= 0; i--) {
-      final date = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: i));
+      final date = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: i));
       final normalizedDate = DateTime(date.year, date.month, date.day);
 
       if (normalizedDate.isBefore(startDate)) continue;
 
       final log = logMap[normalizedDate];
       if (log != null && log.mood != null) {
-        dataPoints.add(ChartDataPoint(
-          date: normalizedDate,
-          mood: log.mood!,
-          note: log.notes,
-        ));
+        dataPoints.add(
+          ChartDataPoint(
+            date: normalizedDate,
+            mood: log.mood!,
+            note: log.notes,
+          ),
+        );
       }
     }
 
@@ -181,9 +177,7 @@ class MoodTrendChart extends StatelessWidget {
         rightTitles: const AxisTitles(
           sideTitles: SideTitles(showTitles: false),
         ),
-        topTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
+        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
@@ -247,9 +241,7 @@ class MoodTrendChart extends StatelessWidget {
           color: AppTheme.primaryColor,
           barWidth: 3,
           isStrokeCapRound: true,
-          dotData: FlDotData(
-            show: true,
-          ),
+          dotData: FlDotData(show: true),
           belowBarData: BarAreaData(
             show: true,
             gradient: LinearGradient(
@@ -275,8 +267,8 @@ class MoodTrendChart extends StatelessWidget {
                 final point = dataPoints[index];
                 final noteSnippet = point.note != null && point.note!.isNotEmpty
                     ? (point.note!.length > 30
-                        ? '${point.note!.substring(0, 30)}...'
-                        : point.note!)
+                          ? '${point.note!.substring(0, 30)}...'
+                          : point.note!)
                     : 'No note';
                 return LineTooltipItem(
                   '${DateFormatter.formatDate(point.date)}\n'
@@ -318,10 +310,7 @@ class MoodTrendChart extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [
-                AppTheme.primaryColor,
-                AppTheme.secondaryColor,
-              ],
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
             ),
           ),
         ),
@@ -341,9 +330,7 @@ class MoodTrendChart extends StatelessWidget {
     return Card(
       elevation: 4,
       shadowColor: AppTheme.primaryColor.withOpacity(0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         padding: const EdgeInsets.all(40),
@@ -387,10 +374,5 @@ class ChartDataPoint {
   final int mood;
   final String? note;
 
-  const ChartDataPoint({
-    required this.date,
-    required this.mood,
-    this.note,
-  });
+  const ChartDataPoint({required this.date, required this.mood, this.note});
 }
-

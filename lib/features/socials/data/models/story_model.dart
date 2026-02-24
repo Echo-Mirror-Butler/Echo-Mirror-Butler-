@@ -1,4 +1,5 @@
-import 'package:echomirror_server_client/echomirror_server_client.dart' as serverpod;
+import 'package:echomirror_server_client/echomirror_server_client.dart'
+    as serverpod;
 
 /// Story model for Instagram-style stories
 class StoryModel {
@@ -44,4 +45,3 @@ class StoryModel {
   bool get isExpired => DateTime.now().isAfter(expiresAt);
   bool get hasViewed => false; // Will be set based on current user
 }
-

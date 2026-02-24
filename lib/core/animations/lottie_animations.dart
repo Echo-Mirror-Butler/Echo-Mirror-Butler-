@@ -1,9 +1,9 @@
 /// Lottie animation asset paths
-/// 
+///
 /// Download free Lottie animations from:
 /// - https://lottiefiles.com/
 /// - https://lordicon.com/
-/// 
+///
 /// Place the JSON files in assets/lottie/ directory
 class LottieAnimations {
   LottieAnimations._();
@@ -30,4 +30,3 @@ class LottieAnimations {
   static const String moodHappy = 'assets/lottie/mood_happy.json';
   static const String habitCheck = 'assets/lottie/habit_check.json';
 }
-

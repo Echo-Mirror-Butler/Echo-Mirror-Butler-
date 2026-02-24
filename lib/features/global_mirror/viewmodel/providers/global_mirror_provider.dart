@@ -19,7 +19,10 @@ final moodPinsStreamProvider = StreamProvider<List<MoodPinModel>>((ref) {
 });
 
 /// Provider for video feed with pagination
-final videoFeedProvider = FutureProvider.family<List<VideoPostModel>, int>((ref, page) async {
+final videoFeedProvider = FutureProvider.family<List<VideoPostModel>, int>((
+  ref,
+  page,
+) async {
   final repository = ref.watch(globalMirrorRepositoryProvider);
   return repository.getVideoFeed(offset: page * 10, limit: 10);
 });
@@ -58,7 +61,8 @@ class GlobalMirrorState {
   }) {
     return GlobalMirrorState(
       isSharing: isSharing ?? this.isSharing,
-      hasLocationPermission: hasLocationPermission ?? this.hasLocationPermission,
+      hasLocationPermission:
+          hasLocationPermission ?? this.hasLocationPermission,
       error: error,
       videoFeed: videoFeed ?? this.videoFeed,
       currentVideoPage: currentVideoPage ?? this.currentVideoPage,
@@ -76,14 +80,18 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
   /// Share mood with anonymized location
   Future<bool> shareMood(String sentiment) async {
     try {
-      debugPrint('[GlobalMirrorNotifier] shareMood called with sentiment: $sentiment');
+      debugPrint(
+        '[GlobalMirrorNotifier] shareMood called with sentiment: $sentiment',
+      );
       state = state.copyWith(isSharing: true, error: null);
 
       // Get current location
       debugPrint('[GlobalMirrorNotifier] Getting current location...');
       final position = await _repository.getCurrentLocation();
       if (position == null) {
-        debugPrint('[GlobalMirrorNotifier] Location permission denied or unavailable');
+        debugPrint(
+          '[GlobalMirrorNotifier] Location permission denied or unavailable',
+        );
         state = state.copyWith(
           isSharing: false,
           error: 'Location permission required',
@@ -92,7 +100,9 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
         return false;
       }
 
-      debugPrint('[GlobalMirrorNotifier] Location obtained: ${position.latitude}, ${position.longitude}');
+      debugPrint(
+        '[GlobalMirrorNotifier] Location obtained: ${position.latitude}, ${position.longitude}',
+      );
 
       // Add mood pin
       debugPrint('[GlobalMirrorNotifier] Adding mood pin to repository...');
@@ -107,17 +117,16 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       state = state.copyWith(
         isSharing: false,
         hasLocationPermission: true,
-        error: (pinId != null && pinId.isNotEmpty) ? null : 'Failed to share mood',
+        error: (pinId != null && pinId.isNotEmpty)
+            ? null
+            : 'Failed to share mood',
       );
 
       return pinId != null && pinId.isNotEmpty;
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorNotifier] Error sharing mood: $e');
       debugPrint('[GlobalMirrorNotifier] Stack trace: $stackTrace');
-      state = state.copyWith(
-        isSharing: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isSharing: false, error: e.toString());
       return false;
     }
   }
@@ -131,7 +140,7 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       state = state.copyWith(isSharing: true, error: null);
 
       debugPrint('[GlobalMirrorProvider] Starting video upload: $videoPath');
-      
+
       final videoUrl = await _repository.uploadVideo(
         videoPath: videoPath,
         moodTag: moodTag,
@@ -139,19 +148,19 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
 
       if (videoUrl != null && videoUrl.isNotEmpty) {
         debugPrint('[GlobalMirrorProvider] Video upload successful: $videoUrl');
-        state = state.copyWith(
-          isSharing: false,
-          error: null,
-        );
+        state = state.copyWith(isSharing: false, error: null);
 
         // Refresh video feed if successful
         await loadVideoFeed(refresh: true);
         return true;
       } else {
-        debugPrint('[GlobalMirrorProvider] Video upload failed: returned null or empty URL');
+        debugPrint(
+          '[GlobalMirrorProvider] Video upload failed: returned null or empty URL',
+        );
         state = state.copyWith(
           isSharing: false,
-          error: 'Failed to upload video. Please check your connection and try again.',
+          error:
+              'Failed to upload video. Please check your connection and try again.',
         );
         return false;
       }
@@ -175,7 +184,7 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       state = state.copyWith(isSharing: true, error: null);
 
       debugPrint('[GlobalMirrorProvider] Starting image upload: $imagePath');
-      
+
       final imageUrl = await _repository.uploadImage(
         imagePath: imagePath,
         moodTag: moodTag,
@@ -183,36 +192,33 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
 
       if (imageUrl != null && imageUrl.isNotEmpty) {
         debugPrint('[GlobalMirrorProvider] Image upload successful: $imageUrl');
-        state = state.copyWith(
-          isSharing: false,
-          error: null,
-        );
+        state = state.copyWith(isSharing: false, error: null);
 
         // Refresh video feed if successful
         await loadVideoFeed(refresh: true);
         return true;
       } else {
-        debugPrint('[GlobalMirrorProvider] Image upload failed: returned null or empty URL');
+        debugPrint(
+          '[GlobalMirrorProvider] Image upload failed: returned null or empty URL',
+        );
         state = state.copyWith(
           isSharing: false,
-          error: 'Failed to upload image. Please check your connection and try again.',
+          error:
+              'Failed to upload image. Please check your connection and try again.',
         );
         return false;
       }
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorProvider] Image upload error: $e');
       debugPrint('[GlobalMirrorProvider] Stack trace: $stackTrace');
-      
+
       // Extract error message, removing "Exception: " prefix if present
       String errorMessage = e.toString();
       if (errorMessage.startsWith('Exception: ')) {
         errorMessage = errorMessage.substring(11);
       }
-      
-      state = state.copyWith(
-        isSharing: false,
-        error: errorMessage,
-      );
+
+      state = state.copyWith(isSharing: false, error: errorMessage);
       return false;
     }
   }
@@ -220,8 +226,10 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
   /// Load video feed
   Future<void> loadVideoFeed({bool refresh = false}) async {
     try {
-      debugPrint('[GlobalMirrorProvider] Loading video feed (refresh: $refresh)');
-      
+      debugPrint(
+        '[GlobalMirrorProvider] Loading video feed (refresh: $refresh)',
+      );
+
       if (refresh) {
         state = state.copyWith(currentVideoPage: 0, videoFeed: [], error: null);
       }
@@ -271,10 +279,12 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
         moodPinId: moodPinId,
         text: text,
       );
-      
+
       if (commentId != null && commentId.isNotEmpty) {
         // Refresh notifications since Serverpod created them automatically
-        ref.read(moodCommentNotificationProvider.notifier).refreshNotifications();
+        ref
+            .read(moodCommentNotificationProvider.notifier)
+            .refreshNotifications();
         return true;
       }
       return false;
@@ -295,18 +305,27 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
   }
 
   /// Generate cluster encouragement message
-  Future<String> generateClusterEncouragement(String sentiment, int nearbyCount) async {
+  Future<String> generateClusterEncouragement(
+    String sentiment,
+    int nearbyCount,
+  ) async {
     try {
-      return await _repository.generateClusterEncouragement(sentiment, nearbyCount);
+      return await _repository.generateClusterEncouragement(
+        sentiment,
+        nearbyCount,
+      );
     } catch (e) {
-      debugPrint('[GlobalMirrorNotifier] Error generating cluster encouragement: $e');
+      debugPrint(
+        '[GlobalMirrorNotifier] Error generating cluster encouragement: $e',
+      );
       return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
     }
   }
 }
 
 /// Provider for Global Mirror state notifier
-final globalMirrorProvider = StateNotifierProvider<GlobalMirrorNotifier, GlobalMirrorState>((ref) {
-  final repository = ref.watch(globalMirrorRepositoryProvider);
-  return GlobalMirrorNotifier(repository);
-});
+final globalMirrorProvider =
+    StateNotifierProvider<GlobalMirrorNotifier, GlobalMirrorState>((ref) {
+      final repository = ref.watch(globalMirrorRepositoryProvider);
+      return GlobalMirrorNotifier(repository);
+    });
