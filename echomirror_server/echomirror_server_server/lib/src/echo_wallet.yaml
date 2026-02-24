@@ -1,0 +1,9 @@
+class: EchoWallet
+table: echo_wallets
+fields:
+  userId: int
+  balance: double
+indexes:
+  echo_wallet_user_idx:
+    fields: userId
+    unique: true
