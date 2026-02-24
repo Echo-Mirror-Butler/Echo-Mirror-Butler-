@@ -140,7 +140,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
                     decoration: BoxDecoration(
                       color: index == _currentPage
                           ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -451,7 +451,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
                   Text(
                     'Expires in ${_getTimeRemaining(widget.video.expiresAt)}',
                     style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 10,
                     ),
                   ),
@@ -486,7 +486,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: const FaIcon(
@@ -509,7 +509,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(

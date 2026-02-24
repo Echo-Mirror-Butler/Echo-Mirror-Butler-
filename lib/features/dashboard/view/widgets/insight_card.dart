@@ -24,16 +24,16 @@ class InsightCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [color.withOpacity(0.15), color.withOpacity(0.05)]
-              : [Colors.white, color.withOpacity(0.03)],
+              ? [color.withValues(alpha: 0.15), color.withValues(alpha: 0.05)]
+              : [Colors.white, color.withValues(alpha: 0.03)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : color.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : color.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -58,12 +58,12 @@ class InsightCard extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [color, color.withOpacity(0.7)],
+                          colors: [color, color.withValues(alpha: 0.7)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: color.withOpacity(0.3),
+                            color: color.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -94,7 +94,7 @@ class InsightCard extends StatelessWidget {
                           Text(
                             DateFormatter.formatDate(insight.date),
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 
                                 0.5,
                               ),
                               fontSize: 12,
@@ -110,7 +110,7 @@ class InsightCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.15),
+                        color: color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -131,7 +131,7 @@ class InsightCard extends StatelessWidget {
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
                     height: 1.5,
-                    color: theme.colorScheme.onSurface.withOpacity(0.8),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,

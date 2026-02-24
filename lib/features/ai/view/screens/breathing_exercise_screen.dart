@@ -346,8 +346,8 @@ class _BreathingExerciseScreenState
                             color: index < _currentCycle
                                 ? AppTheme.primaryColor
                                 : index == _currentCycle
-                                ? AppTheme.primaryColor.withOpacity(0.5)
-                                : Colors.white.withOpacity(0.2),
+                                ? AppTheme.primaryColor.withValues(alpha: 0.5)
+                                : Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         ),
@@ -396,7 +396,7 @@ class _BreathingExerciseScreenState
                                       letterSpacing: 1.5,
                                       shadows: [
                                         Shadow(
-                                          color: _getPhaseColor().withOpacity(
+                                          color: _getPhaseColor().withValues(alpha: 
                                             0.5,
                                           ),
                                           blurRadius: 20,
@@ -441,10 +441,10 @@ class _BreathingExerciseScreenState
                                             shape: BoxShape.circle,
                                             gradient: RadialGradient(
                                               colors: [
-                                                _getPhaseColor().withOpacity(
+                                                _getPhaseColor().withValues(alpha: 
                                                   0.15,
                                                 ),
-                                                _getPhaseColor().withOpacity(
+                                                _getPhaseColor().withValues(alpha: 
                                                   0.0,
                                                 ),
                                               ],
@@ -459,10 +459,10 @@ class _BreathingExerciseScreenState
                                             shape: BoxShape.circle,
                                             gradient: RadialGradient(
                                               colors: [
-                                                _getPhaseColor().withOpacity(
+                                                _getPhaseColor().withValues(alpha: 
                                                   0.9,
                                                 ),
-                                                _getPhaseColor().withOpacity(
+                                                _getPhaseColor().withValues(alpha: 
                                                   0.6,
                                                 ),
                                               ],
@@ -470,7 +470,7 @@ class _BreathingExerciseScreenState
                                             boxShadow: [
                                               BoxShadow(
                                                 color: _getPhaseColor()
-                                                    .withOpacity(0.5),
+                                                    .withValues(alpha: 0.5),
                                                 blurRadius: 50 * scale,
                                                 spreadRadius: 8 * scale,
                                               ),
@@ -483,7 +483,7 @@ class _BreathingExerciseScreenState
                                           height: 120 * scale,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: Colors.white.withOpacity(
+                                            color: Colors.white.withValues(alpha: 
                                               0.3,
                                             ),
                                           ),
@@ -501,7 +501,7 @@ class _BreathingExerciseScreenState
                                     key: ValueKey<String>(_currentPhase),
                                     style: GoogleFonts.poppins(
                                       fontSize: 20,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(alpha: 0.9),
                                       fontWeight: FontWeight.w500,
                                       shadows: [
                                         const Shadow(
@@ -534,7 +534,7 @@ class _BreathingExerciseScreenState
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                         const SizedBox(height: 28),
@@ -548,7 +548,7 @@ class _BreathingExerciseScreenState
                                 borderRadius: BorderRadius.circular(50),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(
+                                    color: AppTheme.primaryColor.withValues(alpha: 
                                       0.3,
                                     ),
                                     blurRadius: 15,
@@ -583,7 +583,7 @@ class _BreathingExerciseScreenState
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: theme.colorScheme.onSurface
-                                    .withOpacity(0.6),
+                                    .withValues(alpha: 0.6),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,
                                   vertical: 12,
@@ -595,7 +595,7 @@ class _BreathingExerciseScreenState
                                   Icon(
                                     FontAwesomeIcons.xmark,
                                     size: 18,
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
@@ -603,7 +603,7 @@ class _BreathingExerciseScreenState
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(alpha: 0.9),
                                     ),
                                   ),
                                 ],
@@ -689,7 +689,7 @@ class _BreathingExerciseScreenState
                   'You\'ve completed your breathing exercise.\nHow did you feel after the breathing exercise?',
                   style: GoogleFonts.poppins(
                     fontSize: 18,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -743,7 +743,7 @@ class _BreathingExerciseScreenState
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.white.withOpacity(0.8),
+                    foregroundColor: Colors.white.withValues(alpha: 0.8),
                   ),
                   child: Text('Done', style: GoogleFonts.poppins(fontSize: 16)),
                 ),
@@ -764,11 +764,11 @@ class _BreathingExerciseScreenState
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? color.withOpacity(0.3)
-              : Colors.white.withOpacity(0.1),
+              ? color.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(25),
           border: Border.all(
-            color: isSelected ? color : Colors.white.withOpacity(0.3),
+            color: isSelected ? color : Colors.white.withValues(alpha: 0.3),
             width: 2,
           ),
         ),
@@ -848,9 +848,9 @@ class _BreathingExerciseScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -868,7 +868,7 @@ class _BreathingExerciseScreenState
             rec['message'] as String,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
           const SizedBox(height: 16),
@@ -891,7 +891,7 @@ class _BreathingExerciseScreenState
                       tip,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: Colors.white.withOpacity(0.85),
+                        color: Colors.white.withValues(alpha: 0.85),
                       ),
                     ),
                   ),

@@ -89,10 +89,10 @@ class PrivacyInfoSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -109,7 +109,7 @@ class PrivacyInfoSheet extends StatelessWidget {
                       'We aggregate data to show global mood patterns, never to identify individuals.',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: theme.colorScheme.onSurface.withOpacity(0.8),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                       ),
                     ),
                   ),
@@ -157,7 +157,7 @@ class PrivacyInfoSheet extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: FaIcon(icon, color: AppTheme.primaryColor, size: 16),

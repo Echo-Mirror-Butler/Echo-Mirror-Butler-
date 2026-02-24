@@ -198,7 +198,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -233,7 +233,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
           Icon(
             FontAwesomeIcons.images,
             size: 64,
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
@@ -307,7 +307,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppTheme.primaryColor),
         ),

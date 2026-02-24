@@ -78,8 +78,8 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.1),
-                  AppTheme.secondaryColor.withOpacity(0.1),
+                  AppTheme.primaryColor.withValues(alpha: 0.1),
+                  AppTheme.secondaryColor.withValues(alpha: 0.1),
                 ],
               ),
             ),
@@ -159,7 +159,7 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppTheme.primaryColor.withOpacity(0.2),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -168,7 +168,7 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         height: 1.6,
-                        color: theme.colorScheme.onSurface.withOpacity(0.9),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -178,7 +178,7 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                     'Generated ${_formatDate(widget.insight.generatedAt)}',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                       fontStyle: FontStyle.italic,
                     ),
                   ),

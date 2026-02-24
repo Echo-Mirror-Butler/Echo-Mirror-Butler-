@@ -189,7 +189,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: sentimentColor.withOpacity(0.1),
+                color: sentimentColor.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -222,7 +222,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                           'Send a message of support',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -248,10 +248,10 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -303,7 +303,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                             Icon(
                               FontAwesomeIcons.heart,
                               size: 48,
-                              color: theme.colorScheme.onSurface.withOpacity(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 
                                 0.3,
                               ),
                             ),
@@ -312,7 +312,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               'No comments yet',
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
-                                color: theme.colorScheme.onSurface.withOpacity(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 
                                   0.6,
                                 ),
                               ),
@@ -322,7 +322,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               'Be the first to send support!',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 
                                   0.5,
                                 ),
                               ),
@@ -343,7 +343,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                             color: theme.colorScheme.surface,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: theme.colorScheme.outline.withOpacity(0.2),
+                              color: theme.colorScheme.outline.withValues(alpha: 0.2),
                             ),
                           ),
                           child: Column(
@@ -374,7 +374,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.5),
+                                      .withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -391,7 +391,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                 color: theme.colorScheme.surface,
                 border: Border(
                   top: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
               ),
@@ -408,12 +408,12 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                             'Send support... (e.g., "How are you?", "You\'re not alone")',
                         hintStyle: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withOpacity(0.3),
+                            color: theme.colorScheme.outline.withValues(alpha: 0.3),
                           ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(

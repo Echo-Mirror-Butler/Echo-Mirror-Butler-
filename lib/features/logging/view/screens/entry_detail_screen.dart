@@ -72,7 +72,7 @@ class EntryDetailScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -89,7 +89,7 @@ class EntryDetailScreen extends ConsumerWidget {
                           Text(
                             'Date',
                             style: theme.textTheme.labelMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 
                                 0.6,
                               ),
                             ),
@@ -124,7 +124,7 @@ class EntryDetailScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _getMoodColor(entry.mood!).withOpacity(0.1),
+                          color: _getMoodColor(entry.mood!).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -141,7 +141,7 @@ class EntryDetailScreen extends ConsumerWidget {
                             Text(
                               'Mood',
                               style: theme.textTheme.labelMedium?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 
                                   0.6,
                                 ),
                               ),
@@ -180,7 +180,7 @@ class EntryDetailScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.secondaryColor.withOpacity(0.1),
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -203,7 +203,7 @@ class EntryDetailScreen extends ConsumerWidget {
                       Text(
                         'No habits logged for this day',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           fontStyle: FontStyle.italic,
                         ),
                       )
@@ -215,7 +215,7 @@ class EntryDetailScreen extends ConsumerWidget {
                           return Chip(
                             label: Text(habit),
                             backgroundColor: AppTheme.secondaryColor
-                                .withOpacity(0.1),
+                                .withValues(alpha: 0.1),
                             labelStyle: TextStyle(
                               color: AppTheme.secondaryColor,
                               fontWeight: FontWeight.w600,
@@ -245,7 +245,7 @@ class EntryDetailScreen extends ConsumerWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.accentColor.withOpacity(0.1),
+                            color: AppTheme.accentColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -268,7 +268,7 @@ class EntryDetailScreen extends ConsumerWidget {
                       Text(
                         'No notes for this day',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           fontStyle: FontStyle.italic,
                         ),
                       )

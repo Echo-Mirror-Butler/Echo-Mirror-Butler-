@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -83,6 +82,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
       if (mounted) {
         // Navigate to login - the router redirect should now allow this
+        // ignore: use_build_context_synchronously
         context.go('/login');
       }
     } catch (e, stackTrace) {
@@ -93,6 +93,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         try {
           await markOnboardingCompleted();
           await Future.delayed(const Duration(milliseconds: 100));
+          // ignore: use_build_context_synchronously
           context.go('/login');
         } catch (e2) {
           debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
@@ -125,7 +126,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ),
@@ -158,7 +159,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     count: _pages.length,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface.withOpacity(0.2),
+                      dotColor: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,
@@ -187,7 +188,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface.withOpacity(
+                                color: theme.colorScheme.onSurface.withValues(alpha: 
                                   0.7,
                                 ),
                               ),
@@ -286,7 +287,7 @@ class _OnboardingPage extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: data.gradient.first.withOpacity(0.3),
+                      color: data.gradient.first.withValues(alpha: 0.3),
                       blurRadius: 30,
                       spreadRadius: 10,
                     ),
@@ -370,8 +371,8 @@ class _OnboardingPage extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.2),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.2),
                     ],
                   ),
                 ),
@@ -433,7 +434,7 @@ class _OnboardingPage extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.normal,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.6,
               ),
               textAlign: TextAlign.center,

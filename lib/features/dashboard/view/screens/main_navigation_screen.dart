@@ -65,7 +65,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           boxShadow: [
             BoxShadow(
               blurRadius: 20,
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               offset: const Offset(0, -2),
             ),
           ],
@@ -137,7 +137,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppTheme.primaryColor.withOpacity(0.1)
+                ? AppTheme.primaryColor.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -150,7 +150,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 size: 20,
                 color: isSelected
                     ? AppTheme.primaryColor
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 4),
               Text(
@@ -160,7 +160,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected
                       ? AppTheme.primaryColor
-                      : theme.colorScheme.onSurface.withOpacity(0.6),
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

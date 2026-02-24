@@ -3,7 +3,6 @@ import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/serverpod_client_service.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:echomirror_server_client/echomirror_server_client.dart'
     as serverpod;
 import '../models/video_session_model.dart';

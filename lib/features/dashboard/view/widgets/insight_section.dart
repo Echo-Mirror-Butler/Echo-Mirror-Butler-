@@ -46,7 +46,7 @@ class InsightSection extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [color, color.withOpacity(0.7)],
+                        colors: [color, color.withValues(alpha: 0.7)],
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -68,7 +68,7 @@ class InsightSection extends StatelessWidget {
                       Text(
                         '${insights.length} ${insights.length == 1 ? 'insight' : 'insights'}',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),

@@ -84,6 +84,8 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+  serverpod: any
+  echomirror_server: any
 flutter:
   uses-material-design: true
 

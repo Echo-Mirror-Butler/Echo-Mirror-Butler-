@@ -58,7 +58,7 @@ class _MoodPinWidgetState extends State<MoodPinWidget>
                   height: 24 * _pulseAnimation.value,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: widget.color.withOpacity(
+                    color: widget.color.withValues(alpha: 
                       0.3 / _pulseAnimation.value,
                     ),
                   ),
@@ -75,7 +75,7 @@ class _MoodPinWidgetState extends State<MoodPinWidget>
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: widget.color.withOpacity(0.5),
+                    color: widget.color.withValues(alpha: 0.5),
                     blurRadius: 8,
                     spreadRadius: 2,
                   ),
