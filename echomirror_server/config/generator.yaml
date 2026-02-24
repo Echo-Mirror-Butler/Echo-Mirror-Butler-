@@ -1,4 +1,2 @@
 type: server
-serverPackage: echomirror_server
-clientPackage: echomirror_server_client
-clientPackageRelativePath: ../echomirror_server_client
+client_package_path: echomirror_server_client

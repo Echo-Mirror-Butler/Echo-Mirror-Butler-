@@ -1,9 +1,8 @@
 import 'package:serverpod/serverpod.dart';
 import 'package:echomirror_server/server.dart';
-import 'package:serverpod_auth_idp/serverpod_auth_idp.dart' as auth;
+import 'package:serverpod_auth_server/serverpod_auth_server.dart' as auth;
 
 void main(List<String> args) async {
-  // Initialize Serverpod
   final pod = Serverpod(
     args,
     Protocol(),
@@ -11,6 +10,5 @@ void main(List<String> args) async {
     authenticationHandler: auth.authenticationHandler,
   );
 
-  // Start the server
   await pod.start();
 }
