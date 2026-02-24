@@ -22,11 +22,11 @@ class AppStrings {
 
   // Errors
   static const String errorGeneric = 'Something went wrong';
-  static const String errorNetwork = 'Network error. Please check your connection.';
+  static const String errorNetwork =
+      'Network error. Please check your connection.';
   static const String errorAuth = 'Authentication failed. Please try again.';
 
   // Success
   static const String successLogin = 'Login successful';
   static const String successSignUp = 'Account created successfully';
 }
-

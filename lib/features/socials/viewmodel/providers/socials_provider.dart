@@ -49,7 +49,8 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
   final SocialsRepository _repository;
   final NotificationService _notificationService = NotificationService();
   Timer? _refreshTimer;
-  List<String> _notifiedSessions = []; // Track sessions we've already notified about
+  List<String> _notifiedSessions =
+      []; // Track sessions we've already notified about
 
   /// Start auto-refresh timer (every 5 seconds)
   void _startAutoRefresh() {
@@ -77,7 +78,7 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
   /// Load active sessions and stories
   Future<void> loadActiveSessions({bool silent = false}) async {
     if (!silent) {
-    state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(isLoading: true, error: null);
     }
     try {
       final sessions = await _repository.getActiveSessions();
@@ -87,7 +88,7 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
         stories: stories,
         isLoading: false,
       );
-      
+
       // Notify about new active sessions
       if (sessions.isNotEmpty) {
         _notifyAboutActiveSessions(sessions);
@@ -95,19 +96,17 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
     } catch (e) {
       debugPrint('[SocialsNotifier] Error loading sessions: $e');
       if (!silent) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+        state = state.copyWith(isLoading: false, error: e.toString());
       }
     }
   }
-  
+
   /// Notify about active sessions
   void _notifyAboutActiveSessions(List<VideoSessionModel> sessions) {
     for (final session in sessions) {
       // Only notify about sessions we haven't notified about yet
-      final sessionKey = '${session.id}-${session.createdAt.millisecondsSinceEpoch}';
+      final sessionKey =
+          '${session.id}-${session.createdAt.millisecondsSinceEpoch}';
       if (!_notifiedSessions.contains(sessionKey)) {
         _notificationService.notifyActiveSessionAvailable(
           sessionTitle: session.title,
@@ -115,21 +114,21 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
           participantCount: session.participantCount,
         );
         _notifiedSessions.add(sessionKey);
-        
+
         // Clean up old session keys (keep only last 10)
         if (_notifiedSessions.length > 10) {
           _notifiedSessions.removeAt(0);
         }
       }
     }
-    
+
     // Remove keys for sessions that are no longer active
     final activeSessionKeys = sessions
         .map((s) => '${s.id}-${s.createdAt.millisecondsSinceEpoch}')
         .toSet();
     _notifiedSessions.removeWhere((key) => !activeSessionKeys.contains(key));
   }
-  
+
   /// Load stories only
   Future<void> loadStories({bool silent = false}) async {
     try {
@@ -186,8 +185,8 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
 }
 
 /// Socials provider
-final socialsProvider =
-    StateNotifierProvider<SocialsNotifier, SocialsState>((ref) {
+final socialsProvider = StateNotifierProvider<SocialsNotifier, SocialsState>((
+  ref,
+) {
   return SocialsNotifier(ref.read(socialsRepositoryProvider));
 });
-

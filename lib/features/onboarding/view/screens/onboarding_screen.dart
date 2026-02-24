@@ -30,7 +30,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       description:
           'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
       icon: FontAwesomeIcons.userTie,
-      imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+      imageUrl:
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
       lottieAsset: LottieAnimations.mirrorReflection,
       gradient: [AppTheme.primaryColor, AppTheme.secondaryColor],
     ),
@@ -39,7 +40,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       description:
           'Capture your daily reflections, track your mood, and build meaningful habits. Your journey starts with a single entry.',
       icon: FontAwesomeIcons.book,
-      imageUrl: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
+      imageUrl:
+          'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
       lottieAsset: LottieAnimations.habitCheck,
       gradient: [AppTheme.secondaryColor, AppTheme.accentColor],
     ),
@@ -48,7 +50,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       description:
           'Get AI-powered insights about your patterns, predictions for your future, and motivational letters from your future self.',
       icon: FontAwesomeIcons.envelopeOpen,
-      imageUrl: 'https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=800&q=80',
+      imageUrl:
+          'https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=800&q=80',
       lottieAsset: LottieAnimations.envelopeOpen,
       gradient: [AppTheme.accentColor, AppTheme.primaryColor],
     ),
@@ -70,14 +73,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     try {
       // Mark onboarding as completed
       await markOnboardingCompleted();
-      
+
       // Invalidate the provider to refresh the router's redirect logic
       ref.invalidate(onboardingCompletedProvider);
-      
+
       // Wait a bit longer to ensure SharedPreferences write completes
       // and the provider state is refreshed
       await Future.delayed(const Duration(milliseconds: 200));
-      
+
       if (mounted) {
         // Navigate to login - the router redirect should now allow this
         context.go('/login');
@@ -184,7 +187,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.7,
+                                ),
                               ),
                             ),
                           )
@@ -274,18 +279,18 @@ class _OnboardingPage extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               // Background image
-          Container(
-            width: 280,
-            height: 280,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: data.gradient.first.withOpacity(0.3),
-                  blurRadius: 30,
-                  spreadRadius: 10,
-                ),
-              ],
+              Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: data.gradient.first.withOpacity(0.3),
+                      blurRadius: 30,
+                      spreadRadius: 10,
+                    ),
+                  ],
                 ),
                 child: ClipOval(
                   child: data.imageUrl != null
@@ -302,9 +307,10 @@ class _OnboardingPage extends StatelessWidget {
                                   end: Alignment.bottomRight,
                                   colors: data.gradient,
                                 ),
-            ),
-            child: Center(
-                                child: loadingProgress.expectedTotalBytes != null
+                              ),
+                              child: Center(
+                                child:
+                                    loadingProgress.expectedTotalBytes != null
                                     ? ShimmerLoading(
                                         width: 40,
                                         height: 40,
@@ -316,10 +322,10 @@ class _OnboardingPage extends StatelessWidget {
                                         height: 40,
                                         baseColor: Colors.white24,
                                         highlightColor: Colors.white70,
-                                ),
+                                      ),
                               ),
-                        );
-                      },
+                            );
+                          },
                           errorBuilder: (context, error, stackTrace) {
                             // Fallback to gradient if image fails
                             return Container(
@@ -333,11 +339,11 @@ class _OnboardingPage extends StatelessWidget {
                               ),
                               child: Center(
                                 child: Icon(
-                      data.icon,
-                      size: 120,
-                      color: Colors.white,
-                    ),
-            ),
+                                  data.icon,
+                                  size: 120,
+                                  color: Colors.white,
+                                ),
+                              ),
                             );
                           },
                         )
@@ -353,7 +359,7 @@ class _OnboardingPage extends StatelessWidget {
                         ),
                 ),
               ),
-              
+
               // Gradient overlay for better Lottie visibility
               Container(
                 width: 280,
@@ -370,7 +376,7 @@ class _OnboardingPage extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               // Lottie animation overlay
               if (data.lottieAsset != null)
                 SizedBox(
@@ -462,4 +468,3 @@ class OnboardingPageData {
     required this.gradient,
   });
 }
-

@@ -1,0 +1,23 @@
+# LogEntry model for daily logging feature
+class: LogEntry
+
+# This class represents a row in the database
+table: log_entries
+
+# The fields (and columns if connected to the database) of the class
+fields:
+  ### The user ID who owns this entry
+  userId: String
+  ### The date of the log entry
+  date: DateTime
+  ### Mood rating from 1-5 (optional)
+  mood: int?
+  ### List of habits for this day
+  habits: List<String>
+  ### Optional notes about the day
+  notes: String?
+  ### When the entry was created
+  createdAt: DateTime
+  ### When the entry was last updated (optional)
+  updatedAt: DateTime?
+

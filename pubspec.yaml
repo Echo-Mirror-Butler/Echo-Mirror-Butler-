@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+8
 
 environment:
-  sdk: ^3.10.0
+  sdk: ^3.8.0
 
 dependencies:
   flutter:
@@ -35,7 +35,7 @@ dependencies:
   serverpod_client: ^3.0.1
   serverpod_auth_idp_client: ^3.0.1
   echomirror_server_client:
-    path: ../echomirror_server/echomirror_server_client
+    path: echomirror_server/echomirror_server_client
 
   # Utilities
   intl: ^0.19.0

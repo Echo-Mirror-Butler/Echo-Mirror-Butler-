@@ -1,0 +1,4 @@
+linter:
+  rules:
+    # Allow print() statements in server code for logging
+    avoid_print: false

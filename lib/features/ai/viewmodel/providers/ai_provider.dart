@@ -75,15 +75,17 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
     } catch (e, stackTrace) {
       // If error, try to restore cached insight
       if (_cachedInsight != null) {
-        debugPrint('[AiInsightNotifier] ⚠️ Error generating new insight, using cached');
+        debugPrint(
+          '[AiInsightNotifier] ⚠️ Error generating new insight, using cached',
+        );
         state = AsyncValue.data(_cachedInsight);
       } else {
         // Show error state if no cache available
-      debugPrint(
-        '[AiInsightNotifier] ❌ Error generating insight from Gemini: $e',
-      );
-      debugPrint('[AiInsightNotifier] Stack trace: $stackTrace');
-      state = AsyncValue.error(e, stackTrace);
+        debugPrint(
+          '[AiInsightNotifier] ❌ Error generating insight from Gemini: $e',
+        );
+        debugPrint('[AiInsightNotifier] Stack trace: $stackTrace');
+        state = AsyncValue.error(e, stackTrace);
       }
     }
   }

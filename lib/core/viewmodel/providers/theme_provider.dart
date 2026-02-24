@@ -14,10 +14,10 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
   Future<void> _loadThemeMode() async {
     if (_isInitialized) return;
     try {
-    final prefs = await SharedPreferences.getInstance();
-    final themeIndex = prefs.getInt(_themeKey);
+      final prefs = await SharedPreferences.getInstance();
+      final themeIndex = prefs.getInt(_themeKey);
       if (themeIndex != null && themeIndex < ThemeMode.values.length) {
-      state = ThemeMode.values[themeIndex];
+        state = ThemeMode.values[themeIndex];
       }
     } catch (e) {
       // If loading fails, keep system default
@@ -30,8 +30,8 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
   Future<void> setThemeMode(ThemeMode mode) async {
     state = mode;
     try {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeKey, mode.index);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_themeKey, mode.index);
     } catch (e) {
       debugPrint('Error saving theme mode: $e');
     }
@@ -39,9 +39,7 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
 
   void toggleTheme() {
     // Toggle between light and dark only (skip system mode)
-    final newMode = state == ThemeMode.light
-        ? ThemeMode.dark
-        : ThemeMode.light;
+    final newMode = state == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     setThemeMode(newMode);
   }
 }
@@ -50,4 +48,3 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
 final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>(
   (ref) => ThemeNotifier(),
 );
-

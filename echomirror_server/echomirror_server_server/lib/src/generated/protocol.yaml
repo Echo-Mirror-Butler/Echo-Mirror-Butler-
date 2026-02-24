@@ -1,0 +1,56 @@
+ai:
+  - generateInsight:
+  - generateChatResponse:
+emailIdp:
+  - login:
+  - startRegistration:
+  - verifyRegistrationCode:
+  - finishRegistration:
+  - startPasswordReset:
+  - verifyPasswordResetCode:
+  - finishPasswordReset:
+global:
+  - streamMoodPins:
+  - addMoodPin:
+  - uploadVideo:
+  - uploadImage:
+  - getVideoFeed:
+  - getMoodStatistics:
+  - addComment:
+  - getCommentsForPin:
+  - getNotifications:
+  - markNotificationAsRead:
+  - markAllNotificationsAsRead:
+  - deleteNotification:
+  - generateClusterEncouragement:
+jwtRefresh:
+  - refreshAccessToken:
+socials:
+  - getActiveSessions:
+  - createSession:
+  - joinSession:
+  - leaveSession:
+  - getSession:
+  - getAgoraCredentials:
+  - endSession:
+  - createScheduledSession:
+  - getUpcomingScheduledSessions:
+  - getAllUpcomingScheduledSessions:
+  - cancelScheduledSession:
+  - startScheduledSession:
+  - getSessionsNeedingNotification:
+  - markSessionAsNotified:
+  - uploadStoryImage:
+  - createStory:
+  - getActiveStories:
+  - getUserStories:
+  - viewStory:
+  - deleteStory:
+greeting:
+  - hello:
+logging:
+  - createEntry:
+  - getEntries:
+  - getEntryForDate:
+  - updateEntry:
+  - deleteEntry:

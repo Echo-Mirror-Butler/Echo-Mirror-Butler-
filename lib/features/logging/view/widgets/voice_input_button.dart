@@ -27,7 +27,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
   bool _isListening = false;
   bool _isAvailable = false;
   bool _hasInitialized = false; // Track if we've tried to initialize
-  bool _hasPermanentError = false; // Track if we've encountered a permanent error
+  bool _hasPermanentError =
+      false; // Track if we've encountered a permanent error
   String _transcription = '';
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -40,7 +41,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-    
+
     _waveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -64,10 +65,12 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       available = await _speech.initialize(
         onError: (error) {
           debugPrint('[VoiceInput] Speech recognition error: $error');
-          
+
           // Check if it's a permanent error
           if (error.permanent) {
-            debugPrint('[VoiceInput] Permanent error detected: ${error.errorMsg}');
+            debugPrint(
+              '[VoiceInput] Permanent error detected: ${error.errorMsg}',
+            );
             if (mounted) {
               setState(() {
                 _isListening = false;
@@ -76,21 +79,22 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
               });
             }
             widget.onListeningStateChanged?.call(false);
-            
+
             // Provide helpful error message based on error type
             String errorMessage = 'Speech recognition unavailable. ';
-            if (error.errorMsg.contains('permission') || 
+            if (error.errorMsg.contains('permission') ||
                 error.errorMsg.contains('denied') ||
                 error.errorMsg.contains('error_listen_failed')) {
-              errorMessage += 'Please check microphone permissions in Settings.';
+              errorMessage +=
+                  'Please check microphone permissions in Settings.';
             } else if (error.errorMsg.contains('error_retry')) {
               errorMessage += 'Speech service temporarily unavailable.';
             } else {
               errorMessage += 'Using text input instead.';
             }
-            
+
             _showError(errorMessage);
-            
+
             // Switch to mock mode for this session
             if (_isListening) {
               _startMockListening();
@@ -234,10 +238,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           : AppTheme.primaryColor,
       child: _isListening
           ? _buildListeningState()
-          : const Icon(
-              FontAwesomeIcons.microphone,
-              color: Colors.white,
-            ),
+          : const Icon(FontAwesomeIcons.microphone, color: Colors.white),
     );
   }
 
@@ -247,28 +248,31 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       _isListening = true;
     });
     widget.onListeningStateChanged?.call(true);
-    
+
     // Simulate listening for 2 seconds
     await Future.delayed(const Duration(seconds: 2));
-    
+
     if (!mounted) return;
-    
+
     // Generate mock transcription
-    final mockText = 'This is a mock transcription. On a real device with microphone access, '
+    final mockText =
+        'This is a mock transcription. On a real device with microphone access, '
         'this would be your spoken words. Try saying: "I had a great day today, feeling positive and energized!"';
-    
+
     setState(() {
       _isListening = false;
       _transcription = mockText;
     });
-    
+
     widget.onListeningStateChanged?.call(false);
     widget.onTranscriptionComplete(mockText);
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Mock transcription (speech_to_text not available on this platform)'),
+          content: Text(
+            'Mock transcription (speech_to_text not available on this platform)',
+          ),
           duration: Duration(seconds: 2),
         ),
       );
@@ -304,7 +308,6 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       ],
     );
   }
-
 }
 
 /// Voice input overlay showing live transcription
@@ -381,4 +384,3 @@ class VoiceInputOverlay extends StatelessWidget {
     );
   }
 }
-

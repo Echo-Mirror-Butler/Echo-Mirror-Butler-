@@ -4,7 +4,8 @@ class MoodPinCommentModel {
   final String moodPinId; // ID of the mood pin this comment is on
   final String text; // Comment text
   final DateTime timestamp;
-  final String? userId; // Optional: for tracking if comment is from current user
+  final String?
+  userId; // Optional: for tracking if comment is from current user
 
   MoodPinCommentModel({
     required this.id,
@@ -52,4 +53,3 @@ class MoodPinCommentModel {
     );
   }
 }
-
