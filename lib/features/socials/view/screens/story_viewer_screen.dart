@@ -111,7 +111,10 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
       return Scaffold(
         backgroundColor: Colors.black,
         body: const Center(
-          child: Text('No stories available', style: TextStyle(color: Colors.white)),
+          child: Text(
+            'No stories available',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       );
     }
@@ -258,7 +261,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
       },
       itemBuilder: (context, index) {
         final imageUrl = story.imageUrls[index];
-        
+
         // Check if it's a local file path or a URL
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
           // It's a URL - use CachedNetworkImage
@@ -268,9 +271,8 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
             placeholder: (context, url) => const Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
-            errorWidget: (context, url, error) => const Center(
-              child: Icon(Icons.error, color: Colors.white),
-            ),
+            errorWidget: (context, url, error) =>
+                const Center(child: Icon(Icons.error, color: Colors.white)),
           );
         } else {
           // It's a local file path - use Image.file
@@ -278,14 +280,11 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
             return Image.file(
               File(imageUrl),
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const Center(
-                child: Icon(Icons.error, color: Colors.white),
-              ),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.error, color: Colors.white)),
             );
           } catch (e) {
-            return const Center(
-              child: Icon(Icons.error, color: Colors.white),
-            );
+            return const Center(child: Icon(Icons.error, color: Colors.white));
           }
         }
       },
@@ -305,4 +304,3 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
     }
   }
 }
-

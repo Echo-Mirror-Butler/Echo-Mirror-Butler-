@@ -8,7 +8,9 @@ import '../../../logging/data/models/log_entry_model.dart';
 /// Handles all Serverpod backend calls for AI insights
 class AiRepository {
   AiRepository() {
-    debugPrint('[AiRepository] Using shared client with persistent authentication');
+    debugPrint(
+      '[AiRepository] Using shared client with persistent authentication',
+    );
   }
 
   Client get _client => ServerpodClientService.instance.client;
@@ -262,7 +264,7 @@ class AiRepository {
         '[AiRepository]   Future Letter: ${futureLetter.length} chars (min: 300)',
       );
       debugPrint('[AiRepository]   Suggestions: ${suggestions.length} items');
-      
+
       // Log stress level if present
       final stressLevel = result.stressLevel as int?;
       if (stressLevel != null) {
@@ -319,25 +321,26 @@ class AiRepository {
 
   /// Generate a free-form chat response using Gemini
   /// This allows natural conversations without hardcoded responses
-  Future<String> generateChatResponse(String userMessage, {String? context}) async {
+  Future<String> generateChatResponse(
+    String userMessage, {
+    String? context,
+  }) async {
     try {
       debugPrint('[AiRepository] generateChatResponse -> "$userMessage"');
-      
+
       final dynamic client = _client;
       if (client == null) {
         throw Exception('Client is null - cannot connect to server');
       }
-      
+
       debugPrint('[AiRepository] 🤖 Calling Gemini chat API...');
-      final response = await client.ai.generateChatResponse(
-        userMessage,
-        context,
-      ) as String;
-      
+      final response =
+          await client.ai.generateChatResponse(userMessage, context) as String;
+
       if (response.trim().isEmpty) {
         throw Exception('Gemini returned empty response');
       }
-      
+
       debugPrint('[AiRepository] ✅ Received chat response from Gemini');
       return response;
     } catch (e) {

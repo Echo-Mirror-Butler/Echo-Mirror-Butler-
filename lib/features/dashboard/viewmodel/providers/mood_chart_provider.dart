@@ -14,7 +14,7 @@ final moodChartDataProvider = Provider<List<LogEntryModel>>((ref) {
   }
 
   final allLogs = loggingState.value ?? [];
-  
+
   if (allLogs.isEmpty) {
     return [];
   }
@@ -22,16 +22,12 @@ final moodChartDataProvider = Provider<List<LogEntryModel>>((ref) {
   // Filter logs from last 30 days
   final now = DateTime.now();
   final thirtyDaysAgo = now.subtract(const Duration(days: 30));
-  
-  final recentLogs = allLogs
-      .where((log) {
-        final logDate = log.date.isUtc ? log.date.toLocal() : log.date;
-        return logDate.isAfter(thirtyDaysAgo) || 
-               logDate.isAtSameMomentAs(thirtyDaysAgo);
-      })
-      .toList()
-    ..sort((a, b) => a.date.compareTo(b.date));
+
+  final recentLogs = allLogs.where((log) {
+    final logDate = log.date.isUtc ? log.date.toLocal() : log.date;
+    return logDate.isAfter(thirtyDaysAgo) ||
+        logDate.isAtSameMomentAs(thirtyDaysAgo);
+  }).toList()..sort((a, b) => a.date.compareTo(b.date));
 
   return recentLogs;
 });
-

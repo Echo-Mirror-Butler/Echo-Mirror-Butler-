@@ -26,7 +26,7 @@ class DashboardNotifier extends StateNotifier<AsyncValue<List<InsightModel>>> {
       _currentUserId = userId;
       _hasLoaded = false;
     }
-    
+
     // If no userId, return empty list instead of staying in loading state
     if (_currentUserId == null || _currentUserId!.isEmpty) {
       state = const AsyncValue.data([]);
@@ -79,8 +79,10 @@ class DashboardNotifier extends StateNotifier<AsyncValue<List<InsightModel>>> {
 }
 
 /// Dashboard provider
-final dashboardProvider = StateNotifierProvider<DashboardNotifier, AsyncValue<List<InsightModel>>>((ref) {
-  final repository = ref.watch(dashboardRepositoryProvider);
-  return DashboardNotifier(repository);
-});
-
+final dashboardProvider =
+    StateNotifierProvider<DashboardNotifier, AsyncValue<List<InsightModel>>>((
+      ref,
+    ) {
+      final repository = ref.watch(dashboardRepositoryProvider);
+      return DashboardNotifier(repository);
+    });

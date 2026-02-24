@@ -1,7 +1,8 @@
 /// Model for anonymous mood pin on the global map
 class MoodPinModel {
   final String id;
-  final String sentiment; // 'positive', 'neutral', 'negative', 'excited', 'calm', 'anxious'
+  final String
+  sentiment; // 'positive', 'neutral', 'negative', 'excited', 'calm', 'anxious'
   final double gridLat; // Anonymized latitude (rounded to 0.1 degrees)
   final double gridLon; // Anonymized longitude (rounded to 0.1 degrees)
   final DateTime timestamp;

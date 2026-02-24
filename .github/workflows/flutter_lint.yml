@@ -2,9 +2,9 @@ name: Flutter Lint
 
 on:
   push:
-    branches: [main]
+    branches: [main, development]
   pull_request:
-    branches: [main]
+    branches: [main, development]
 
 jobs:
   lint:
@@ -13,10 +13,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout server repo
+        uses: actions/checkout@v4
+        with:
+          repository: akintewe/echomirror-server
+          path: .server
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.8'
           channel: stable
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get

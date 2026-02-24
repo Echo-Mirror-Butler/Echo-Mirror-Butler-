@@ -43,13 +43,19 @@ backend/
 
 Follow these steps in order to get your local environment ready.
 
-### Step 1 — Clone and install Flutter dependencies
+### Step 1 — Clone both repos and install Flutter dependencies
+
+The app depends on the server client package via a local path (`.server/`).
+You must clone the server repo into `.server/` inside the app repo before running `flutter pub get`.
 
 ```bash
 git clone https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-.git
 cd Echo-Mirror-Butler-
+git clone https://github.com/akintewe/echomirror-server .server
 flutter pub get
 ```
+
+> **Note:** `.server/` is gitignored — it will never be committed.
 
 ### Step 2 — Configure environment variables
 
@@ -154,7 +160,7 @@ serverpod generate
 | Method | Description |
 |---|---|
 | `createWallet()` | Generates a new Stellar keypair and funds via Friendbot |
-| `establishTrustline(publicKey, secretKey)` | Creates a trustline for the ECHO asset |
+| `establishTrustline(secretKey)` | Creates a trustline for the ECHO asset |
 | `sendEcho(senderSecret, recipientPublic, amount)` | Sends ECHO between wallets |
 | `getEchoBalance(publicKey)` | Fetches ECHO balance from Horizon |
 

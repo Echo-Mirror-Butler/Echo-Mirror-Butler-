@@ -71,4 +71,3 @@ class PipService {
   /// Get current PiP mode state (cached)
   bool get isInPipModeSync => _isInPipMode;
 }
-

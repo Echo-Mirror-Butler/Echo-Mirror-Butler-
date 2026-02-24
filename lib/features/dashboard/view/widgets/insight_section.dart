@@ -46,18 +46,11 @@ class InsightSection extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          color,
-                          color.withOpacity(0.7),
-                        ],
+                        colors: [color, color.withOpacity(0.7)],
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      icon,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                    child: Icon(icon, color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Column(
@@ -103,10 +96,14 @@ class InsightSection extends StatelessWidget {
             ],
           ),
         ),
-        ...insights.take(3).map((insight) => InsightCard(
-              insight: insight,
-              onTap: () => onInsightTap?.call(insight),
-            )),
+        ...insights
+            .take(3)
+            .map(
+              (insight) => InsightCard(
+                insight: insight,
+                onTap: () => onInsightTap?.call(insight),
+              ),
+            ),
         if (insights.length > 3 && onViewAll != null)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

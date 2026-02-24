@@ -34,7 +34,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 3),
+    );
   }
 
   @override
@@ -45,7 +47,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   void _checkMilestones(List<InsightModel> insights) {
     if (_hasCheckedMilestone) return;
-    
+
     // Mock milestone check - trigger confetti for 7+ insights
     if (insights.length >= 7) {
       _hasCheckedMilestone = true;
@@ -66,31 +68,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (userId.isNotEmpty) {
           // Load logs first (needed for analytics and AI insights)
-          await ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
-          
+          await ref
+              .read(loggingProvider.notifier)
+              .loadLogEntries(userId: userId);
+
           // Check daily log and schedule notification if needed
           ref.read(dailyLogCheckProvider.future);
-          
+
           // Load insights
-          ref.read(dashboardProvider.notifier).loadInsights(
-            userId: userId,
-            forceReload: false,
-          );
-          
+          ref
+              .read(dashboardProvider.notifier)
+              .loadInsights(userId: userId, forceReload: false);
+
           // Auto-generate AI insights if we have enough logs (after logs are loaded)
           Future.delayed(const Duration(milliseconds: 500), () {
             // Check if widget is still mounted before using ref
             if (!mounted) return;
-            
+
             final loggingState = ref.read(loggingProvider);
             final logs = loggingState.value ?? [];
             if (logs.length >= 3) {
               final now = DateTime.now();
-              final recentLogs = logs
-                  .where((log) => log.date.isAfter(now.subtract(const Duration(days: 14))))
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date));
-              
+              final recentLogs =
+                  logs
+                      .where(
+                        (log) => log.date.isAfter(
+                          now.subtract(const Duration(days: 14)),
+                        ),
+                      )
+                      .toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
+
               if (recentLogs.length >= 3) {
                 // Check if insight already exists
                 if (!mounted) return;
@@ -98,7 +106,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 if (aiState.value == null) {
                   if (!mounted) return;
                   // Auto-generate insight
-                  ref.read(aiInsightProvider.notifier).generateInsight(recentLogs);
+                  ref
+                      .read(aiInsightProvider.notifier)
+                      .generateInsight(recentLogs);
                 }
               }
             }
@@ -129,112 +139,110 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       body: Stack(
         children: [
           dashboardState.when(
-        data: (insights) {
-          if (insights.isEmpty) {
-            return _buildEmptyState(context, theme, ref);
-          }
-
-          // Check milestones and trigger confetti
-          _checkMilestones(insights);
-
-          // Group insights by type
-          final predictions = insights
-              .where((i) => i.type == InsightType.prediction)
-              .toList()
-            ..sort((a, b) => b.date.compareTo(a.date));
-
-          final habits = insights
-              .where((i) => i.type == InsightType.habit)
-              .toList()
-            ..sort((a, b) => b.date.compareTo(a.date));
-
-          final moods = insights
-              .where((i) => i.type == InsightType.mood)
-              .toList()
-            ..sort((a, b) => b.date.compareTo(a.date));
-
-          final general = insights
-              .where((i) => i.type == InsightType.general)
-              .toList()
-            ..sort((a, b) => b.date.compareTo(a.date));
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              if (authState.isAuthenticated && authState.user != null) {
-                await ref.read(dashboardProvider.notifier).loadInsights(
-                      userId: authState.user!.id,
-                      forceReload: true,
-                    );
+            data: (insights) {
+              if (insights.isEmpty) {
+                return _buildEmptyState(context, theme, ref);
               }
+
+              // Check milestones and trigger confetti
+              _checkMilestones(insights);
+
+              // Group insights by type
+              final predictions =
+                  insights
+                      .where((i) => i.type == InsightType.prediction)
+                      .toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
+
+              final habits =
+                  insights.where((i) => i.type == InsightType.habit).toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
+
+              final moods =
+                  insights.where((i) => i.type == InsightType.mood).toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
+
+              final general =
+                  insights.where((i) => i.type == InsightType.general).toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  if (authState.isAuthenticated && authState.user != null) {
+                    await ref
+                        .read(dashboardProvider.notifier)
+                        .loadInsights(
+                          userId: authState.user!.id,
+                          forceReload: true,
+                        );
+                  }
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Stats section
+                      DashboardStats(insights: insights),
+                      const SizedBox(height: 8),
+                      // Mood Trend Chart
+                      MoodTrendChart(
+                        recentLogs: ref.watch(moodChartDataProvider),
+                      ),
+                      const SizedBox(height: 8),
+                      // AI Insights section
+                      const AiInsightSection(),
+                      const SizedBox(height: 8),
+                      // Mood Analytics card
+                      _buildMoodAnalyticsCard(context, theme),
+                      const SizedBox(height: 8),
+
+                      // Predictions section
+                      InsightSection(
+                        title: 'Predictions',
+                        insights: predictions,
+                        icon: FontAwesomeIcons.wandMagicSparkles,
+                        color: AppTheme.secondaryColor,
+                      ),
+
+                      // Habits section
+                      InsightSection(
+                        title: 'Habits',
+                        insights: habits,
+                        icon: FontAwesomeIcons.repeat,
+                        color: AppTheme.primaryColor,
+                      ),
+
+                      // Moods section
+                      InsightSection(
+                        title: 'Mood Insights',
+                        insights: moods,
+                        icon: FontAwesomeIcons.faceSmile,
+                        color: AppTheme.accentColor,
+                        onInsightTap: (insight) =>
+                            _handleInsightTap(context, ref, insight),
+                      ),
+
+                      // General insights section
+                      if (general.isNotEmpty)
+                        InsightSection(
+                          title: 'General Insights',
+                          insights: general,
+                          icon: FontAwesomeIcons.lightbulb,
+                          color: AppTheme.primaryColor,
+                        ),
+
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
+              );
             },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats section
-                  DashboardStats(insights: insights),
-                  const SizedBox(height: 8),
-                  // Mood Trend Chart
-                  MoodTrendChart(
-                    recentLogs: ref.watch(moodChartDataProvider),
-                  ),
-                  const SizedBox(height: 8),
-                  // AI Insights section
-                  const AiInsightSection(),
-                  const SizedBox(height: 8),
-                  // Mood Analytics card
-                  _buildMoodAnalyticsCard(context, theme),
-                  const SizedBox(height: 8),
-
-                  // Predictions section
-                  InsightSection(
-                    title: 'Predictions',
-                    insights: predictions,
-                    icon: FontAwesomeIcons.wandMagicSparkles,
-                    color: AppTheme.secondaryColor,
-                  ),
-
-                  // Habits section
-                  InsightSection(
-                    title: 'Habits',
-                    insights: habits,
-                    icon: FontAwesomeIcons.repeat,
-                    color: AppTheme.primaryColor,
-                  ),
-
-                  // Moods section
-                  InsightSection(
-                    title: 'Mood Insights',
-                    insights: moods,
-                    icon: FontAwesomeIcons.faceSmile,
-                    color: AppTheme.accentColor,
-                    onInsightTap: (insight) => _handleInsightTap(context, ref, insight),
-                  ),
-
-                  // General insights section
-                  if (general.isNotEmpty)
-                    InsightSection(
-                      title: 'General Insights',
-                      insights: general,
-                      icon: FontAwesomeIcons.lightbulb,
-                      color: AppTheme.primaryColor,
-                    ),
-
-                  const SizedBox(height: 16),
-                ],
-              ),
-            ),
-          );
-        },
-        loading: () => const Center(
-          child: ShimmerLoading(
-            width: 40,
-            height: 40,
+            loading: () =>
+                const Center(child: ShimmerLoading(width: 40, height: 40)),
+            error: (error, stack) =>
+                _buildErrorState(context, theme, error, ref),
           ),
-        ),
-        error: (error, stack) => _buildErrorState(context, theme, error, ref),
-      ),
           // Confetti overlay
           Align(
             alignment: Alignment.topCenter,
@@ -265,9 +273,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: InkWell(
           onTap: () => context.push('/dashboard/mood-analytics'),
           borderRadius: BorderRadius.circular(16),
@@ -281,10 +287,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppTheme.accentColor,
-                        AppTheme.primaryColor,
-                      ],
+                      colors: [AppTheme.accentColor, AppTheme.primaryColor],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -347,10 +350,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.secondaryColor,
-                    ],
+                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
@@ -393,10 +393,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.secondaryColor,
-                    ],
+                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
@@ -499,18 +496,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onPressed: () {
                 final authState = ref.read(authProvider);
                 if (authState.isAuthenticated && authState.user != null) {
-                  ref.read(dashboardProvider.notifier).loadInsights(
-                        userId: authState.user!.id,
-                      );
+                  ref
+                      .read(dashboardProvider.notifier)
+                      .loadInsights(userId: authState.user!.id);
                 }
               },
               icon: const Icon(Icons.refresh, size: 20),
               label: const Text(
                 'Retry',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
@@ -528,7 +522,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  void _handleInsightTap(BuildContext context, WidgetRef ref, InsightModel insight) async {
+  void _handleInsightTap(
+    BuildContext context,
+    WidgetRef ref,
+    InsightModel insight,
+  ) async {
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) return;
 
@@ -538,12 +536,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         // Get log entries from provider
         final loggingState = ref.read(loggingProvider);
         final entries = loggingState.value ?? [];
-        
+
         if (entries.isEmpty) {
           // No entries loaded, try to load them first
-          await ref.read(loggingProvider.notifier).loadLogEntries(
-            userId: authState.user!.id,
-          );
+          await ref
+              .read(loggingProvider.notifier)
+              .loadLogEntries(userId: authState.user!.id);
           // Wait a bit for the load to complete
           await Future.delayed(const Duration(milliseconds: 300));
           final updatedState = ref.read(loggingProvider);
@@ -552,21 +550,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             throw Exception('No entries available');
           }
         }
-        
+
         // Find entry for the insight date
-        final insightDate = DateTime(insight.date.year, insight.date.month, insight.date.day);
-        final currentEntries = ref.read(loggingProvider).value ?? [];
-        
-        final matchingEntry = currentEntries.firstWhere(
-          (entry) {
-            final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
-            final entryDate = DateTime(localDate.year, localDate.month, localDate.day);
-            return entryDate.isAtSameMomentAs(insightDate);
-          },
+        final insightDate = DateTime(
+          insight.date.year,
+          insight.date.month,
+          insight.date.day,
         );
+        final currentEntries = ref.read(loggingProvider).value ?? [];
+
+        final matchingEntry = currentEntries.firstWhere((entry) {
+          final localDate = entry.date.isUtc
+              ? entry.date.toLocal()
+              : entry.date;
+          final entryDate = DateTime(
+            localDate.year,
+            localDate.month,
+            localDate.day,
+          );
+          return entryDate.isAtSameMomentAs(insightDate);
+        });
 
         if (context.mounted) {
-          context.push('/logging/detail/${matchingEntry.id}', extra: matchingEntry);
+          context.push(
+            '/logging/detail/${matchingEntry.id}',
+            extra: matchingEntry,
+          );
         }
       } catch (e) {
         // If entry not found, show a message with option to create entry
@@ -589,4 +598,3 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 }
-

@@ -13,7 +13,8 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
 
   @override
-  ConsumerState<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  ConsumerState<MainNavigationScreen> createState() =>
+      _MainNavigationScreenState();
 }
 
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
@@ -44,9 +45,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-      viewportFraction: 1.0,
-    );
+    _pageController = PageController(viewportFraction: 1.0);
   }
 
   @override
@@ -64,13 +63,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   void _updateIndexFromRoute() {
     final currentLocation = GoRouterState.of(context).matchedLocation;
-    final index = _navigationItems.indexWhere(
-      (item) {
-        // Match exact route or routes that start with the item route
-        return currentLocation == item.route ||
-               currentLocation.startsWith('${item.route}/');
-      },
-    );
+    final index = _navigationItems.indexWhere((item) {
+      // Match exact route or routes that start with the item route
+      return currentLocation == item.route ||
+          currentLocation.startsWith('${item.route}/');
+    });
     if (index != -1 && index != _currentIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {

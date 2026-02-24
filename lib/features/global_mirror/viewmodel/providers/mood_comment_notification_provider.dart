@@ -5,13 +5,18 @@ import '../../../../core/services/serverpod_client_service.dart';
 import '../../data/models/mood_comment_notification_model.dart';
 
 /// Provider for mood comment notifications
-final moodCommentNotificationProvider = StateNotifierProvider<MoodCommentNotificationNotifier, List<MoodCommentNotificationModel>>((ref) {
-  return MoodCommentNotificationNotifier();
-});
+final moodCommentNotificationProvider =
+    StateNotifierProvider<
+      MoodCommentNotificationNotifier,
+      List<MoodCommentNotificationModel>
+    >((ref) {
+      return MoodCommentNotificationNotifier();
+    });
 
 /// State notifier for managing mood comment notifications
 /// NOTE: Requires Serverpod endpoints to be implemented (see SERVERPOD_COMMENTS_SETUP.md)
-class MoodCommentNotificationNotifier extends StateNotifier<List<MoodCommentNotificationModel>> {
+class MoodCommentNotificationNotifier
+    extends StateNotifier<List<MoodCommentNotificationModel>> {
   MoodCommentNotificationNotifier() : super([]) {
     _loadNotifications();
   }
@@ -43,12 +48,16 @@ class MoodCommentNotificationNotifier extends StateNotifier<List<MoodCommentNoti
       //   );
       // }).toList()
       //   ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      
+
       // For now, return empty list until authentication is implemented
-      debugPrint('[MoodCommentNotificationNotifier] Notifications require userId - authentication not yet implemented');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] Notifications require userId - authentication not yet implemented',
+      );
       state = [];
     } catch (e) {
-      debugPrint('[MoodCommentNotificationNotifier] Error loading notifications: $e');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] Error loading notifications: $e',
+      );
       state = [];
     }
   }
@@ -71,7 +80,9 @@ class MoodCommentNotificationNotifier extends StateNotifier<List<MoodCommentNoti
       }
       await _loadNotifications(); // Refresh from server
     } catch (e) {
-      debugPrint('[MoodCommentNotificationNotifier] Error marking notification as read: $e');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] Error marking notification as read: $e',
+      );
     }
   }
 
@@ -86,10 +97,14 @@ class MoodCommentNotificationNotifier extends StateNotifier<List<MoodCommentNoti
       // if (success) {
       //   await _loadNotifications(); // Refresh from server
       // }
-      debugPrint('[MoodCommentNotificationNotifier] markAllNotificationsAsRead requires userId - authentication not yet implemented');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] markAllNotificationsAsRead requires userId - authentication not yet implemented',
+      );
       await _loadNotifications(); // Refresh from server
     } catch (e) {
-      debugPrint('[MoodCommentNotificationNotifier] Error marking all notifications as read: $e');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] Error marking all notifications as read: $e',
+      );
     }
   }
 
@@ -106,7 +121,9 @@ class MoodCommentNotificationNotifier extends StateNotifier<List<MoodCommentNoti
       }
       await _loadNotifications(); // Refresh from server
     } catch (e) {
-      debugPrint('[MoodCommentNotificationNotifier] Error deleting notification: $e');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] Error deleting notification: $e',
+      );
     }
   }
 
@@ -123,10 +140,14 @@ class MoodCommentNotificationNotifier extends StateNotifier<List<MoodCommentNoti
       //     await _client.global.deleteNotification(notifIdInt);
       //   }
       // }
-      debugPrint('[MoodCommentNotificationNotifier] clearAll endpoint not yet available');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] clearAll endpoint not yet available',
+      );
       await _loadNotifications(); // Refresh from server
     } catch (e) {
-      debugPrint('[MoodCommentNotificationNotifier] Error clearing all notifications: $e');
+      debugPrint(
+        '[MoodCommentNotificationNotifier] Error clearing all notifications: $e',
+      );
     }
   }
 
