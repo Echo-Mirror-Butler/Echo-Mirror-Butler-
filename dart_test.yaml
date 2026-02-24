@@ -1,5 +1,4 @@
 tags:
   integration:
-    skip: "Should be run manually with: flutter test --tags integration"
 
 timeout: 30s
