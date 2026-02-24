@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+@Tags(['integration'])
 /// Integration test to verify the GiftEndpoint is properly implemented
 /// and the app can connect to Serverpod for ECHO token operations.
 ///
