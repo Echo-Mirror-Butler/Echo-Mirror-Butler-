@@ -117,9 +117,8 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final tx = giftState.history[index];
-          final isSent =
-              currentUserId != null &&
-              tx.senderUserId.toString() == currentUserId;
+          final senderStr = tx.senderUserId.toString();
+          final isSent = currentUserId != null && senderStr == currentUserId;
           return _GiftTxCard(tx: tx, isSent: isSent);
         },
       ),
@@ -139,10 +138,11 @@ class _EmptyHistoryPlaceholder extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ShaderMask(
-          shaderCallback:
-              (bounds) => const LinearGradient(
-                colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
-              ).createShader(bounds),
+          shaderCallback: (bounds) {
+            return const LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+            ).createShader(bounds);
+          },
           child: const Icon(
             FontAwesomeIcons.gift,
             size: 72,
@@ -184,8 +184,9 @@ class _GiftTxCard extends StatelessWidget {
     final theme = Theme.of(context);
     final directionColor =
         isSent ? theme.colorScheme.error : const Color(0xFF2E7D32);
-    final isWhole =
-        tx.echoAmount.truncateToDouble() == tx.echoAmount;
+    final directionIcon =
+        isSent ? Icons.call_made_rounded : Icons.call_received_rounded;
+    final isWhole = tx.echoAmount.truncateToDouble() == tx.echoAmount;
     final amountLabel =
         '${tx.echoAmount.toStringAsFixed(isWhole ? 0 : 2)} ECHO';
 
@@ -211,13 +212,7 @@ class _GiftTxCard extends StatelessWidget {
                     color: directionColor.withAlpha(26),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    isSent
-                        ? Icons.call_made_rounded
-                        : Icons.call_received_rounded,
-                    color: directionColor,
-                    size: 20,
-                  ),
+                  child: Icon(directionIcon, color: directionColor, size: 20),
                 ),
                 const SizedBox(width: 12),
 
