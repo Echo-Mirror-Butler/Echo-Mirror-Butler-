@@ -139,7 +139,7 @@ class _EmptyHistoryPlaceholder extends StatelessWidget {
       children: [
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
-            colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+            colors: [AppTheme.primaryColor, AppTheme.secondaryColor]
           ).createShader(bounds),
           child: const Icon(
             FontAwesomeIcons.gift,
@@ -190,7 +190,9 @@ class _GiftTxCard extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
