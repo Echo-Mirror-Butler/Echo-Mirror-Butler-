@@ -35,6 +35,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final giftState = ref.watch(giftProvider);
+    // UserModel.id is a String; senderUserId is int — compare via toString().
     final currentUserId = ref.watch(authProvider).user?.id;
 
     return Scaffold(
@@ -53,7 +54,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
   Widget _buildBody(
     ThemeData theme,
     GiftState giftState,
-    int? currentUserId,
+    String? currentUserId,
   ) {
     // ── Loading ───────────────────────────────────────────────────────────────
     if (giftState.isLoading && giftState.history.isEmpty) {
@@ -113,11 +114,12 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         itemCount: giftState.history.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final tx = giftState.history[index];
           final isSent =
-              currentUserId != null && tx.senderUserId == currentUserId;
+              currentUserId != null &&
+              tx.senderUserId.toString() == currentUserId;
           return _GiftTxCard(tx: tx, isSent: isSent);
         },
       ),
@@ -182,16 +184,22 @@ class _GiftTxCard extends StatelessWidget {
     final theme = Theme.of(context);
     final directionColor =
         isSent ? theme.colorScheme.error : const Color(0xFF2E7D32);
+    final isWhole =
+        tx.echoAmount.truncateToDouble() == tx.echoAmount;
+    final amountLabel =
+        '${tx.echoAmount.toStringAsFixed(isWhole ? 0 : 2)} ECHO';
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Top row: direction icon + amount + status chip ────────────────
+            // ── Top row: direction icon + amount + status chip ───────────
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -204,7 +212,9 @@ class _GiftTxCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    isSent ? Icons.call_made_rounded : Icons.call_received_rounded,
+                    isSent
+                        ? Icons.call_made_rounded
+                        : Icons.call_received_rounded,
                     color: directionColor,
                     size: 20,
                   ),
@@ -223,7 +233,7 @@ class _GiftTxCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${tx.echoAmount.toStringAsFixed(tx.echoAmount.truncateToDouble() == tx.echoAmount ? 0 : 2)} ECHO',
+                        amountLabel,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: directionColor,
