@@ -40,4 +40,3 @@ void main() {
     expect(history, isA<List<GiftTransactionModel>>());
   });
 }
-
