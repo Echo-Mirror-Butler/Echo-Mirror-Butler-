@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/date_formatter.dart';
+import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../data/models/gift_transaction_model.dart';
 import '../../viewmodel/providers/gift_provider.dart';
 
 /// Screen for sending ECHO token gifts to another user.
@@ -31,6 +33,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(giftProvider.notifier).loadBalance();
+      ref.read(giftProvider.notifier).loadHistory();
     });
   }
 
@@ -161,6 +164,29 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
+
+                const SizedBox(height: 48),
+
+                // Gift History Header
+                Row(
+                  children: [
+                    Text('Gift History', style: theme.textTheme.titleLarge),
+                    const Spacer(),
+                    if (giftState.isLoading)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Gift History List
+                if (giftState.history.isEmpty)
+                  _buildEmptyState(theme)
+                else
+                  _buildHistoryList(theme, giftState.history),
               ],
             ),
           ),
@@ -288,6 +314,177 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               Navigator.pop(ctx);
             },
             child: const Text('Set'),
+          ),
+        ],
+      ),
+    );
+  Widget _buildEmptyState(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            FontAwesomeIcons.gift,
+            size: 40,
+            color: theme.colorScheme.outline.withOpacity(0.5),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No gifts yet',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.outline,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Sent and received gifts will appear here',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryList(ThemeData theme, List<GiftTransactionModel> history) {
+    final currentUserId = ref.watch(authProvider).user?.id;
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: history.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final tx = history[index];
+        // Handle ID mismatch (String vs int) by comparing as strings
+        final isSent = tx.senderUserId.toString() == currentUserId ||
+            tx.senderUserId == 0; // Stub fallback
+        
+        final directionLabel = isSent ? 'Sent to' : 'Received from';
+        final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
+        final name = isSent && tx.recipientUserId == widget.recipientUserId
+            ? 'Recipient' // We know we are on this user's screen
+            : 'User #$otherId';
+
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: CircleAvatar(
+              backgroundColor: isSent 
+                  ? AppTheme.primaryColor.withOpacity(0.1)
+                  : Colors.green.withOpacity(0.1),
+              child: Icon(
+                isSent ? FontAwesomeIcons.arrowUp : FontAwesomeIcons.arrowDown,
+                size: 16,
+                color: isSent ? AppTheme.primaryColor : Colors.green,
+              ),
+            ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isSent ? 'You' : name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Text(
+                  '${isSent ? "-" : "+"}${tx.echoAmount.toStringAsFixed(0)} ECHO',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isSent ? Colors.black87 : Colors.green[700],
+                  ),
+                ),
+              ],
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      '$directionLabel ${!isSent ? "You" : name}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    const Spacer(),
+                    Text(
+                      DateFormatter.formatRelativeTime(tx.createdAt),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _buildStatusBadge(theme, tx.status),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusBadge(ThemeData theme, String status) {
+    Color color;
+    IconData icon;
+    
+    switch (status.toLowerCase()) {
+      case 'completed':
+        color = Colors.green;
+        icon = Icons.check_circle;
+        break;
+      case 'pending':
+        color = Colors.orange;
+        icon = Icons.access_time;
+        break;
+      case 'failed':
+        color = Colors.red;
+        icon = Icons.error;
+        break;
+      default:
+        color = Colors.grey;
+        icon = Icons.help;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
