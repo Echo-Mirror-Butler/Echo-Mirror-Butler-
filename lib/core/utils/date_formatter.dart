@@ -63,4 +63,20 @@ class DateFormatter {
     final localDate = date.isUtc ? date.toLocal() : date;
     return DateTime(localDate.year, localDate.month, localDate.day);
   }
+
+  /// Format relative time (e.g., "2 hours ago")
+  static String formatRelativeTime(DateTime date) {
+    final duration = DateTime.now().difference(date);
+    if (duration.inDays > 7) {
+      return formatDate(date);
+    } else if (duration.inDays >= 1) {
+      return '${duration.inDays} ${duration.inDays == 1 ? "day" : "days"} ago';
+    } else if (duration.inHours >= 1) {
+      return '${duration.inHours} ${duration.inHours == 1 ? "hour" : "hours"} ago';
+    } else if (duration.inMinutes >= 1) {
+      return '${duration.inMinutes} ${duration.inMinutes == 1 ? "minute" : "minutes"} ago';
+    } else {
+      return 'Just now';
+    }
+  }
 }
