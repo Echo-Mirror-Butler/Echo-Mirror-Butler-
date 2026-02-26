@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:echomirror/features/global_mirror/viewmodel/providers/gift_provider.dart';
-import 'package:echomirror/features/global_mirror/data/repositories/gift_repository.dart';
-import 'package:echomirror/features/global_mirror/data/models/gift_transaction_model.dart';
+import 'package:echomirror/features/global_mirror/viewmodel/providers/'
+    'gift_provider.dart';
+import 'package:echomirror/features/global_mirror/data/repositories/'
+    'gift_repository.dart';
+import 'package:echomirror/features/global_mirror/data/models/'
+    'gift_transaction_model.dart';
 
 /// Mock implementation of GiftRepository for testing
 class MockGiftRepository implements GiftRepository {
@@ -124,7 +127,7 @@ void main() {
         // Wait for completion
         await loadingFuture;
 
-        // After completion, isLoading should be false and balance should be updated
+        // After completion: isLoading should be false and balance updated
         expect(container.read(giftProvider).isLoading, false);
         expect(container.read(giftProvider).echoBalance, 100.0);
       },
