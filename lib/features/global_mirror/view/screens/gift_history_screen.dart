@@ -139,7 +139,7 @@ class _EmptyHistoryPlaceholder extends StatelessWidget {
       children: [
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
-            colors: [AppTheme.primaryColor, AppTheme.secondaryColor]
+            colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
           ).createShader(bounds),
           child: const Icon(
             FontAwesomeIcons.gift,
@@ -180,19 +180,19 @@ class _GiftTxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final directionColor =
-        isSent ? theme.colorScheme.error : const Color(0xFF2E7D32);
-    final directionIcon =
-        isSent ? Icons.call_made_rounded : Icons.call_received_rounded;
+    final directionColor = isSent
+        ? theme.colorScheme.error
+        : const Color(0xFF2E7D32);
+    final directionIcon = isSent
+        ? Icons.call_made_rounded
+        : Icons.call_received_rounded;
     final isWhole = tx.echoAmount.truncateToDouble() == tx.echoAmount;
     final amountLabel =
         '${tx.echoAmount.toStringAsFixed(isWhole ? 0 : 2)} ECHO';
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
