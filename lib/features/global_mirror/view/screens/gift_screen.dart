@@ -141,7 +141,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                             strokeWidth: 2,
                             color: Colors.white,
                           ),
-                        ),
+                        )
                       : const Icon(FontAwesomeIcons.gift),
                   label: Text(
                     giftState.isSending
