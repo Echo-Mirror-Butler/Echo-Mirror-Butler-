@@ -94,8 +94,9 @@ class LoggingScreen extends ConsumerWidget {
                   child: AnimatedCard(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: EdgeInsets.zero,
-                    animationDuration:
-                        Duration(milliseconds: 300 + (index * 50)),
+                    animationDuration: Duration(
+                      milliseconds: 300 + (index * 50),
+                    ),
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundColor: AppTheme.primaryColor.withOpacity(0.1),

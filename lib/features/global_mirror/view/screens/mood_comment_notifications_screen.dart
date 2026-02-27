@@ -144,8 +144,9 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                             'When someone comments on your mood,\nyou\'ll see it here',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color:
-                                  theme.colorScheme.onSurface.withOpacity(0.6),
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.6,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
