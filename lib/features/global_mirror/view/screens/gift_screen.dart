@@ -391,7 +391,10 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             ],
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             leading: CircleAvatar(
               backgroundColor: isSent 
                   ? AppTheme.primaryColor.withOpacity(0.1)
@@ -486,7 +489,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
