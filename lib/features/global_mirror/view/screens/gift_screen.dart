@@ -193,7 +193,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
                 // Gift History List
                 if (giftState.history.isEmpty)
-                  _buildEmptyState(theme),
+                  _buildEmptyState(theme)
                 else
                   _buildHistoryList(
                     theme,
@@ -462,7 +462,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '•',
+                      '\u2022',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.outline,
                       ),
