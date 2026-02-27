@@ -246,7 +246,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
                       fontSize: 12,
                     ),
                   ),
-                  backgroundColor: statusColor.withOpacity(0.1),
+                  backgroundColor: statusColor.withValues(alpha: 0.1),
                   side: BorderSide(color: statusColor, width: 1),
                 ),
               ],
