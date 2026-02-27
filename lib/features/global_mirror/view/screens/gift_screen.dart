@@ -372,7 +372,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         // Handle ID mismatch (String vs int) by comparing as strings
         final isSent = tx.senderUserId.toString() == currentUserId ||
             tx.senderUserId == 0; // Stub fallback
-        
+
         final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
         final name = isSent && tx.recipientUserId == widget.recipientUserId
             ? 'Recipient' // We know we are on this user's screen
@@ -396,7 +396,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               vertical: 8,
             ),
             leading: CircleAvatar(
-              backgroundColor: isSent 
+              backgroundColor: isSent
                   ? AppTheme.primaryColor.withOpacity(0.1)
                   : Colors.green.withOpacity(0.1),
               child: Icon(
@@ -469,7 +469,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   Widget _buildStatusBadge(ThemeData theme, String status) {
     Color color;
     IconData icon;
-    
+
     switch (status.toLowerCase()) {
       case 'completed':
         color = Colors.green;
