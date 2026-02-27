@@ -32,9 +32,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
 
   Future<void> _openStellarLink(String txHash) async {
     // Stellar Expert testnet URL format
-    final url = Uri.parse(
-      'https://testnet.stellar.expert/transaction/$txHash',
-    );
+    final url = Uri.parse('https://testnet.stellar.expert/transaction/$txHash');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
@@ -105,11 +103,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         color: AppTheme.primaryColor,
-        child: _buildHistoryContent(
-          theme,
-          giftState,
-          currentUserId,
-        ),
+        child: _buildHistoryContent(theme, giftState, currentUserId),
       ),
     );
   }
@@ -129,11 +123,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  FontAwesomeIcons.gift,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
+                Icon(FontAwesomeIcons.gift, size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
                   'No gift history yet',
@@ -165,11 +155,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
         final tx = giftState.history[index];
         final isSent = tx.senderUserId == currentUserId;
 
-        return _buildTransactionTile(
-          theme,
-          tx,
-          isSent,
-        );
+        return _buildTransactionTile(theme, tx, isSent);
       },
     );
   }
@@ -232,11 +218,7 @@ class _GiftHistoryScreenState extends ConsumerState<GiftHistoryScreen> {
                 ),
                 // Status chip
                 Chip(
-                  avatar: Icon(
-                    statusIcon,
-                    size: 16,
-                    color: statusColor,
-                  ),
+                  avatar: Icon(statusIcon, size: 16, color: statusColor),
                   label: Text(
                     tx.status.substring(0, 1).toUpperCase() +
                         tx.status.substring(1),
