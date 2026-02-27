@@ -75,7 +75,6 @@ void main() {
       return ProviderScope(
         overrides: [
           giftRepositoryProvider.overrideWithValue(repo),
-          authProvider.overrideWith((ref) => AuthNotifier()),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
