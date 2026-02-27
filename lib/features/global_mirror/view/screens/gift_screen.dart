@@ -85,7 +85,10 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ECHO balance
-                _buildBalanceCard(theme, giftState.echoBalance),
+                _buildBalanceCard(
+                  theme,
+                  giftState.echoBalance,
+                ),
                 const SizedBox(height: 28),
 
                 // Amount picker
@@ -186,7 +189,10 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                 if (giftState.history.isEmpty)
                   _buildEmptyState(theme)
                 else
-                  _buildHistoryList(theme, giftState.history),
+                  _buildHistoryList(
+                    theme,
+                    giftState.history,
+                  ),
               ],
             ),
           ),
