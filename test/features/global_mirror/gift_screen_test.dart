@@ -107,22 +107,24 @@ void main() {
       expect(button.onPressed, isNotNull);
     });
 
-    testWidgets('send button is disabled when amount exceeds balance',
-        (tester) async {
-      fakeRepo.balance = 3.0;
+    testWidgets(
+      'send button is disabled when amount exceeds balance',
+      (tester) async {
+        fakeRepo.balance = 3.0;
 
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Default amount is 5.0, which exceeds balance of 3.0
-      final sendButton = find.widgetWithText(FilledButton, 'Send 5 ECHO');
-      expect(sendButton, findsOneWidget);
+        // Default amount is 5.0, which exceeds balance of 3.0
+        final sendButton = find.widgetWithText(FilledButton, 'Send 5 ECHO');
+        expect(sendButton, findsOneWidget);
 
-      final button = tester.widget<FilledButton>(sendButton);
-      expect(button.onPressed, isNull);
+        final button = tester.widget<FilledButton>(sendButton);
+        expect(button.onPressed, isNull);
 
-      expect(find.text('Insufficient ECHO balance'), findsOneWidget);
-    });
+        expect(find.text('Insufficient ECHO balance'), findsOneWidget);
+      },
+    );
 
     testWidgets('shows success message after sending', (tester) async {
       fakeRepo.balance = 50.0;
