@@ -63,7 +63,10 @@ void main() {
     test('ignores duplicate dates and null mood entries', () {
       final entries = [
         buildEntry(referenceDate, mood: 4),
-        buildEntry(referenceDate, mood: 2), // Same date should not double-count.
+        buildEntry(
+          referenceDate,
+          mood: 2,
+        ), // Same date should not double-count.
         buildEntry(referenceDate.subtract(const Duration(days: 1)), mood: 3),
         buildEntry(
           referenceDate.subtract(const Duration(days: 2)),
@@ -102,11 +105,14 @@ void main() {
 
       entries = entries
           .where(
-            (entry) =>
-                !_isSameDay(
-                  entry.date,
-                  DateTime(referenceDate.year, referenceDate.month, referenceDate.day),
-                ),
+            (entry) => !_isSameDay(
+              entry.date,
+              DateTime(
+                referenceDate.year,
+                referenceDate.month,
+                referenceDate.day,
+              ),
+            ),
           )
           .toList();
 

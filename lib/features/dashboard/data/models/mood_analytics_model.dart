@@ -36,13 +36,17 @@ class MoodAnalyticsModel {
     List<LogEntryModel> entries, {
     DateTime? referenceDate,
   }) {
-    final moodEntryDates =
-        entries.where((entry) => entry.mood != null).map((entry) {
-          final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
-          return DateTime(localDate.year, localDate.month, localDate.day);
-        });
+    final moodEntryDates = entries.where((entry) => entry.mood != null).map((
+      entry,
+    ) {
+      final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
+      return DateTime(localDate.year, localDate.month, localDate.day);
+    });
 
-    return _computeStreakFromDates(moodEntryDates, referenceDate: referenceDate);
+    return _computeStreakFromDates(
+      moodEntryDates,
+      referenceDate: referenceDate,
+    );
   }
 
   static int _computeStreakFromDates(

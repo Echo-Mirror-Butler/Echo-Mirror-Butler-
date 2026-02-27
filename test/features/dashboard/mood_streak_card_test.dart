@@ -7,9 +7,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: MoodStreakCard(streak: 5)),
-      ),
+      const MaterialApp(home: Scaffold(body: MoodStreakCard(streak: 5))),
     );
 
     expect(find.text('\u{1F525} 5-day streak'), findsOneWidget);
@@ -18,9 +16,7 @@ void main() {
 
   testWidgets('shows start prompt when streak is zero', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: MoodStreakCard(streak: 0)),
-      ),
+      const MaterialApp(home: Scaffold(body: MoodStreakCard(streak: 0))),
     );
 
     expect(find.text('\u{1F525} 0-day streak'), findsOneWidget);
