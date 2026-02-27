@@ -373,11 +373,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         final tx = history[index];
         // Handle ID mismatch (String vs int) by comparing as strings
         final isSent = tx.senderUserId.toString() == currentUserId ||
-            tx.senderUserId == 0; // Stub fallback
+            tx.senderUserId == 0;
 
         final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
         final name = isSent && tx.recipientUserId == widget.recipientUserId
-            ? 'Recipient' // We know we are on this user's screen
+            ? 'Recipient'
             : 'User #$otherId';
 
         return Container(
