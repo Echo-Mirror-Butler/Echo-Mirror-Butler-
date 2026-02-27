@@ -141,7 +141,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                             strokeWidth: 2,
                             color: Colors.white,
                           ),
-                        )
+                        ),
                       : const Icon(FontAwesomeIcons.gift),
                   label: Text(
                     giftState.isSending
@@ -302,7 +302,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: false),
           decoration: const InputDecoration(
-            labelText: 'ECHO amount (1–100)',
+            labelText: 'ECHO amount (1-100)',
             suffixText: 'ECHO',
           ),
           autofocus: true,
@@ -525,4 +525,3 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 }
-
