@@ -400,9 +400,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                   ? AppTheme.primaryColor.withOpacity(0.1)
                   : Colors.green.withOpacity(0.1),
               child: Icon(
-                isSent
-                    ? FontAwesomeIcons.gift
-                    : FontAwesomeIcons.handHoldingHeart,
+                isSent ? FontAwesomeIcons.gift : FontAwesomeIcons.handHoldingHeart,
                 size: 16,
                 color: isSent ? AppTheme.primaryColor : Colors.green,
               ),
@@ -421,9 +419,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                   '${isSent ? "-" : "+"}${tx.echoAmount.toStringAsFixed(0)} ECHO',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isSent
-                        ? theme.colorScheme.onSurface
-                        : Colors.green[700],
+                    color: isSent ? theme.colorScheme.onSurface : Colors.green[700],
                   ),
                 ),
               ],
@@ -489,10 +485,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -503,14 +496,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 12,
-            color: color,
-          ),
-          const SizedBox(
-            width: 4,
-          ),
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
           Text(
             status.toUpperCase(),
             style: TextStyle(
