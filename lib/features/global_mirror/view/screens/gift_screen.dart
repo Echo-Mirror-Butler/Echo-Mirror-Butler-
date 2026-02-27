@@ -77,6 +77,13 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(FontAwesomeIcons.clock),
+            tooltip: 'View gift history',
+            onPressed: () => context.push('/gift-history'),
+          ),
+        ],
       ),
       body: Stack(
         children: [
