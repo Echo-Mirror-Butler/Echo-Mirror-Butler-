@@ -489,4 +489,18 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-    
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
