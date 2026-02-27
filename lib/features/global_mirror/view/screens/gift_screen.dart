@@ -371,7 +371,6 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         final isSent = tx.senderUserId.toString() == currentUserId ||
             tx.senderUserId == 0; // Stub fallback
         
-        final directionLabel = isSent ? 'Sent to' : 'Received from';
         final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
         final name = isSent && tx.recipientUserId == widget.recipientUserId
             ? 'Recipient' // We know we are on this user's screen
@@ -396,7 +395,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                   ? AppTheme.primaryColor.withOpacity(0.1)
                   : Colors.green.withOpacity(0.1),
               child: Icon(
-                isSent ? FontAwesomeIcons.arrowUp : FontAwesomeIcons.arrowDown,
+                isSent ? FontAwesomeIcons.gift : FontAwesomeIcons.handHoldingHeart,
                 size: 16,
                 color: isSent ? AppTheme.primaryColor : Colors.green,
               ),
@@ -405,15 +404,17 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    isSent ? 'You' : name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    name,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 Text(
                   '${isSent ? "-" : "+"}${tx.echoAmount.toStringAsFixed(0)} ECHO',
-                  style: TextStyle(
+                  style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isSent ? Colors.black87 : Colors.green[700],
+                    color: isSent ? theme.colorScheme.onSurface : Colors.green[700],
                   ),
                 ),
               ],
@@ -425,18 +426,29 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                 Row(
                   children: [
                     Text(
-                      '$directionLabel ${!isSent ? "You" : name}',
-                      style: theme.textTheme.bodySmall,
+                      isSent ? 'Sent' : 'Received',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 4),
+                    Text(
+                      '•',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                     Text(
                       DateFormatter.formatRelativeTime(tx.createdAt),
-                      style: theme.textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
+                    const Spacer(),
+                    _buildStatusBadge(theme, tx.status),
                   ],
                 ),
-                const SizedBox(height: 8),
-                _buildStatusBadge(theme, tx.status),
               ],
             ),
           ),
@@ -477,18 +489,4 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            status.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+    
