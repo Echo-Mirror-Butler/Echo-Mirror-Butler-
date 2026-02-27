@@ -319,6 +319,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         ],
       ),
     );
+  }
+
   Widget _buildEmptyState(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(32),
