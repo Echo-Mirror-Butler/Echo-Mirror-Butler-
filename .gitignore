@@ -66,3 +66,6 @@ build/
 
 # Ignore downloaded Dart/Flutter SDK zips
 /dart-sdk*.zip
+
+# Ignore local setup script
+/scripts/setup-flutter-and-format.ps1
