@@ -25,12 +25,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   final _messageController = TextEditingController();
   late final ConfettiController _confettiController;
 
-  static const _presetAmounts = [
-    1.0,
-    5.0,
-    10.0,
-    25.0,
-  ];
+  static const _presetAmounts = [1.0, 5.0, 10.0, 25.0];
 
   @override
   void initState() {
@@ -131,7 +126,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
                 // Send button
                 FilledButton.icon(
-                  onPressed: giftState.isSending ||
+                  onPressed:
+                      giftState.isSending ||
                           _selectedAmount > giftState.echoBalance
                       ? null
                       : _handleSend,
@@ -221,10 +217,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor,
-            AppTheme.secondaryColor,
-          ],
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -376,14 +369,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: history.length,
-      separatorBuilder: (context, index) => const SizedBox(
-        height: 12,
-      ),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final tx = history[index];
         // Handle ID mismatch (String vs int) by comparing as strings
-        final isSent = tx.senderUserId.toString() == currentUserId ||
-            tx.senderUserId == 0;
+        final isSent =
+            tx.senderUserId.toString() == currentUserId || tx.senderUserId == 0;
 
         final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
         final name = isSent && tx.recipientUserId == widget.recipientUserId
@@ -506,9 +497,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-        ),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
