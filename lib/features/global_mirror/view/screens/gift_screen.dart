@@ -25,7 +25,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   final _messageController = TextEditingController();
   late final ConfettiController _confettiController;
 
-  static const _presetAmounts = [1.0, 5.0, 10.0, 25.0];
+  static const _presetAmounts = [
+    1.0,
+    5.0,
+    10.0,
+    25.0,
+  ];
 
   @override
   void initState() {
@@ -375,7 +380,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: history.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => const SizedBox(
+        height: 12,
+      ),
       itemBuilder: (context, index) {
         final tx = history[index];
         // Handle ID mismatch (String vs int) by comparing as strings
