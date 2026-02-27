@@ -402,7 +402,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                   ? AppTheme.primaryColor.withOpacity(0.1)
                   : Colors.green.withOpacity(0.1),
               child: Icon(
-                isSent ? FontAwesomeIcons.gift : FontAwesomeIcons.handHoldingHeart,
+                isSent
+                    ? FontAwesomeIcons.gift
+                    : FontAwesomeIcons.handHoldingHeart,
                 size: 16,
                 color: isSent ? AppTheme.primaryColor : Colors.green,
               ),
@@ -421,7 +423,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                   '${isSent ? "-" : "+"}${tx.echoAmount.toStringAsFixed(0)} ECHO',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isSent ? theme.colorScheme.onSurface : Colors.green[700],
+                    color: isSent
+                        ? theme.colorScheme.onSurface
+                        : Colors.green[700],
                   ),
                 ),
               ],
