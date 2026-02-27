@@ -420,7 +420,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                   ),
                 ),
                 Text(
-                  '${isSent ? "-" : "+"}'
+                  '${isSent ? '-' : '+'}'
                   '${tx.echoAmount.toStringAsFixed(0)} ECHO',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
