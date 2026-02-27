@@ -1,3 +1,5 @@
+import '../../../logging/data/models/log_entry_model.dart';
+
 /// Model for mood analytics calculations
 class MoodAnalyticsModel {
   final double averageMood;
@@ -21,6 +23,51 @@ class MoodAnalyticsModel {
     this.weeklyAverage,
     this.monthlyAverage,
   });
+
+  /// Computes the current mood streak (consecutive days with a mood entry),
+  /// counting backward from today.
+  ///
+  /// Rules:
+  /// - Counts unique calendar days only (multiple entries on same day = 1 day)
+  /// - Uses local dates for comparison
+  /// - Requires a mood value to count as a mood entry
+  /// - If there is no mood entry for today, streak is 0
+  static int computeStreak(
+    List<LogEntryModel> entries, {
+    DateTime? referenceDate,
+  }) {
+    final moodEntryDates =
+        entries.where((entry) => entry.mood != null).map((entry) {
+          final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
+          return DateTime(localDate.year, localDate.month, localDate.day);
+        });
+
+    return _computeStreakFromDates(moodEntryDates, referenceDate: referenceDate);
+  }
+
+  static int _computeStreakFromDates(
+    Iterable<DateTime> dates, {
+    DateTime? referenceDate,
+  }) {
+    final uniqueDates = dates.toSet();
+    if (uniqueDates.isEmpty) return 0;
+
+    final baseDate = referenceDate ?? DateTime.now();
+    final localBaseDate = baseDate.isUtc ? baseDate.toLocal() : baseDate;
+    var cursor = DateTime(
+      localBaseDate.year,
+      localBaseDate.month,
+      localBaseDate.day,
+    );
+
+    var streak = 0;
+    while (uniqueDates.contains(cursor)) {
+      streak++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+
+    return streak;
+  }
 
   /// Create analytics from log entries
   factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries) {
