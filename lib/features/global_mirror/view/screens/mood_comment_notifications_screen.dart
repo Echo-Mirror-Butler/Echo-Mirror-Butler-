@@ -111,40 +111,56 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: notifications.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref
+              .read(moodCommentNotificationProvider.notifier)
+              .refreshNotifications();
+        },
+        child: notifications.isEmpty
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  Icon(
-                    FontAwesomeIcons.heart,
-                    size: 64,
-                    color: theme.colorScheme.primary.withOpacity(0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No notifications yet',
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            FontAwesomeIcons.heart,
+                            size: 64,
+                            color: theme.colorScheme.primary.withOpacity(0.3),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No notifications yet',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'When someone comments on your mood,\nyou\'ll see it here',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'When someone comments on your mood,\nyou\'ll see it here',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: notifications.length,
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: notifications.length,
               itemBuilder: (context, index) {
                 final notification = notifications[index];
                 final sentimentColor = _getSentimentColor(
@@ -295,6 +311,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                 );
               },
             ),
+      ),
       floatingActionButton: unreadCount > 0
           ? FloatingActionButton.extended(
               onPressed: () {

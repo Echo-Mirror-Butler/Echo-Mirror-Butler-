@@ -45,90 +45,127 @@ class LoggingScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: loggingState.when(
-        data: (entries) {
-          if (entries.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    FontAwesomeIcons.book,
-                    size: 64,
-                    color: theme.colorScheme.primary.withOpacity(0.5),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('No entries yet', style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Start logging your daily mood and habits',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            );
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final userId = ref.read(authProvider).user?.id;
+          if (userId != null && userId.isNotEmpty) {
+            await ref
+                .read(loggingProvider.notifier)
+                .loadLogEntries(userId: userId);
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: entries.length,
-            itemBuilder: (context, index) {
-              final entry = entries[index];
-              return Hero(
-                tag: 'log_entry_${entry.id}',
-                child: AnimatedCard(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: EdgeInsets.zero,
-                  animationDuration: Duration(milliseconds: 300 + (index * 50)),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                      child: Icon(
-                        _getMoodIcon(entry.mood),
-                        color: AppTheme.primaryColor,
+        },
+        child: loggingState.when(
+          data: (entries) {
+            if (entries.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            FontAwesomeIcons.book,
+                            size: 64,
+                            color: theme.colorScheme.primary.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No entries yet',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Start logging your daily mood and habits',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ],
                       ),
                     ),
-                    title: Text(
-                      DateFormatter.formatDate(entry.date),
-                      style: theme.textTheme.titleMedium,
+                  ),
+                ],
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: entries.length,
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return Hero(
+                  tag: 'log_entry_${entry.id}',
+                  child: AnimatedCard(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.zero,
+                    animationDuration:
+                        Duration(milliseconds: 300 + (index * 50)),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                        child: Icon(
+                          _getMoodIcon(entry.mood),
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      title: Text(
+                        DateFormatter.formatDate(entry.date),
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      subtitle: Text(
+                        entry.mood != null
+                            ? 'Mood: ${entry.mood}/5'
+                            : 'No mood logged',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      trailing: Icon(
+                        FontAwesomeIcons.chevronRight,
+                        size: 16,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      ),
+                      onTap: () {
+                        context.push(
+                          '/logging/detail/${entry.id}',
+                          extra: entry,
+                        );
+                      },
                     ),
-                    subtitle: Text(
-                      entry.mood != null
-                          ? 'Mood: ${entry.mood}/5'
-                          : 'No mood logged',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    trailing: Icon(
-                      FontAwesomeIcons.chevronRight,
-                      size: 16,
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    onTap: () {
-                      context.push('/logging/detail/${entry.id}', extra: entry);
-                    },
+                  ),
+                );
+              },
+            );
+          },
+          loading: () =>
+              const Center(child: ShimmerLoading(width: 40, height: 40)),
+          error: (error, stack) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        FontAwesomeIcons.triangleExclamation,
+                        size: 64,
+                        color: AppTheme.errorColor,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading entries',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: theme.textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-              );
-            },
-          );
-        },
-        loading: () =>
-            const Center(child: ShimmerLoading(width: 40, height: 40)),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                FontAwesomeIcons.triangleExclamation,
-                size: 64,
-                color: AppTheme.errorColor,
-              ),
-              const SizedBox(height: 16),
-              Text('Error loading entries', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: theme.textTheme.bodySmall,
-                textAlign: TextAlign.center,
               ),
             ],
           ),
