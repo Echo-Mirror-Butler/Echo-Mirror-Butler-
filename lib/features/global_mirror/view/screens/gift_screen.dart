@@ -193,7 +193,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
                 // Gift History List
                 if (giftState.history.isEmpty)
-                  _buildEmptyState(theme)
+                  _buildEmptyState(theme),
                 else
                   _buildHistoryList(
                     theme,
@@ -228,7 +228,10 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          colors: [
+            AppTheme.primaryColor,
+            AppTheme.secondaryColor,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
