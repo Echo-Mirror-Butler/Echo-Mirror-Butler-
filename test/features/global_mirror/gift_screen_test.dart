@@ -1,6 +1,5 @@
 import 'package:confetti/confetti.dart';
 import 'package:echomirror/core/themes/app_theme.dart';
-import 'package:echomirror/features/auth/viewmodel/providers/auth_provider.dart';
 import 'package:echomirror/features/global_mirror/data/models/gift_transaction_model.dart';
 import 'package:echomirror/features/global_mirror/data/repositories/gift_repository.dart';
 import 'package:echomirror/features/global_mirror/view/screens/gift_screen.dart';
@@ -240,8 +239,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Message (optional)'), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Add a kind note...'),
-          findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, 'Add a kind note...'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('sends gift with message', (tester) async {
