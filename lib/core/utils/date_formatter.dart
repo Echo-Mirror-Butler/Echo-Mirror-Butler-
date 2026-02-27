@@ -72,9 +72,11 @@ class DateFormatter {
     } else if (duration.inDays >= 1) {
       return '${duration.inDays} ${duration.inDays == 1 ? 'day' : 'days'} ago';
     } else if (duration.inHours >= 1) {
-      return '${duration.inHours} ${duration.inHours == 1 ? 'hour' : 'hours'} ago';
+      return '${duration.inHours} '
+          '${duration.inHours == 1 ? 'hour' : 'hours'} ago';
     } else if (duration.inMinutes >= 1) {
-      return '${duration.inMinutes} ${duration.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+      return '${duration.inMinutes} '
+          '${duration.inMinutes == 1 ? 'minute' : 'minutes'} ago';
     } else {
       return 'Just now';
     }
