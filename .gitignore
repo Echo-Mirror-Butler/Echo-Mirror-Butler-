@@ -63,3 +63,6 @@ build/
 .flutter-plugins-dependencies
 *.iml
 *.lock
+
+# Ignore downloaded Dart/Flutter SDK zips
+/dart-sdk*.zip
