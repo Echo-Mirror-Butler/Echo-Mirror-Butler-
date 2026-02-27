@@ -3,12 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
-
 import '../../../auth/viewmodel/providers/auth_provider.dart';
-
 import '../../data/models/gift_transaction_model.dart';
 import '../../viewmodel/providers/gift_provider.dart';
 
@@ -369,9 +366,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: history.length,
-      separatorBuilder: (context, index) => const SizedBox(
-        height: 12,
-      ),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final tx = history[index];
         // Handle ID mismatch (String vs int) by comparing as strings
