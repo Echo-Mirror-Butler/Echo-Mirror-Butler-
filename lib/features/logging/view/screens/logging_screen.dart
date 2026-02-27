@@ -46,14 +46,9 @@ class LoggingScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          final userId = ref.read(authProvider).user?.id;
-          if (userId != null && userId.isNotEmpty) {
-            await ref
-                .read(loggingProvider.notifier)
-                .loadLogEntries(userId: userId);
-          }
-        },
+        onRefresh: () => ref
+            .read(loggingProvider.notifier)
+            .loadLogEntries(userId: ref.read(authProvider).user?.id),
         child: loggingState.when(
           data: (entries) {
             if (entries.isEmpty) {

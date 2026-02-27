@@ -112,11 +112,9 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async {
-          await ref
-              .read(moodCommentNotificationProvider.notifier)
-              .refreshNotifications();
-        },
+        onRefresh: () => ref
+            .read(moodCommentNotificationProvider.notifier)
+            .refreshNotifications(),
         child: notifications.isEmpty
             ? ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
