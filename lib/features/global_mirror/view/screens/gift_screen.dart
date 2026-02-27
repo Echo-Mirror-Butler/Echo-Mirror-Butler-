@@ -366,7 +366,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: history.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => const SizedBox(
+        height: 12,
+      ),
       itemBuilder: (context, index) {
         final tx = history[index];
         // Handle ID mismatch (String vs int) by comparing as strings
@@ -485,7 +487,10 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -496,8 +501,14 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(
+            icon,
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(
+            width: 4,
+          ),
           Text(
             status.toUpperCase(),
             style: TextStyle(
