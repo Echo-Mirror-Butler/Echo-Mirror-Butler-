@@ -177,6 +177,51 @@ class SocialsRepository {
     }
   }
 
+  /// Create a scheduled session
+  Future<ScheduledSession> createScheduledSession({
+    required String title,
+    required DateTime scheduledTime,
+    bool isVoiceOnly = false,
+    String? description,
+  }) async {
+    try {
+      debugPrint(
+        '[SocialsRepository] createScheduledSession -> title: $title, time: $scheduledTime',
+      );
+      final userInfo = await _getCurrentUserInfo();
+      final result = await _client.socials.createScheduledSession(
+        title,
+        userInfo['id']!,
+        userInfo['name']!,
+        null, // hostAvatarUrl
+        scheduledTime,
+        description,
+        isVoiceOnly,
+      );
+      debugPrint(
+        '[SocialsRepository] Scheduled session created: ${result.id}',
+      );
+      return result;
+    } catch (e) {
+      debugPrint('[SocialsRepository] createScheduledSession error -> $e');
+      rethrow;
+    }
+  }
+
+  /// Get upcoming scheduled sessions for the current user
+  Future<List<ScheduledSession>> getUpcomingScheduledSessions() async {
+    try {
+      debugPrint('[SocialsRepository] getUpcomingScheduledSessions');
+      final userInfo = await _getCurrentUserInfo();
+      return await _client.socials.getUpcomingScheduledSessions(
+        userInfo['id']!,
+      );
+    } catch (e) {
+      debugPrint('[SocialsRepository] getUpcomingScheduledSessions error -> $e');
+      return [];
+    }
+  }
+
   /// Convert Serverpod VideoSession to local VideoSessionModel
   VideoSessionModel _convertToModel(VideoSession session) {
     return VideoSessionModel(
