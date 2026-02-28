@@ -86,6 +86,15 @@ The Serverpod backend for Global Mirror has been successfully implemented, gener
 
 ## 🚀 Deployment Steps
 
+### Required environment variables
+
+For video/voice calls (Agora), set these before running the server (e.g. in a `.env` file or your shell). Copy `echomirror_server_server/.env.example` to `.env` and fill in values.
+
+- **AGORA_APP_ID** – Agora project App ID (from [Agora Console](https://console.agora.io/))
+- **AGORA_APP_CERT** – Agora App Certificate (same project)
+
+If unset, `getAgoraCredentials` will throw; the rest of the backend works without them.
+
 ### Local Development
 
 1. **Apply Migration**:
