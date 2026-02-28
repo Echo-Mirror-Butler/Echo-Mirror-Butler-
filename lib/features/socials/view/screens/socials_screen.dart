@@ -468,12 +468,12 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
       builder: (bottomSheetContext) => _StartSessionBottomSheet(
         onCreateSession: (title, isVoiceOnly) async {
           Navigator.pop(bottomSheetContext);
+          final navigator = Navigator.of(context);
           final session = await ref
               .read(socialsProvider.notifier)
               .createSession(title: title, isVoiceOnly: isVoiceOnly);
           if (session != null && mounted) {
-            Navigator.push(
-              context, // Use outer context, not bottom sheet context
+            navigator.push(
               MaterialPageRoute(
                 builder: (context) => VideoCallScreen(
                   sessionId: session.id,
@@ -766,7 +766,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     const Spacer(),
                     const FaIcon(
-                      FontAwesomeIcons.edit,
+                      FontAwesomeIcons.penToSquare,
                       color: AppTheme.primaryColor,
                       size: 14,
                     ),
