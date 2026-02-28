@@ -22,7 +22,7 @@ class MockGiftRepository implements GiftRepository {
   void setSendGiftFailure(
     bool shouldFail, {
     double? failWhenAmountGreaterThan,
-  }), {
+  }) {
     _shouldFailSendGift = shouldFail;
     _failSendGiftWhenAmountGreaterThan =
         failWhenAmountGreaterThan ?? double.infinity;
@@ -38,7 +38,7 @@ class MockGiftRepository implements GiftRepository {
     required int recipientUserId,
     required double amount,
     String? message,
-  }), async {
+  }) async {
     if (_shouldFailSendGift || amount > _failSendGiftWhenAmountGreaterThan) {
       return null;
     }
@@ -113,7 +113,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: amount,
         message: 'Test gift',
-      ),
+      );
 
       expect(success, isTrue);
       expect(giftNotifier.state.echoBalance, initialBalance - amount);
@@ -135,7 +135,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: amount,
         message: message,
-      ),
+      );
 
       await giftNotifier.loadHistory();
 
@@ -160,7 +160,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: amount,
         message: 'Should fail',
-      ),
+      );
 
       expect(success, isFalse);
       expect(giftNotifier.state.lastSentTx, isNull);
@@ -191,7 +191,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: firstAmount,
         message: 'First gift',
-      ),
+      );
 
       expect(firstSuccess, isTrue);
       expect(giftNotifier.state.echoBalance, 170.0); // 200 - 30
@@ -205,7 +205,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: secondAmount,
         message: 'Second gift',
-      ),
+      );
 
       expect(secondSuccess, isTrue);
       expect(giftNotifier.state.echoBalance, 150.0); // 170 - 20
@@ -274,7 +274,7 @@ void main() {
         recipientUserId: 999,
         amount: 5.0,
         message: 'Loading test',
-      ),
+      );
       expect(giftNotifier.state.isSending, isTrue);
 
       await sendGiftFuture;
