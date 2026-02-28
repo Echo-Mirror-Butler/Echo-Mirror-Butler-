@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:serverpod/serverpod.dart';
 import 'package:agora_token_service/agora_token_service.dart';
@@ -5,9 +6,11 @@ import '../generated/protocol.dart';
 
 /// Socials endpoint for video/voice call sessions
 class SocialsEndpoint extends Endpoint {
-  // Agora credentials
-  static const String _agoraAppId = 'eccb4923605644c89d00aa2bd9e3c10c';
-  static const String _agoraAppCertificate = 'dc3ce665edcb48a581cb665bf1c61ab7';
+  // Agora credentials from environment (set AGORA_APP_ID and AGORA_APP_CERT)
+  static final String _agoraAppId =
+      Platform.environment['AGORA_APP_ID'] ?? '';
+  static final String _agoraAppCertificate =
+      Platform.environment['AGORA_APP_CERT'] ?? '';
 
   /// Token expiration time (24 hours)
   static const int _tokenExpirationInSeconds = 24 * 3600;
@@ -129,6 +132,16 @@ class SocialsEndpoint extends Endpoint {
     int userId,
   ) async {
     try {
+      if (_agoraAppId.isEmpty || _agoraAppCertificate.isEmpty) {
+        session.log(
+          'AGORA_APP_ID or AGORA_APP_CERT not configured. '
+          'Set them in environment variables.',
+        );
+        throw Exception(
+          'Agora credentials not configured. Set AGORA_APP_ID and AGORA_APP_CERT.',
+        );
+      }
+
       session.log(
         'Generating Agora token for channel: $channelName, uid: $userId',
       );

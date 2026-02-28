@@ -79,6 +79,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           await ref.read(socialsProvider.notifier).loadActiveSessions();
         },
         child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Stories and Live Sessions Bar
             SliverToBoxAdapter(
