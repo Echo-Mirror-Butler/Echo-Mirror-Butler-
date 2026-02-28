@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../viewmodel/providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
 
@@ -40,11 +41,49 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Future<void> _handleReset() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      // TODO: integrate password reset with auth provider using widget.token
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        setState(() => _isLoading = false);
-        context.go('/login');
+
+      try {
+        final authRepository = ref.read(authRepositoryProvider);
+        final success = await authRepository.resetPassword(
+          widget.email,
+          widget.token,
+          _passwordController.text,
+        );
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Password reset successfully! Please log in with your new password.',
+                ),
+                backgroundColor: AppTheme.successColor,
+              ),
+            );
+            context.go('/login');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Failed to reset password. The link may have expired.',
+                ),
+                backgroundColor: AppTheme.errorColor,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
       }
     }
   }
