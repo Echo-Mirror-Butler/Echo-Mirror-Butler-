@@ -7,15 +7,18 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../../logging/data/models/log_entry_model.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../../help/view/screens/professional_help_screen.dart';
 import '../../data/models/insight_model.dart';
+import '../../data/models/mood_analytics_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
+import '../widgets/mood_streak_card.dart';
 import '../widgets/mood_trend_chart.dart';
 import '../../viewmodel/providers/mood_chart_provider.dart';
 
@@ -59,6 +62,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
+    final loggingState = ref.watch(loggingProvider);
+    final logEntries = loggingState.value ?? const <LogEntryModel>[];
+    final currentStreak = MoodAnalyticsModel.computeStreak(logEntries);
     final theme = Theme.of(context);
 
     // Load logs and insights when we have a user ID
@@ -184,6 +190,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       // Stats section
                       DashboardStats(insights: insights),
+                      const SizedBox(height: 8),
+                      // Mood streak card
+                      MoodStreakCard(streak: currentStreak),
                       const SizedBox(height: 8),
                       // Mood Trend Chart
                       MoodTrendChart(
