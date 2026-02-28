@@ -19,9 +19,13 @@ class MockGiftRepository implements GiftRepository {
     _history.addAll(history);
   }
 
-  void setSendGiftFailure(bool shouldFail, {double? failWhenAmountGreaterThan}) {
+  void setSendGiftFailure(
+    bool shouldFail, {
+    double? failWhenAmountGreaterThan,
+  }), {
     _shouldFailSendGift = shouldFail;
-    _failSendGiftWhenAmountGreaterThan = failWhenAmountGreaterThan ?? double.infinity;
+    _failSendGiftWhenAmountGreaterThan =
+        failWhenAmountGreaterThan ?? double.infinity;
   }
 
   @override
@@ -34,7 +38,7 @@ class MockGiftRepository implements GiftRepository {
     required int recipientUserId,
     required double amount,
     String? message,
-  }) async {
+  }), async {
     if (_shouldFailSendGift || amount > _failSendGiftWhenAmountGreaterThan) {
       return null;
     }
@@ -95,7 +99,9 @@ void main() {
       expect(giftNotifier.state.echoBalance, greaterThanOrEqualTo(0));
     });
 
-    test('2. After sendGift(recipientUserId, 5.0), balance decreases by 5.0', () async {
+    test(
+      '2. After sendGift(recipientUserId, 5.0), balance decreases by 5.0',
+      () async {
       mockRepo.setBalance(100.0);
       await giftNotifier.loadBalance();
 
@@ -107,7 +113,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: amount,
         message: 'Test gift',
-      );
+      ),
 
       expect(success, isTrue);
       expect(giftNotifier.state.echoBalance, initialBalance - amount);
@@ -129,7 +135,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: amount,
         message: message,
-      );
+      ),
 
       await giftNotifier.loadHistory();
 
@@ -154,7 +160,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: amount,
         message: 'Should fail',
-      );
+      ),
 
       expect(success, isFalse);
       expect(giftNotifier.state.lastSentTx, isNull);
@@ -165,7 +171,9 @@ void main() {
       expect(giftNotifier.state.echoBalance, 25.0);
     });
 
-    test('5. GiftNotifier state reflects balance changes after sendGift', () async {
+    test(
+      '5. GiftNotifier state reflects balance changes after sendGift',
+      () async {
       mockRepo.setBalance(200.0);
       await giftNotifier.loadBalance();
 
@@ -183,7 +191,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: firstAmount,
         message: 'First gift',
-      );
+      ),
 
       expect(firstSuccess, isTrue);
       expect(giftNotifier.state.echoBalance, 170.0); // 200 - 30
@@ -197,7 +205,7 @@ void main() {
         recipientUserId: recipientUserId,
         amount: secondAmount,
         message: 'Second gift',
-      );
+      ),
 
       expect(secondSuccess, isTrue);
       expect(giftNotifier.state.echoBalance, 150.0); // 170 - 20
@@ -207,14 +215,28 @@ void main() {
       expect(giftNotifier.state.error, isNull);
     });
 
-    test('6. Multiple transactions appear in history in chronological order', () async {
+    test(
+      '6. Multiple transactions appear in history in chronological order',
+      () async {
       mockRepo.setBalance(100.0);
       await giftNotifier.loadBalance();
 
       // Send multiple gifts
-      await giftNotifier.sendGift(recipientUserId: 1, amount: 10.0, message: 'First');
-      await giftNotifier.sendGift(recipientUserId: 2, amount: 15.0, message: 'Second');
-      await giftNotifier.sendGift(recipientUserId: 3, amount: 5.0, message: 'Third');
+      await giftNotifier.sendGift(
+        recipientUserId: 1,
+        amount: 10.0,
+        message: 'First',
+      );
+      await giftNotifier.sendGift(
+        recipientUserId: 2,
+        amount: 15.0,
+        message: 'Second',
+      );
+      await giftNotifier.sendGift(
+        recipientUserId: 3,
+        amount: 5.0,
+        message: 'Third',
+      ),
 
       await giftNotifier.loadHistory();
 
@@ -252,7 +274,7 @@ void main() {
         recipientUserId: 999,
         amount: 5.0,
         message: 'Loading test',
-      );
+      ),
       expect(giftNotifier.state.isSending, isTrue);
 
       await sendGiftFuture;
