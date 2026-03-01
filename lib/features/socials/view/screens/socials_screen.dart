@@ -152,7 +152,13 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               ),
             ),
 
-            // Recent Sessions or Empty State
+            // Scheduled Sessions
+            if (socialsState.scheduledSessions.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _buildScheduledSessionsList(socialsState, theme),
+              ),
+
+            // Active Sessions or Empty State
             SliverToBoxAdapter(
               child: socialsState.activeSessions.isEmpty
                   ? _buildEmptyState(theme)
@@ -348,6 +354,112 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
     );
   }
 
+  Widget _buildScheduledSessionsList(dynamic state, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Scheduled Sessions',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...state.scheduledSessions.map((session) {
+            return FadeInUp(
+              child: _buildScheduledSessionCard(session, theme),
+            );
+          }).toList(),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduledSessionCard(dynamic session, ThemeData theme) {
+    final scheduledTime = session.scheduledTime as DateTime;
+    final formattedTime =
+        '${scheduledTime.day}/${scheduledTime.month}/${scheduledTime.year} at ${scheduledTime.hour.toString().padLeft(2, '0')}:${scheduledTime.minute.toString().padLeft(2, '0')}';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppTheme.secondaryColor.withOpacity(0.1),
+              child: FaIcon(
+                session.isVoiceOnly as bool
+                    ? FontAwesomeIcons.phone
+                    : FontAwesomeIcons.video,
+                color: AppTheme.secondaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    session.title as String,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.clock,
+                        size: 12,
+                        color: AppTheme.secondaryColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        formattedTime,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.secondaryColor),
+              ),
+              child: Text(
+                'Scheduled',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showStartSessionDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -356,12 +468,12 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
       builder: (bottomSheetContext) => _StartSessionBottomSheet(
         onCreateSession: (title, isVoiceOnly) async {
           Navigator.pop(bottomSheetContext);
+          final navigator = Navigator.of(context);
           final session = await ref
               .read(socialsProvider.notifier)
               .createSession(title: title, isVoiceOnly: isVoiceOnly);
           if (session != null && mounted) {
-            Navigator.push(
-              context, // Use outer context, not bottom sheet context
+            navigator.push(
               MaterialPageRoute(
                 builder: (context) => VideoCallScreen(
                   sessionId: session.id,
@@ -369,6 +481,34 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                   sessionTitle: session.title,
                   hostName: session.hostName,
                 ),
+              ),
+            );
+          }
+        },
+        onScheduleSession: (title, isVoiceOnly, scheduledTime) async {
+          final messenger = ScaffoldMessenger.of(context);
+          final scheduled = await ref
+              .read(socialsProvider.notifier)
+              .scheduleSession(
+                title: title,
+                isVoiceOnly: isVoiceOnly,
+                scheduledTime: scheduledTime,
+              );
+          if (!mounted) return;
+          if (scheduled != null) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Session scheduled for ${scheduledTime.day}/${scheduledTime.month} at ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}',
+                ),
+                backgroundColor: AppTheme.successColor,
+              ),
+            );
+          } else {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Failed to schedule session. Please try again.'),
+                backgroundColor: AppTheme.errorColor,
               ),
             );
           }
@@ -381,8 +521,13 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
 /// Bottom sheet for starting a new session
 class _StartSessionBottomSheet extends StatefulWidget {
   final Function(String title, bool isVoiceOnly) onCreateSession;
+  final Function(String title, bool isVoiceOnly, DateTime scheduledTime)
+  onScheduleSession;
 
-  const _StartSessionBottomSheet({required this.onCreateSession});
+  const _StartSessionBottomSheet({
+    required this.onCreateSession,
+    required this.onScheduleSession,
+  });
 
   @override
   State<_StartSessionBottomSheet> createState() =>
@@ -621,7 +766,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     const Spacer(),
                     const FaIcon(
-                      FontAwesomeIcons.edit,
+                      FontAwesomeIcons.penToSquare,
                       color: AppTheme.primaryColor,
                       size: 14,
                     ),
@@ -657,16 +802,11 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                 }
 
                 if (_scheduleForLater) {
-                  // Handle scheduled session
                   Navigator.pop(context);
-                  // TODO: Call schedule session endpoint
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Session scheduled for ${_scheduledTime!.day}/${_scheduledTime!.month} at ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                      ),
-                      backgroundColor: AppTheme.successColor,
-                    ),
+                  widget.onScheduleSession(
+                    _titleController.text.trim(),
+                    _isVoiceOnly,
+                    _scheduledTime!,
                   );
                 } else {
                   // Start session immediately
