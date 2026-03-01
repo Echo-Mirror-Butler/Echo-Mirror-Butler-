@@ -288,7 +288,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     final controller = TextEditingController(
       text: _selectedAmount.toStringAsFixed(0),
     );
-    showDialog(
+
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Custom Amount'),
@@ -309,16 +310,20 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
           FilledButton(
             onPressed: () {
               final value = double.tryParse(controller.text) ?? 1.0;
-              setState(() {
-                _selectedAmount = value.clamp(1.0, 100.0);
-              });
+              if (mounted) {
+                setState(() {
+                  _selectedAmount = value.clamp(1.0, 100.0);
+                });
+              }
               Navigator.pop(ctx);
             },
             child: const Text('Set'),
           ),
         ],
       ),
-    );
+    ).whenComplete(controller.dispose);
+    // .whenComplete guarantees dispose() is called for every exit path:
+    // Cancel button, Set button, tap-outside-to-dismiss, and back-button.
   }
 
   Widget _buildEmptyState(ThemeData theme) {
