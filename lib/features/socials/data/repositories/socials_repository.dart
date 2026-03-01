@@ -197,9 +197,7 @@ class SocialsRepository {
         description,
         isVoiceOnly,
       );
-      debugPrint(
-        '[SocialsRepository] Scheduled session created: ${result.id}',
-      );
+      debugPrint('[SocialsRepository] Scheduled session created: ${result.id}');
       return result;
     } catch (e) {
       debugPrint('[SocialsRepository] createScheduledSession error -> $e');
@@ -216,7 +214,9 @@ class SocialsRepository {
         userInfo['id']!,
       );
     } catch (e) {
-      debugPrint('[SocialsRepository] getUpcomingScheduledSessions error -> $e');
+      debugPrint(
+        '[SocialsRepository] getUpcomingScheduledSessions error -> $e',
+      );
       return [];
     }
   }

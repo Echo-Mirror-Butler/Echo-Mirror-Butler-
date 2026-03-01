@@ -370,9 +370,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           ),
           const SizedBox(height: 16),
           ...state.scheduledSessions.map((session) {
-            return FadeInUp(
-              child: _buildScheduledSessionCard(session, theme),
-            );
+            return FadeInUp(child: _buildScheduledSessionCard(session, theme));
           }).toList(),
           const SizedBox(height: 8),
         ],
