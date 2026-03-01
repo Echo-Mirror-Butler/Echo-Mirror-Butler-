@@ -8,6 +8,7 @@ import '../../../../core/viewmodel/providers/theme_provider.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../../global_mirror/viewmodel/providers/gift_provider.dart'; 
 
 /// Modern settings screen with improved UI/UX
 class SettingsScreen extends ConsumerWidget {
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final authState = ref.watch(authProvider);
     final isDark = theme.brightness == Brightness.dark;
+    final echoBalance = ref.watch(giftProvider).echoBalance; 
 
     return Scaffold(
       appBar: AppBar(
@@ -61,7 +63,7 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Manage your account settings',
           ),
           const SizedBox(height: 12),
-          _buildAccountCard(context, theme, authState, ref),
+          _buildAccountCard(context, theme, authState, ref, echoBalance), 
         ],
       ),
     );
@@ -324,6 +326,7 @@ class SettingsScreen extends ConsumerWidget {
     ThemeData theme,
     dynamic authState,
     WidgetRef ref,
+    double echoBalance, 
   ) {
     return Card(
       elevation: 0,
@@ -338,6 +341,25 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(4),
         child: Column(
           children: [
+          
+            _buildModernListTile(
+              context,
+              theme,
+              icon: FontAwesomeIcons.coins,
+              iconColor: AppTheme.primaryColor,
+              title: 'ECHO Balance',
+              subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
+              trailing: FaIcon(
+                FontAwesomeIcons.chevronRight,
+                size: 14,
+                color: theme.colorScheme.onSurface.withOpacity(0.4),
+              ),
+              onTap: () => context.push('/gift/0'),
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withOpacity(0.1),
+            ),
             if (authState.user != null)
               _buildModernListTile(
                 context,
