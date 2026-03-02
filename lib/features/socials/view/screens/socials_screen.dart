@@ -38,18 +38,15 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
     });
 
     // React to tab index changes to start/stop auto-refresh
-    ref.listen<int>(
-      mainTabIndexProvider,
-      (previous, next) {
-        final notifier = ref.read(socialsProvider.notifier);
-        if (next == 2) {
-          notifier.loadActiveSessions();
-          notifier.startAutoRefresh();
-        } else {
-          notifier.stopAutoRefresh();
-        }
-      },
-    );
+    ref.listen<int>(mainTabIndexProvider, (previous, next) {
+      final notifier = ref.read(socialsProvider.notifier);
+      if (next == 2) {
+        notifier.loadActiveSessions();
+        notifier.startAutoRefresh();
+      } else {
+        notifier.stopAutoRefresh();
+      }
+    });
   }
 
   @override
