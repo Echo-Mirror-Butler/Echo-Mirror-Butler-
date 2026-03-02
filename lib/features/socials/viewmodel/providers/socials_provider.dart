@@ -47,9 +47,7 @@ class SocialsState {
 
 /// Socials notifier with auto-refresh capability
 class SocialsNotifier extends StateNotifier<SocialsState> {
-  SocialsNotifier(this._repository) : super(const SocialsState()) {
-    _startAutoRefresh();
-  }
+  SocialsNotifier(this._repository) : super(const SocialsState());
 
   final SocialsRepository _repository;
   final NotificationService _notificationService = NotificationService();
@@ -57,10 +55,10 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
   final List<String> _notifiedSessions =
       []; // Track sessions we've already notified about
 
-  /// Start auto-refresh timer (every 5 seconds)
-  void _startAutoRefresh() {
+  /// Start auto-refresh timer (every 15 seconds)
+  void startAutoRefresh() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       // Only refresh if not currently loading (to avoid overlapping requests)
       if (!state.isLoading) {
         loadActiveSessions(silent: true);
