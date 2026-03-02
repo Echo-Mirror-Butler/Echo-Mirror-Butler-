@@ -79,9 +79,7 @@ void main() {
     setUp(() {
       mockRepo = MockGiftRepository();
       container = ProviderContainer(
-        overrides: [
-          giftRepositoryProvider.overrideWithValue(mockRepo),
-        ],
+        overrides: [giftRepositoryProvider.overrideWithValue(mockRepo)],
       );
       giftNotifier = GiftNotifier(mockRepo);
     });
@@ -102,26 +100,27 @@ void main() {
     test(
       '2. After sendGift(recipientUserId, 5.0), balance decreases by 5.0',
       () async {
-      mockRepo.setBalance(100.0);
-      await giftNotifier.loadBalance();
+        mockRepo.setBalance(100.0);
+        await giftNotifier.loadBalance();
 
-      final initialBalance = giftNotifier.state.echoBalance;
-      const recipientUserId = 42;
-      const amount = 5.0;
+        final initialBalance = giftNotifier.state.echoBalance;
+        const recipientUserId = 42;
+        const amount = 5.0;
 
-      final success = await giftNotifier.sendGift(
-        recipientUserId: recipientUserId,
-        amount: amount,
-        message: 'Test gift',
-      );
+        final success = await giftNotifier.sendGift(
+          recipientUserId: recipientUserId,
+          amount: amount,
+          message: 'Test gift',
+        );
 
-      expect(success, isTrue);
-      expect(giftNotifier.state.echoBalance, initialBalance - amount);
-      expect(giftNotifier.state.lastSentTx, isNotNull);
-      expect(giftNotifier.state.lastSentTx!.recipientUserId, recipientUserId);
-      expect(giftNotifier.state.lastSentTx!.echoAmount, amount);
-      expect(giftNotifier.state.error, isNull);
-    });
+        expect(success, isTrue);
+        expect(giftNotifier.state.echoBalance, initialBalance - amount);
+        expect(giftNotifier.state.lastSentTx, isNotNull);
+        expect(giftNotifier.state.lastSentTx!.recipientUserId, recipientUserId);
+        expect(giftNotifier.state.lastSentTx!.echoAmount, amount);
+        expect(giftNotifier.state.error, isNull);
+      },
+    );
 
     test('3. getGiftHistory() contains the sent transaction', () async {
       mockRepo.setBalance(100.0);
@@ -174,85 +173,87 @@ void main() {
     test(
       '5. GiftNotifier state reflects balance changes after sendGift',
       () async {
-      mockRepo.setBalance(200.0);
-      await giftNotifier.loadBalance();
+        mockRepo.setBalance(200.0);
+        await giftNotifier.loadBalance();
 
-      const recipientUserId = 789;
-      const firstAmount = 30.0;
-      const secondAmount = 20.0;
+        const recipientUserId = 789;
+        const firstAmount = 30.0;
+        const secondAmount = 20.0;
 
-      // Initial state
-      expect(giftNotifier.state.isSending, isFalse);
-      expect(giftNotifier.state.lastSentTx, isNull);
-      expect(giftNotifier.state.error, isNull);
+        // Initial state
+        expect(giftNotifier.state.isSending, isFalse);
+        expect(giftNotifier.state.lastSentTx, isNull);
+        expect(giftNotifier.state.error, isNull);
 
-      // First gift
-      final firstSuccess = await giftNotifier.sendGift(
-        recipientUserId: recipientUserId,
-        amount: firstAmount,
-        message: 'First gift',
-      );
+        // First gift
+        final firstSuccess = await giftNotifier.sendGift(
+          recipientUserId: recipientUserId,
+          amount: firstAmount,
+          message: 'First gift',
+        );
 
-      expect(firstSuccess, isTrue);
-      expect(giftNotifier.state.echoBalance, 170.0); // 200 - 30
-      expect(giftNotifier.state.lastSentTx, isNotNull);
-      expect(giftNotifier.state.lastSentTx!.echoAmount, firstAmount);
-      expect(giftNotifier.state.isSending, isFalse);
-      expect(giftNotifier.state.error, isNull);
+        expect(firstSuccess, isTrue);
+        expect(giftNotifier.state.echoBalance, 170.0); // 200 - 30
+        expect(giftNotifier.state.lastSentTx, isNotNull);
+        expect(giftNotifier.state.lastSentTx!.echoAmount, firstAmount);
+        expect(giftNotifier.state.isSending, isFalse);
+        expect(giftNotifier.state.error, isNull);
 
-      // Second gift
-      final secondSuccess = await giftNotifier.sendGift(
-        recipientUserId: recipientUserId,
-        amount: secondAmount,
-        message: 'Second gift',
-      );
+        // Second gift
+        final secondSuccess = await giftNotifier.sendGift(
+          recipientUserId: recipientUserId,
+          amount: secondAmount,
+          message: 'Second gift',
+        );
 
-      expect(secondSuccess, isTrue);
-      expect(giftNotifier.state.echoBalance, 150.0); // 170 - 20
-      expect(giftNotifier.state.lastSentTx, isNotNull);
-      expect(giftNotifier.state.lastSentTx!.echoAmount, secondAmount);
-      expect(giftNotifier.state.isSending, isFalse);
-      expect(giftNotifier.state.error, isNull);
-    });
+        expect(secondSuccess, isTrue);
+        expect(giftNotifier.state.echoBalance, 150.0); // 170 - 20
+        expect(giftNotifier.state.lastSentTx, isNotNull);
+        expect(giftNotifier.state.lastSentTx!.echoAmount, secondAmount);
+        expect(giftNotifier.state.isSending, isFalse);
+        expect(giftNotifier.state.error, isNull);
+      },
+    );
 
     test(
       '6. Multiple transactions appear in history in chronological order',
       () async {
-      mockRepo.setBalance(100.0);
-      await giftNotifier.loadBalance();
+        mockRepo.setBalance(100.0);
+        await giftNotifier.loadBalance();
 
-      // Send multiple gifts
-      await giftNotifier.sendGift(
-        recipientUserId: 1,
-        amount: 10.0,
-        message: 'First',
-      );
-      await giftNotifier.sendGift(
-        recipientUserId: 2,
-        amount: 15.0,
-        message: 'Second',
-      );
-      await giftNotifier.sendGift(
-        recipientUserId: 3,
-        amount: 5.0,
-        message: 'Third',
-      ),
+        // Send multiple gifts
+        await giftNotifier.sendGift(
+          recipientUserId: 1,
+          amount: 10.0,
+          message: 'First',
+        );
+        await giftNotifier.sendGift(
+          recipientUserId: 2,
+          amount: 15.0,
+          message: 'Second',
+        );
+        await giftNotifier.sendGift(
+          recipientUserId: 3,
+          amount: 5.0,
+          message: 'Third',
+        );
 
-      await giftNotifier.loadHistory();
+        await giftNotifier.loadHistory();
 
-      expect(giftNotifier.state.history.length, 3);
+        expect(giftNotifier.state.history.length, 3);
 
-      // Check chronological order (first transaction should be oldest)
-      expect(giftNotifier.state.history[0].echoAmount, 10.0);
-      expect(giftNotifier.state.history[1].echoAmount, 15.0);
-      expect(giftNotifier.state.history[2].echoAmount, 5.0);
+        // Check chronological order (first transaction should be oldest)
+        expect(giftNotifier.state.history[0].echoAmount, 10.0);
+        expect(giftNotifier.state.history[1].echoAmount, 15.0);
+        expect(giftNotifier.state.history[2].echoAmount, 5.0);
 
-      // Check all transactions are completed
-      for (final transaction in giftNotifier.state.history) {
-        expect(transaction.isCompleted, isTrue);
-        expect(transaction.status, 'completed');
-      }
-    });
+        // Check all transactions are completed
+        for (final transaction in giftNotifier.state.history) {
+          expect(transaction.isCompleted, isTrue);
+          expect(transaction.status, 'completed');
+        }
+      },
+    );
 
     test('7. Loading state updates correctly during operations', () async {
       mockRepo.setBalance(50.0);
