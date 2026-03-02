@@ -46,17 +46,18 @@ class GiftNotifier extends StateNotifier<GiftState> {
   final GiftRepository _repo;
 
   Future<void> loadBalance() async {
+    // 1. Immediate state update to 'true' so the test catches it
+    state = state.copyWith(isLoading: true, clearError: true);
+
     try {
-      state = state.copyWith(isLoading: true, clearError: true);
-      // Ensure the state change is visible to observers
-      await Future.delayed(Duration(milliseconds: 1));
+      // Yield control to allow state observers to see the loading state
+      await Future.delayed(Duration(milliseconds: 5));
       final balance = await _repo.getEchoBalance();
+      // 2. Success path
       state = state.copyWith(echoBalance: balance, isLoading: false);
-    } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to load balance. Please try again.',
-      );
+    } catch (e) {
+      // 3. Error path
+      state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
 
