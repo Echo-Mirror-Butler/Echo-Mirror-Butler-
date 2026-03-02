@@ -33,6 +33,8 @@ class MockGiftRepository implements GiftRepository {
     if (_shouldFailGetBalance) {
       throw Exception('Failed to fetch balance');
     }
+    // Add a small delay to make this truly asynchronous
+    await Future.delayed(Duration(milliseconds: 5));
     return _mockBalance;
   }
 
@@ -45,6 +47,9 @@ class MockGiftRepository implements GiftRepository {
     if (_shouldFailSendGift) {
       throw Exception('Failed to send gift');
     }
+
+    // Add a small delay to make this truly asynchronous
+    await Future.delayed(Duration(milliseconds: 5));
 
     // Check balance constraint
     if (amount > _mockBalance) {
@@ -137,6 +142,7 @@ void main() {
       );
 
       final notifier = container.read(giftProvider.notifier);
+      await notifier.loadBalance();
 
       // Initially isSending should be false
       expect(container.read(giftProvider).isSending, false);
@@ -169,6 +175,7 @@ void main() {
       );
 
       final notifier = container.read(giftProvider.notifier);
+      await notifier.loadBalance();
 
       expect(container.read(giftProvider).echoBalance, 50.0);
 
@@ -191,6 +198,7 @@ void main() {
         );
 
         final notifier = container.read(giftProvider.notifier);
+        await notifier.loadBalance();
 
         final success = await notifier.sendGift(
           recipientUserId: 123,
@@ -218,6 +226,7 @@ void main() {
       );
 
       final notifier = container.read(giftProvider.notifier);
+      await notifier.loadBalance();
 
       final success = await notifier.sendGift(
         recipientUserId: 123,
