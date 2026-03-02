@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:echomirror_server_client/echomirror_server_client.dart';
 import '../../data/models/video_session_model.dart';
 import '../../data/models/story_model.dart';
 import '../../data/repositories/socials_repository.dart';
@@ -15,12 +16,14 @@ final socialsRepositoryProvider = Provider<SocialsRepository>((ref) {
 class SocialsState {
   final List<VideoSessionModel> activeSessions;
   final List<StoryModel> stories;
+  final List<ScheduledSession> scheduledSessions;
   final bool isLoading;
   final String? error;
 
   const SocialsState({
     this.activeSessions = const [],
     this.stories = const [],
+    this.scheduledSessions = const [],
     this.isLoading = false,
     this.error,
   });
@@ -28,12 +31,14 @@ class SocialsState {
   SocialsState copyWith({
     List<VideoSessionModel>? activeSessions,
     List<StoryModel>? stories,
+    List<ScheduledSession>? scheduledSessions,
     bool? isLoading,
     String? error,
   }) {
     return SocialsState(
       activeSessions: activeSessions ?? this.activeSessions,
       stories: stories ?? this.stories,
+      scheduledSessions: scheduledSessions ?? this.scheduledSessions,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
     );
@@ -49,7 +54,7 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
   final SocialsRepository _repository;
   final NotificationService _notificationService = NotificationService();
   Timer? _refreshTimer;
-  List<String> _notifiedSessions =
+  final List<String> _notifiedSessions =
       []; // Track sessions we've already notified about
 
   /// Start auto-refresh timer (every 5 seconds)
@@ -83,9 +88,11 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
     try {
       final sessions = await _repository.getActiveSessions();
       final stories = await _repository.getActiveStories();
+      final scheduled = await _repository.getUpcomingScheduledSessions();
       state = state.copyWith(
         activeSessions: sessions,
         stories: stories,
+        scheduledSessions: scheduled,
         isLoading: false,
       );
 
@@ -154,6 +161,28 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
       return session;
     } catch (e) {
       debugPrint('[SocialsNotifier] Error creating session: $e');
+      state = state.copyWith(error: e.toString());
+      return null;
+    }
+  }
+
+  /// Schedule a future session
+  Future<ScheduledSession?> scheduleSession({
+    required String title,
+    required DateTime scheduledTime,
+    bool isVoiceOnly = false,
+  }) async {
+    try {
+      final session = await _repository.createScheduledSession(
+        title: title,
+        scheduledTime: scheduledTime,
+        isVoiceOnly: isVoiceOnly,
+      );
+      final scheduled = await _repository.getUpcomingScheduledSessions();
+      state = state.copyWith(scheduledSessions: scheduled);
+      return session;
+    } catch (e) {
+      debugPrint('[SocialsNotifier] Error scheduling session: $e');
       state = state.copyWith(error: e.toString());
       return null;
     }

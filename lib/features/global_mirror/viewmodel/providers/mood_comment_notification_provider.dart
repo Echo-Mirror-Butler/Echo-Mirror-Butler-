@@ -78,7 +78,6 @@ class MoodCommentNotificationNotifier
       if (success) {
         await _loadNotifications(); // Refresh from server
       }
-      await _loadNotifications(); // Refresh from server
     } catch (e) {
       debugPrint(
         '[MoodCommentNotificationNotifier] Error marking notification as read: $e',
@@ -119,7 +118,6 @@ class MoodCommentNotificationNotifier
       if (success) {
         await _loadNotifications(); // Refresh from server
       }
-      await _loadNotifications(); // Refresh from server
     } catch (e) {
       debugPrint(
         '[MoodCommentNotificationNotifier] Error deleting notification: $e',
