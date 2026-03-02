@@ -317,6 +317,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       final hostName = widget.hostName;
       final isHost = widget.isHost;
 
+      // Bail out safely if engine initialization failed.
+      if (_engine == null) {
+        _isNavigatingAway = false;
+        return;
+      }
+
       pipOverlay.showPipOverlay(
         context: context,
         engine: _engine!,
@@ -366,10 +372,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       // Small delay to ensure overlay is shown
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Navigate back - call continues in floating overlay
-      if (mounted) {
-        Navigator.pop(context);
+      if (!mounted) {
+        return;
       }
+
+      // Navigate back - call continues in floating overlay
+      Navigator.pop(context);
     } catch (e) {
       debugPrint('[VideoCallScreen] Error handling back button: $e');
       _isNavigatingAway = false;
