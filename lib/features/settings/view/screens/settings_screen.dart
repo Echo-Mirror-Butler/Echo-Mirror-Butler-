@@ -8,7 +8,7 @@ import '../../../../core/viewmodel/providers/theme_provider.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
-import '../../../global_mirror/viewmodel/providers/gift_provider.dart'; 
+import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
 
 /// Modern settings screen with improved UI/UX
 class SettingsScreen extends ConsumerWidget {
@@ -20,7 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final authState = ref.watch(authProvider);
     final isDark = theme.brightness == Brightness.dark;
-    final echoBalance = ref.watch(giftProvider).echoBalance; 
+    final echoBalance = ref.watch(giftProvider).echoBalance;
 
     return Scaffold(
       appBar: AppBar(
@@ -63,7 +63,7 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Manage your account settings',
           ),
           const SizedBox(height: 12),
-          _buildAccountCard(context, theme, authState, ref, echoBalance), 
+          _buildAccountCard(context, theme, authState, ref, echoBalance),
         ],
       ),
     );
@@ -326,7 +326,7 @@ class SettingsScreen extends ConsumerWidget {
     ThemeData theme,
     dynamic authState,
     WidgetRef ref,
-    double echoBalance, 
+    double echoBalance,
   ) {
     return Card(
       elevation: 0,
@@ -341,7 +341,6 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(4),
         child: Column(
           children: [
-          
             _buildModernListTile(
               context,
               theme,
