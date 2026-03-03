@@ -28,7 +28,7 @@ void main() {
     setUpAll(() async {
       // Create and fund an issuer account for this test run
       issuerKeypair = KeyPair.random();
-      
+
       int retries = 3;
       int statusCode = 0;
       while (retries > 0 && statusCode != 200) {
@@ -43,7 +43,7 @@ void main() {
         if (statusCode != 200) await Future.delayed(const Duration(seconds: 2));
         retries--;
       }
-      
+
       expect(
         statusCode,
         200,
@@ -69,10 +69,11 @@ void main() {
           } catch (e) {
             statusCode = 500;
           }
-          if (statusCode != 200) await Future.delayed(const Duration(seconds: 2));
+          if (statusCode != 200)
+            await Future.delayed(const Duration(seconds: 2));
           retries--;
         }
-        
+
         expect(
           statusCode,
           200,
