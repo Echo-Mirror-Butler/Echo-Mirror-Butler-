@@ -5,6 +5,7 @@ import '../../data/models/mood_pin_model.dart';
 import '../../data/models/video_post_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../data/repositories/global_mirror_repository.dart';
+import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import 'mood_comment_notification_provider.dart';
 
 /// Provider for Global Mirror repository
@@ -14,6 +15,12 @@ final globalMirrorRepositoryProvider = Provider<GlobalMirrorRepository>((ref) {
 
 /// Provider for streaming mood pins
 final moodPinsStreamProvider = StreamProvider<List<MoodPinModel>>((ref) {
+  final tabIndex = ref.watch(mainTabIndexProvider);
+  if (tabIndex != 1) {
+    // When the Globe tab is not visible, avoid maintaining a live stream
+    // connection and instead expose an empty stream.
+    return Stream<List<MoodPinModel>>.value(const []);
+  }
   final repository = ref.watch(globalMirrorRepositoryProvider);
   return repository.streamMoodPins();
 });

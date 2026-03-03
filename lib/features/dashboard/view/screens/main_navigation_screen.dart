@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import '../../../global_mirror/view/screens/globe_screen.dart';
 import '../../../socials/view/screens/socials_screen.dart';
 import '../../../logging/view/screens/logging_screen.dart';
@@ -31,6 +32,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Ensure the main tab index provider starts in sync with the initial tab.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(mainTabIndexProvider.notifier).state = _selectedIndex;
+    });
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -40,6 +51,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     setState(() {
       _selectedIndex = index;
     });
+    ref.read(mainTabIndexProvider.notifier).state = index;
     _pageController.jumpToPage(index);
   }
 
@@ -56,6 +68,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           setState(() {
             _selectedIndex = index;
           });
+          ref.read(mainTabIndexProvider.notifier).state = index;
         },
         children: _screens,
       ),
