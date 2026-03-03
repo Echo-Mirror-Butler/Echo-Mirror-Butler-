@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import '../../viewmodel/providers/socials_provider.dart';
@@ -177,11 +178,33 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               ),
 
             // Active Sessions or Empty State
-            SliverToBoxAdapter(
-              child: socialsState.activeSessions.isEmpty
-                  ? _buildEmptyState(theme)
-                  : _buildRecentSessionsList(socialsState, theme),
-            ),
+            if (socialsState.isLoading && socialsState.activeSessions.isEmpty)
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final isDark = theme.brightness == Brightness.dark;
+                    return Shimmer.fromColors(
+                      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                      child: Container(
+                        height: 100,
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[900] : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: 3,
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: socialsState.activeSessions.isEmpty
+                    ? _buildEmptyState(theme)
+                    : _buildRecentSessionsList(socialsState, theme),
+              ),
           ],
         ),
       ),
