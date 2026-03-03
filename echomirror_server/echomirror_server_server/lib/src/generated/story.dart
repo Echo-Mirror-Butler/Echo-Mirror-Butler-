@@ -56,11 +56,11 @@ abstract class Story implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       expiresAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
-      viewCount: jsonSerialization['viewCount'] as int,
+      viewCount: jsonSerialization['viewCount'] as int?,
       viewedBy: _i2.Protocol().deserialize<List<String>>(
         jsonSerialization['viewedBy'],
       ),
-      isActive: jsonSerialization['isActive'] as bool,
+      isActive: jsonSerialization['isActive'] as bool?,
     );
   }
 
@@ -234,46 +234,98 @@ class _StoryImpl extends Story {
 class StoryUpdateTable extends _i1.UpdateTable<StoryTable> {
   StoryUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> userId(String value) =>
-      _i1.ColumnValue(table.userId, value);
+  _i1.ColumnValue<String, String> userId(String value) => _i1.ColumnValue(
+    table.userId,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> userName(String value) =>
-      _i1.ColumnValue(table.userName, value);
+  _i1.ColumnValue<String, String> userName(String value) => _i1.ColumnValue(
+    table.userName,
+    value,
+  );
 
   _i1.ColumnValue<String, String> userAvatarUrl(String? value) =>
-      _i1.ColumnValue(table.userAvatarUrl, value);
+      _i1.ColumnValue(
+        table.userAvatarUrl,
+        value,
+      );
 
   _i1.ColumnValue<List<String>, List<String>> imageUrls(List<String> value) =>
-      _i1.ColumnValue(table.imageUrls, value);
+      _i1.ColumnValue(
+        table.imageUrls,
+        value,
+      );
 
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(table.createdAt, value);
+      _i1.ColumnValue(
+        table.createdAt,
+        value,
+      );
 
   _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
-      _i1.ColumnValue(table.expiresAt, value);
+      _i1.ColumnValue(
+        table.expiresAt,
+        value,
+      );
 
-  _i1.ColumnValue<int, int> viewCount(int value) =>
-      _i1.ColumnValue(table.viewCount, value);
+  _i1.ColumnValue<int, int> viewCount(int value) => _i1.ColumnValue(
+    table.viewCount,
+    value,
+  );
 
   _i1.ColumnValue<List<String>, List<String>> viewedBy(List<String> value) =>
-      _i1.ColumnValue(table.viewedBy, value);
+      _i1.ColumnValue(
+        table.viewedBy,
+        value,
+      );
 
-  _i1.ColumnValue<bool, bool> isActive(bool value) =>
-      _i1.ColumnValue(table.isActive, value);
+  _i1.ColumnValue<bool, bool> isActive(bool value) => _i1.ColumnValue(
+    table.isActive,
+    value,
+  );
 }
 
 class StoryTable extends _i1.Table<int?> {
   StoryTable({super.tableRelation}) : super(tableName: 'stories') {
     updateTable = StoryUpdateTable(this);
-    userId = _i1.ColumnString('userId', this);
-    userName = _i1.ColumnString('userName', this);
-    userAvatarUrl = _i1.ColumnString('userAvatarUrl', this);
-    imageUrls = _i1.ColumnSerializable<List<String>>('imageUrls', this);
-    createdAt = _i1.ColumnDateTime('createdAt', this);
-    expiresAt = _i1.ColumnDateTime('expiresAt', this);
-    viewCount = _i1.ColumnInt('viewCount', this, hasDefault: true);
-    viewedBy = _i1.ColumnSerializable<List<String>>('viewedBy', this);
-    isActive = _i1.ColumnBool('isActive', this, hasDefault: true);
+    userId = _i1.ColumnString(
+      'userId',
+      this,
+    );
+    userName = _i1.ColumnString(
+      'userName',
+      this,
+    );
+    userAvatarUrl = _i1.ColumnString(
+      'userAvatarUrl',
+      this,
+    );
+    imageUrls = _i1.ColumnSerializable<List<String>>(
+      'imageUrls',
+      this,
+    );
+    createdAt = _i1.ColumnDateTime(
+      'createdAt',
+      this,
+    );
+    expiresAt = _i1.ColumnDateTime(
+      'expiresAt',
+      this,
+    );
+    viewCount = _i1.ColumnInt(
+      'viewCount',
+      this,
+      hasDefault: true,
+    );
+    viewedBy = _i1.ColumnSerializable<List<String>>(
+      'viewedBy',
+      this,
+    );
+    isActive = _i1.ColumnBool(
+      'isActive',
+      this,
+      hasDefault: true,
+    );
   }
 
   late final StoryUpdateTable updateTable;
@@ -429,7 +481,10 @@ class StoryRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<Story>(id, transaction: transaction);
+    return session.db.findById<Story>(
+      id,
+      transaction: transaction,
+    );
   }
 
   /// Inserts all [Story]s in the list and returns the inserted rows.
@@ -443,7 +498,10 @@ class StoryRepository {
     List<Story> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<Story>(rows, transaction: transaction);
+    return session.db.insert<Story>(
+      rows,
+      transaction: transaction,
+    );
   }
 
   /// Inserts a single [Story] and returns the inserted row.
@@ -454,7 +512,10 @@ class StoryRepository {
     Story row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<Story>(row, transaction: transaction);
+    return session.db.insertRow<Story>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Updates all [Story]s in the list and returns the updated rows. If
@@ -539,7 +600,10 @@ class StoryRepository {
     List<Story> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<Story>(rows, transaction: transaction);
+    return session.db.delete<Story>(
+      rows,
+      transaction: transaction,
+    );
   }
 
   /// Deletes a single [Story].
@@ -548,7 +612,10 @@ class StoryRepository {
     Story row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<Story>(row, transaction: transaction);
+    return session.db.deleteRow<Story>(
+      row,
+      transaction: transaction,
+    );
   }
 
   /// Deletes all rows matching the [where] expression.
