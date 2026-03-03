@@ -263,18 +263,66 @@ class AuthRepository {
     String currentPassword,
     String newPassword,
   ) async {
-    debugPrint('[AuthRepository] changePassword');
-    throw Exception(
-      'Password change is not yet available. Please contact support.',
-    );
+    try {
+      debugPrint('[AuthRepository] changePassword');
+
+      // Get current user email from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('user_email');
+
+      if (email == null) {
+        throw Exception('User email not found. Please log in again.');
+      }
+
+      // Verify current password by attempting to authenticate
+      try {
+        await _client.emailIdp.login(email: email, password: currentPassword);
+      } catch (e) {
+        debugPrint('[AuthRepository] Current password verification failed: $e');
+        throw Exception('Current password is incorrect');
+      }
+
+      // Use dynamic client to call changePassword endpoint if it exists
+      // This follows the same pattern as password reset
+      final dynamic client = _client;
+      try {
+        final result =
+            await client.emailIdp.changePassword(
+                  oldPassword: currentPassword,
+                  newPassword: newPassword,
+                )
+                as bool;
+        debugPrint('[AuthRepository] changePassword success -> $result');
+        return result;
+      } catch (e) {
+        // If the endpoint doesn't exist, throw a clear error
+        debugPrint('[AuthRepository] changePassword endpoint error: $e');
+        throw Exception(
+          'Password change is not yet available. Please contact support.',
+        );
+      }
+    } catch (e) {
+      debugPrint('[AuthRepository] changePassword error -> $e');
+      rethrow;
+    }
   }
 
   /// Request password reset
   Future<bool> requestPasswordReset(String email) async {
-    debugPrint('[AuthRepository] requestPasswordReset');
-    throw Exception(
-      'Password reset is not yet available. Please contact support.',
-    );
+    try {
+      debugPrint('[AuthRepository] requestPasswordReset -> $email');
+      // Call the password reset endpoint
+      // Note: This will be available after running 'serverpod generate'
+      final dynamic client = _client;
+      final result =
+          await client.passwordReset.requestPasswordReset(email) as bool;
+      debugPrint('[AuthRepository] requestPasswordReset success -> $result');
+      return result;
+    } catch (e) {
+      debugPrint('[AuthRepository] requestPasswordReset error -> $e');
+      // Return false on error, but don't throw to prevent email enumeration
+      return false;
+    }
   }
 
   /// Reset password with token
@@ -283,9 +331,18 @@ class AuthRepository {
     String token,
     String newPassword,
   ) async {
-    debugPrint('[AuthRepository] resetPassword');
-    throw Exception(
-      'Password reset is not yet available. Please contact support.',
-    );
+    try {
+      debugPrint('[AuthRepository] resetPassword -> $email');
+      // Call the password reset endpoint
+      final dynamic client = _client;
+      final result =
+          await client.passwordReset.resetPassword(email, token, newPassword)
+              as bool;
+      debugPrint('[AuthRepository] resetPassword success -> $result');
+      return result;
+    } catch (e) {
+      debugPrint('[AuthRepository] resetPassword error -> $e');
+      throw Exception('Password reset failed: ${e.toString()}');
+    }
   }
 }
