@@ -1,0 +1,29 @@
+import 'package:serverpod/serverpod.dart';
+
+/// Endpoint for authenticated user operations
+class AuthEndpoint extends Endpoint {
+  /// Change password for authenticated user
+  Future<bool> changePassword(
+    Session session,
+    String currentPassword,
+    String newPassword,
+  ) async {
+    final authInfo = await session.authenticated;
+    if (authInfo == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // Use Serverpod's built-in password change
+      await session.auth.changePassword(
+        authInfo.userId,
+        currentPassword,
+        newPassword,
+      );
+      return true;
+    } catch (e) {
+      session.log('changePassword error: $e');
+      return false;
+    }
+  }
+}

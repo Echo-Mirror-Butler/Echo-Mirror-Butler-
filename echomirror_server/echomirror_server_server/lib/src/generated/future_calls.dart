@@ -51,7 +51,10 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
   }
 
   @override
-  void initialize(_i1.FutureCallManager futureCallManager, String serverId) {
+  void initialize(
+    _i1.FutureCallManager futureCallManager,
+    String serverId,
+  ) {
     var registeredFutureCalls = <String, _i1.FutureCall>{
       'CleanupTaskInvokeFutureCall': CleanupTaskInvokeFutureCall(),
     };
@@ -63,29 +66,39 @@ class FutureCalls extends _i1.FutureCallDispatch<_FutureCallRef> {
   }
 
   @override
-  _FutureCallRef callAtTime(DateTime time, {String? identifier}) {
-    return _FutureCallRef((name, object) {
-      return _effectiveFutureCallManager.scheduleFutureCall(
-        name,
-        object,
-        time,
-        _effectiveServerId,
-        identifier,
-      );
-    });
+  _FutureCallRef callAtTime(
+    DateTime time, {
+    String? identifier,
+  }) {
+    return _FutureCallRef(
+      (name, object) {
+        return _effectiveFutureCallManager.scheduleFutureCall(
+          name,
+          object,
+          time,
+          _effectiveServerId,
+          identifier,
+        );
+      },
+    );
   }
 
   @override
-  _FutureCallRef callWithDelay(Duration delay, {String? identifier}) {
-    return _FutureCallRef((name, object) {
-      return _effectiveFutureCallManager.scheduleFutureCall(
-        name,
-        object,
-        DateTime.now().toUtc().add(delay),
-        _effectiveServerId,
-        identifier,
-      );
-    });
+  _FutureCallRef callWithDelay(
+    Duration delay, {
+    String? identifier,
+  }) {
+    return _FutureCallRef(
+      (name, object) {
+        return _effectiveFutureCallManager.scheduleFutureCall(
+          name,
+          object,
+          DateTime.now().toUtc().add(delay),
+          _effectiveServerId,
+          identifier,
+        );
+      },
+    );
   }
 
   @override
@@ -108,7 +121,10 @@ class _CleanupTaskFutureCallDispatcher {
   final _InvokeFutureCall _invokeFutureCall;
 
   Future<void> invoke(_i1.SerializableModel? data) {
-    return _invokeFutureCall('CleanupTaskInvokeFutureCall', data);
+    return _invokeFutureCall(
+      'CleanupTaskInvokeFutureCall',
+      data,
+    );
   }
 }
 
@@ -119,6 +135,9 @@ class CleanupTaskInvokeFutureCall
     _i1.Session session,
     _i1.SerializableModel? data,
   ) async {
-    await _i3.CleanupTask().invoke(session, data);
+    await _i3.CleanupTask().invoke(
+      session,
+      data,
+    );
   }
 }
