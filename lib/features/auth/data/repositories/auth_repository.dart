@@ -309,10 +309,20 @@ class AuthRepository {
 
   /// Request password reset
   Future<bool> requestPasswordReset(String email) async {
-    debugPrint('[AuthRepository] requestPasswordReset');
-    throw Exception(
-      'Password reset is not yet available. Please contact support.',
-    );
+    try {
+      debugPrint('[AuthRepository] requestPasswordReset -> $email');
+      // Call the password reset endpoint
+      // Note: This will be available after running 'serverpod generate'
+      final dynamic client = _client;
+      final result =
+          await client.passwordReset.requestPasswordReset(email) as bool;
+      debugPrint('[AuthRepository] requestPasswordReset success -> $result');
+      return result;
+    } catch (e) {
+      debugPrint('[AuthRepository] requestPasswordReset error -> $e');
+      // Return false on error, but don't throw to prevent email enumeration
+      return false;
+    }
   }
 
   /// Reset password with token
