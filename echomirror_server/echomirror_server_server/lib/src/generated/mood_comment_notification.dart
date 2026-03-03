@@ -204,75 +204,39 @@ class MoodCommentNotificationUpdateTable
     extends _i1.UpdateTable<MoodCommentNotificationTable> {
   MoodCommentNotificationUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> userId(int value) => _i1.ColumnValue(
-    table.userId,
-    value,
-  );
+  _i1.ColumnValue<int, int> userId(int value) =>
+      _i1.ColumnValue(table.userId, value);
 
-  _i1.ColumnValue<int, int> moodPinId(int value) => _i1.ColumnValue(
-    table.moodPinId,
-    value,
-  );
+  _i1.ColumnValue<int, int> moodPinId(int value) =>
+      _i1.ColumnValue(table.moodPinId, value);
 
-  _i1.ColumnValue<int, int> commentId(int value) => _i1.ColumnValue(
-    table.commentId,
-    value,
-  );
+  _i1.ColumnValue<int, int> commentId(int value) =>
+      _i1.ColumnValue(table.commentId, value);
 
-  _i1.ColumnValue<String, String> commentText(String value) => _i1.ColumnValue(
-    table.commentText,
-    value,
-  );
+  _i1.ColumnValue<String, String> commentText(String value) =>
+      _i1.ColumnValue(table.commentText, value);
 
-  _i1.ColumnValue<String, String> sentiment(String value) => _i1.ColumnValue(
-    table.sentiment,
-    value,
-  );
+  _i1.ColumnValue<String, String> sentiment(String value) =>
+      _i1.ColumnValue(table.sentiment, value);
 
   _i1.ColumnValue<DateTime, DateTime> timestamp(DateTime value) =>
-      _i1.ColumnValue(
-        table.timestamp,
-        value,
-      );
+      _i1.ColumnValue(table.timestamp, value);
 
-  _i1.ColumnValue<bool, bool> isRead(bool value) => _i1.ColumnValue(
-    table.isRead,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> isRead(bool value) =>
+      _i1.ColumnValue(table.isRead, value);
 }
 
 class MoodCommentNotificationTable extends _i1.Table<int?> {
   MoodCommentNotificationTable({super.tableRelation})
     : super(tableName: 'mood_comment_notifications') {
     updateTable = MoodCommentNotificationUpdateTable(this);
-    userId = _i1.ColumnInt(
-      'userId',
-      this,
-    );
-    moodPinId = _i1.ColumnInt(
-      'moodPinId',
-      this,
-    );
-    commentId = _i1.ColumnInt(
-      'commentId',
-      this,
-    );
-    commentText = _i1.ColumnString(
-      'commentText',
-      this,
-    );
-    sentiment = _i1.ColumnString(
-      'sentiment',
-      this,
-    );
-    timestamp = _i1.ColumnDateTime(
-      'timestamp',
-      this,
-    );
-    isRead = _i1.ColumnBool(
-      'isRead',
-      this,
-    );
+    userId = _i1.ColumnInt('userId', this);
+    moodPinId = _i1.ColumnInt('moodPinId', this);
+    commentId = _i1.ColumnInt('commentId', this);
+    commentText = _i1.ColumnString('commentText', this);
+    sentiment = _i1.ColumnString('sentiment', this);
+    timestamp = _i1.ColumnDateTime('timestamp', this);
+    isRead = _i1.ColumnBool('isRead', this);
   }
 
   late final MoodCommentNotificationUpdateTable updateTable;

@@ -310,7 +310,9 @@ class AuthRepository {
   /// Request password reset
   Future<bool> requestPasswordReset(String email) async {
     debugPrint('[AuthRepository] requestPasswordReset');
-    throw Exception('Password reset is not yet available. Please contact support.');
+    throw Exception(
+      'Password reset is not yet available. Please contact support.',
+    );
   }
 
   /// Reset password with token

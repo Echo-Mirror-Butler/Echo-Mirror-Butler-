@@ -167,48 +167,26 @@ class _VideoPostImpl extends VideoPost {
 class VideoPostUpdateTable extends _i1.UpdateTable<VideoPostTable> {
   VideoPostUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> videoUrl(String value) => _i1.ColumnValue(
-    table.videoUrl,
-    value,
-  );
+  _i1.ColumnValue<String, String> videoUrl(String value) =>
+      _i1.ColumnValue(table.videoUrl, value);
 
-  _i1.ColumnValue<String, String> moodTag(String value) => _i1.ColumnValue(
-    table.moodTag,
-    value,
-  );
+  _i1.ColumnValue<String, String> moodTag(String value) =>
+      _i1.ColumnValue(table.moodTag, value);
 
   _i1.ColumnValue<DateTime, DateTime> timestamp(DateTime value) =>
-      _i1.ColumnValue(
-        table.timestamp,
-        value,
-      );
+      _i1.ColumnValue(table.timestamp, value);
 
   _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
-      _i1.ColumnValue(
-        table.expiresAt,
-        value,
-      );
+      _i1.ColumnValue(table.expiresAt, value);
 }
 
 class VideoPostTable extends _i1.Table<int?> {
   VideoPostTable({super.tableRelation}) : super(tableName: 'video_posts') {
     updateTable = VideoPostUpdateTable(this);
-    videoUrl = _i1.ColumnString(
-      'videoUrl',
-      this,
-    );
-    moodTag = _i1.ColumnString(
-      'moodTag',
-      this,
-    );
-    timestamp = _i1.ColumnDateTime(
-      'timestamp',
-      this,
-    );
-    expiresAt = _i1.ColumnDateTime(
-      'expiresAt',
-      this,
-    );
+    videoUrl = _i1.ColumnString('videoUrl', this);
+    moodTag = _i1.ColumnString('moodTag', this);
+    timestamp = _i1.ColumnDateTime('timestamp', this);
+    expiresAt = _i1.ColumnDateTime('expiresAt', this);
   }
 
   late final VideoPostUpdateTable updateTable;
@@ -222,13 +200,7 @@ class VideoPostTable extends _i1.Table<int?> {
   late final _i1.ColumnDateTime expiresAt;
 
   @override
-  List<_i1.Column> get columns => [
-    id,
-    videoUrl,
-    moodTag,
-    timestamp,
-    expiresAt,
-  ];
+  List<_i1.Column> get columns => [id, videoUrl, moodTag, timestamp, expiresAt];
 }
 
 class VideoPostInclude extends _i1.IncludeObject {
@@ -349,10 +321,7 @@ class VideoPostRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<VideoPost>(
-      id,
-      transaction: transaction,
-    );
+    return session.db.findById<VideoPost>(id, transaction: transaction);
   }
 
   /// Inserts all [VideoPost]s in the list and returns the inserted rows.
@@ -366,10 +335,7 @@ class VideoPostRepository {
     List<VideoPost> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<VideoPost>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.insert<VideoPost>(rows, transaction: transaction);
   }
 
   /// Inserts a single [VideoPost] and returns the inserted row.
@@ -380,10 +346,7 @@ class VideoPostRepository {
     VideoPost row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<VideoPost>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<VideoPost>(row, transaction: transaction);
   }
 
   /// Updates all [VideoPost]s in the list and returns the updated rows. If
@@ -468,10 +431,7 @@ class VideoPostRepository {
     List<VideoPost> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<VideoPost>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<VideoPost>(rows, transaction: transaction);
   }
 
   /// Deletes a single [VideoPost].
@@ -480,10 +440,7 @@ class VideoPostRepository {
     VideoPost row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<VideoPost>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<VideoPost>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
