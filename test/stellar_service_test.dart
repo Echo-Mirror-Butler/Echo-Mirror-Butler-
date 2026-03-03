@@ -28,11 +28,24 @@ void main() {
     setUpAll(() async {
       // Create and fund an issuer account for this test run
       issuerKeypair = KeyPair.random();
-      final issuerFund = await http.get(
-        Uri.parse('$friendbotUrl?addr=${issuerKeypair.accountId}'),
-      );
+      
+      int retries = 3;
+      int statusCode = 0;
+      while (retries > 0 && statusCode != 200) {
+        try {
+          final issuerFund = await http.get(
+            Uri.parse('$friendbotUrl?addr=${issuerKeypair.accountId}'),
+          );
+          statusCode = issuerFund.statusCode;
+        } catch (e) {
+          statusCode = 500;
+        }
+        if (statusCode != 200) await Future.delayed(const Duration(seconds: 2));
+        retries--;
+      }
+      
       expect(
-        issuerFund.statusCode,
+        statusCode,
         200,
         reason: 'Friendbot should fund the issuer account',
       );
@@ -45,11 +58,23 @@ void main() {
         expect(userKeypair.accountId, startsWith('G'));
         expect(userKeypair.secretSeed, startsWith('S'));
 
-        final response = await http.get(
-          Uri.parse('$friendbotUrl?addr=${userKeypair.accountId}'),
-        );
+        int retries = 3;
+        int statusCode = 0;
+        while (retries > 0 && statusCode != 200) {
+          try {
+            final response = await http.get(
+              Uri.parse('$friendbotUrl?addr=${userKeypair.accountId}'),
+            );
+            statusCode = response.statusCode;
+          } catch (e) {
+            statusCode = 500;
+          }
+          if (statusCode != 200) await Future.delayed(const Duration(seconds: 2));
+          retries--;
+        }
+        
         expect(
-          response.statusCode,
+          statusCode,
           200,
           reason: 'Friendbot should fund the user account',
         );
