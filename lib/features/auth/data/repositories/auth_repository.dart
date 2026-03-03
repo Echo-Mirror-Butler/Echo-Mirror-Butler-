@@ -264,13 +264,17 @@ class AuthRepository {
     String newPassword,
   ) async {
     debugPrint('[AuthRepository] changePassword');
-    throw Exception('Password change is not yet available. Please contact support.');
+    throw Exception(
+      'Password change is not yet available. Please contact support.',
+    );
   }
 
   /// Request password reset
   Future<bool> requestPasswordReset(String email) async {
     debugPrint('[AuthRepository] requestPasswordReset');
-    throw Exception('Password reset is not yet available. Please contact support.');
+    throw Exception(
+      'Password reset is not yet available. Please contact support.',
+    );
   }
 
   /// Reset password with token
@@ -280,6 +284,8 @@ class AuthRepository {
     String newPassword,
   ) async {
     debugPrint('[AuthRepository] resetPassword');
-    throw Exception('Password reset is not yet available. Please contact support.');
+    throw Exception(
+      'Password reset is not yet available. Please contact support.',
+    );
   }
 }
