@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../widgets/stories_bar.dart';
 import '../widgets/start_session_button.dart';
@@ -25,9 +26,26 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load active sessions when screen opens
+    // Load active sessions and start auto-refresh only when Socials tab is active
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(socialsProvider.notifier).loadActiveSessions();
+      if (!mounted) return;
+      final currentIndex = ref.read(mainTabIndexProvider);
+      if (currentIndex == 2) {
+        final notifier = ref.read(socialsProvider.notifier);
+        notifier.loadActiveSessions();
+        notifier.startAutoRefresh();
+      }
+    });
+
+    // React to tab index changes to start/stop auto-refresh
+    ref.listen<int>(mainTabIndexProvider, (previous, next) {
+      final notifier = ref.read(socialsProvider.notifier);
+      if (next == 2) {
+        notifier.loadActiveSessions();
+        notifier.startAutoRefresh();
+      } else {
+        notifier.stopAutoRefresh();
+      }
     });
   }
 
