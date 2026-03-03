@@ -153,38 +153,22 @@ class _UserMoodPinImpl extends UserMoodPin {
 class UserMoodPinUpdateTable extends _i1.UpdateTable<UserMoodPinTable> {
   UserMoodPinUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> userId(int value) => _i1.ColumnValue(
-    table.userId,
-    value,
-  );
+  _i1.ColumnValue<int, int> userId(int value) =>
+      _i1.ColumnValue(table.userId, value);
 
-  _i1.ColumnValue<int, int> moodPinId(int value) => _i1.ColumnValue(
-    table.moodPinId,
-    value,
-  );
+  _i1.ColumnValue<int, int> moodPinId(int value) =>
+      _i1.ColumnValue(table.moodPinId, value);
 
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
-        table.createdAt,
-        value,
-      );
+      _i1.ColumnValue(table.createdAt, value);
 }
 
 class UserMoodPinTable extends _i1.Table<int?> {
   UserMoodPinTable({super.tableRelation}) : super(tableName: 'user_mood_pins') {
     updateTable = UserMoodPinUpdateTable(this);
-    userId = _i1.ColumnInt(
-      'userId',
-      this,
-    );
-    moodPinId = _i1.ColumnInt(
-      'moodPinId',
-      this,
-    );
-    createdAt = _i1.ColumnDateTime(
-      'createdAt',
-      this,
-    );
+    userId = _i1.ColumnInt('userId', this);
+    moodPinId = _i1.ColumnInt('moodPinId', this);
+    createdAt = _i1.ColumnDateTime('createdAt', this);
   }
 
   late final UserMoodPinUpdateTable updateTable;
@@ -196,12 +180,7 @@ class UserMoodPinTable extends _i1.Table<int?> {
   late final _i1.ColumnDateTime createdAt;
 
   @override
-  List<_i1.Column> get columns => [
-    id,
-    userId,
-    moodPinId,
-    createdAt,
-  ];
+  List<_i1.Column> get columns => [id, userId, moodPinId, createdAt];
 }
 
 class UserMoodPinInclude extends _i1.IncludeObject {
@@ -322,10 +301,7 @@ class UserMoodPinRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<UserMoodPin>(
-      id,
-      transaction: transaction,
-    );
+    return session.db.findById<UserMoodPin>(id, transaction: transaction);
   }
 
   /// Inserts all [UserMoodPin]s in the list and returns the inserted rows.
@@ -339,10 +315,7 @@ class UserMoodPinRepository {
     List<UserMoodPin> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<UserMoodPin>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.insert<UserMoodPin>(rows, transaction: transaction);
   }
 
   /// Inserts a single [UserMoodPin] and returns the inserted row.
@@ -353,10 +326,7 @@ class UserMoodPinRepository {
     UserMoodPin row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<UserMoodPin>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<UserMoodPin>(row, transaction: transaction);
   }
 
   /// Updates all [UserMoodPin]s in the list and returns the updated rows. If
@@ -441,10 +411,7 @@ class UserMoodPinRepository {
     List<UserMoodPin> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<UserMoodPin>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<UserMoodPin>(rows, transaction: transaction);
   }
 
   /// Deletes a single [UserMoodPin].
@@ -453,10 +420,7 @@ class UserMoodPinRepository {
     UserMoodPin row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<UserMoodPin>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<UserMoodPin>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.
