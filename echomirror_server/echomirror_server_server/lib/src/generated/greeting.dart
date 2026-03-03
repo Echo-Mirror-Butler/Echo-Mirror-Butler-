@@ -49,11 +49,7 @@ abstract class Greeting
   /// Returns a shallow copy of this [Greeting]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  Greeting copyWith({
-    String? message,
-    String? author,
-    DateTime? timestamp,
-  });
+  Greeting copyWith({String? message, String? author, DateTime? timestamp});
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -85,21 +81,13 @@ class _GreetingImpl extends Greeting {
     required String message,
     required String author,
     required DateTime timestamp,
-  }) : super._(
-         message: message,
-         author: author,
-         timestamp: timestamp,
-       );
+  }) : super._(message: message, author: author, timestamp: timestamp);
 
   /// Returns a shallow copy of this [Greeting]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  Greeting copyWith({
-    String? message,
-    String? author,
-    DateTime? timestamp,
-  }) {
+  Greeting copyWith({String? message, String? author, DateTime? timestamp}) {
     return Greeting(
       message: message ?? this.message,
       author: author ?? this.author,

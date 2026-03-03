@@ -179,57 +179,30 @@ class _MoodPinImpl extends MoodPin {
 class MoodPinUpdateTable extends _i1.UpdateTable<MoodPinTable> {
   MoodPinUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> sentiment(String value) => _i1.ColumnValue(
-    table.sentiment,
-    value,
-  );
+  _i1.ColumnValue<String, String> sentiment(String value) =>
+      _i1.ColumnValue(table.sentiment, value);
 
-  _i1.ColumnValue<double, double> gridLat(double value) => _i1.ColumnValue(
-    table.gridLat,
-    value,
-  );
+  _i1.ColumnValue<double, double> gridLat(double value) =>
+      _i1.ColumnValue(table.gridLat, value);
 
-  _i1.ColumnValue<double, double> gridLon(double value) => _i1.ColumnValue(
-    table.gridLon,
-    value,
-  );
+  _i1.ColumnValue<double, double> gridLon(double value) =>
+      _i1.ColumnValue(table.gridLon, value);
 
   _i1.ColumnValue<DateTime, DateTime> timestamp(DateTime value) =>
-      _i1.ColumnValue(
-        table.timestamp,
-        value,
-      );
+      _i1.ColumnValue(table.timestamp, value);
 
   _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime? value) =>
-      _i1.ColumnValue(
-        table.expiresAt,
-        value,
-      );
+      _i1.ColumnValue(table.expiresAt, value);
 }
 
 class MoodPinTable extends _i1.Table<int?> {
   MoodPinTable({super.tableRelation}) : super(tableName: 'mood_pins') {
     updateTable = MoodPinUpdateTable(this);
-    sentiment = _i1.ColumnString(
-      'sentiment',
-      this,
-    );
-    gridLat = _i1.ColumnDouble(
-      'gridLat',
-      this,
-    );
-    gridLon = _i1.ColumnDouble(
-      'gridLon',
-      this,
-    );
-    timestamp = _i1.ColumnDateTime(
-      'timestamp',
-      this,
-    );
-    expiresAt = _i1.ColumnDateTime(
-      'expiresAt',
-      this,
-    );
+    sentiment = _i1.ColumnString('sentiment', this);
+    gridLat = _i1.ColumnDouble('gridLat', this);
+    gridLon = _i1.ColumnDouble('gridLon', this);
+    timestamp = _i1.ColumnDateTime('timestamp', this);
+    expiresAt = _i1.ColumnDateTime('expiresAt', this);
   }
 
   late final MoodPinUpdateTable updateTable;
@@ -373,10 +346,7 @@ class MoodPinRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<MoodPin>(
-      id,
-      transaction: transaction,
-    );
+    return session.db.findById<MoodPin>(id, transaction: transaction);
   }
 
   /// Inserts all [MoodPin]s in the list and returns the inserted rows.
@@ -390,10 +360,7 @@ class MoodPinRepository {
     List<MoodPin> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<MoodPin>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.insert<MoodPin>(rows, transaction: transaction);
   }
 
   /// Inserts a single [MoodPin] and returns the inserted row.
@@ -404,10 +371,7 @@ class MoodPinRepository {
     MoodPin row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<MoodPin>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<MoodPin>(row, transaction: transaction);
   }
 
   /// Updates all [MoodPin]s in the list and returns the updated rows. If
@@ -492,10 +456,7 @@ class MoodPinRepository {
     List<MoodPin> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<MoodPin>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<MoodPin>(rows, transaction: transaction);
   }
 
   /// Deletes a single [MoodPin].
@@ -504,10 +465,7 @@ class MoodPinRepository {
     MoodPin row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<MoodPin>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<MoodPin>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

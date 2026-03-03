@@ -165,48 +165,27 @@ class _MoodPinCommentImpl extends MoodPinComment {
 class MoodPinCommentUpdateTable extends _i1.UpdateTable<MoodPinCommentTable> {
   MoodPinCommentUpdateTable(super.table);
 
-  _i1.ColumnValue<int, int> moodPinId(int value) => _i1.ColumnValue(
-    table.moodPinId,
-    value,
-  );
+  _i1.ColumnValue<int, int> moodPinId(int value) =>
+      _i1.ColumnValue(table.moodPinId, value);
 
-  _i1.ColumnValue<int, int> userId(int? value) => _i1.ColumnValue(
-    table.userId,
-    value,
-  );
+  _i1.ColumnValue<int, int> userId(int? value) =>
+      _i1.ColumnValue(table.userId, value);
 
-  _i1.ColumnValue<String, String> text(String value) => _i1.ColumnValue(
-    table.text,
-    value,
-  );
+  _i1.ColumnValue<String, String> text(String value) =>
+      _i1.ColumnValue(table.text, value);
 
   _i1.ColumnValue<DateTime, DateTime> timestamp(DateTime value) =>
-      _i1.ColumnValue(
-        table.timestamp,
-        value,
-      );
+      _i1.ColumnValue(table.timestamp, value);
 }
 
 class MoodPinCommentTable extends _i1.Table<int?> {
   MoodPinCommentTable({super.tableRelation})
     : super(tableName: 'mood_pin_comments') {
     updateTable = MoodPinCommentUpdateTable(this);
-    moodPinId = _i1.ColumnInt(
-      'moodPinId',
-      this,
-    );
-    userId = _i1.ColumnInt(
-      'userId',
-      this,
-    );
-    text = _i1.ColumnString(
-      'text',
-      this,
-    );
-    timestamp = _i1.ColumnDateTime(
-      'timestamp',
-      this,
-    );
+    moodPinId = _i1.ColumnInt('moodPinId', this);
+    userId = _i1.ColumnInt('userId', this);
+    text = _i1.ColumnString('text', this);
+    timestamp = _i1.ColumnDateTime('timestamp', this);
   }
 
   late final MoodPinCommentUpdateTable updateTable;
@@ -220,13 +199,7 @@ class MoodPinCommentTable extends _i1.Table<int?> {
   late final _i1.ColumnDateTime timestamp;
 
   @override
-  List<_i1.Column> get columns => [
-    id,
-    moodPinId,
-    userId,
-    text,
-    timestamp,
-  ];
+  List<_i1.Column> get columns => [id, moodPinId, userId, text, timestamp];
 }
 
 class MoodPinCommentInclude extends _i1.IncludeObject {
@@ -347,10 +320,7 @@ class MoodPinCommentRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<MoodPinComment>(
-      id,
-      transaction: transaction,
-    );
+    return session.db.findById<MoodPinComment>(id, transaction: transaction);
   }
 
   /// Inserts all [MoodPinComment]s in the list and returns the inserted rows.
@@ -364,10 +334,7 @@ class MoodPinCommentRepository {
     List<MoodPinComment> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<MoodPinComment>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.insert<MoodPinComment>(rows, transaction: transaction);
   }
 
   /// Inserts a single [MoodPinComment] and returns the inserted row.
@@ -378,10 +345,7 @@ class MoodPinCommentRepository {
     MoodPinComment row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<MoodPinComment>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<MoodPinComment>(row, transaction: transaction);
   }
 
   /// Updates all [MoodPinComment]s in the list and returns the updated rows. If
@@ -466,10 +430,7 @@ class MoodPinCommentRepository {
     List<MoodPinComment> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<MoodPinComment>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<MoodPinComment>(rows, transaction: transaction);
   }
 
   /// Deletes a single [MoodPinComment].
@@ -478,10 +439,7 @@ class MoodPinCommentRepository {
     MoodPinComment row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<MoodPinComment>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<MoodPinComment>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

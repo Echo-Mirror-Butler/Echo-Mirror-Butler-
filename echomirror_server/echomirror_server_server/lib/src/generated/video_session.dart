@@ -241,104 +241,51 @@ class _VideoSessionImpl extends VideoSession {
 class VideoSessionUpdateTable extends _i1.UpdateTable<VideoSessionTable> {
   VideoSessionUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> hostId(String value) => _i1.ColumnValue(
-    table.hostId,
-    value,
-  );
+  _i1.ColumnValue<String, String> hostId(String value) =>
+      _i1.ColumnValue(table.hostId, value);
 
-  _i1.ColumnValue<String, String> hostName(String value) => _i1.ColumnValue(
-    table.hostName,
-    value,
-  );
+  _i1.ColumnValue<String, String> hostName(String value) =>
+      _i1.ColumnValue(table.hostName, value);
 
   _i1.ColumnValue<String, String> hostAvatarUrl(String? value) =>
-      _i1.ColumnValue(
-        table.hostAvatarUrl,
-        value,
-      );
+      _i1.ColumnValue(table.hostAvatarUrl, value);
 
-  _i1.ColumnValue<String, String> title(String value) => _i1.ColumnValue(
-    table.title,
-    value,
-  );
+  _i1.ColumnValue<String, String> title(String value) =>
+      _i1.ColumnValue(table.title, value);
 
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
-        table.createdAt,
-        value,
-      );
+      _i1.ColumnValue(table.createdAt, value);
 
   _i1.ColumnValue<DateTime, DateTime> expiresAt(DateTime value) =>
-      _i1.ColumnValue(
-        table.expiresAt,
-        value,
-      );
+      _i1.ColumnValue(table.expiresAt, value);
 
-  _i1.ColumnValue<int, int> participantCount(int value) => _i1.ColumnValue(
-    table.participantCount,
-    value,
-  );
+  _i1.ColumnValue<int, int> participantCount(int value) =>
+      _i1.ColumnValue(table.participantCount, value);
 
-  _i1.ColumnValue<bool, bool> isVideoEnabled(bool value) => _i1.ColumnValue(
-    table.isVideoEnabled,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> isVideoEnabled(bool value) =>
+      _i1.ColumnValue(table.isVideoEnabled, value);
 
-  _i1.ColumnValue<bool, bool> isVoiceOnly(bool value) => _i1.ColumnValue(
-    table.isVoiceOnly,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> isVoiceOnly(bool value) =>
+      _i1.ColumnValue(table.isVoiceOnly, value);
 
-  _i1.ColumnValue<bool, bool> isActive(bool value) => _i1.ColumnValue(
-    table.isActive,
-    value,
-  );
+  _i1.ColumnValue<bool, bool> isActive(bool value) =>
+      _i1.ColumnValue(table.isActive, value);
 }
 
 class VideoSessionTable extends _i1.Table<int?> {
   VideoSessionTable({super.tableRelation})
     : super(tableName: 'video_sessions') {
     updateTable = VideoSessionUpdateTable(this);
-    hostId = _i1.ColumnString(
-      'hostId',
-      this,
-    );
-    hostName = _i1.ColumnString(
-      'hostName',
-      this,
-    );
-    hostAvatarUrl = _i1.ColumnString(
-      'hostAvatarUrl',
-      this,
-    );
-    title = _i1.ColumnString(
-      'title',
-      this,
-    );
-    createdAt = _i1.ColumnDateTime(
-      'createdAt',
-      this,
-    );
-    expiresAt = _i1.ColumnDateTime(
-      'expiresAt',
-      this,
-    );
-    participantCount = _i1.ColumnInt(
-      'participantCount',
-      this,
-    );
-    isVideoEnabled = _i1.ColumnBool(
-      'isVideoEnabled',
-      this,
-    );
-    isVoiceOnly = _i1.ColumnBool(
-      'isVoiceOnly',
-      this,
-    );
-    isActive = _i1.ColumnBool(
-      'isActive',
-      this,
-    );
+    hostId = _i1.ColumnString('hostId', this);
+    hostName = _i1.ColumnString('hostName', this);
+    hostAvatarUrl = _i1.ColumnString('hostAvatarUrl', this);
+    title = _i1.ColumnString('title', this);
+    createdAt = _i1.ColumnDateTime('createdAt', this);
+    expiresAt = _i1.ColumnDateTime('expiresAt', this);
+    participantCount = _i1.ColumnInt('participantCount', this);
+    isVideoEnabled = _i1.ColumnBool('isVideoEnabled', this);
+    isVoiceOnly = _i1.ColumnBool('isVoiceOnly', this);
+    isActive = _i1.ColumnBool('isActive', this);
   }
 
   late final VideoSessionUpdateTable updateTable;
@@ -497,10 +444,7 @@ class VideoSessionRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<VideoSession>(
-      id,
-      transaction: transaction,
-    );
+    return session.db.findById<VideoSession>(id, transaction: transaction);
   }
 
   /// Inserts all [VideoSession]s in the list and returns the inserted rows.
@@ -514,10 +458,7 @@ class VideoSessionRepository {
     List<VideoSession> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<VideoSession>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.insert<VideoSession>(rows, transaction: transaction);
   }
 
   /// Inserts a single [VideoSession] and returns the inserted row.
@@ -528,10 +469,7 @@ class VideoSessionRepository {
     VideoSession row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<VideoSession>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<VideoSession>(row, transaction: transaction);
   }
 
   /// Updates all [VideoSession]s in the list and returns the updated rows. If
@@ -616,10 +554,7 @@ class VideoSessionRepository {
     List<VideoSession> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<VideoSession>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<VideoSession>(rows, transaction: transaction);
   }
 
   /// Deletes a single [VideoSession].
@@ -628,10 +563,7 @@ class VideoSessionRepository {
     VideoSession row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<VideoSession>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<VideoSession>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

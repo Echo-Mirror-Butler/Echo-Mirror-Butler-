@@ -213,76 +213,38 @@ class _LogEntryImpl extends LogEntry {
 class LogEntryUpdateTable extends _i1.UpdateTable<LogEntryTable> {
   LogEntryUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> userId(String value) => _i1.ColumnValue(
-    table.userId,
-    value,
-  );
+  _i1.ColumnValue<String, String> userId(String value) =>
+      _i1.ColumnValue(table.userId, value);
 
-  _i1.ColumnValue<DateTime, DateTime> date(DateTime value) => _i1.ColumnValue(
-    table.date,
-    value,
-  );
+  _i1.ColumnValue<DateTime, DateTime> date(DateTime value) =>
+      _i1.ColumnValue(table.date, value);
 
-  _i1.ColumnValue<int, int> mood(int? value) => _i1.ColumnValue(
-    table.mood,
-    value,
-  );
+  _i1.ColumnValue<int, int> mood(int? value) =>
+      _i1.ColumnValue(table.mood, value);
 
   _i1.ColumnValue<List<String>, List<String>> habits(List<String> value) =>
-      _i1.ColumnValue(
-        table.habits,
-        value,
-      );
+      _i1.ColumnValue(table.habits, value);
 
-  _i1.ColumnValue<String, String> notes(String? value) => _i1.ColumnValue(
-    table.notes,
-    value,
-  );
+  _i1.ColumnValue<String, String> notes(String? value) =>
+      _i1.ColumnValue(table.notes, value);
 
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(
-        table.createdAt,
-        value,
-      );
+      _i1.ColumnValue(table.createdAt, value);
 
   _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime? value) =>
-      _i1.ColumnValue(
-        table.updatedAt,
-        value,
-      );
+      _i1.ColumnValue(table.updatedAt, value);
 }
 
 class LogEntryTable extends _i1.Table<int?> {
   LogEntryTable({super.tableRelation}) : super(tableName: 'log_entries') {
     updateTable = LogEntryUpdateTable(this);
-    userId = _i1.ColumnString(
-      'userId',
-      this,
-    );
-    date = _i1.ColumnDateTime(
-      'date',
-      this,
-    );
-    mood = _i1.ColumnInt(
-      'mood',
-      this,
-    );
-    habits = _i1.ColumnSerializable<List<String>>(
-      'habits',
-      this,
-    );
-    notes = _i1.ColumnString(
-      'notes',
-      this,
-    );
-    createdAt = _i1.ColumnDateTime(
-      'createdAt',
-      this,
-    );
-    updatedAt = _i1.ColumnDateTime(
-      'updatedAt',
-      this,
-    );
+    userId = _i1.ColumnString('userId', this);
+    date = _i1.ColumnDateTime('date', this);
+    mood = _i1.ColumnInt('mood', this);
+    habits = _i1.ColumnSerializable<List<String>>('habits', this);
+    notes = _i1.ColumnString('notes', this);
+    createdAt = _i1.ColumnDateTime('createdAt', this);
+    updatedAt = _i1.ColumnDateTime('updatedAt', this);
   }
 
   late final LogEntryUpdateTable updateTable;
@@ -439,10 +401,7 @@ class LogEntryRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<LogEntry>(
-      id,
-      transaction: transaction,
-    );
+    return session.db.findById<LogEntry>(id, transaction: transaction);
   }
 
   /// Inserts all [LogEntry]s in the list and returns the inserted rows.
@@ -456,10 +415,7 @@ class LogEntryRepository {
     List<LogEntry> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<LogEntry>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.insert<LogEntry>(rows, transaction: transaction);
   }
 
   /// Inserts a single [LogEntry] and returns the inserted row.
@@ -470,10 +426,7 @@ class LogEntryRepository {
     LogEntry row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insertRow<LogEntry>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<LogEntry>(row, transaction: transaction);
   }
 
   /// Updates all [LogEntry]s in the list and returns the updated rows. If
@@ -558,10 +511,7 @@ class LogEntryRepository {
     List<LogEntry> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<LogEntry>(
-      rows,
-      transaction: transaction,
-    );
+    return session.db.delete<LogEntry>(rows, transaction: transaction);
   }
 
   /// Deletes a single [LogEntry].
@@ -570,10 +520,7 @@ class LogEntryRepository {
     LogEntry row, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<LogEntry>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<LogEntry>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

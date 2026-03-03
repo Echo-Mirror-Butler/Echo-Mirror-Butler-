@@ -37,29 +37,32 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   Future<void> _handleChangePassword() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      
-      final success = await ref.read(authProvider.notifier).changePassword(
-        _currentPasswordController.text,
-        _newPasswordController.text,
-      );
-      
+
+      final success = await ref
+          .read(authProvider.notifier)
+          .changePassword(
+            _currentPasswordController.text,
+            _newPasswordController.text,
+          );
+
       if (mounted) {
         setState(() => _isLoading = false);
-        
+
         if (success) {
           _currentPasswordController.clear();
           _newPasswordController.clear();
           _confirmPasswordController.clear();
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Password updated successfully')),
           );
           context.pop();
         } else {
-          final error = ref.read(authProvider).error ?? 'Failed to update password';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
+          final error =
+              ref.read(authProvider).error ?? 'Failed to update password';
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error)));
         }
       }
     }
