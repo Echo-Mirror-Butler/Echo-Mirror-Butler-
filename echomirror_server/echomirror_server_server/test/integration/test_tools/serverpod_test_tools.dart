@@ -164,13 +164,34 @@ class _InternalTestEndpoints extends TestEndpoints
     _i2.SerializationManager serializationManager,
     _i2.EndpointDispatch endpoints,
   ) {
-    ai = _AiEndpoint(endpoints, serializationManager);
-    emailIdp = _EmailIdpEndpoint(endpoints, serializationManager);
-    global = _GlobalEndpoint(endpoints, serializationManager);
-    jwtRefresh = _JwtRefreshEndpoint(endpoints, serializationManager);
-    socials = _SocialsEndpoint(endpoints, serializationManager);
-    greeting = _GreetingEndpoint(endpoints, serializationManager);
-    logging = _LoggingEndpoint(endpoints, serializationManager);
+    ai = _AiEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    emailIdp = _EmailIdpEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    global = _GlobalEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    jwtRefresh = _JwtRefreshEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    socials = _SocialsEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    greeting = _GreetingEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    logging = _LoggingEndpoint(
+      endpoints,
+      serializationManager,
+    );
   }
 }
 
@@ -179,7 +200,10 @@ class _FutureCalls {
 }
 
 class _AiEndpoint {
-  _AiEndpoint(this._endpointDispatch, this._serializationManager);
+  _AiEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -253,7 +277,10 @@ class _AiEndpoint {
 }
 
 class _EmailIdpEndpoint {
-  _EmailIdpEndpoint(this._endpointDispatch, this._serializationManager);
+  _EmailIdpEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -526,7 +553,10 @@ class _EmailIdpEndpoint {
 }
 
 class _GlobalEndpoint {
-  _GlobalEndpoint(this._endpointDispatch, this._serializationManager);
+  _GlobalEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -536,27 +566,30 @@ class _GlobalEndpoint {
     _i1.TestSessionBuilder sessionBuilder,
   ) {
     var _localTestStreamManager = _i1.TestStreamManager<List<_i7.MoodPin>>();
-    _i1.callStreamFunctionAndHandleExceptions(() async {
-      var _localUniqueSession =
-          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
-            endpoint: 'global',
-            method: 'streamMoodPins',
-          );
-      var _localCallContext = await _endpointDispatch
-          .getMethodStreamCallContext(
-            createSessionCallback: (_) => _localUniqueSession,
-            endpointPath: 'global',
-            methodName: 'streamMoodPins',
-            arguments: {},
-            requestedInputStreams: [],
-            serializationManager: _serializationManager,
-          );
-      await _localTestStreamManager.callStreamMethod(
-        _localCallContext,
-        _localUniqueSession,
-        {},
-      );
-    }, _localTestStreamManager.outputStreamController);
+    _i1.callStreamFunctionAndHandleExceptions(
+      () async {
+        var _localUniqueSession =
+            (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+              endpoint: 'global',
+              method: 'streamMoodPins',
+            );
+        var _localCallContext = await _endpointDispatch
+            .getMethodStreamCallContext(
+              createSessionCallback: (_) => _localUniqueSession,
+              endpointPath: 'global',
+              methodName: 'streamMoodPins',
+              arguments: {},
+              requestedInputStreams: [],
+              serializationManager: _serializationManager,
+            );
+        await _localTestStreamManager.callStreamMethod(
+          _localCallContext,
+          _localUniqueSession,
+          {},
+        );
+      },
+      _localTestStreamManager.outputStreamController,
+    );
     return _localTestStreamManager.outputStreamController.stream;
   }
 
@@ -683,7 +716,10 @@ class _GlobalEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'global',
           methodName: 'getVideoFeed',
-          parameters: _i1.testObjectToJson({'offset': offset, 'limit': limit}),
+          parameters: _i1.testObjectToJson({
+            'offset': offset,
+            'limit': limit,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
@@ -956,7 +992,10 @@ class _GlobalEndpoint {
 }
 
 class _JwtRefreshEndpoint {
-  _JwtRefreshEndpoint(this._endpointDispatch, this._serializationManager);
+  _JwtRefreshEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -995,7 +1034,10 @@ class _JwtRefreshEndpoint {
 }
 
 class _SocialsEndpoint {
-  _SocialsEndpoint(this._endpointDispatch, this._serializationManager);
+  _SocialsEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -1679,7 +1721,10 @@ class _SocialsEndpoint {
 }
 
 class _GreetingEndpoint {
-  _GreetingEndpoint(this._endpointDispatch, this._serializationManager);
+  _GreetingEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -1718,7 +1763,10 @@ class _GreetingEndpoint {
 }
 
 class _LoggingEndpoint {
-  _LoggingEndpoint(this._endpointDispatch, this._serializationManager);
+  _LoggingEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
 
   final _i2.EndpointDispatch _endpointDispatch;
 
@@ -1818,7 +1866,10 @@ class _LoggingEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'logging',
           methodName: 'getEntryForDate',
-          parameters: _i1.testObjectToJson({'userId': userId, 'date': date}),
+          parameters: _i1.testObjectToJson({
+            'userId': userId,
+            'date': date,
+          }),
           serializationManager: _serializationManager,
         );
         var _localReturnValue =
