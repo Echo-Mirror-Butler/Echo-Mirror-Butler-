@@ -180,24 +180,26 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
             // Active Sessions or Empty State
             if (socialsState.isLoading && socialsState.activeSessions.isEmpty)
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final isDark = theme.brightness == Brightness.dark;
-                    return Shimmer.fromColors(
-                      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-                      child: Container(
-                        height: 100,
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[900] : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final isDark = theme.brightness == Brightness.dark;
+                  return Shimmer.fromColors(
+                    baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                    highlightColor: isDark
+                        ? Colors.grey[700]!
+                        : Colors.grey[100]!,
+                    child: Container(
+                      height: 100,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
                       ),
-                    );
-                  },
-                  childCount: 3,
-                ),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[900] : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  );
+                }, childCount: 3),
               )
             else
               SliverToBoxAdapter(
