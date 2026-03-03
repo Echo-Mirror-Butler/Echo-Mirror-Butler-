@@ -18,15 +18,14 @@ jobs:
 
       - name: Install OSV Scanner
         run: |
-          OSV_VERSION=$(curl -s https://api.github.com/repos/google/osv-scanner/releases/latest | grep tag_name | cut -d '"' -f 4)
           curl -LO https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
           chmod +x osv-scanner_linux_amd64
           sudo mv osv-scanner_linux_amd64 /usr/local/bin/osv-scanner
 
       - name: Scan Flutter app pubspec.lock
         run: |
-          osv-scanner --lockfile=pubspec.lock --severity=HIGH
+          osv-scanner --lockfile=pubspec.lock 
 
       - name: Scan Server pubspec.lock
         run: |
-          osv-scanner --lockfile=echomirror_server/echomirror_server_server/pubspec.lock --severity=HIGH
+          osv-scanner --lockfile=echomirror_server/echomirror_server_server/pubspec.lock 
