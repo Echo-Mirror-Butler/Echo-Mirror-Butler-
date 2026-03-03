@@ -149,9 +149,6 @@ void _sendPasswordResetCode(
 
 /// Creates JWT config from environment variables (Serverpod Cloud) or passwords file (local)
 TokenManagerBuilder _createJwtConfig() {
-  // JwtConfigFromPasswords reads from passwords.yaml
-  // In Serverpod Cloud, we need to ensure secrets are accessible
-  // For now, use the standard approach - Serverpod Cloud should handle secret injection
   return JwtConfigFromPasswords();
 }
 

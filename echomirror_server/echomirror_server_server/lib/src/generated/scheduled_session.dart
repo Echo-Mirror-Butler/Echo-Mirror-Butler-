@@ -63,8 +63,8 @@ abstract class ScheduledSession
       ),
       isVideoEnabled: jsonSerialization['isVideoEnabled'] as bool,
       isVoiceOnly: jsonSerialization['isVoiceOnly'] as bool,
-      isNotified: jsonSerialization['isNotified'] as bool,
-      isCancelled: jsonSerialization['isCancelled'] as bool,
+      isNotified: jsonSerialization['isNotified'] as bool?,
+      isCancelled: jsonSerialization['isCancelled'] as bool?,
       actualSessionId: jsonSerialization['actualSessionId'] as String?,
     );
   }
@@ -269,59 +269,125 @@ class ScheduledSessionUpdateTable
     extends _i1.UpdateTable<ScheduledSessionTable> {
   ScheduledSessionUpdateTable(super.table);
 
-  _i1.ColumnValue<String, String> hostId(String value) =>
-      _i1.ColumnValue(table.hostId, value);
+  _i1.ColumnValue<String, String> hostId(String value) => _i1.ColumnValue(
+    table.hostId,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> hostName(String value) =>
-      _i1.ColumnValue(table.hostName, value);
+  _i1.ColumnValue<String, String> hostName(String value) => _i1.ColumnValue(
+    table.hostName,
+    value,
+  );
 
   _i1.ColumnValue<String, String> hostAvatarUrl(String? value) =>
-      _i1.ColumnValue(table.hostAvatarUrl, value);
+      _i1.ColumnValue(
+        table.hostAvatarUrl,
+        value,
+      );
 
-  _i1.ColumnValue<String, String> title(String value) =>
-      _i1.ColumnValue(table.title, value);
+  _i1.ColumnValue<String, String> title(String value) => _i1.ColumnValue(
+    table.title,
+    value,
+  );
 
-  _i1.ColumnValue<String, String> description(String? value) =>
-      _i1.ColumnValue(table.description, value);
+  _i1.ColumnValue<String, String> description(String? value) => _i1.ColumnValue(
+    table.description,
+    value,
+  );
 
   _i1.ColumnValue<DateTime, DateTime> scheduledTime(DateTime value) =>
-      _i1.ColumnValue(table.scheduledTime, value);
+      _i1.ColumnValue(
+        table.scheduledTime,
+        value,
+      );
 
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
-      _i1.ColumnValue(table.createdAt, value);
+      _i1.ColumnValue(
+        table.createdAt,
+        value,
+      );
 
-  _i1.ColumnValue<bool, bool> isVideoEnabled(bool value) =>
-      _i1.ColumnValue(table.isVideoEnabled, value);
+  _i1.ColumnValue<bool, bool> isVideoEnabled(bool value) => _i1.ColumnValue(
+    table.isVideoEnabled,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> isVoiceOnly(bool value) =>
-      _i1.ColumnValue(table.isVoiceOnly, value);
+  _i1.ColumnValue<bool, bool> isVoiceOnly(bool value) => _i1.ColumnValue(
+    table.isVoiceOnly,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> isNotified(bool value) =>
-      _i1.ColumnValue(table.isNotified, value);
+  _i1.ColumnValue<bool, bool> isNotified(bool value) => _i1.ColumnValue(
+    table.isNotified,
+    value,
+  );
 
-  _i1.ColumnValue<bool, bool> isCancelled(bool value) =>
-      _i1.ColumnValue(table.isCancelled, value);
+  _i1.ColumnValue<bool, bool> isCancelled(bool value) => _i1.ColumnValue(
+    table.isCancelled,
+    value,
+  );
 
   _i1.ColumnValue<String, String> actualSessionId(String? value) =>
-      _i1.ColumnValue(table.actualSessionId, value);
+      _i1.ColumnValue(
+        table.actualSessionId,
+        value,
+      );
 }
 
 class ScheduledSessionTable extends _i1.Table<int?> {
   ScheduledSessionTable({super.tableRelation})
     : super(tableName: 'scheduled_sessions') {
     updateTable = ScheduledSessionUpdateTable(this);
-    hostId = _i1.ColumnString('hostId', this);
-    hostName = _i1.ColumnString('hostName', this);
-    hostAvatarUrl = _i1.ColumnString('hostAvatarUrl', this);
-    title = _i1.ColumnString('title', this);
-    description = _i1.ColumnString('description', this);
-    scheduledTime = _i1.ColumnDateTime('scheduledTime', this);
-    createdAt = _i1.ColumnDateTime('createdAt', this);
-    isVideoEnabled = _i1.ColumnBool('isVideoEnabled', this);
-    isVoiceOnly = _i1.ColumnBool('isVoiceOnly', this);
-    isNotified = _i1.ColumnBool('isNotified', this, hasDefault: true);
-    isCancelled = _i1.ColumnBool('isCancelled', this, hasDefault: true);
-    actualSessionId = _i1.ColumnString('actualSessionId', this);
+    hostId = _i1.ColumnString(
+      'hostId',
+      this,
+    );
+    hostName = _i1.ColumnString(
+      'hostName',
+      this,
+    );
+    hostAvatarUrl = _i1.ColumnString(
+      'hostAvatarUrl',
+      this,
+    );
+    title = _i1.ColumnString(
+      'title',
+      this,
+    );
+    description = _i1.ColumnString(
+      'description',
+      this,
+    );
+    scheduledTime = _i1.ColumnDateTime(
+      'scheduledTime',
+      this,
+    );
+    createdAt = _i1.ColumnDateTime(
+      'createdAt',
+      this,
+    );
+    isVideoEnabled = _i1.ColumnBool(
+      'isVideoEnabled',
+      this,
+    );
+    isVoiceOnly = _i1.ColumnBool(
+      'isVoiceOnly',
+      this,
+    );
+    isNotified = _i1.ColumnBool(
+      'isNotified',
+      this,
+      hasDefault: true,
+    );
+    isCancelled = _i1.ColumnBool(
+      'isCancelled',
+      this,
+      hasDefault: true,
+    );
+    actualSessionId = _i1.ColumnString(
+      'actualSessionId',
+      this,
+    );
   }
 
   late final ScheduledSessionUpdateTable updateTable;
@@ -486,7 +552,10 @@ class ScheduledSessionRepository {
     int id, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.findById<ScheduledSession>(id, transaction: transaction);
+    return session.db.findById<ScheduledSession>(
+      id,
+      transaction: transaction,
+    );
   }
 
   /// Inserts all [ScheduledSession]s in the list and returns the inserted rows.
@@ -500,7 +569,10 @@ class ScheduledSessionRepository {
     List<ScheduledSession> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.insert<ScheduledSession>(rows, transaction: transaction);
+    return session.db.insert<ScheduledSession>(
+      rows,
+      transaction: transaction,
+    );
   }
 
   /// Inserts a single [ScheduledSession] and returns the inserted row.
@@ -601,7 +673,10 @@ class ScheduledSessionRepository {
     List<ScheduledSession> rows, {
     _i1.Transaction? transaction,
   }) async {
-    return session.db.delete<ScheduledSession>(rows, transaction: transaction);
+    return session.db.delete<ScheduledSession>(
+      rows,
+      transaction: transaction,
+    );
   }
 
   /// Deletes a single [ScheduledSession].

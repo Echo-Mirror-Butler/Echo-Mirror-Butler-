@@ -24,19 +24,56 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i11;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i12;
+import 'package:echomirror_server_server/src/generated/future_calls.dart'
+    as _i13;
+export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
   void initializeEndpoints(_i1.Server server) {
     var endpoints = <String, _i1.Endpoint>{
-      'ai': _i2.AiEndpoint()..initialize(server, 'ai', null),
-      'emailIdp': _i3.EmailIdpEndpoint()..initialize(server, 'emailIdp', null),
-      'global': _i4.GlobalEndpoint()..initialize(server, 'global', null),
+      'ai': _i2.AiEndpoint()
+        ..initialize(
+          server,
+          'ai',
+          null,
+        ),
+      'emailIdp': _i3.EmailIdpEndpoint()
+        ..initialize(
+          server,
+          'emailIdp',
+          null,
+        ),
+      'global': _i4.GlobalEndpoint()
+        ..initialize(
+          server,
+          'global',
+          null,
+        ),
       'jwtRefresh': _i5.JwtRefreshEndpoint()
-        ..initialize(server, 'jwtRefresh', null),
-      'socials': _i6.SocialsEndpoint()..initialize(server, 'socials', null),
-      'greeting': _i7.GreetingEndpoint()..initialize(server, 'greeting', null),
-      'logging': _i8.LoggingEndpoint()..initialize(server, 'logging', null),
+        ..initialize(
+          server,
+          'jwtRefresh',
+          null,
+        ),
+      'socials': _i6.SocialsEndpoint()
+        ..initialize(
+          server,
+          'socials',
+          null,
+        ),
+      'greeting': _i7.GreetingEndpoint()
+        ..initialize(
+          server,
+          'greeting',
+          null,
+        ),
+      'logging': _i8.LoggingEndpoint()
+        ..initialize(
+          server,
+          'logging',
+          null,
+        ),
     };
     connectors['ai'] = _i1.EndpointConnector(
       name: 'ai',
@@ -51,8 +88,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['ai'] as _i2.AiEndpoint).generateInsight(
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['ai'] as _i2.AiEndpoint).generateInsight(
                 session,
                 params['recentLogs'],
               ),
@@ -71,12 +111,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: true,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['ai'] as _i2.AiEndpoint).generateChatResponse(
-                session,
-                params['userMessage'],
-                params['context'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['ai'] as _i2.AiEndpoint).generateChatResponse(
+                    session,
+                    params['userMessage'],
+                    params['context'],
+                  ),
         ),
       },
     );
@@ -98,8 +142,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint).login(
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint).login(
                 session,
                 email: params['email'],
                 password: params['password'],
@@ -114,11 +161,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint).startRegistration(
-                session,
-                email: params['email'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
+                  .startRegistration(
+                    session,
+                    email: params['email'],
+                  ),
         ),
         'verifyRegistrationCode': _i1.MethodConnector(
           name: 'verifyRegistrationCode',
@@ -134,8 +185,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
                   .verifyRegistrationCode(
                     session,
                     accountRequestId: params['accountRequestId'],
@@ -156,8 +210,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
                   .finishRegistration(
                     session,
                     registrationToken: params['registrationToken'],
@@ -173,9 +230,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
-                  .startPasswordReset(session, email: params['email']),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
+                  .startPasswordReset(
+                    session,
+                    email: params['email'],
+                  ),
         ),
         'verifyPasswordResetCode': _i1.MethodConnector(
           name: 'verifyPasswordResetCode',
@@ -191,8 +254,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
                   .verifyPasswordResetCode(
                     session,
                     passwordResetRequestId: params['passwordResetRequestId'],
@@ -213,14 +279,27 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
                   .finishPasswordReset(
                     session,
                     finishPasswordResetToken:
                         params['finishPasswordResetToken'],
                     newPassword: params['newPassword'],
                   ),
+        ),
+        'hasAccount': _i1.MethodConnector(
+          name: 'hasAccount',
+          params: {},
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['emailIdp'] as _i3.EmailIdpEndpoint)
+                  .hasAccount(session),
         ),
       },
     );
@@ -247,8 +326,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).addMoodPin(
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['global'] as _i4.GlobalEndpoint).addMoodPin(
                 session,
                 params['sentiment'],
                 params['latitude'],
@@ -269,12 +351,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).uploadVideo(
-                session,
-                params['videoData'],
-                params['moodTag'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['global'] as _i4.GlobalEndpoint).uploadVideo(
+                    session,
+                    params['videoData'],
+                    params['moodTag'],
+                  ),
         ),
         'uploadImage': _i1.MethodConnector(
           name: 'uploadImage',
@@ -290,12 +376,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).uploadImage(
-                session,
-                params['imageData'],
-                params['moodTag'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['global'] as _i4.GlobalEndpoint).uploadImage(
+                    session,
+                    params['imageData'],
+                    params['moodTag'],
+                  ),
         ),
         'getVideoFeed': _i1.MethodConnector(
           name: 'getVideoFeed',
@@ -311,20 +401,26 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).getVideoFeed(
-                session,
-                params['offset'],
-                params['limit'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['global'] as _i4.GlobalEndpoint).getVideoFeed(
+                    session,
+                    params['offset'],
+                    params['limit'],
+                  ),
         ),
         'getMoodStatistics': _i1.MethodConnector(
           name: 'getMoodStatistics',
           params: {},
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).getMoodStatistics(
-                session,
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['global'] as _i4.GlobalEndpoint)
+                  .getMoodStatistics(session),
         ),
         'addComment': _i1.MethodConnector(
           name: 'addComment',
@@ -340,8 +436,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).addComment(
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['global'] as _i4.GlobalEndpoint).addComment(
                 session,
                 params['moodPinId'],
                 params['text'],
@@ -356,11 +455,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).getCommentsForPin(
-                session,
-                params['moodPinId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['global'] as _i4.GlobalEndpoint).getCommentsForPin(
+                    session,
+                    params['moodPinId'],
+                  ),
         ),
         'getNotifications': _i1.MethodConnector(
           name: 'getNotifications',
@@ -371,11 +474,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).getNotifications(
-                session,
-                params['userId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['global'] as _i4.GlobalEndpoint).getNotifications(
+                    session,
+                    params['userId'],
+                  ),
         ),
         'markNotificationAsRead': _i1.MethodConnector(
           name: 'markNotificationAsRead',
@@ -386,9 +493,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint)
-                  .markNotificationAsRead(session, params['notificationId']),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['global'] as _i4.GlobalEndpoint)
+                  .markNotificationAsRead(
+                    session,
+                    params['notificationId'],
+                  ),
         ),
         'markAllNotificationsAsRead': _i1.MethodConnector(
           name: 'markAllNotificationsAsRead',
@@ -399,9 +512,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint)
-                  .markAllNotificationsAsRead(session, params['userId']),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['global'] as _i4.GlobalEndpoint)
+                  .markAllNotificationsAsRead(
+                    session,
+                    params['userId'],
+                  ),
         ),
         'deleteNotification': _i1.MethodConnector(
           name: 'deleteNotification',
@@ -412,11 +531,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint).deleteNotification(
-                session,
-                params['notificationId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['global'] as _i4.GlobalEndpoint)
+                  .deleteNotification(
+                    session,
+                    params['notificationId'],
+                  ),
         ),
         'generateClusterEncouragement': _i1.MethodConnector(
           name: 'generateClusterEncouragement',
@@ -432,8 +555,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['global'] as _i4.GlobalEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['global'] as _i4.GlobalEndpoint)
                   .generateClusterEncouragement(
                     session,
                     params['sentiment'],
@@ -469,8 +595,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['jwtRefresh'] as _i5.JwtRefreshEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['jwtRefresh'] as _i5.JwtRefreshEndpoint)
                   .refreshAccessToken(
                     session,
                     refreshToken: params['refreshToken'],
@@ -485,10 +614,12 @@ class Endpoints extends _i1.EndpointDispatch {
         'getActiveSessions': _i1.MethodConnector(
           name: 'getActiveSessions',
           params: {},
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).getActiveSessions(
-                session,
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
+                  .getActiveSessions(session),
         ),
         'createSession': _i1.MethodConnector(
           name: 'createSession',
@@ -519,15 +650,19 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).createSession(
-                session,
-                params['title'],
-                params['hostId'],
-                params['hostName'],
-                params['hostAvatarUrl'],
-                params['isVoiceOnly'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).createSession(
+                    session,
+                    params['title'],
+                    params['hostId'],
+                    params['hostName'],
+                    params['hostAvatarUrl'],
+                    params['isVoiceOnly'],
+                  ),
         ),
         'joinSession': _i1.MethodConnector(
           name: 'joinSession',
@@ -538,11 +673,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).joinSession(
-                session,
-                params['sessionId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).joinSession(
+                    session,
+                    params['sessionId'],
+                  ),
         ),
         'leaveSession': _i1.MethodConnector(
           name: 'leaveSession',
@@ -553,11 +692,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).leaveSession(
-                session,
-                params['sessionId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).leaveSession(
+                    session,
+                    params['sessionId'],
+                  ),
         ),
         'getSession': _i1.MethodConnector(
           name: 'getSession',
@@ -568,11 +711,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).getSession(
-                session,
-                params['sessionId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).getSession(
+                    session,
+                    params['sessionId'],
+                  ),
         ),
         'getAgoraCredentials': _i1.MethodConnector(
           name: 'getAgoraCredentials',
@@ -588,12 +735,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).getAgoraCredentials(
-                session,
-                params['channelName'],
-                params['userId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
+                  .getAgoraCredentials(
+                    session,
+                    params['channelName'],
+                    params['userId'],
+                  ),
         ),
         'endSession': _i1.MethodConnector(
           name: 'endSession',
@@ -609,12 +760,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).endSession(
-                session,
-                params['sessionId'],
-                params['hostId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).endSession(
+                    session,
+                    params['sessionId'],
+                    params['hostId'],
+                  ),
         ),
         'createScheduledSession': _i1.MethodConnector(
           name: 'createScheduledSession',
@@ -655,8 +810,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
                   .createScheduledSession(
                     session,
                     params['title'],
@@ -677,15 +835,24 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint)
-                  .getUpcomingScheduledSessions(session, params['userId']),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
+                  .getUpcomingScheduledSessions(
+                    session,
+                    params['userId'],
+                  ),
         ),
         'getAllUpcomingScheduledSessions': _i1.MethodConnector(
           name: 'getAllUpcomingScheduledSessions',
           params: {},
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
                   .getAllUpcomingScheduledSessions(session),
         ),
         'cancelScheduledSession': _i1.MethodConnector(
@@ -702,8 +869,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
                   .cancelScheduledSession(
                     session,
                     params['sessionId'],
@@ -724,8 +894,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
                   .startScheduledSession(
                     session,
                     params['scheduledSessionId'],
@@ -735,8 +908,11 @@ class Endpoints extends _i1.EndpointDispatch {
         'getSessionsNeedingNotification': _i1.MethodConnector(
           name: 'getSessionsNeedingNotification',
           params: {},
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint)
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
                   .getSessionsNeedingNotification(session),
         ),
         'markSessionAsNotified': _i1.MethodConnector(
@@ -748,9 +924,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint)
-                  .markSessionAsNotified(session, params['sessionId']),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
+                  .markSessionAsNotified(
+                    session,
+                    params['sessionId'],
+                  ),
         ),
         'uploadStoryImage': _i1.MethodConnector(
           name: 'uploadStoryImage',
@@ -766,12 +948,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).uploadStoryImage(
-                session,
-                params['imageData'],
-                params['userId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
+                  .uploadStoryImage(
+                    session,
+                    params['imageData'],
+                    params['userId'],
+                  ),
         ),
         'createStory': _i1.MethodConnector(
           name: 'createStory',
@@ -797,22 +983,28 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).createStory(
-                session,
-                params['userId'],
-                params['userName'],
-                params['userAvatarUrl'],
-                params['imageUrls'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).createStory(
+                    session,
+                    params['userId'],
+                    params['userName'],
+                    params['userAvatarUrl'],
+                    params['imageUrls'],
+                  ),
         ),
         'getActiveStories': _i1.MethodConnector(
           name: 'getActiveStories',
           params: {},
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).getActiveStories(
-                session,
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['socials'] as _i6.SocialsEndpoint)
+                  .getActiveStories(session),
         ),
         'getUserStories': _i1.MethodConnector(
           name: 'getUserStories',
@@ -823,11 +1015,15 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).getUserStories(
-                session,
-                params['userId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).getUserStories(
+                    session,
+                    params['userId'],
+                  ),
         ),
         'viewStory': _i1.MethodConnector(
           name: 'viewStory',
@@ -843,12 +1039,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).viewStory(
-                session,
-                params['storyId'],
-                params['viewerId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).viewStory(
+                    session,
+                    params['storyId'],
+                    params['viewerId'],
+                  ),
         ),
         'deleteStory': _i1.MethodConnector(
           name: 'deleteStory',
@@ -864,12 +1064,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['socials'] as _i6.SocialsEndpoint).deleteStory(
-                session,
-                params['storyId'],
-                params['userId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['socials'] as _i6.SocialsEndpoint).deleteStory(
+                    session,
+                    params['storyId'],
+                    params['userId'],
+                  ),
         ),
       },
     );
@@ -886,8 +1090,11 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['greeting'] as _i7.GreetingEndpoint).hello(
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['greeting'] as _i7.GreetingEndpoint).hello(
                 session,
                 params['name'],
               ),
@@ -927,15 +1134,19 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: true,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['logging'] as _i8.LoggingEndpoint).createEntry(
-                session,
-                params['userId'],
-                params['date'],
-                params['mood'],
-                params['habits'],
-                params['notes'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['logging'] as _i8.LoggingEndpoint).createEntry(
+                    session,
+                    params['userId'],
+                    params['date'],
+                    params['mood'],
+                    params['habits'],
+                    params['notes'],
+                  ),
         ),
         'getEntries': _i1.MethodConnector(
           name: 'getEntries',
@@ -956,13 +1167,17 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: true,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['logging'] as _i8.LoggingEndpoint).getEntries(
-                session,
-                params['userId'],
-                startDate: params['startDate'],
-                endDate: params['endDate'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['logging'] as _i8.LoggingEndpoint).getEntries(
+                    session,
+                    params['userId'],
+                    startDate: params['startDate'],
+                    endDate: params['endDate'],
+                  ),
         ),
         'getEntryForDate': _i1.MethodConnector(
           name: 'getEntryForDate',
@@ -978,12 +1193,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['logging'] as _i8.LoggingEndpoint).getEntryForDate(
-                session,
-                params['userId'],
-                params['date'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['logging'] as _i8.LoggingEndpoint).getEntryForDate(
+                    session,
+                    params['userId'],
+                    params['date'],
+                  ),
         ),
         'updateEntry': _i1.MethodConnector(
           name: 'updateEntry',
@@ -1019,16 +1238,20 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: true,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['logging'] as _i8.LoggingEndpoint).updateEntry(
-                session,
-                params['userId'],
-                params['entryId'],
-                params['date'],
-                params['mood'],
-                params['habits'],
-                params['notes'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['logging'] as _i8.LoggingEndpoint).updateEntry(
+                    session,
+                    params['userId'],
+                    params['entryId'],
+                    params['date'],
+                    params['mood'],
+                    params['habits'],
+                    params['notes'],
+                  ),
         ),
         'deleteEntry': _i1.MethodConnector(
           name: 'deleteEntry',
@@ -1044,12 +1267,16 @@ class Endpoints extends _i1.EndpointDispatch {
               nullable: false,
             ),
           },
-          call: (_i1.Session session, Map<String, dynamic> params) async =>
-              (endpoints['logging'] as _i8.LoggingEndpoint).deleteEntry(
-                session,
-                params['userId'],
-                params['entryId'],
-              ),
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['logging'] as _i8.LoggingEndpoint).deleteEntry(
+                    session,
+                    params['userId'],
+                    params['entryId'],
+                  ),
         ),
       },
     );
@@ -1057,5 +1284,10 @@ class Endpoints extends _i1.EndpointDispatch {
       ..initializeEndpoints(server);
     modules['serverpod_auth_core'] = _i12.Endpoints()
       ..initializeEndpoints(server);
+  }
+
+  @override
+  _i1.FutureCallDispatch? get futureCalls {
+    return _i13.FutureCalls();
   }
 }
