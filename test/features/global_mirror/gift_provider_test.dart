@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import 'package:echomirror/features/global_mirror/viewmodel/providers/'
     'gift_provider.dart';
 import 'package:echomirror/features/global_mirror/data/repositories/'
@@ -13,6 +14,8 @@ class MockGiftRepository implements GiftRepository {
   List<GiftTransactionModel> _mockHistory = [];
   bool _shouldFailGetBalance = false;
   bool _shouldFailSendGift = false;
+  Completer<void>? _getBalanceCompleter;
+  Completer<void>? _sendGiftCompleter;
 
   MockGiftRepository({
     double initialBalance = 0.0,
@@ -28,13 +31,27 @@ class MockGiftRepository implements GiftRepository {
 
   void setFailSendGift(bool fail) => _shouldFailSendGift = fail;
 
+  /// Set a Completer to pause getEchoBalance() at a known point for testing
+  void pauseGetBalance() => _getBalanceCompleter = Completer<void>();
+
+  /// Resume the paused getEchoBalance() operation
+  void resumeGetBalance() => _getBalanceCompleter?.complete();
+
+  /// Set a Completer to pause sendGift() at a known point for testing
+  void pauseSendGift() => _sendGiftCompleter = Completer<void>();
+
+  /// Resume the paused sendGift() operation
+  void resumeSendGift() => _sendGiftCompleter?.complete();
+
   @override
   Future<double> getEchoBalance() async {
     if (_shouldFailGetBalance) {
       throw Exception('Failed to fetch balance');
     }
-    // Add a small delay to make this truly asynchronous
-    await Future.delayed(Duration(milliseconds: 5));
+    // Wait for completer if one is set (allows tests to pause at a known point)
+    if (_getBalanceCompleter != null) {
+      await _getBalanceCompleter!.future;
+    }
     return _mockBalance;
   }
 
@@ -48,8 +65,10 @@ class MockGiftRepository implements GiftRepository {
       throw Exception('Failed to send gift');
     }
 
-    // Add a small delay to make this truly asynchronous
-    await Future.delayed(Duration(milliseconds: 5));
+    // Wait for completer if one is set (allows tests to pause at a known point)
+    if (_sendGiftCompleter != null) {
+      await _sendGiftCompleter!.future;
+    }
 
     // Check balance constraint
     if (amount > _mockBalance) {
@@ -107,6 +126,7 @@ void main() {
       'loadBalance() sets isLoading to true then false and updates balance',
       () async {
         mockRepo.setBalance(100.0);
+        mockRepo.pauseGetBalance();
 
         final container = ProviderContainer(
           overrides: [giftRepositoryProvider.overrideWithValue(mockRepo)],
@@ -118,12 +138,17 @@ void main() {
         expect(container.read(giftProvider).isLoading, false);
         expect(container.read(giftProvider).echoBalance, 0.0);
 
-        // Call loadBalance
+        // Call loadBalance (will pause due to Completer)
         final loadingFuture = notifier.loadBalance();
 
+        // Give the notifier a chance to update state
+        await Future.delayed(Duration.zero);
+
         // Check isLoading is true during the operation
-        await Future.delayed(const Duration(milliseconds: 10));
         expect(container.read(giftProvider).isLoading, true);
+
+        // Resume the operation
+        mockRepo.resumeGetBalance();
 
         // Wait for completion
         await loadingFuture;
@@ -136,6 +161,7 @@ void main() {
 
     test('sendGift() sets isSending to true then false on success', () async {
       mockRepo.setBalance(50.0);
+      mockRepo.pauseSendGift();
 
       final container = ProviderContainer(
         overrides: [giftRepositoryProvider.overrideWithValue(mockRepo)],
@@ -147,16 +173,21 @@ void main() {
       // Initially isSending should be false
       expect(container.read(giftProvider).isSending, false);
 
-      // Call sendGift
+      // Call sendGift (will pause due to Completer)
       final sendingFuture = notifier.sendGift(
         recipientUserId: 123,
         amount: 25.0,
         message: 'Happy birthday!',
       );
 
+      // Give the notifier a chance to update state
+      await Future.delayed(Duration.zero);
+
       // Check isSending is true during the operation
-      await Future.delayed(const Duration(milliseconds: 10));
       expect(container.read(giftProvider).isSending, true);
+
+      // Resume the operation
+      mockRepo.resumeSendGift();
 
       // Wait for completion
       final success = await sendingFuture;

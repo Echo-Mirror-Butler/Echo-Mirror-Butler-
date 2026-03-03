@@ -50,8 +50,6 @@ class GiftNotifier extends StateNotifier<GiftState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      // Yield control to allow state observers to see the loading state
-      await Future.delayed(Duration(milliseconds: 5));
       final balance = await _repo.getEchoBalance();
       // 2. Success path
       state = state.copyWith(echoBalance: balance, isLoading: false);
@@ -78,8 +76,6 @@ class GiftNotifier extends StateNotifier<GiftState> {
       clearError: true,
       clearLastTx: true,
     );
-    // Ensure the state change is visible to observers
-    await Future.delayed(Duration(milliseconds: 1));
     try {
       // Load current balance from repo
       final currentBalance = await _repo.getEchoBalance();
