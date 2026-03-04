@@ -27,7 +27,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load active sessions and start auto-refresh only when Socials tab is active
+    // Load active sessions and start auto-refresh only when Socials
+    // tab is active
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final currentIndex = ref.read(mainTabIndexProvider);
@@ -128,7 +129,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                             .loadActiveSessions();
                       },
                       onStoryTap: (story) {
-                        // Filter stories to show only this user's stories (like Instagram)
+                        // Filter stories to show only this user's stories
+                        // (like Instagram)
                         final userStories = socialsState.stories
                             .where((s) => s.userId == story.userId)
                             .toList()
@@ -406,8 +408,12 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
 
   Widget _buildScheduledSessionCard(dynamic session, ThemeData theme) {
     final scheduledTime = session.scheduledTime as DateTime;
-    final formattedTime =
-        '${scheduledTime.day}/${scheduledTime.month}/${scheduledTime.year} at ${scheduledTime.hour.toString().padLeft(2, '0')}:${scheduledTime.minute.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${scheduledTime.day}/${scheduledTime.month}/${scheduledTime.year}';
+    final hour = scheduledTime.hour.toString().padLeft(2, '0');
+    final minute = scheduledTime.minute.toString().padLeft(2, '0');
+    final timeStr = '$hour:$minute';
+    final formattedTime = '$dateStr at $timeStr';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -520,10 +526,15 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               );
           if (!mounted) return;
           if (scheduled != null) {
+            final day = scheduledTime.day;
+            final month = scheduledTime.month;
+            final hour = scheduledTime.hour;
+            final minute =
+                scheduledTime.minute.toString().padLeft(2, '0');
             messenger.showSnackBar(
               SnackBar(
                 content: Text(
-                  'Session scheduled for ${scheduledTime.day}/${scheduledTime.month} at ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}',
+                  'Session scheduled for $day/$month at $hour:$minute',
                 ),
                 backgroundColor: AppTheme.successColor,
               ),
@@ -781,7 +792,10 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '${_scheduledTime!.day}/${_scheduledTime!.month}/${_scheduledTime!.year} at ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                      '${_scheduledTime!.day}/${_scheduledTime!.month}/'
+                      '${_scheduledTime!.year} at '
+                      '${_scheduledTime!.hour.toString().padLeft(2, '0')}:'
+                      '${_scheduledTime!.minute.toString().padLeft(2, '0')}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
