@@ -77,7 +77,6 @@ void main() {
   // No need for UuidValue helper; using local _MockUuidValue
 
   group('Sign In Tests', () {
-
     group('Success scenarios', () {
       test('signIn returns user ID on valid credentials', () async {
         // Arrange - Configure mocks for successful sign in
@@ -87,10 +86,12 @@ void main() {
         );
 
         // Mock the emailIdp.login call
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenAnswer((_) async => mockAuthSuccess);
+        when(
+          mockEmailIdp.login(
+            email: anyNamed('email'),
+            password: anyNamed('password'),
+          ),
+        ).thenAnswer((_) async => mockAuthSuccess);
 
         when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
         when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
@@ -113,10 +114,12 @@ void main() {
           userId: testUserId,
         );
 
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenAnswer((_) async => mockAuthSuccess);
+        when(
+          mockEmailIdp.login(
+            email: anyNamed('email'),
+            password: anyNamed('password'),
+          ),
+        ).thenAnswer((_) async => mockAuthSuccess);
 
         when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
         when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
@@ -136,10 +139,12 @@ void main() {
           userId: testUserId,
         );
 
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenAnswer((_) async => mockAuthSuccess);
+        when(
+          mockEmailIdp.login(
+            email: anyNamed('email'),
+            password: anyNamed('password'),
+          ),
+        ).thenAnswer((_) async => mockAuthSuccess);
 
         when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
         when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
@@ -154,40 +159,46 @@ void main() {
         expect(prefs.getString('user_id'), testUserId);
       });
 
-      test('signIn calls backend login once with correct credentials', () async {
-        // Arrange
-        final mockAuthSuccess = createAuthSuccess(
-          token: testJwtToken,
-          userId: testUserId,
-        );
+      test(
+        'signIn calls backend login once with correct credentials',
+        () async {
+          // Arrange
+          final mockAuthSuccess = createAuthSuccess(
+            token: testJwtToken,
+            userId: testUserId,
+          );
 
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenAnswer((_) async => mockAuthSuccess);
+          when(
+            mockEmailIdp.login(
+              email: anyNamed('email'),
+              password: anyNamed('password'),
+            ),
+          ).thenAnswer((_) async => mockAuthSuccess);
 
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
-        when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => testJwtToken);
+          when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
+          when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
+          when(mockAuthKeyManager.get()).thenAnswer((_) async => testJwtToken);
 
-        // Act
-        await authRepository.signIn(testEmail, testPassword);
+          // Act
+          await authRepository.signIn(testEmail, testPassword);
 
-        // Assert
-        verify(mockEmailIdp.login(
-          email: testEmail,
-          password: testPassword,
-        )).called(1);
-      });
+          // Assert
+          verify(
+            mockEmailIdp.login(email: testEmail, password: testPassword),
+          ).called(1);
+        },
+      );
     });
 
     group('Failure scenarios', () {
       test('signIn throws on wrong password', () async {
         // Arrange - Configure mock to throw exception on login
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenThrow(Exception('Invalid credentials'));
+        when(
+          mockEmailIdp.login(
+            email: anyNamed('email'),
+            password: anyNamed('password'),
+          ),
+        ).thenThrow(Exception('Invalid credentials'));
 
         // Act & Assert
         expect(
@@ -203,10 +214,12 @@ void main() {
           userId: testUserId,
         );
 
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenAnswer((_) async => mockAuthSuccessNoToken);
+        when(
+          mockEmailIdp.login(
+            email: anyNamed('email'),
+            password: anyNamed('password'),
+          ),
+        ).thenAnswer((_) async => mockAuthSuccessNoToken);
 
         when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
 
@@ -214,9 +227,13 @@ void main() {
         expect(
           () => authRepository.signIn(testEmail, testPassword),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('Login succeeded but no authentication token received')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains(
+                    'Login succeeded but no authentication token received',
+                  ),
+            ),
           ),
         );
       });
@@ -228,10 +245,12 @@ void main() {
           userId: testUserId,
         );
 
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenAnswer((_) async => mockAuthSuccess);
+        when(
+          mockEmailIdp.login(
+            email: anyNamed('email'),
+            password: anyNamed('password'),
+          ),
+        ).thenAnswer((_) async => mockAuthSuccess);
 
         when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
         when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
@@ -242,19 +261,23 @@ void main() {
         expect(
           () => authRepository.signIn(testEmail, testPassword),
           throwsA(
-            predicate((e) =>
-                e is Exception &&
-                e.toString().contains('Failed to save authentication token')),
+            predicate(
+              (e) =>
+                  e is Exception &&
+                  e.toString().contains('Failed to save authentication token'),
+            ),
           ),
         );
       });
 
       test('signIn does not save SharedPreferences on failure', () async {
         // Arrange - Configure mock to throw exception on login
-        when(mockEmailIdp.login(
-          email: anyNamed('email'),
-          password: anyNamed('password'),
-        )).thenThrow(Exception('Invalid credentials'));
+        when(
+          mockEmailIdp.login(
+            email: anyNamed('email'),
+            password: anyNamed('password'),
+          ),
+        ).thenThrow(Exception('Invalid credentials'));
 
         // Act
         try {
@@ -274,8 +297,9 @@ void main() {
   group('Sign Up Tests', () {
     test('signUp returns userId on valid input', () async {
       // Arrange
-      when(mockEmailIdp.startRegistration(email: anyNamed('email')))
-          .thenAnswer((_) async => UuidValue.fromString(testUserId));
+      when(
+        mockEmailIdp.startRegistration(email: anyNamed('email')),
+      ).thenAnswer((_) async => UuidValue.fromString(testUserId));
 
       // Act
       final id = await authRepository.signUp(testEmail, testPassword, testName);
@@ -337,8 +361,11 @@ void main() {
       mockClient.passwordResetStub = _FakePasswordReset(success: true);
 
       // Act
-      final ok =
-          await authRepository.resetPassword(testEmail, testResetToken, testNewPassword);
+      final ok = await authRepository.resetPassword(
+        testEmail,
+        testResetToken,
+        testNewPassword,
+      );
 
       // Assert
       expect(ok, isTrue);
@@ -359,12 +386,9 @@ class _TestClient extends Client {
   _TestClient({
     required EndpointEmailIdp emailIdp,
     required AuthenticationKeyManager keyManager,
-  })  : _emailIdp = emailIdp,
-        _authKeyManager = keyManager,
-        super(
-          'http://localhost',
-          authenticationKeyManager: keyManager,
-        );
+  }) : _emailIdp = emailIdp,
+       _authKeyManager = keyManager,
+       super('http://localhost', authenticationKeyManager: keyManager);
 
   @override
   EndpointEmailIdp get emailIdp => _emailIdp;
@@ -390,8 +414,13 @@ class _FakePasswordReset {
   _FakePasswordReset({required this.success});
 
   Future<bool> requestPasswordReset(String email) async => success;
-  Future<bool> resetPassword(String email, String token, String newPassword) async =>
-      success;
-  Future<bool> changePassword(String currentPassword, String newPassword) async =>
-      success;
+  Future<bool> resetPassword(
+    String email,
+    String token,
+    String newPassword,
+  ) async => success;
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async => success;
 }

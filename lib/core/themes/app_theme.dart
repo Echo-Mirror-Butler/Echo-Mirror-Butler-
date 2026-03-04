@@ -61,7 +61,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 4,
-        shadowColor: primaryColor.withOpacity(0.1),
+        shadowColor: primaryColor.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: surfaceColor,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -138,7 +138,7 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 4,
-        shadowColor: darkPrimaryColor.withOpacity(0.2),
+        shadowColor: darkPrimaryColor.withValues(alpha: 0.2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         color: darkSurfaceColor,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -263,7 +263,7 @@ class AppTheme {
       bodySmall: GoogleFonts.poppins(
         fontSize: 12,
         fontWeight: FontWeight.normal,
-        color: baseColor.withOpacity(0.7),
+        color: baseColor.withValues(alpha: 0.7),
         letterSpacing: 0,
       ),
       labelLarge: GoogleFonts.poppins(
@@ -281,7 +281,7 @@ class AppTheme {
       labelSmall: GoogleFonts.poppins(
         fontSize: 11,
         fontWeight: FontWeight.w500,
-        color: baseColor.withOpacity(0.7),
+        color: baseColor.withValues(alpha: 0.7),
         letterSpacing: 0.5,
       ),
     );
