@@ -270,7 +270,7 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Center(child: ShimmerLoading(width: 24, height: 24)),
           ),
-          error: (_, __) => Padding(
+          error: (_, _) => Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
@@ -296,7 +296,7 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           child: Center(child: ShimmerLoading(width: 24, height: 24)),
         ),
-        error: (_, __) => Padding(
+        error: (_, _) => Padding(
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
