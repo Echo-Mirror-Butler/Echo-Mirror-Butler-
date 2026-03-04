@@ -16,6 +16,7 @@ class ServerpodClientService {
 
   Client? _client;
   bool _isInitialized = false;
+  SharedPreferencesAuthKeyProvider? _keyProvider;
 
   /// Check if the service is initialized
   bool get isInitialized => _isInitialized;
@@ -40,11 +41,12 @@ class ServerpodClientService {
       // Get SharedPreferences instance
       final prefs = await SharedPreferences.getInstance();
 
-      // Create custom authentication key manager with SharedPreferences
-      final keyManager = SharedPreferencesAuthKeyManager(prefs);
+      // Create auth key provider with SharedPreferences
+      final keyProvider = SharedPreferencesAuthKeyProvider(prefs);
+      _keyProvider = keyProvider;
 
       // Check if we have a saved key before creating the client
-      final savedKey = await keyManager.get();
+      final savedKey = await keyProvider.get();
       if (savedKey != null) {
         debugPrint(
           '[ServerpodClientService] ✅ Found existing authentication key (${savedKey.length} chars) - user should be logged in',
@@ -55,19 +57,16 @@ class ServerpodClientService {
         );
       }
 
-      // Create client with persistent authentication key manager
-      // The key manager will automatically provide the saved key to the client
-      _client = Client(
-        ApiConstants.serverUrl,
-        authenticationKeyManager: keyManager,
-      );
+      // Create client and attach auth key provider
+      _client = Client(ApiConstants.serverUrl);
+      _client!.authKeyProvider = keyProvider;
 
-      // Verify the client can access the key
+      // Verify the client can access the header value
       if (_client != null) {
-        final clientKey = await _client!.authenticationKeyManager?.get();
-        if (clientKey != null) {
+        final headerValue = await _client!.authKeyProvider?.authHeaderValue;
+        if (headerValue != null) {
           debugPrint(
-            '[ServerpodClientService] ✅ Client can access saved authentication key',
+            '[ServerpodClientService] ✅ Client has authentication header configured',
           );
         } else if (savedKey != null) {
           debugPrint(
@@ -90,103 +89,63 @@ class ServerpodClientService {
   }
 }
 
-/// Custom authentication key manager using SharedPreferences for persistent storage
-class SharedPreferencesAuthKeyManager implements AuthenticationKeyManager {
+/// Custom auth key provider using SharedPreferences for persistent storage
+class SharedPreferencesAuthKeyProvider implements ClientAuthKeyProvider {
   final SharedPreferences _prefs;
   static const String _key = 'serverpod_auth_key';
 
-  SharedPreferencesAuthKeyManager(this._prefs);
+  SharedPreferencesAuthKeyProvider(this._prefs);
 
-  @override
+  // Helper to read saved key
   Future<String?> get() async {
     final key = _prefs.getString(_key);
     if (key != null) {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] ✅ Retrieved authentication key from SharedPreferences (${key.length} chars)',
+        '[SharedPreferencesAuthKeyProvider] ✅ Retrieved authentication key from SharedPreferences (${key.length} chars)',
       );
     } else {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] No authentication key found in SharedPreferences',
+        '[SharedPreferencesAuthKeyProvider] No authentication key found in SharedPreferences',
       );
     }
     return key;
   }
 
-  @override
   Future<void> put(String key) async {
     debugPrint(
-      '[SharedPreferencesAuthKeyManager] Saving authentication key (${key.length} chars)',
+      '[SharedPreferencesAuthKeyProvider] Saving authentication key (${key.length} chars)',
     );
     await _prefs.setString(_key, key);
     debugPrint(
-      '[SharedPreferencesAuthKeyManager] ✅ Authentication key saved to SharedPreferences',
+      '[SharedPreferencesAuthKeyProvider] ✅ Authentication key saved to SharedPreferences',
     );
 
     // Verify it was saved
-    final saved = await _prefs.getString(_key);
+    final saved = _prefs.getString(_key);
     if (saved != null) {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] ✅ Verified: Key is persisted',
+        '[SharedPreferencesAuthKeyProvider] ✅ Verified: Key is persisted',
       );
     } else {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] ❌ ERROR: Key was not saved!',
+        '[SharedPreferencesAuthKeyProvider] ❌ ERROR: Key was not saved!',
       );
     }
   }
 
-  @override
   Future<void> remove() async {
     await _prefs.remove(_key);
   }
 
-  @override
-  Future<String?> getHeaderValue() async {
-    final token = await get();
-    if (token == null) {
-      debugPrint(
-        '[SharedPreferencesAuthKeyManager] getHeaderValue: No token available',
-      );
-      return null;
-    }
-
-    // Remove "Bearer " prefix if present (we store just the token)
-    String cleanToken = token;
-    if (cleanToken.startsWith('Bearer ')) {
-      cleanToken = cleanToken.substring(7);
-    }
-
-    // Return "Bearer <token>" format for the authorization header
-    final headerValue = 'Bearer $cleanToken';
-    debugPrint(
-      '[SharedPreferencesAuthKeyManager] getHeaderValue: Returning "Bearer <token>" (${headerValue.length} chars)',
-    );
-    return headerValue;
-  }
-
-  @override
-  Future<String?> toHeaderValue(String? key) async {
-    if (key != null) {
-      // Save the key (remove Bearer prefix if present)
-      String tokenToSave = key;
-      if (tokenToSave.startsWith('Bearer ')) {
-        tokenToSave = tokenToSave.substring(7);
-      }
-      await put(tokenToSave);
-
-      // Return just the token (Serverpod will format the header)
-      return tokenToSave;
-    }
-    // Return the saved token
-    return await get();
-  }
+  // Support older interface versions
+  Future<void> set(String key) async => put(key);
 
   @override
   Future<String?> get authHeaderValue async {
     final token = await get();
     if (token == null) {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] authHeaderValue: No token available',
+        '[SharedPreferencesAuthKeyProvider] authHeaderValue: No token available',
       );
       return null;
     }
@@ -200,8 +159,33 @@ class SharedPreferencesAuthKeyManager implements AuthenticationKeyManager {
     // Return "Bearer <token>" format for the authorization header
     final headerValue = 'Bearer $cleanToken';
     debugPrint(
-      '[SharedPreferencesAuthKeyManager] authHeaderValue: Returning "Bearer <token>" (${headerValue.length} chars)',
+      '[SharedPreferencesAuthKeyProvider] authHeaderValue: Returning "Bearer <token>"',
     );
     return headerValue;
+  }
+}
+
+extension ServerpodClientServiceAuthOps on ServerpodClientService {
+  Future<void> saveAuthToken(String token) async {
+    if (_keyProvider != null) {
+      await _keyProvider!.put(token);
+    } else {
+      await _client?.authenticationKeyManager?.put(token);
+    }
+  }
+
+  Future<void> clearAuthToken() async {
+    if (_keyProvider != null) {
+      await _keyProvider!.remove();
+    } else {
+      await _client?.authenticationKeyManager?.remove();
+    }
+  }
+
+  Future<bool> hasAuth() async {
+    final header = await _client?.authKeyProvider?.authHeaderValue;
+    if (header != null) return true;
+    final legacy = await _client?.authenticationKeyManager?.get();
+    return legacy != null;
   }
 }

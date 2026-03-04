@@ -11,6 +11,7 @@ import '../widgets/start_session_button.dart';
 import 'video_call_screen.dart';
 import 'story_viewer_screen.dart';
 import 'create_story_screen.dart';
+import '../../../global_mirror/view/screens/mood_comment_notifications_screen.dart';
 
 /// Socials screen with active sessions and video call functionality
 class SocialsScreen extends ConsumerStatefulWidget {
@@ -86,7 +87,12 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           IconButton(
             icon: const FaIcon(FontAwesomeIcons.bell),
             onPressed: () {
-              // TODO: Show notifications
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MoodCommentNotificationsScreen(),
+                ),
+              );
             },
             color: theme.colorScheme.onSurface,
           ),
@@ -711,7 +717,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                       border: Border.all(
                         color: _isVoiceOnly
                             ? AppTheme.primaryColor
-                            : theme.colorScheme.onSurface.withOpacity(0.2),
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.2,
+                              ),
                       ),
                     ),
                     child: Column(
@@ -720,7 +728,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                           FontAwesomeIcons.phone,
                           color: _isVoiceOnly
                               ? AppTheme.primaryColor
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -732,7 +742,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                                 : FontWeight.normal,
                             color: _isVoiceOnly
                                 ? AppTheme.primaryColor
-                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                         ),
                       ],
@@ -772,7 +784,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.primaryColor),
                 ),

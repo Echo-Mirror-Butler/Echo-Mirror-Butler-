@@ -1,24 +1,12 @@
 import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
-import 'package:echomirror/core/services/serverpod_client_service.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as auth_core;
 
-// Import the generated mocks file (will be created by build_runner)
-import 'auth_repository_test.mocks.dart';
+// This test avoids code generation by using lightweight fakes
 
-// Generate mocks for the required dependencies
-// Run: flutter pub run build_runner build --delete-conflicting-outputs
-@GenerateMocks([
-  ServerpodClientService,
-  SharedPreferences,
-  AuthenticationKeyManager,
-  EndpointEmailIdp,
-])
 void main() {
   // Test data constants
   const testEmail = 'test@example.com';
@@ -32,17 +20,17 @@ void main() {
 
   // Mock instances
   late _TestClient mockClient;
-  late MockAuthenticationKeyManager mockAuthKeyManager;
-  late MockEndpointEmailIdp mockEmailIdp;
+  late _FakeAuthenticationKeyManager fakeAuthKeyManager;
+  late _FakeEndpointEmailIdp fakeEmailIdp;
   late AuthRepository authRepository;
 
   setUp(() {
-    // Initialize mocks before each test
-    mockEmailIdp = MockEndpointEmailIdp();
-    mockAuthKeyManager = MockAuthenticationKeyManager();
+    // Initialize fakes before each test
+    fakeEmailIdp = _FakeEndpointEmailIdp();
+    fakeAuthKeyManager = _FakeAuthenticationKeyManager();
     mockClient = _TestClient(
-      emailIdp: mockEmailIdp,
-      keyManager: mockAuthKeyManager,
+      emailIdp: fakeEmailIdp,
+      keyManager: fakeAuthKeyManager,
     );
 
     // Set up SharedPreferences with mock initial values
@@ -51,8 +39,8 @@ void main() {
     // Initialize the repository with the mock client
     authRepository = AuthRepository(client: mockClient);
 
-    // Wire up key manager mocks
-    when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
+    // Initial state: no token
+    fakeAuthKeyManager.storedToken = null;
   });
 
   tearDown(() {
@@ -84,20 +72,7 @@ void main() {
           token: testJwtToken,
           userId: testUserId,
         );
-
-        // Mock the emailIdp.login call
-        when(
-          mockEmailIdp.login(
-            email: anyNamed('email'),
-            password: anyNamed('password'),
-          ),
-        ).thenAnswer((_) async => mockAuthSuccess);
-
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
-        when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
-
-        // Mock the second get() call to verify token was saved
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => testJwtToken);
+        fakeEmailIdp.loginResult = mockAuthSuccess;
 
         // Act
         final result = await authRepository.signIn(testEmail, testPassword);
@@ -113,23 +88,14 @@ void main() {
           token: testJwtToken,
           userId: testUserId,
         );
-
-        when(
-          mockEmailIdp.login(
-            email: anyNamed('email'),
-            password: anyNamed('password'),
-          ),
-        ).thenAnswer((_) async => mockAuthSuccess);
-
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
-        when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => testJwtToken);
+        fakeEmailIdp.loginResult = mockAuthSuccess;
 
         // Act
         await authRepository.signIn(testEmail, testPassword);
 
         // Assert
-        verify(mockAuthKeyManager.put(testJwtToken)).called(1);
+        expect(fakeAuthKeyManager.putCount, 1);
+        expect(fakeAuthKeyManager.storedToken, testJwtToken);
       });
 
       test('signIn saves user email and ID to SharedPreferences', () async {
@@ -138,17 +104,7 @@ void main() {
           token: testJwtToken,
           userId: testUserId,
         );
-
-        when(
-          mockEmailIdp.login(
-            email: anyNamed('email'),
-            password: anyNamed('password'),
-          ),
-        ).thenAnswer((_) async => mockAuthSuccess);
-
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
-        when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => testJwtToken);
+        fakeEmailIdp.loginResult = mockAuthSuccess;
 
         // Act
         await authRepository.signIn(testEmail, testPassword);
@@ -167,25 +123,15 @@ void main() {
             token: testJwtToken,
             userId: testUserId,
           );
-
-          when(
-            mockEmailIdp.login(
-              email: anyNamed('email'),
-              password: anyNamed('password'),
-            ),
-          ).thenAnswer((_) async => mockAuthSuccess);
-
-          when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
-          when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
-          when(mockAuthKeyManager.get()).thenAnswer((_) async => testJwtToken);
+          fakeEmailIdp.loginResult = mockAuthSuccess;
 
           // Act
           await authRepository.signIn(testEmail, testPassword);
 
           // Assert
-          verify(
-            mockEmailIdp.login(email: testEmail, password: testPassword),
-          ).called(1);
+          expect(fakeEmailIdp.loginCallCount, 1);
+          expect(fakeEmailIdp.lastLoginEmail, testEmail);
+          expect(fakeEmailIdp.lastLoginPassword, testPassword);
         },
       );
     });
@@ -193,12 +139,7 @@ void main() {
     group('Failure scenarios', () {
       test('signIn throws on wrong password', () async {
         // Arrange - Configure mock to throw exception on login
-        when(
-          mockEmailIdp.login(
-            email: anyNamed('email'),
-            password: anyNamed('password'),
-          ),
-        ).thenThrow(Exception('Invalid credentials'));
+        fakeEmailIdp.loginError = Exception('Invalid credentials');
 
         // Act & Assert
         expect(
@@ -213,15 +154,8 @@ void main() {
           token: '',
           userId: testUserId,
         );
-
-        when(
-          mockEmailIdp.login(
-            email: anyNamed('email'),
-            password: anyNamed('password'),
-          ),
-        ).thenAnswer((_) async => mockAuthSuccessNoToken);
-
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
+        fakeEmailIdp.loginResult = mockAuthSuccessNoToken;
+        fakeAuthKeyManager.storedToken = null;
 
         // Act & Assert
         expect(
@@ -244,18 +178,8 @@ void main() {
           token: testJwtToken,
           userId: testUserId,
         );
-
-        when(
-          mockEmailIdp.login(
-            email: anyNamed('email'),
-            password: anyNamed('password'),
-          ),
-        ).thenAnswer((_) async => mockAuthSuccess);
-
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
-        when(mockAuthKeyManager.put(any)).thenAnswer((_) async {});
-        // Second get() call returns null, indicating token wasn't saved
-        when(mockAuthKeyManager.get()).thenAnswer((_) async => null);
+        fakeEmailIdp.loginResult = mockAuthSuccess;
+        fakeAuthKeyManager.failSave = true;
 
         // Act & Assert
         expect(
@@ -272,12 +196,7 @@ void main() {
 
       test('signIn does not save SharedPreferences on failure', () async {
         // Arrange - Configure mock to throw exception on login
-        when(
-          mockEmailIdp.login(
-            email: anyNamed('email'),
-            password: anyNamed('password'),
-          ),
-        ).thenThrow(Exception('Invalid credentials'));
+        fakeEmailIdp.loginError = Exception('Invalid credentials');
 
         // Act
         try {
@@ -297,16 +216,15 @@ void main() {
   group('Sign Up Tests', () {
     test('signUp returns userId on valid input', () async {
       // Arrange
-      when(
-        mockEmailIdp.startRegistration(email: anyNamed('email')),
-      ).thenAnswer((_) async => UuidValue.fromString(testUserId));
+      fakeEmailIdp.startRegistrationResult = UuidValue.fromString(testUserId);
 
       // Act
       final id = await authRepository.signUp(testEmail, testPassword, testName);
 
       // Assert
       expect(id, testUserId);
-      verify(mockEmailIdp.startRegistration(email: testEmail)).called(1);
+      expect(fakeEmailIdp.startRegistrationCallCount, 1);
+      expect(fakeEmailIdp.lastStartRegistrationEmail, testEmail);
     });
   });
 
@@ -321,8 +239,8 @@ void main() {
       await prefs.setString('user_email', testEmail);
       await prefs.setString('user_id', testUserId);
 
-      // Stub remove on key manager
-      when(mockAuthKeyManager.remove()).thenAnswer((_) async {});
+      // Remove token via key manager
+      fakeAuthKeyManager.remove();
 
       // Act
       await authRepository.signOut();
@@ -330,7 +248,7 @@ void main() {
       // Assert: SharedPreferences cleared and key manager called
       expect(prefs.getString('user_email'), isNull);
       expect(prefs.getString('user_id'), isNull);
-      verify(mockAuthKeyManager.remove()).called(1);
+      expect(fakeAuthKeyManager.removeCount, 1);
     });
   });
 
@@ -388,7 +306,7 @@ class _TestClient extends Client {
     required AuthenticationKeyManager keyManager,
   }) : _emailIdp = emailIdp,
        _authKeyManager = keyManager,
-       super('http://localhost', authenticationKeyManager: keyManager);
+       super('http://localhost');
 
   @override
   EndpointEmailIdp get emailIdp => _emailIdp;
@@ -423,4 +341,145 @@ class _FakePasswordReset {
     String currentPassword,
     String newPassword,
   ) async => success;
+}
+
+// Lightweight fake AuthenticationKeyManager
+class _FakeAuthenticationKeyManager implements AuthenticationKeyManager {
+  String? storedToken;
+  int putCount = 0;
+  bool failSave = false;
+  int removeCount = 0;
+
+  @override
+  Future<String?> get() async {
+    return storedToken;
+  }
+
+  @override
+  Future<void> put(String token) async {
+    putCount += 1;
+    if (failSave) {
+      storedToken = null;
+      return;
+    }
+    storedToken = token;
+  }
+
+  @override
+  Future<void> remove() async {
+    storedToken = null;
+    removeCount += 1;
+  }
+
+  @override
+  Future<String?> getHeaderValue() async {
+    return toHeaderValue(storedToken);
+  }
+
+  @override
+  Future<String?> toHeaderValue(String? token) async {
+    if (token == null || token.isEmpty) return null;
+    return 'Bearer $token';
+  }
+
+  @override
+  Future<String?> get authHeaderValue async => toHeaderValue(storedToken);
+}
+
+// Lightweight fake EndpointEmailIdp
+class _FakeEndpointEmailIdp implements EndpointEmailIdp {
+  auth_core.AuthSuccess? loginResult;
+  Object? loginError;
+  UuidValue? startRegistrationResult;
+  int loginCallCount = 0;
+  String? lastLoginEmail;
+  String? lastLoginPassword;
+  int startRegistrationCallCount = 0;
+  String? lastStartRegistrationEmail;
+
+  @override
+  Future<auth_core.AuthSuccess> login({
+    required String email,
+    required String password,
+  }) async {
+    loginCallCount += 1;
+    lastLoginEmail = email;
+    lastLoginPassword = password;
+    if (loginError != null) {
+      throw loginError!;
+    }
+    return loginResult!;
+  }
+
+  @override
+  Future<UuidValue> startRegistration({required String email}) async {
+    startRegistrationCallCount += 1;
+    lastStartRegistrationEmail = email;
+    return startRegistrationResult!;
+  }
+
+  // Unused methods in tests, provide minimal stubs to satisfy interface
+  @override
+  Future<auth_core.AuthSuccess> finishRegistration({
+    required String registrationToken,
+    required String password,
+  }) async {
+    return loginResult ??
+        auth_core.AuthSuccess(
+          token: 'token',
+          authUserId: UuidValue.fromString(
+            '00000000-0000-0000-0000-000000000000',
+          ),
+          authStrategy: 'email',
+          scopeNames: const <String>{},
+        );
+  }
+
+  @override
+  Future<String> verifyRegistrationCode({
+    required UuidValue accountRequestId,
+    required String verificationCode,
+  }) async {
+    return 'token';
+  }
+
+  @override
+  Future<bool> hasAccount() async => true;
+
+  @override
+  Future<UuidValue> startPasswordReset({required String email}) async =>
+      UuidValue.fromString('00000000-0000-0000-0000-000000000001');
+
+  @override
+  Future<String> verifyPasswordResetCode({
+    required UuidValue passwordResetRequestId,
+    required String verificationCode,
+  }) async => 'finishPasswordResetToken';
+
+  @override
+  Future<void> finishPasswordReset({
+    required String finishPasswordResetToken,
+    required String newPassword,
+  }) async {}
+
+  @override
+  String get name => 'emailIdp';
+
+  @override
+  EndpointCaller get caller => throw UnimplementedError();
+
+  @override
+  void resetStream() {}
+
+  @override
+  Future<void> sendStreamMessage(SerializableModel message) async {}
+
+  @override
+  ServerpodClientShared get client => throw UnimplementedError();
+
+  @override
+  set client(ServerpodClientShared value) {}
+
+  @override
+  Stream<SerializableModel> get stream => Stream<SerializableModel>.empty();
 }

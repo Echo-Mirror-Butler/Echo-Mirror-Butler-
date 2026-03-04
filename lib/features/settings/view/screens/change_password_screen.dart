@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../auth/view/widgets/custom_text_field.dart';
+import '../../../auth/viewmodel/providers/auth_provider.dart';
 
 /// Change password screen for authenticated users
 class ChangePasswordScreen extends ConsumerStatefulWidget {
@@ -36,14 +37,37 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   Future<void> _handleChangePassword() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      // TODO: integrate change password with auth provider
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
+      try {
+        final ok = await ref
+            .read(authProvider.notifier)
+            .changePassword(
+              _currentPasswordController.text.trim(),
+              _newPasswordController.text.trim(),
+            );
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        if (ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Password updated successfully')),
+          );
+          context.pop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to update password'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password updated successfully')),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
         );
-        context.pop();
       }
     }
   }

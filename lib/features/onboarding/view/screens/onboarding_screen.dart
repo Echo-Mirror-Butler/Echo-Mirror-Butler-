@@ -80,22 +80,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // and the provider state is refreshed
       await Future.delayed(const Duration(milliseconds: 200));
 
-      if (mounted) {
-        // Navigate to login - the router redirect should now allow this
-        context.go('/login');
-      }
+      if (!mounted) return;
+      context.go('/login');
     } catch (e, stackTrace) {
       debugPrint('[OnboardingScreen] Error completing onboarding: $e');
       debugPrint('[OnboardingScreen] Stack trace: $stackTrace');
       // Fallback: try to navigate anyway after marking as completed
-      if (mounted) {
-        try {
-          await markOnboardingCompleted();
-          await Future.delayed(const Duration(milliseconds: 100));
-          context.go('/login');
-        } catch (e2) {
-          debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
-        }
+      if (!mounted) return;
+      try {
+        await markOnboardingCompleted();
+        await Future.delayed(const Duration(milliseconds: 100));
+        context.go('/login');
+      } catch (e2) {
+        debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
       }
     }
   }
@@ -124,7 +121,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ),
@@ -157,7 +154,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     count: _pages.length,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface.withOpacity(0.2),
+                      dotColor: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,
@@ -186,8 +183,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.7,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
                                 ),
                               ),
                             ),
@@ -285,7 +282,7 @@ class _OnboardingPage extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: data.gradient.first.withOpacity(0.3),
+                      color: data.gradient.first.withValues(alpha: 0.3),
                       blurRadius: 30,
                       spreadRadius: 10,
                     ),
@@ -369,8 +366,8 @@ class _OnboardingPage extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.2),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.2),
                     ],
                   ),
                 ),
@@ -432,7 +429,7 @@ class _OnboardingPage extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.normal,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.6,
               ),
               textAlign: TextAlign.center,

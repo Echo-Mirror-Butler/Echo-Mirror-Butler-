@@ -533,7 +533,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         await _handleBackButton();
       },
       child: Scaffold(
@@ -628,7 +628,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -703,10 +703,10 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -733,7 +733,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -779,7 +779,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.8),
+                        Colors.black.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -874,7 +874,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: avatarColor.withOpacity(0.3),
+                    color: avatarColor.withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -904,7 +904,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -951,11 +951,11 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               color: isDanger
                   ? Colors.red
                   : (isActive
-                        ? Colors.white.withOpacity(0.2)
-                        : Colors.red.withOpacity(0.8)),
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.red.withValues(alpha: 0.8)),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),

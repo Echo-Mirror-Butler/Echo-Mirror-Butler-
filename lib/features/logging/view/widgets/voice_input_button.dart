@@ -188,8 +188,10 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
         listenFor: const Duration(seconds: 30),
         pauseFor: const Duration(seconds: 3),
         localeId: 'en_US',
-        cancelOnError: true,
-        partialResults: true,
+        listenOptions: stt.SpeechListenOptions(
+          cancelOnError: true,
+          partialResults: true,
+        ),
       );
     } catch (e) {
       debugPrint('[VoiceInput] Error starting listening: $e');

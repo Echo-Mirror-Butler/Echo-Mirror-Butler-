@@ -18,7 +18,7 @@ class AuthRepository {
   Client get _client {
     // Use test client if provided (for testing)
     if (_testClient != null) {
-      return _testClient!;
+      return _testClient;
     }
 
     // Ensure client is initialized before use
@@ -30,6 +30,13 @@ class AuthRepository {
     return ServerpodClientService.instance.client;
   }
 
+  Future<bool> _hasAuth() async {
+    final header = await _client.authKeyProvider?.authHeaderValue;
+    if (header != null) return true;
+    final legacy = await _client.authenticationKeyManager?.get();
+    return legacy != null;
+  }
+
   /// Sign in with email and password
   /// Returns user ID on success, throws exception on failure
   Future<String> signIn(String email, String password) async {
@@ -37,9 +44,9 @@ class AuthRepository {
       debugPrint('[AuthRepository] signIn -> $email');
 
       // Check if we have a key before login
-      final keyBefore = await _client.authenticationKeyManager?.get();
+      final keyBeforeHeader = await _client.authKeyProvider?.authHeaderValue;
       debugPrint(
-        '[AuthRepository] Key before login: ${keyBefore != null ? "exists" : "null"}',
+        '[AuthRepository] Key before login: ${keyBeforeHeader != null ? "exists" : "null"}',
       );
 
       // Login and get the response
@@ -85,7 +92,7 @@ class AuthRepository {
       debugPrint(
         '[AuthRepository] Saving JWT authentication token (${token.length} chars)...',
       );
-      await _client.authenticationKeyManager?.put(token);
+      await ServerpodClientService.instance.saveAuthToken(token);
 
       // Save user info (email and authUserId) to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
@@ -101,8 +108,12 @@ class AuthRepository {
       }
 
       // Verify the token was saved
+      final header = await _client.authKeyProvider?.authHeaderValue;
       final savedToken = await _client.authenticationKeyManager?.get();
-      if (savedToken == null || savedToken != token) {
+      final ok = header != null
+          ? (header.startsWith('Bearer ') && header.substring(7) == token)
+          : (savedToken == token);
+      if (!ok) {
         debugPrint('[AuthRepository] ❌ ERROR: Token was not saved correctly!');
         throw Exception('Failed to save authentication token');
       }
@@ -204,7 +215,7 @@ class AuthRepository {
       // Serverpod handles sign out through session management
       // Clear the authentication key and user info
       debugPrint('[AuthRepository] signOut');
-      await _client.authenticationKeyManager?.remove();
+      await ServerpodClientService.instance.clearAuthToken();
 
       // Clear saved user info
       final prefs = await SharedPreferences.getInstance();
@@ -222,8 +233,8 @@ class AuthRepository {
   Future<Map<String, dynamic>?> getCurrentUser() async {
     try {
       // Check if we have an authentication key
-      final key = await _client.authenticationKeyManager?.get();
-      if (key == null) {
+      final hasAuth = await _hasAuth();
+      if (!hasAuth) {
         debugPrint('[AuthRepository] getCurrentUser: No authentication key');
         return null;
       }
@@ -257,8 +268,7 @@ class AuthRepository {
   /// Check if user is authenticated
   Future<bool> isAuthenticated() async {
     try {
-      final key = await _client.authenticationKeyManager?.get();
-      return key != null;
+      return await _hasAuth();
     } catch (e) {
       debugPrint('[AuthRepository] isAuthenticated error -> $e');
       return false;

@@ -64,7 +64,7 @@ class ActiveSessionsStories extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: theme.colorScheme.onSurface.withOpacity(0.3),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -131,7 +131,7 @@ class ActiveSessionsStories extends StatelessWidget {
                           ? LinearGradient(
                               colors: [
                                 AppTheme.primaryColor,
-                                AppTheme.primaryColor.withOpacity(0.6),
+                                AppTheme.primaryColor.withValues(alpha: 0.6),
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -139,7 +139,7 @@ class ActiveSessionsStories extends StatelessWidget {
                           : null,
                       color: isActive
                           ? null
-                          : theme.colorScheme.onSurface.withOpacity(0.2),
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.2),
                     ),
                     child: Container(
                       margin: const EdgeInsets.all(3),
