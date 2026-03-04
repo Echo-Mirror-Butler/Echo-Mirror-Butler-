@@ -79,6 +79,10 @@ class EndpointEmailIdp extends _i5.EndpointEmailIdpBase {
   @override
   String get name => 'emailIdp';
 
+  @override
+  _i2.Future<bool> hasAccount() =>
+      caller.callServerEndpoint<bool>('emailIdp', 'hasAccount', {});
+
   /// Logs in the user and returns a new session.
   ///
   /// Throws an [EmailAccountLoginException] in case of errors, with reason:
