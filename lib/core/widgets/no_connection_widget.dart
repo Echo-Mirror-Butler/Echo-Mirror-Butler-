@@ -6,11 +6,7 @@ import '../themes/app_theme.dart';
 
 /// Reusable no internet connection empty state widget
 class NoConnectionWidget extends StatelessWidget {
-  const NoConnectionWidget({
-    super.key,
-    required this.onRetry,
-    this.message,
-  });
+  const NoConnectionWidget({super.key, required this.onRetry, this.message});
 
   final VoidCallback onRetry;
   final String? message;

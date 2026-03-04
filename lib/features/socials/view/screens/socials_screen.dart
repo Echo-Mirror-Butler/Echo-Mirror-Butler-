@@ -124,19 +124,18 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                           ),
                         );
                         // Refresh sessions when returning from video call
-                        ref
-                            .read(socialsProvider.notifier)
-                            .loadActiveSessions();
+                        ref.read(socialsProvider.notifier).loadActiveSessions();
                       },
                       onStoryTap: (story) {
                         // Filter stories to show only this user's stories
                         // (like Instagram)
-                        final userStories = socialsState.stories
-                            .where((s) => s.userId == story.userId)
-                            .toList()
-                          ..sort(
-                            (a, b) => b.createdAt.compareTo(a.createdAt),
-                          ); // Most recent first
+                        final userStories =
+                            socialsState.stories
+                                .where((s) => s.userId == story.userId)
+                                .toList()
+                              ..sort(
+                                (a, b) => b.createdAt.compareTo(a.createdAt),
+                              ); // Most recent first
 
                         Navigator.push(
                           context,
@@ -182,8 +181,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                   // Scheduled Sessions
                   if (socialsState.scheduledSessions.isNotEmpty)
                     SliverToBoxAdapter(
-                      child:
-                          _buildScheduledSessionsList(socialsState, theme),
+                      child: _buildScheduledSessionsList(socialsState, theme),
                     ),
 
                   // Active Sessions or Empty State
@@ -529,8 +527,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
             final day = scheduledTime.day;
             final month = scheduledTime.month;
             final hour = scheduledTime.hour;
-            final minute =
-                scheduledTime.minute.toString().padLeft(2, '0');
+            final minute = scheduledTime.minute.toString().padLeft(2, '0');
             messenger.showSnackBar(
               SnackBar(
                 content: Text(
