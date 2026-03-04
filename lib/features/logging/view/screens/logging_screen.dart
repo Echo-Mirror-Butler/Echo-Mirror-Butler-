@@ -136,8 +136,7 @@ class LoggingScreen extends ConsumerWidget {
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
           error: (error, stack) => NoConnectionWidget(
-            onRetry: () =>
-                ref.refresh(loggingProvider),
+            onRetry: () => ref.refresh(loggingProvider),
           ),
         ),
       ),

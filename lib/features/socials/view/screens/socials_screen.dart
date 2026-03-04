@@ -103,93 +103,95 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                     ref.read(socialsProvider.notifier).loadActiveSessions(),
               )
             : CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // Stories and Live Sessions Bar
-            SliverToBoxAdapter(
-              child: StoriesBar(
-                liveSessions: socialsState.activeSessions,
-                stories: socialsState.stories,
-                onSessionTap: (session) async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VideoCallScreen(
-                        sessionId: session.id,
-                        isHost: false,
-                        sessionTitle: session.title,
-                        hostName: session.hostName,
-                      ),
-                    ),
-                  );
-                  // Refresh sessions when returning from video call
-                  ref.read(socialsProvider.notifier).loadActiveSessions();
-                },
-                onStoryTap: (story) {
-                  // Filter stories to show only this user's stories (like Instagram)
-                  final userStories =
-                      socialsState.stories
-                          .where((s) => s.userId == story.userId)
-                          .toList()
-                        ..sort(
-                          (a, b) => b.createdAt.compareTo(a.createdAt),
-                        ); // Most recent first
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Stories and Live Sessions Bar
+                  SliverToBoxAdapter(
+                    child: StoriesBar(
+                      liveSessions: socialsState.activeSessions,
+                      stories: socialsState.stories,
+                      onSessionTap: (session) async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoCallScreen(
+                              sessionId: session.id,
+                              isHost: false,
+                              sessionTitle: session.title,
+                              hostName: session.hostName,
+                            ),
+                          ),
+                        );
+                        // Refresh sessions when returning from video call
+                        ref
+                            .read(socialsProvider.notifier)
+                            .loadActiveSessions();
+                      },
+                      onStoryTap: (story) {
+                        // Filter stories to show only this user's stories (like Instagram)
+                        final userStories = socialsState.stories
+                            .where((s) => s.userId == story.userId)
+                            .toList()
+                          ..sort(
+                            (a, b) => b.createdAt.compareTo(a.createdAt),
+                          ); // Most recent first
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StoryViewerScreen(
-                        stories: userStories,
-                        initialIndex:
-                            0, // Always start at the first (most recent) story
-                      ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StoryViewerScreen(
+                              stories: userStories,
+                              initialIndex: 0,
+                              // Always start at the first (most recent) story
+                            ),
+                          ),
+                        ).then((_) {
+                          // Refresh stories after viewing
+                          ref.read(socialsProvider.notifier).loadStories();
+                        });
+                      },
+                      onAddStory: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateStoryScreen(),
+                          ),
+                        );
+                        if (result == true) {
+                          // Refresh stories after creating
+                          ref.read(socialsProvider.notifier).loadStories();
+                        }
+                      },
                     ),
-                  ).then((_) {
-                    // Refresh stories after viewing
-                    ref.read(socialsProvider.notifier).loadStories();
-                  });
-                },
-                onAddStory: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateStoryScreen(),
-                    ),
-                  );
-                  if (result == true) {
-                    // Refresh stories after creating
-                    ref.read(socialsProvider.notifier).loadStories();
-                  }
-                },
-              ),
-            ),
-
-            // Start Session Button (Circle with Plus)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: StartSessionButton(
-                    onTap: () => _showStartSessionDialog(context),
                   ),
-                ),
-              ),
-            ),
 
-            // Scheduled Sessions
-            if (socialsState.scheduledSessions.isNotEmpty)
-              SliverToBoxAdapter(
-                child: _buildScheduledSessionsList(socialsState, theme),
-              ),
+                  // Start Session Button (Circle with Plus)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: StartSessionButton(
+                          onTap: () => _showStartSessionDialog(context),
+                        ),
+                      ),
+                    ),
+                  ),
 
-            // Active Sessions or Empty State
-            SliverToBoxAdapter(
-              child: socialsState.activeSessions.isEmpty
-                  ? _buildEmptyState(theme)
-                  : _buildRecentSessionsList(socialsState, theme),
-            ),
-          ],
-        ),
+                  // Scheduled Sessions
+                  if (socialsState.scheduledSessions.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child:
+                          _buildScheduledSessionsList(socialsState, theme),
+                    ),
+
+                  // Active Sessions or Empty State
+                  SliverToBoxAdapter(
+                    child: socialsState.activeSessions.isEmpty
+                        ? _buildEmptyState(theme)
+                        : _buildRecentSessionsList(socialsState, theme),
+                  ),
+                ],
+              ),
       ),
     );
   }
