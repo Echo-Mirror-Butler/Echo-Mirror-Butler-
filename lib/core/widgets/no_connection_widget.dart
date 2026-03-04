@@ -67,8 +67,7 @@ class NoConnectionWidget extends StatelessWidget {
                 delay: const Duration(milliseconds: 300),
                 duration: const Duration(milliseconds: 600),
                 child: Text(
-                  message ??
-                      'Please check your internet connection and try again.',
+                  message ?? 'Please check your internet connection and retry.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: isMobile ? 14 : 16,
