@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/animated_card.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
@@ -134,36 +135,9 @@ class LoggingScreen extends ConsumerWidget {
           },
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
-          error: (error, stack) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        FontAwesomeIcons.triangleExclamation,
-                        size: 64,
-                        color: AppTheme.errorColor,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading entries',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        error.toString(),
-                        style: theme.textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          error: (error, stack) => NoConnectionWidget(
+            onRetry: () =>
+                ref.refresh(loggingProvider),
           ),
         ),
       ),

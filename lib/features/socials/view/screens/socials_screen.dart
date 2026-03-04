@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../widgets/stories_bar.dart';
@@ -96,7 +97,12 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
         onRefresh: () async {
           await ref.read(socialsProvider.notifier).loadActiveSessions();
         },
-        child: CustomScrollView(
+        child: socialsState.error != null
+            ? NoConnectionWidget(
+                onRetry: () =>
+                    ref.read(socialsProvider.notifier).loadActiveSessions(),
+              )
+            : CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             // Stories and Live Sessions Bar
