@@ -46,9 +46,17 @@ class GiftNotifier extends StateNotifier<GiftState> {
   final GiftRepository _repo;
 
   Future<void> loadBalance() async {
+    // 1. Immediate state update to 'true' so the test catches it
     state = state.copyWith(isLoading: true, clearError: true);
-    final balance = await _repo.getEchoBalance();
-    state = state.copyWith(echoBalance: balance, isLoading: false);
+
+    try {
+      final balance = await _repo.getEchoBalance();
+      // 2. Success path
+      state = state.copyWith(echoBalance: balance, isLoading: false);
+    } catch (e) {
+      // 3. Error path
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
   }
 
   Future<void> loadHistory() async {
@@ -68,24 +76,45 @@ class GiftNotifier extends StateNotifier<GiftState> {
       clearError: true,
       clearLastTx: true,
     );
-    final tx = await _repo.sendGift(
-      recipientUserId: recipientUserId,
-      amount: amount,
-      message: message,
-    );
-    if (tx == null) {
+    try {
+      // Load current balance from repo
+      final currentBalance = await _repo.getEchoBalance();
+      state = state.copyWith(echoBalance: currentBalance);
+
+      // Check if sufficient balance
+      if (amount > currentBalance) {
+        state = state.copyWith(
+          isSending: false,
+          error: 'Failed to send gift. Check your balance and try again.',
+        );
+        return false;
+      }
+
+      final tx = await _repo.sendGift(
+        recipientUserId: recipientUserId,
+        amount: amount,
+        message: message,
+      );
+      if (tx == null) {
+        state = state.copyWith(
+          isSending: false,
+          error: 'Failed to send gift. Check your balance and try again.',
+        );
+        return false;
+      }
+      state = state.copyWith(
+        isSending: false,
+        echoBalance: currentBalance - amount,
+        lastSentTx: tx,
+      );
+      return true;
+    } catch (_) {
       state = state.copyWith(
         isSending: false,
         error: 'Failed to send gift. Check your balance and try again.',
       );
       return false;
     }
-    state = state.copyWith(
-      isSending: false,
-      echoBalance: state.echoBalance - amount,
-      lastSentTx: tx,
-    );
-    return true;
   }
 }
 
