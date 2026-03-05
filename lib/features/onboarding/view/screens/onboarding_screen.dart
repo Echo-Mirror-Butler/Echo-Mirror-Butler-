@@ -154,7 +154,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     count: _pages.length,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                      dotColor: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.2,
+                      ),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,

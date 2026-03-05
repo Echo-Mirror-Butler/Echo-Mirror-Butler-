@@ -229,7 +229,65 @@ void main() {
   });
 
   group('Complete Sign Up Tests', () {
-    // Tests will be implemented in subsequent tasks
+    const testAccountRequestId = testUserId;
+    const testVerificationCode = '123456';
+
+    test('completeSignUp returns account request ID on success', () async {
+      // Arrange
+      fakeEmailIdp.verifyRegistrationCodeResult = 'registration-token-123';
+      fakeEmailIdp.finishRegistrationSuccess = true;
+
+      // Act
+      final result = await authRepository.completeSignUp(
+        accountRequestId: testAccountRequestId,
+        verificationCode: testVerificationCode,
+        password: testPassword,
+      );
+
+      // Assert
+      expect(result, testAccountRequestId);
+      expect(fakeEmailIdp.verifyRegistrationCodeCallCount, 1);
+      expect(fakeEmailIdp.finishRegistrationCallCount, 1);
+    });
+
+    test('completeSignUp throws on invalid accountRequestId format', () async {
+      // Arrange
+      const invalidUuid = 'not-a-uuid';
+
+      // Act & Assert
+      expect(
+        () => authRepository.completeSignUp(
+          accountRequestId: invalidUuid,
+          verificationCode: testVerificationCode,
+          password: testPassword,
+        ),
+        throwsA(
+          predicate(
+            (e) =>
+                e is Exception &&
+                (e.toString().contains('Invalid accountRequestId format') ||
+                    e.toString().contains('Complete sign up failed')),
+          ),
+        ),
+      );
+    });
+
+    test('completeSignUp throws on invalid verification code', () async {
+      // Arrange
+      fakeEmailIdp.verifyRegistrationCodeError = Exception(
+        'Invalid verification code',
+      );
+
+      // Act & Assert
+      expect(
+        () => authRepository.completeSignUp(
+          accountRequestId: testAccountRequestId,
+          verificationCode: 'wrong-code',
+          password: testPassword,
+        ),
+        throwsA(isA<Exception>()),
+      );
+    });
   });
 
   group('Sign Out Tests', () {
@@ -238,9 +296,10 @@ void main() {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', testEmail);
       await prefs.setString('user_id', testUserId);
+      fakeAuthKeyManager.storedToken = testJwtToken;
 
-      // Remove token via key manager
-      fakeAuthKeyManager.remove();
+      // Reset the remove count before the test
+      fakeAuthKeyManager.removeCount = 0;
 
       // Act
       await authRepository.signOut();
@@ -253,11 +312,72 @@ void main() {
   });
 
   group('Get Current User Tests', () {
-    // Tests will be implemented in subsequent tasks
+    test('getCurrentUser returns user data when authenticated', () async {
+      // Arrange: set up authentication
+      fakeAuthKeyManager.storedToken = testJwtToken;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', testEmail);
+      await prefs.setString('user_id', testUserId);
+
+      // Act
+      final user = await authRepository.getCurrentUser();
+
+      // Assert
+      expect(user, isNotNull);
+      expect(user!['id'], testUserId);
+      expect(user['email'], testEmail);
+      expect(user.containsKey('name'), isTrue);
+      expect(user.containsKey('createdAt'), isTrue);
+    });
+
+    test('getCurrentUser returns null without authentication key', () async {
+      // Arrange: no authentication key
+      fakeAuthKeyManager.storedToken = null;
+
+      // Act
+      final user = await authRepository.getCurrentUser();
+
+      // Assert
+      expect(user, isNull);
+    });
+
+    test('getCurrentUser returns null without saved user_id', () async {
+      // Arrange: has auth key but no user_id in SharedPreferences
+      fakeAuthKeyManager.storedToken = testJwtToken;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', testEmail);
+      // Don't set user_id
+
+      // Act
+      final user = await authRepository.getCurrentUser();
+
+      // Assert
+      expect(user, isNull);
+    });
   });
 
   group('Is Authenticated Tests', () {
-    // Tests will be implemented in subsequent tasks
+    test('isAuthenticated returns true with valid key', () async {
+      // Arrange
+      fakeAuthKeyManager.storedToken = testJwtToken;
+
+      // Act
+      final result = await authRepository.isAuthenticated();
+
+      // Assert
+      expect(result, isTrue);
+    });
+
+    test('isAuthenticated returns false without key', () async {
+      // Arrange
+      fakeAuthKeyManager.storedToken = null;
+
+      // Act
+      final result = await authRepository.isAuthenticated();
+
+      // Assert
+      expect(result, isFalse);
+    });
   });
 
   group('Request Password Reset Tests', () {
@@ -291,7 +411,39 @@ void main() {
   });
 
   group('Change Password Tests', () {
-    // Optional: covered by repository; not required by acceptance
+    test('changePassword returns true on success', () async {
+      // Arrange
+      mockClient.passwordResetStub = _FakePasswordReset(success: true);
+
+      // Act
+      final result = await authRepository.changePassword(
+        testPassword,
+        testNewPassword,
+      );
+
+      // Assert
+      expect(result, isTrue);
+    });
+
+    test('changePassword throws on failure', () async {
+      // Arrange
+      mockClient.passwordResetStub = _FakePasswordReset(
+        success: false,
+        shouldThrow: true,
+      );
+
+      // Act & Assert
+      expect(
+        () => authRepository.changePassword(testPassword, testNewPassword),
+        throwsA(
+          predicate(
+            (e) =>
+                e is Exception &&
+                e.toString().contains('Password change failed'),
+          ),
+        ),
+      );
+    });
   });
 }
 
@@ -300,19 +452,31 @@ class _TestClient extends Client {
   final EndpointEmailIdp _emailIdp;
   final AuthenticationKeyManager _authKeyManager;
   Object? passwordResetStub;
+  ClientAuthKeyProvider? _authKeyProvider;
 
   _TestClient({
     required EndpointEmailIdp emailIdp,
     required AuthenticationKeyManager keyManager,
   }) : _emailIdp = emailIdp,
        _authKeyManager = keyManager,
-       super('http://localhost');
+       super('http://localhost') {
+    // Create a fake auth key provider that wraps the key manager
+    _authKeyProvider = _FakeAuthKeyProvider(keyManager);
+  }
 
   @override
   EndpointEmailIdp get emailIdp => _emailIdp;
 
   @override
   AuthenticationKeyManager? get authenticationKeyManager => _authKeyManager;
+
+  @override
+  ClientAuthKeyProvider? get authKeyProvider => _authKeyProvider;
+
+  @override
+  set authKeyProvider(ClientAuthKeyProvider? provider) {
+    _authKeyProvider = provider;
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
@@ -326,21 +490,47 @@ class _TestClient extends Client {
 
 // No additional mock classes needed when using real AuthSuccess
 
+// Fake AuthKeyProvider that wraps AuthenticationKeyManager
+class _FakeAuthKeyProvider implements ClientAuthKeyProvider {
+  final AuthenticationKeyManager _keyManager;
+
+  _FakeAuthKeyProvider(this._keyManager);
+
+  @override
+  Future<String?> get authHeaderValue async {
+    final token = await _keyManager.get();
+    if (token == null || token.isEmpty) return null;
+    return 'Bearer $token';
+  }
+}
+
 // Minimal fake PasswordReset handler used via dynamic
 class _FakePasswordReset {
   final bool success;
-  _FakePasswordReset({required this.success});
+  final bool shouldThrow;
+  _FakePasswordReset({required this.success, this.shouldThrow = false});
 
-  Future<bool> requestPasswordReset(String email) async => success;
+  Future<bool> requestPasswordReset(String email) async {
+    if (shouldThrow) throw Exception('Password reset request failed');
+    return success;
+  }
+
   Future<bool> resetPassword(
     String email,
     String token,
     String newPassword,
-  ) async => success;
+  ) async {
+    if (shouldThrow) throw Exception('Password reset failed');
+    return success;
+  }
+
   Future<bool> changePassword(
     String currentPassword,
     String newPassword,
-  ) async => success;
+  ) async {
+    if (shouldThrow) throw Exception('Password change failed');
+    return success;
+  }
 }
 
 // Lightweight fake AuthenticationKeyManager
@@ -391,11 +581,16 @@ class _FakeEndpointEmailIdp implements EndpointEmailIdp {
   auth_core.AuthSuccess? loginResult;
   Object? loginError;
   UuidValue? startRegistrationResult;
+  String? verifyRegistrationCodeResult;
+  Object? verifyRegistrationCodeError;
+  bool finishRegistrationSuccess = false;
   int loginCallCount = 0;
   String? lastLoginEmail;
   String? lastLoginPassword;
   int startRegistrationCallCount = 0;
   String? lastStartRegistrationEmail;
+  int verifyRegistrationCodeCallCount = 0;
+  int finishRegistrationCallCount = 0;
 
   @override
   Future<auth_core.AuthSuccess> login({
@@ -418,12 +613,27 @@ class _FakeEndpointEmailIdp implements EndpointEmailIdp {
     return startRegistrationResult!;
   }
 
-  // Unused methods in tests, provide minimal stubs to satisfy interface
+  @override
+  Future<String> verifyRegistrationCode({
+    required UuidValue accountRequestId,
+    required String verificationCode,
+  }) async {
+    verifyRegistrationCodeCallCount += 1;
+    if (verifyRegistrationCodeError != null) {
+      throw verifyRegistrationCodeError!;
+    }
+    return verifyRegistrationCodeResult ?? 'registration-token';
+  }
+
   @override
   Future<auth_core.AuthSuccess> finishRegistration({
     required String registrationToken,
     required String password,
   }) async {
+    finishRegistrationCallCount += 1;
+    if (!finishRegistrationSuccess) {
+      throw Exception('Registration failed');
+    }
     return loginResult ??
         auth_core.AuthSuccess(
           token: 'token',
@@ -433,14 +643,6 @@ class _FakeEndpointEmailIdp implements EndpointEmailIdp {
           authStrategy: 'email',
           scopeNames: const <String>{},
         );
-  }
-
-  @override
-  Future<String> verifyRegistrationCode({
-    required UuidValue accountRequestId,
-    required String verificationCode,
-  }) async {
-    return 'token';
   }
 
   @override

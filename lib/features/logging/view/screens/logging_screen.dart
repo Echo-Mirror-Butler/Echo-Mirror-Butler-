@@ -64,7 +64,9 @@ class LoggingScreen extends ConsumerWidget {
                           Icon(
                             FontAwesomeIcons.book,
                             size: 64,
-                            color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -99,7 +101,9 @@ class LoggingScreen extends ConsumerWidget {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        backgroundColor: AppTheme.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
                         child: Icon(
                           _getMoodIcon(entry.mood),
                           color: AppTheme.primaryColor,
@@ -118,7 +122,9 @@ class LoggingScreen extends ConsumerWidget {
                       trailing: Icon(
                         FontAwesomeIcons.chevronRight,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       onTap: () {
                         context.push(

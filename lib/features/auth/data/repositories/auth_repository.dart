@@ -92,7 +92,12 @@ class AuthRepository {
       debugPrint(
         '[AuthRepository] Saving JWT authentication token (${token.length} chars)...',
       );
-      await ServerpodClientService.instance.saveAuthToken(token);
+      // Use test client's key manager directly if in test mode
+      if (_testClient != null) {
+        await _client.authenticationKeyManager?.put(token);
+      } else {
+        await ServerpodClientService.instance.saveAuthToken(token);
+      }
 
       // Save user info (email and authUserId) to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
@@ -215,7 +220,12 @@ class AuthRepository {
       // Serverpod handles sign out through session management
       // Clear the authentication key and user info
       debugPrint('[AuthRepository] signOut');
-      await ServerpodClientService.instance.clearAuthToken();
+      // Use test client's key manager directly if in test mode
+      if (_testClient != null) {
+        await _client.authenticationKeyManager?.remove();
+      } else {
+        await ServerpodClientService.instance.clearAuthToken();
+      }
 
       // Clear saved user info
       final prefs = await SharedPreferences.getInstance();
