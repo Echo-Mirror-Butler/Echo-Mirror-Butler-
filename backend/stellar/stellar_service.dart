@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import 'stellar_config.dart';
@@ -21,13 +22,13 @@ class StellarService {
   /// Returns the [KeyPair] containing both public and secret keys.
   static Future<KeyPair> createWallet() async {
     final keypair = KeyPair.random();
-    await _fundViafriendbot(keypair.accountId);
+    await _fundViaFriendbot(keypair.accountId);
     debugPrint('[StellarService] Created wallet: ${keypair.accountId}');
     return keypair;
   }
 
   /// Funds a testnet account with XLM via Stellar Friendbot.
-  static Future<void> _fundViafriendbot(String publicKey) async {
+  static Future<void> _fundViaFriendbot(String publicKey) async {
     final url = '${StellarConfig.friendbotUrl}?addr=$publicKey';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode != 200) {
