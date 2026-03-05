@@ -30,12 +30,9 @@ webServer:
 # This is the database setup for your server.
 database:
   host: localhost
-  port: 5432
+  port: 8090
   name: echomirror_server
   user: postgres
-  #requireSsl: true # defaults to false
-  #isUnixSocket: true # defaults to false
-  #maxConnectionCount: 10 # Defaults to 10, a negative or null value removes the limit
 
 # This is the setup for Redis.
 redis:

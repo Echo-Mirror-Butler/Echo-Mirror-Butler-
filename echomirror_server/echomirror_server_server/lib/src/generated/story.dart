@@ -56,11 +56,11 @@ abstract class Story implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       expiresAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['expiresAt'],
       ),
-      viewCount: jsonSerialization['viewCount'] as int,
+      viewCount: jsonSerialization['viewCount'] as int?,
       viewedBy: _i2.Protocol().deserialize<List<String>>(
         jsonSerialization['viewedBy'],
       ),
-      isActive: jsonSerialization['isActive'] as bool,
+      isActive: jsonSerialization['isActive'] as bool?,
     );
   }
 

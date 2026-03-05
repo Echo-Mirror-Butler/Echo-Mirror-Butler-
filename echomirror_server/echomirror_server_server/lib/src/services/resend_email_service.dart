@@ -13,9 +13,9 @@ class ResendEmailService {
     required String apiKey,
     required String fromEmail,
     String fromName = 'EchoMirror',
-  })  : _apiKey = apiKey,
-        _fromEmail = fromEmail,
-        _fromName = fromName;
+  }) : _apiKey = apiKey,
+       _fromEmail = fromEmail,
+       _fromName = fromName;
 
   Future<bool> sendVerificationEmail({
     required String toEmail,
@@ -41,7 +41,8 @@ class ResendEmailService {
         return true;
       } else {
         print(
-            '[ResendEmail] ⚠️  Failed to send email. Status: ${response.statusCode}, Body: ${response.body}');
+          '[ResendEmail] ⚠️  Failed to send email. Status: ${response.statusCode}, Body: ${response.body}',
+        );
         return false;
       }
     } catch (e) {
@@ -74,7 +75,8 @@ class ResendEmailService {
         return true;
       } else {
         print(
-            '[ResendEmail] ⚠️  Failed to send email. Status: ${response.statusCode}, Body: ${response.body}');
+          '[ResendEmail] ⚠️  Failed to send email. Status: ${response.statusCode}, Body: ${response.body}',
+        );
         return false;
       }
     } catch (e) {
@@ -247,4 +249,3 @@ class ResendEmailService {
 ''';
   }
 }
-
