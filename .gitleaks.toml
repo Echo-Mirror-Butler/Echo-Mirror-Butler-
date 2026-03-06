@@ -1,0 +1,6 @@
+[allowlist]
+  paths = [
+    '''echomirror_server/echomirror_server_server/.env.example''',
+    '''backend/stellar/stellar_config.dart''',
+    '''backend/.env.example''',
+  ]
