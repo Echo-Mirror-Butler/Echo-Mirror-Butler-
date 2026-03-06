@@ -30,5 +30,42 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
-      - name: Run tests
-        run: flutter test --exclude-tags integration
+      - name: Run tests with coverage
+        run: flutter test --exclude-tags integration --coverage
+
+      - name: Check coverage threshold
+        run: |
+          LCOV_FILE="coverage/lcov.info"
+
+          if [ ! -f "$LCOV_FILE" ]; then
+            echo "Coverage file not found at $LCOV_FILE"
+            exit 1
+          fi
+
+          # Sum up all lines found (LF) and lines hit (LH) across the report
+          TOTAL_LINES=$(grep -h "^LF:" "$LCOV_FILE" | cut -d: -f2 | paste -sd+ - | bc)
+          COVERED_LINES=$(grep -h "^LH:" "$LCOV_FILE" | cut -d: -f2 | paste -sd+ - | bc)
+
+          if [ -z "$TOTAL_LINES" ] || [ -z "$COVERED_LINES" ] || [ "$TOTAL_LINES" -eq 0 ]; then
+            echo "No executable lines found in coverage report. Marking coverage as 0%."
+            COVERAGE=0
+          else
+            COVERAGE=$(awk "BEGIN { printf \"%.2f\", ($COVERED_LINES / $TOTAL_LINES) * 100 }")
+          fi
+
+          echo "Total lines:   $TOTAL_LINES"
+          echo "Covered lines: $COVERED_LINES"
+          echo "Coverage:      $COVERAGE%"
+
+          # Initial minimum coverage threshold.
+          # Current suite sits around ~33%, so start slightly lower and
+          # increase over time as more tests are added.
+          THRESHOLD=30
+
+          # Fail the build if coverage drops below the threshold
+          if awk "BEGIN { exit !($COVERAGE < $THRESHOLD) }"; then
+            echo "Coverage $COVERAGE% is below minimum threshold of ${THRESHOLD}%"
+            exit 1
+          fi
+
+          echo "Coverage $COVERAGE% meets minimum threshold of ${THRESHOLD}%"
