@@ -263,10 +263,41 @@ class AuthRepository {
     String currentPassword,
     String newPassword,
   ) async {
-    debugPrint('[AuthRepository] changePassword');
-    throw Exception(
-      'Password change is not yet available. Please contact support.',
-    );
+    try {
+      debugPrint('[AuthRepository] changePassword');
+
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('user_email');
+
+      if (email == null) {
+        throw Exception('User email not found. Please log in again.');
+      }
+
+      try {
+        await _client.emailIdp.login(email: email, password: currentPassword);
+      } catch (e) {
+        debugPrint('[AuthRepository] Current password verification failed: $e');
+        throw Exception('Current password is incorrect');
+      }
+
+      final dynamic client = _client;
+      try {
+        final result = await client.emailIdp.changePassword(
+          oldPassword: currentPassword,
+          newPassword: newPassword,
+        ) as bool;
+        debugPrint('[AuthRepository] changePassword success -> $result');
+        return result;
+      } catch (e) {
+        debugPrint('[AuthRepository] changePassword endpoint error: $e');
+        throw Exception(
+          'Password change is not yet available. Please contact support.',
+        );
+      }
+    } catch (e) {
+      debugPrint('[AuthRepository] changePassword error -> $e');
+      rethrow;
+    }
   }
 
   /// Request password reset
