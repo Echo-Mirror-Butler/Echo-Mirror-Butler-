@@ -123,7 +123,7 @@ class SharedPreferencesAuthKeyManager implements AuthenticationKeyManager {
     );
 
     // Verify it was saved
-    final saved = await _prefs.getString(_key);
+    final saved = _prefs.getString(_key);
     if (saved != null) {
       debugPrint(
         '[SharedPreferencesAuthKeyManager] ✅ Verified: Key is persisted',

@@ -69,8 +69,9 @@ void main() {
           } catch (e) {
             statusCode = 500;
           }
-          if (statusCode != 200)
+          if (statusCode != 200) {
             await Future.delayed(const Duration(seconds: 2));
+          }
           retries--;
         }
 
