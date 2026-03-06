@@ -8,7 +8,6 @@
 // ignore_for_file: type_literal_in_constant_pattern
 // ignore_for_file: use_super_parameters
 // ignore_for_file: invalid_use_of_internal_member
-
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
@@ -32,6 +31,8 @@ import 'package:echomirror_server_server/src/generated/scheduled_session.dart'
     as _i13;
 import 'package:echomirror_server_server/src/generated/story.dart' as _i14;
 import 'package:echomirror_server_server/src/generated/greeting.dart' as _i15;
+import 'package:echomirror_server_server/src/generated/future_calls.dart'
+    as _i16;
 import 'package:echomirror_server_server/src/generated/protocol.dart';
 import 'package:echomirror_server_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -139,6 +140,8 @@ void withServerpod(
 }
 
 class TestEndpoints {
+  late final futureCalls = _FutureCalls();
+
   late final _AiEndpoint ai;
 
   late final _EmailIdpEndpoint emailIdp;
@@ -169,6 +172,10 @@ class _InternalTestEndpoints extends TestEndpoints
     greeting = _GreetingEndpoint(endpoints, serializationManager);
     logging = _LoggingEndpoint(endpoints, serializationManager);
   }
+}
+
+class _FutureCalls {
+  late final cleanupTask = _CleanupTaskFutureCall();
 }
 
 class _AiEndpoint {
@@ -482,6 +489,34 @@ class _EmailIdpEndpoint {
                   _localCallContext.arguments,
                 )
                 as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<bool> hasAccount(_i1.TestSessionBuilder sessionBuilder) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'emailIdp',
+            method: 'hasAccount',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'emailIdp',
+          methodName: 'hasAccount',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<bool>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1875,5 +1910,23 @@ class _LoggingEndpoint {
         await _localUniqueSession.close();
       }
     });
+  }
+}
+
+class _CleanupTaskFutureCall {
+  Future<void> invoke(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i2.SerializableModel? data,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i16.CleanupTaskInvokeFutureCall().invoke(
+        _localUniqueSession,
+        data,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -46,7 +47,27 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     super.dispose();
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
   Future<void> _handleSend() async {
+    final currentBalance = ref.read(giftProvider).echoBalance;
+
+    if (_selectedAmount <= 0) {
+      _showError('Amount must be greater than 0');
+      return;
+    }
+    if (_selectedAmount > currentBalance) {
+      _showError('Insufficient ECHO balance');
+      return;
+    }
+
     final success = await ref
         .read(giftProvider.notifier)
         .sendGift(
@@ -286,40 +307,53 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
   void _showCustomAmountDialog() {
     final controller = TextEditingController(
-      text: _selectedAmount.toStringAsFixed(0),
+      text: _selectedAmount.toStringAsFixed(1),
     );
+    String? errorText;
 
-    showDialog<void>(
+    showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Custom Amount'),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: false),
-          decoration: const InputDecoration(
-            labelText: 'ECHO amount (1-100)',
-            suffixText: 'ECHO',
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Custom Amount'),
+          content: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+            ],
+            decoration: InputDecoration(
+              labelText: 'ECHO amount (0.1–1000)',
+              suffixText: 'ECHO',
+              errorText: errorText,
+            ),
+            autofocus: true,
           ),
-          autofocus: true,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final parsed = double.tryParse(controller.text);
+                if (parsed == null) {
+                  setDialogState(() => errorText = 'Enter a valid number');
+                  return;
+                }
+                if (parsed < 0.1 || parsed > 1000) {
+                  setDialogState(
+                    () => errorText = 'Amount must be between 0.1 and 1000',
+                  );
+                  return;
+                }
+                setState(() => _selectedAmount = parsed);
+                Navigator.pop(ctx);
+              },
+              child: const Text('Set'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = double.tryParse(controller.text) ?? 1.0;
-              if (mounted) {
-                setState(() {
-                  _selectedAmount = value.clamp(1.0, 100.0);
-                });
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Set'),
-          ),
-        ],
       ),
     ).whenComplete(controller.dispose);
     // .whenComplete guarantees dispose() is called for every exit path:

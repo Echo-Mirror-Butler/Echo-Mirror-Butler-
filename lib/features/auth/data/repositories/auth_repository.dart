@@ -258,8 +258,56 @@ class AuthRepository {
     }
   }
 
+  /// Change password for authenticated user
+  Future<bool> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    try {
+      debugPrint('[AuthRepository] changePassword');
+
+      // Get current user email from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('user_email');
+
+      if (email == null) {
+        throw Exception('User email not found. Please log in again.');
+      }
+
+      // Verify current password by attempting to authenticate
+      try {
+        await _client.emailIdp.login(email: email, password: currentPassword);
+      } catch (e) {
+        debugPrint('[AuthRepository] Current password verification failed: $e');
+        throw Exception('Current password is incorrect');
+      }
+
+      // Use dynamic client to call changePassword endpoint if it exists
+      // This follows the same pattern as password reset
+      final dynamic client = _client;
+      try {
+        final result =
+            await client.emailIdp.changePassword(
+                  oldPassword: currentPassword,
+                  newPassword: newPassword,
+                )
+                as bool;
+        debugPrint('[AuthRepository] changePassword success -> $result');
+        return result;
+      } catch (e) {
+        // If the endpoint doesn't exist, throw a clear error
+        debugPrint('[AuthRepository] changePassword endpoint error: $e');
+        throw Exception(
+          'Password change is not yet available. Please contact support.',
+        );
+      }
+    } catch (e) {
+      debugPrint('[AuthRepository] changePassword error -> $e');
+      rethrow;
+    }
+  }
+
   /// Request password reset
-  /// Sends a reset token to the user's email
   Future<bool> requestPasswordReset(String email) async {
     try {
       debugPrint('[AuthRepository] requestPasswordReset -> $email');
@@ -295,29 +343,6 @@ class AuthRepository {
     } catch (e) {
       debugPrint('[AuthRepository] resetPassword error -> $e');
       throw Exception('Password reset failed: ${e.toString()}');
-    }
-  }
-
-  /// Change password for authenticated user
-  Future<bool> changePassword(
-    String currentPassword,
-    String newPassword,
-  ) async {
-    try {
-      debugPrint('[AuthRepository] changePassword');
-      // Call the password reset endpoint
-      final dynamic client = _client;
-      final result =
-          await client.passwordReset.changePassword(
-                currentPassword,
-                newPassword,
-              )
-              as bool;
-      debugPrint('[AuthRepository] changePassword success -> $result');
-      return result;
-    } catch (e) {
-      debugPrint('[AuthRepository] changePassword error -> $e');
-      throw Exception('Password change failed: ${e.toString()}');
     }
   }
 }

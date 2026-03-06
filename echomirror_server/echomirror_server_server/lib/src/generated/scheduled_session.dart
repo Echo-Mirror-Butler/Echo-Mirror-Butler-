@@ -63,8 +63,8 @@ abstract class ScheduledSession
       ),
       isVideoEnabled: jsonSerialization['isVideoEnabled'] as bool,
       isVoiceOnly: jsonSerialization['isVoiceOnly'] as bool,
-      isNotified: jsonSerialization['isNotified'] as bool,
-      isCancelled: jsonSerialization['isCancelled'] as bool,
+      isNotified: jsonSerialization['isNotified'] as bool?,
+      isCancelled: jsonSerialization['isCancelled'] as bool?,
       actualSessionId: jsonSerialization['actualSessionId'] as String?,
     );
   }
