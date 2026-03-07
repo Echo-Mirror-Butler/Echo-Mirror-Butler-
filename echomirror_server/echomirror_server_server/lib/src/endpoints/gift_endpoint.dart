@@ -20,10 +20,7 @@ class GiftEndpoint extends Endpoint {
     );
 
     if (wallet == null) {
-      final newWallet = EchoWallet(
-        userId: userId,
-        balance: 10.0,
-      );
+      final newWallet = EchoWallet(userId: userId, balance: 10.0);
       await EchoWallet.db.insertRow(session, newWallet);
       return 10.0;
     }
@@ -53,10 +50,7 @@ class GiftEndpoint extends Endpoint {
     );
 
     if (senderWallet == null) {
-      senderWallet = EchoWallet(
-        userId: senderId,
-        balance: 10.0,
-      );
+      senderWallet = EchoWallet(userId: senderId, balance: 10.0);
       await EchoWallet.db.insertRow(session, senderWallet);
     }
 
@@ -70,15 +64,16 @@ class GiftEndpoint extends Endpoint {
     );
 
     if (recipientWallet == null) {
-      recipientWallet = EchoWallet(
-        userId: recipientUserId,
-        balance: 10.0,
-      );
+      recipientWallet = EchoWallet(userId: recipientUserId, balance: 10.0);
       await EchoWallet.db.insertRow(session, recipientWallet);
     }
 
-    senderWallet = senderWallet.copyWith(balance: senderWallet.balance - amount);
-    recipientWallet = recipientWallet.copyWith(balance: recipientWallet.balance + amount);
+    senderWallet = senderWallet.copyWith(
+      balance: senderWallet.balance - amount,
+    );
+    recipientWallet = recipientWallet.copyWith(
+      balance: recipientWallet.balance + amount,
+    );
 
     await EchoWallet.db.updateRow(session, senderWallet);
     await EchoWallet.db.updateRow(session, recipientWallet);
@@ -100,7 +95,8 @@ class GiftEndpoint extends Endpoint {
 
     return await GiftTransaction.db.find(
       session,
-      where: (t) => t.senderUserId.equals(userId) | t.recipientUserId.equals(userId),
+      where: (t) =>
+          t.senderUserId.equals(userId) | t.recipientUserId.equals(userId),
       orderBy: (t) => t.createdAt,
       orderDescending: true,
       limit: 50,
@@ -123,10 +119,7 @@ class GiftEndpoint extends Endpoint {
     );
 
     if (wallet == null) {
-      wallet = EchoWallet(
-        userId: userId,
-        balance: 10.0 + amount,
-      );
+      wallet = EchoWallet(userId: userId, balance: 10.0 + amount);
       await EchoWallet.db.insertRow(session, wallet);
       return wallet.balance;
     }

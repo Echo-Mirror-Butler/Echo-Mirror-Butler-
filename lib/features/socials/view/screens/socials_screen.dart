@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../widgets/stories_bar.dart';
@@ -27,7 +29,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load active sessions and start auto-refresh only when Socials tab is active
+    // Load active sessions and start auto-refresh only when Socials
+    // tab is active
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final currentIndex = ref.read(mainTabIndexProvider);
@@ -102,94 +105,127 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
         onRefresh: () async {
           await ref.read(socialsProvider.notifier).loadActiveSessions();
         },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // Stories and Live Sessions Bar
-            SliverToBoxAdapter(
-              child: StoriesBar(
-                liveSessions: socialsState.activeSessions,
-                stories: socialsState.stories,
-                onSessionTap: (session) async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VideoCallScreen(
-                        sessionId: session.id,
-                        isHost: false,
-                        sessionTitle: session.title,
-                        hostName: session.hostName,
-                      ),
-                    ),
-                  );
-                  // Refresh sessions when returning from video call
-                  ref.read(socialsProvider.notifier).loadActiveSessions();
-                },
-                onStoryTap: (story) {
-                  // Filter stories to show only this user's stories (like Instagram)
-                  final userStories =
-                      socialsState.stories
-                          .where((s) => s.userId == story.userId)
-                          .toList()
-                        ..sort(
-                          (a, b) => b.createdAt.compareTo(a.createdAt),
-                        ); // Most recent first
+        child: socialsState.error != null
+            ? NoConnectionWidget(
+                onRetry: () =>
+                    ref.read(socialsProvider.notifier).loadActiveSessions(),
+              )
+            : CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Stories and Live Sessions Bar
+                  SliverToBoxAdapter(
+                    child: StoriesBar(
+                      liveSessions: socialsState.activeSessions,
+                      stories: socialsState.stories,
+                      onSessionTap: (session) async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoCallScreen(
+                              sessionId: session.id,
+                              isHost: false,
+                              sessionTitle: session.title,
+                              hostName: session.hostName,
+                            ),
+                          ),
+                        );
+                        // Refresh sessions when returning from video call
+                        ref.read(socialsProvider.notifier).loadActiveSessions();
+                      },
+                      onStoryTap: (story) {
+                        // Filter stories to show only this user's stories
+                        // (like Instagram)
+                        final userStories =
+                            socialsState.stories
+                                .where((s) => s.userId == story.userId)
+                                .toList()
+                              ..sort(
+                                (a, b) => b.createdAt.compareTo(a.createdAt),
+                              ); // Most recent first
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StoryViewerScreen(
-                        stories: userStories,
-                        initialIndex:
-                            0, // Always start at the first (most recent) story
-                      ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StoryViewerScreen(
+                              stories: userStories,
+                              initialIndex: 0,
+                              // Always start at the first (most recent) story
+                            ),
+                          ),
+                        ).then((_) {
+                          // Refresh stories after viewing
+                          ref.read(socialsProvider.notifier).loadStories();
+                        });
+                      },
+                      onAddStory: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateStoryScreen(),
+                          ),
+                        );
+                        if (result == true) {
+                          // Refresh stories after creating
+                          ref.read(socialsProvider.notifier).loadStories();
+                        }
+                      },
                     ),
-                  ).then((_) {
-                    // Refresh stories after viewing
-                    ref.read(socialsProvider.notifier).loadStories();
-                  });
-                },
-                onAddStory: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateStoryScreen(),
-                    ),
-                  );
-                  if (result == true) {
-                    // Refresh stories after creating
-                    ref.read(socialsProvider.notifier).loadStories();
-                  }
-                },
-              ),
-            ),
-
-            // Start Session Button (Circle with Plus)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: StartSessionButton(
-                    onTap: () => _showStartSessionDialog(context),
                   ),
-                ),
-              ),
-            ),
 
-            // Scheduled Sessions
-            if (socialsState.scheduledSessions.isNotEmpty)
-              SliverToBoxAdapter(
-                child: _buildScheduledSessionsList(socialsState, theme),
-              ),
+                  // Start Session Button (Circle with Plus)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: StartSessionButton(
+                          onTap: () => _showStartSessionDialog(context),
+                        ),
+                      ),
+                    ),
+                  ),
 
-            // Active Sessions or Empty State
-            SliverToBoxAdapter(
-              child: socialsState.activeSessions.isEmpty
-                  ? _buildEmptyState(theme)
-                  : _buildRecentSessionsList(socialsState, theme),
-            ),
-          ],
-        ),
+                  // Scheduled Sessions
+                  if (socialsState.scheduledSessions.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _buildScheduledSessionsList(socialsState, theme),
+                    ),
+
+                  // Active Sessions or Empty State
+                  if (socialsState.isLoading &&
+                      socialsState.activeSessions.isEmpty)
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final isDark = theme.brightness == Brightness.dark;
+                        return Shimmer.fromColors(
+                          baseColor: isDark
+                              ? Colors.grey[800]!
+                              : Colors.grey[300]!,
+                          highlightColor: isDark
+                              ? Colors.grey[700]!
+                              : Colors.grey[100]!,
+                          child: Container(
+                            height: 100,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey[900] : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        );
+                      }, childCount: 3),
+                    )
+                  else
+                    SliverToBoxAdapter(
+                      child: socialsState.activeSessions.isEmpty
+                          ? _buildEmptyState(theme)
+                          : _buildRecentSessionsList(socialsState, theme),
+                    ),
+                ],
+              ),
       ),
     );
   }
@@ -408,8 +444,12 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
 
   Widget _buildScheduledSessionCard(dynamic session, ThemeData theme) {
     final scheduledTime = session.scheduledTime as DateTime;
-    final formattedTime =
-        '${scheduledTime.day}/${scheduledTime.month}/${scheduledTime.year} at ${scheduledTime.hour.toString().padLeft(2, '0')}:${scheduledTime.minute.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${scheduledTime.day}/${scheduledTime.month}/${scheduledTime.year}';
+    final hour = scheduledTime.hour.toString().padLeft(2, '0');
+    final minute = scheduledTime.minute.toString().padLeft(2, '0');
+    final timeStr = '$hour:$minute';
+    final formattedTime = '$dateStr at $timeStr';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -524,10 +564,14 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               );
           if (!mounted) return;
           if (scheduled != null) {
+            final day = scheduledTime.day;
+            final month = scheduledTime.month;
+            final hour = scheduledTime.hour;
+            final minute = scheduledTime.minute.toString().padLeft(2, '0');
             messenger.showSnackBar(
               SnackBar(
                 content: Text(
-                  'Session scheduled for ${scheduledTime.day}/${scheduledTime.month} at ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}',
+                  'Session scheduled for $day/$month at $hour:$minute',
                 ),
                 backgroundColor: AppTheme.successColor,
               ),
@@ -797,7 +841,10 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '${_scheduledTime!.day}/${_scheduledTime!.month}/${_scheduledTime!.year} at ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                      '${_scheduledTime!.day}/${_scheduledTime!.month}/'
+                      '${_scheduledTime!.year} at '
+                      '${_scheduledTime!.hour.toString().padLeft(2, '0')}:'
+                      '${_scheduledTime!.minute.toString().padLeft(2, '0')}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

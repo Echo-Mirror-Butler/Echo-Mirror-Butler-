@@ -24,6 +24,9 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i11;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i12;
+import 'package:echomirror_server_server/src/generated/future_calls.dart'
+    as _i13;
+export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -221,6 +224,14 @@ class Endpoints extends _i1.EndpointDispatch {
                         params['finishPasswordResetToken'],
                     newPassword: params['newPassword'],
                   ),
+        ),
+        'hasAccount': _i1.MethodConnector(
+          name: 'hasAccount',
+          params: {},
+          call: (_i1.Session session, Map<String, dynamic> params) async =>
+              (endpoints['emailIdp'] as _i3.EmailIdpEndpoint).hasAccount(
+                session,
+              ),
         ),
       },
     );
@@ -1057,5 +1068,10 @@ class Endpoints extends _i1.EndpointDispatch {
       ..initializeEndpoints(server);
     modules['serverpod_auth_core'] = _i12.Endpoints()
       ..initializeEndpoints(server);
+  }
+
+  @override
+  _i1.FutureCallDispatch? get futureCalls {
+    return _i13.FutureCalls();
   }
 }

@@ -37,37 +37,33 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   Future<void> _handleChangePassword() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      try {
-        final ok = await ref
-            .read(authProvider.notifier)
-            .changePassword(
-              _currentPasswordController.text.trim(),
-              _newPasswordController.text.trim(),
-            );
-        if (!mounted) return;
+
+      final success = await ref
+          .read(authProvider.notifier)
+          .changePassword(
+            _currentPasswordController.text,
+            _newPasswordController.text,
+          );
+
+      if (mounted) {
         setState(() => _isLoading = false);
-        if (ok) {
+
+        if (success) {
+          _currentPasswordController.clear();
+          _newPasswordController.clear();
+          _confirmPasswordController.clear();
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Password updated successfully')),
           );
           context.pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to update password'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
+          final error =
+              ref.read(authProvider).error ?? 'Failed to update password';
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(error)));
         }
-      } catch (e) {
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
       }
     }
   }
