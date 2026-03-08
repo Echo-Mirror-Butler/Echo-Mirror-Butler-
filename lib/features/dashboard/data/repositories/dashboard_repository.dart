@@ -172,7 +172,7 @@ class DashboardRepository {
             userId: userId,
             title: 'Logging Milestone',
             description:
-                'You\'ve logged ${totalEntries} entries! Your consistency is building valuable insights.',
+                'You\'ve logged $totalEntries entries! Your consistency is building valuable insights.',
             date: now,
             type: InsightType.general,
             createdAt: now,
