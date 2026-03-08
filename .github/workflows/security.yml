@@ -1,0 +1,31 @@
+name: Security · Vulnerability Scan
+
+on:
+  pull_request:
+    branches: [main, development]
+  schedule:
+    - cron: '0 3 * * 1'  # Every Monday at 3am UTC
+  workflow_dispatch:
+
+jobs:
+  osv-scan:
+    name: OSV Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install OSV Scanner
+        run: |
+          curl -LO https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
+          chmod +x osv-scanner_linux_amd64
+          sudo mv osv-scanner_linux_amd64 /usr/local/bin/osv-scanner
+
+      - name: Scan Flutter app pubspec.lock
+        run: |
+          osv-scanner --lockfile=pubspec.lock 
+
+      - name: Scan Server pubspec.lock
+        run: |
+          osv-scanner --lockfile=echomirror_server/echomirror_server_server/pubspec.lock 
