@@ -21,8 +21,9 @@ void run(List<String> args) async {
   // Initialize Resend email service
   try {
     final resendApiKey = pod.getPassword('resendApiKey');
-    final fromEmail = pod.getPassword('emailFromAddress') ?? 'noreply@echomirror.app';
-    
+    final fromEmail =
+        pod.getPassword('emailFromAddress') ?? 'noreply@echomirror.app';
+
     if (resendApiKey != null && resendApiKey.isNotEmpty) {
       _emailService = ResendEmailService(
         apiKey: resendApiKey,
@@ -94,18 +95,19 @@ void _sendRegistrationCode(
   if (_emailService != null) {
     _emailService!
         .sendVerificationEmail(
-      toEmail: email,
-      verificationCode: verificationCode,
-    )
+          toEmail: email,
+          verificationCode: verificationCode,
+        )
         .then((sent) {
-      if (sent) {
-        print('[EmailIdp] ✅ Verification email sent to $email');
-      } else {
-        print('[EmailIdp] ⚠️  Failed to send verification email to $email');
-      }
-    }).catchError((e) {
-      print('[EmailIdp] ❌ Error sending verification email: $e');
-    });
+          if (sent) {
+            print('[EmailIdp] ✅ Verification email sent to $email');
+          } else {
+            print('[EmailIdp] ⚠️  Failed to send verification email to $email');
+          }
+        })
+        .catchError((e) {
+          print('[EmailIdp] ❌ Error sending verification email: $e');
+        });
   } else {
     print('[EmailIdp] ℹ️  Email service not configured - code only logged');
   }
@@ -127,19 +129,19 @@ void _sendPasswordResetCode(
   // Use print() instead of session.log() since session may close
   if (_emailService != null) {
     _emailService!
-        .sendPasswordResetEmail(
-      toEmail: email,
-      resetCode: verificationCode,
-    )
+        .sendPasswordResetEmail(toEmail: email, resetCode: verificationCode)
         .then((sent) {
-      if (sent) {
-        print('[EmailIdp] ✅ Password reset email sent to $email');
-      } else {
-        print('[EmailIdp] ⚠️  Failed to send password reset email to $email');
-      }
-    }).catchError((e) {
-      print('[EmailIdp] ❌ Error sending password reset email: $e');
-    });
+          if (sent) {
+            print('[EmailIdp] ✅ Password reset email sent to $email');
+          } else {
+            print(
+              '[EmailIdp] ⚠️  Failed to send password reset email to $email',
+            );
+          }
+        })
+        .catchError((e) {
+          print('[EmailIdp] ❌ Error sending password reset email: $e');
+        });
   } else {
     print('[EmailIdp] ℹ️  Email service not configured - code only logged');
   }
@@ -147,9 +149,6 @@ void _sendPasswordResetCode(
 
 /// Creates JWT config from environment variables (Serverpod Cloud) or passwords file (local)
 TokenManagerBuilder _createJwtConfig() {
-  // JwtConfigFromPasswords reads from passwords.yaml
-  // In Serverpod Cloud, we need to ensure secrets are accessible
-  // For now, use the standard approach - Serverpod Cloud should handle secret injection
   return JwtConfigFromPasswords();
 }
 

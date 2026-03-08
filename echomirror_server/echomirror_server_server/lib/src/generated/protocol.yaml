@@ -9,6 +9,7 @@ emailIdp:
   - startPasswordReset:
   - verifyPasswordResetCode:
   - finishPasswordReset:
+  - hasAccount:
 global:
   - streamMoodPins:
   - addMoodPin:

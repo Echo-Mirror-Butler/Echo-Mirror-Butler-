@@ -7,8 +7,7 @@ import '../generated/protocol.dart';
 /// Socials endpoint for video/voice call sessions
 class SocialsEndpoint extends Endpoint {
   // Agora credentials from environment (set AGORA_APP_ID and AGORA_APP_CERT)
-  static final String _agoraAppId =
-      Platform.environment['AGORA_APP_ID'] ?? '';
+  static final String _agoraAppId = Platform.environment['AGORA_APP_ID'] ?? '';
   static final String _agoraAppCertificate =
       Platform.environment['AGORA_APP_CERT'] ?? '';
 

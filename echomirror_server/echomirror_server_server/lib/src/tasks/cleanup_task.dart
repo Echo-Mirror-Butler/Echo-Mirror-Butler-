@@ -8,7 +8,7 @@ class CleanupTask extends FutureCall {
 
   @override
   Future<void> invoke(Session session, SerializableModel? data) async {
-    await cleanupExpiredContent(session);
+    await _cleanupExpiredContent(session);
 
     // Re-schedule the task to run again in 1 hour
     await session.serverpod.futureCallWithDelay(
@@ -26,7 +26,7 @@ class CleanupTask extends FutureCall {
   }
 
   /// Start the periodic cleanup task
-  static Future<void> start(Session session) async {
+  static Future<void> _start(Session session) async {
     // Schedule the first cleanup to run in 1 hour
     await session.serverpod.futureCallWithDelay(
       'cleanup-expired-content',
@@ -36,7 +36,7 @@ class CleanupTask extends FutureCall {
   }
 
   /// Clean up expired mood pins and video posts
-  static Future<void> cleanupExpiredContent(Session session) async {
+  static Future<void> _cleanupExpiredContent(Session session) async {
     try {
       final now = DateTime.now();
       int deletedPins = 0;

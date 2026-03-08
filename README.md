@@ -11,6 +11,7 @@
 [![Serverpod](https://img.shields.io/badge/Serverpod-3.0+-FF6B6B?logo=serverpod&logoColor=white)](https://serverpod.dev)
 [![Riverpod](https://img.shields.io/badge/Riverpod-2.6+-FF6B6B?logo=riverpod&logoColor=white)](https://riverpod.dev)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Coverage](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-/branch/development/graph/badge.svg)](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-)
 
 </div>
 
