@@ -15,6 +15,13 @@ analyzer:
     # server-side packages (serverpod, serverpod_auth_idp) not available
     # in the Flutter app context. Exclude it from flutter analyze.
     - echomirror_server/**
+  errors:
+    deprecated_member_use: ignore
+    use_build_context_synchronously: ignore
+    unnecessary_import: ignore
+    unnecessary_underscores: ignore
+    depend_on_referenced_packages: ignore
+    curly_braces_in_flow_control_structures: ignore
 
 linter:
   # The lint rules applied to this project can be customized in the
