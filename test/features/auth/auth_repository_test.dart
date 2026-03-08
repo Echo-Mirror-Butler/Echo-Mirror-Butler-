@@ -383,7 +383,10 @@ void main() {
   group('Request Password Reset Tests', () {
     test('requestPasswordReset returns true', () async {
       // Arrange: provide dynamic passwordReset handler via fake client
-      mockClient.passwordResetStub = _FakePasswordReset(success: true);
+      mockClient.passwordResetStub = _FakePasswordReset(
+        success: true,
+        shouldThrow: false,
+      );
 
       // Act
       final ok = await authRepository.requestPasswordReset(testEmail);
@@ -396,7 +399,10 @@ void main() {
   group('Reset Password Tests', () {
     test('resetPassword returns true with valid token', () async {
       // Arrange
-      mockClient.passwordResetStub = _FakePasswordReset(success: true);
+      mockClient.passwordResetStub = _FakePasswordReset(
+        success: true,
+        shouldThrow: false,
+      );
 
       // Act
       final ok = await authRepository.resetPassword(
@@ -525,7 +531,7 @@ class _FakeAuthKeyProvider implements ClientAuthKeyProvider {
 class _FakePasswordReset {
   final bool success;
   final bool shouldThrow;
-  _FakePasswordReset({required this.success, this.shouldThrow = false});
+  _FakePasswordReset({required this.success, required this.shouldThrow});
 
   Future<bool> requestPasswordReset(String email) async {
     if (shouldThrow) throw Exception('Password reset request failed');
