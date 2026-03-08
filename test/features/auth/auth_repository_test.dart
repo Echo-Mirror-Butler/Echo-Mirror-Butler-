@@ -412,8 +412,18 @@ void main() {
 
   group('Change Password Tests', () {
     test('changePassword returns true on success', () async {
-      // Arrange
-      mockClient.passwordResetStub = _FakePasswordReset(success: true);
+      // Arrange - Set up authenticated user state
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', testEmail);
+      fakeAuthKeyManager.storedToken = testJwtToken;
+
+      // Mock successful login for current password verification
+      final mockAuthSuccess = createAuthSuccess(
+        token: testJwtToken,
+        userId: testUserId,
+      );
+      fakeEmailIdp.loginResult = mockAuthSuccess;
+      fakeEmailIdp.changePasswordSuccess = true;
 
       // Act
       final result = await authRepository.changePassword(
@@ -426,11 +436,18 @@ void main() {
     });
 
     test('changePassword throws on failure', () async {
-      // Arrange
-      mockClient.passwordResetStub = _FakePasswordReset(
-        success: false,
-        shouldThrow: true,
+      // Arrange - Set up authenticated user state
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', testEmail);
+      fakeAuthKeyManager.storedToken = testJwtToken;
+
+      // Mock successful login for current password verification
+      final mockAuthSuccess = createAuthSuccess(
+        token: testJwtToken,
+        userId: testUserId,
       );
+      fakeEmailIdp.loginResult = mockAuthSuccess;
+      fakeEmailIdp.changePasswordError = Exception('Password change failed');
 
       // Act & Assert
       expect(
@@ -439,7 +456,7 @@ void main() {
           predicate(
             (e) =>
                 e is Exception &&
-                e.toString().contains('Password change failed'),
+                e.toString().contains('Password change is not yet available'),
           ),
         ),
       );
@@ -584,6 +601,8 @@ class _FakeEndpointEmailIdp implements EndpointEmailIdp {
   String? verifyRegistrationCodeResult;
   Object? verifyRegistrationCodeError;
   bool finishRegistrationSuccess = false;
+  bool changePasswordSuccess = false;
+  Object? changePasswordError;
   int loginCallCount = 0;
   String? lastLoginEmail;
   String? lastLoginPassword;
@@ -643,6 +662,17 @@ class _FakeEndpointEmailIdp implements EndpointEmailIdp {
           authStrategy: 'email',
           scopeNames: const <String>{},
         );
+  }
+
+  // Add changePassword method for the fake
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    if (changePasswordError != null) {
+      throw changePasswordError!;
+    }
+    return changePasswordSuccess;
   }
 
   @override

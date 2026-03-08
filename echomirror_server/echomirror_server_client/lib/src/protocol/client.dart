@@ -247,13 +247,6 @@ class EndpointEmailIdp extends _i5.EndpointEmailIdpBase {
       'newPassword': newPassword,
     },
   );
-
-  @override
-  _i2.Future<bool> hasAccount() => caller.callServerEndpoint<bool>(
-    'emailIdp',
-    'hasAccount',
-    {},
-  );
 }
 
 /// Global Mirror endpoint for anonymous mood sharing and videos
