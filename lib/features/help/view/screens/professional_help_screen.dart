@@ -882,7 +882,9 @@ class _ProfessionalHelpScreenState
                       : 16,
                 ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(
+                    0.3,
+                  ),
                   border: Border(
                     top: BorderSide(
                       color: theme.colorScheme.outline.withOpacity(0.2),
