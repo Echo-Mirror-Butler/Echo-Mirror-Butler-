@@ -15,9 +15,7 @@ analyzer:
     # server-side packages (serverpod, serverpod_auth_idp) not available
     # in the Flutter app context. Exclude it from flutter analyze.
     - echomirror_server/**
-  errors:
-    # No global ignores here. Suppressions should be done per-file or per-line.
-
+  # No global ignores here. Suppressions should be done per-file or per-line.
 
 linter:
   # The lint rules applied to this project can be customized in the

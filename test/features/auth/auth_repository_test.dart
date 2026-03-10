@@ -12,6 +12,7 @@ class MockEmailIdp extends Mock implements EndpointEmailIdp {}
 
 class MockAuthSuccess extends Mock implements auth_core.AuthSuccess {}
 
+// ignore: deprecated_member_use
 class TestAuthKeyManager implements AuthenticationKeyManager {
   String? _key;
   @override
@@ -80,6 +81,7 @@ void main() {
       client = MockClient();
       emailIdp = MockEmailIdp();
       keyManager = TestAuthKeyManager();
+      // ignore: deprecated_member_use
       when(() => client.authenticationKeyManager).thenReturn(keyManager);
       when(() => client.emailIdp).thenReturn(emailIdp);
     });
