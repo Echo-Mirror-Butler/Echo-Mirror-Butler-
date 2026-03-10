@@ -341,7 +341,7 @@ class _ProfessionalHelpScreenState
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -488,7 +488,7 @@ class _ProfessionalHelpScreenState
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onBackground,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -808,7 +808,7 @@ class _ProfessionalHelpScreenState
                         decoration: BoxDecoration(
                           color: isUser
                               ? theme.colorScheme.primary
-                              : theme.colorScheme.surfaceVariant,
+                              : theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
@@ -841,7 +841,7 @@ class _ProfessionalHelpScreenState
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceVariant,
+                        color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
@@ -882,7 +882,7 @@ class _ProfessionalHelpScreenState
                       : 16,
                 ),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   border: Border(
                     top: BorderSide(
                       color: theme.colorScheme.outline.withOpacity(0.2),

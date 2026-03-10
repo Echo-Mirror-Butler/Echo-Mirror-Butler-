@@ -137,6 +137,7 @@ void main() {
     test('requestPasswordReset returns true', () async {
       final resetApi = TestPasswordResetApi(requestResult: true);
       when(
+        // ignore: deprecated_member_use
         () => client.noSuchMethod(Invocation.getter(#passwordReset)),
       ).thenReturn(resetApi);
       final repo = AuthRepository(client: client);
@@ -147,6 +148,7 @@ void main() {
     test('resetPassword returns true with valid token', () async {
       final resetApi = TestPasswordResetApi(resetResult: true);
       when(
+        // ignore: deprecated_member_use
         () => client.noSuchMethod(Invocation.getter(#passwordReset)),
       ).thenReturn(resetApi);
       final repo = AuthRepository(client: client);
