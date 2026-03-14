@@ -79,6 +79,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   riverpod_generator: ^2.6.1
   build_runner: ^2.4.13
+  mocktail: ^1.0.3
+  serverpod_auth_core_client: ^3.3.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
