@@ -6,7 +6,8 @@ import '../../../../core/services/serverpod_client_service.dart';
 /// Repository for authentication operations
 /// This handles all Serverpod backend calls for auth
 class AuthRepository {
-  AuthRepository() {
+  final Client? _injectedClient;
+  AuthRepository({Client? client}) : _injectedClient = client {
     debugPrint(
       '[AuthRepository] Initialized - client will be accessed when needed',
     );
@@ -14,6 +15,8 @@ class AuthRepository {
 
   /// Get the client instance (lazy initialization)
   Client get _client {
+    final injected = _injectedClient;
+    if (injected != null) return injected;
     // Ensure client is initialized before use
     if (!ServerpodClientService.instance.isInitialized) {
       throw StateError(

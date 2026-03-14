@@ -14,7 +14,7 @@ import '../models/mood_pin_comment_model.dart';
 class GlobalMirrorRepository {
   // Use real Serverpod backend
   // DISABLED - app uses real-time data only
-  bool _useMockData = false;
+  final bool _useMockData = false;
 
   GlobalMirrorRepository() {
     // Use shared client with persistent authentication
