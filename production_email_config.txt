@@ -4,9 +4,9 @@
   # Email Configuration for Gmail
   emailSmtpHost: 'smtp.gmail.com'
   emailSmtpPort: '587'
-  emailUsername: 'devhodaofficial@gmail.com'
-  emailPassword: 'bqslxjmmwvwbdqdd'
-  emailFromAddress: 'devhodaofficial@gmail.com'
+  emailUsername: 'your-email@gmail.com'
+  emailPassword: 'your-app-password-here'
+  emailFromAddress: 'your-email@gmail.com'
 
 # After adding, restart your Serverpod server
 # The server will initialize email service automatically
