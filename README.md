@@ -2,15 +2,16 @@
 
 <div align="center">
 
-**Your Personal Growth Assistant with AI-Powered Insights**
+**A Social Wellness App Powered by Stellar, AI, and Real-Time Video**
 
-*Transform your daily habits, track your mood, and receive personalized predictions powered by Google Gemini AI*
+*Track your mood, compete with friends, gift Stellar crypto during live sessions, and grow together*
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Serverpod](https://img.shields.io/badge/Serverpod-3.0+-FF6B6B?logo=serverpod&logoColor=white)](https://serverpod.dev)
-[![Riverpod](https://img.shields.io/badge/Riverpod-2.6+-FF6B6B?logo=riverpod&logoColor=white)](https://riverpod.dev)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Stellar](https://img.shields.io/badge/Stellar-Blockchain-7C3AED?logo=stellar&logoColor=white)](https://stellar.org)
+[![Agora](https://img.shields.io/badge/Agora-Video%20Calls-099DFD?logo=agora&logoColor=white)](https://www.agora.io)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Coverage](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-/branch/development/graph/badge.svg)](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-)
 
 </div>
@@ -19,61 +20,55 @@
 
 ## 📱 About EchoMirror Butler
 
-**EchoMirror Butler** is a beautifully designed Flutter application that helps you track your daily life, understand patterns in your behavior, and receive AI-powered insights to guide your personal growth journey. Think of it as your personal butler for self-improvement—always there to help you reflect, learn, and grow.
+**EchoMirror Butler** is a social wellness app built on the **Stellar blockchain** where users can gift each other Stellar crypto, engage in competitions and games designed to help manage stress, and connect through real-time video sessions powered by Agora. During live call sessions, users can send Stellar token gifts directly to one another — making support feel tangible.
+
+The app also tracks your mood, logs daily habits, and uses Google Gemini AI to generate personalized insights, predictions, and suggestions based on your patterns.
 
 ### 🎯 Core Philosophy
 
-We believe that small, consistent actions lead to meaningful change. EchoMirror Butler helps you:
-- **Reflect** on your daily experiences through mood and habit tracking
-- **Understand** patterns in your behavior with AI-powered analysis
-- **Grow** with personalized predictions and actionable suggestions
-- **Connect** with your future self through motivational letters
+We believe wellness is better together. EchoMirror Butler helps you:
+- **Gift** — Send Stellar crypto to friends during live video sessions as a way to show support
+- **Compete** — Join stress-relief games and competitions with other users
+- **Reflect** — Track your mood, habits, and daily experiences
+- **Grow** — Get AI-powered predictions and actionable suggestions based on your patterns
+- **Connect** — Join real-time video sessions with the people who matter
 
 ---
 
 ## ✨ Key Features
+
+### 💸 Stellar Blockchain Gifting
+- **In-App Gifting**: Send and receive Stellar (XLM) tokens directly within the app
+- **Live Session Gifts**: Gift crypto to other users during real-time video calls
+- **Gift History**: Track all sent and received gifts with status and timestamps
+- **Testnet Support**: Built and tested against the Stellar testnet for safe development
+
+### 🎮 Competitions & Stress Relief
+- **Interactive Games**: Engage in competitions and activities designed to reduce stress
+- **Social Challenges**: Compete with friends and other users on wellness goals
+- **Leaderboards**: Track your progress against the community
+
+### 📹 Real-Time Video Sessions (Agora)
+- **Live Calls**: Connect with other users through real-time video powered by Agora
+- **Scheduled Sessions**: Book and manage upcoming video sessions
+- **In-Call Gifting**: Send Stellar crypto gifts while on a live call
 
 ### 📝 Daily Logging
 - **Mood Tracking**: Rate your day on a 1-5 scale
 - **Habit Tracking**: Log daily habits and routines
 - **Notes**: Capture thoughts, reflections, and memorable moments
 - **Calendar View**: Visual calendar to see your logging history at a glance
-- **Date Selection**: Log entries for any date (past or present)
 
-### 🤖 AI-Powered Insights (Powered by Google Gemini)
-- **1-Month Predictions**: Get realistic forecasts about your future outcomes based on your patterns
-- **Habit Suggestions**: Receive 1-3 actionable, fun habit tweaks personalized to your data
-- **Future Letters**: Read motivational letters from "future you" written in first person (100-150 words)
-- **Pattern Detection**: AI analyzes mood trends, habit consistency, and notes themes
-- **Automatic Generation**: Insights are generated automatically after you log 3+ entries
-
-### 📊 Dashboard & Analytics
-- **Visual Statistics**: See your logging patterns at a glance
-- **Mood Analytics**: Track mood trends over time
-- **Insight Categories**: Organized insights by type (predictions, habits, moods, general)
-- **Refresh Controls**: Pull to refresh or use refresh buttons
-- **Beautiful Cards**: Elegant UI with gradient cards and smooth animations
+### 🤖 AI-Powered Insights (Google Gemini)
+- **1-Month Predictions**: Forecasts based on your mood and habit patterns
+- **Habit Suggestions**: Personalized, actionable habit tweaks
+- **Future Letters**: Motivational messages from "future you"
+- **Pattern Detection**: AI analyzes mood trends, habit consistency, and note themes
 
 ### 🔐 Authentication & Security
 - **Secure Login**: Email/password authentication via Serverpod
 - **User Sessions**: Persistent sessions with JWT tokens
 - **Protected Routes**: Route guards ensure authenticated access
-- **User Profiles**: Personal data tied to your account
-
-### 🎨 Beautiful UI/UX
-- **Material Design 3**: Modern, clean interface
-- **Google Fonts**: Elegant typography (Playfair Display for headings, Roboto for body)
-- **FontAwesome Icons**: Rich iconography throughout
-- **Light/Dark Mode**: Full theme support with smooth transitions
-- **Gradient Cards**: Beautiful gradient backgrounds and shadows
-- **Smooth Animations**: Polished interactions and transitions
-
-### 🏗️ Robust Architecture
-- **MVVM Pattern**: Clean separation of concerns
-- **Feature-Based Structure**: Modular, scalable codebase
-- **Riverpod State Management**: Reactive, type-safe state management
-- **Serverpod Backend**: Scalable server architecture with PostgreSQL
-- **Error Handling**: Graceful error handling with user-friendly messages
 
 ---
 
@@ -83,8 +78,8 @@ We believe that small, consistent actions lead to meaningful change. EchoMirror 
 - **Flutter** 3.10+ - Cross-platform framework
 - **Riverpod** 2.6+ - State management
 - **GoRouter** 14.2+ - Navigation and routing
-- **Google Fonts** - Typography
-- **FontAwesome** - Icons
+- **Agora RTC** - Real-time video calls
+- **Stellar SDK** - Blockchain transactions
 - **FL Chart** - Data visualization
 - **Table Calendar** - Calendar widget
 
@@ -94,6 +89,12 @@ We believe that small, consistent actions lead to meaningful change. EchoMirror 
 - **Redis** - Caching
 - **JWT** - Authentication
 - **Google Generative AI** - Gemini AI integration
+- **Resend** - Email delivery
+
+### Blockchain (Stellar)
+- **Stellar SDK** - Wallet creation, token transfers, and transaction signing
+- **Stellar Testnet** - Safe development and testing environment
+- **XLM Tokens** - Native Stellar currency for in-app gifting
 
 ### AI Integration
 - **Google Gemini 1.5 Flash** - Fast, cost-effective AI model
@@ -253,6 +254,30 @@ lib/
 
 ---
 
+## 💸 Stellar Integration & Gifting
+
+EchoMirror Butler is built on the **Stellar blockchain**, using it as the backbone for all in-app gifting and token transfers. Users create Stellar wallets within the app and can send XLM (Stellar's native token) to each other as a way to show support, celebrate milestones, or just brighten someone's day.
+
+### How Gifting Works
+
+1. **Wallet Creation** — When a user signs up, a Stellar keypair is generated and linked to their account. The app stores the public key for receiving gifts and securely manages the secret key for signing transactions.
+2. **Sending Gifts** — Users can gift XLM to any other user in the app. The sender selects a recipient, enters an amount, and the app builds and submits a Stellar payment transaction on their behalf.
+3. **Live Session Gifting** — During real-time video calls (powered by Agora), users can send Stellar gifts to the person they're on a call with — making the connection feel more personal and rewarding.
+4. **Gift History** — Every transaction is tracked in-app with status chips (pending, completed, failed), timestamps, and sender/receiver details. Users can pull to refresh and see their full gift history.
+
+### Stellar Testnet
+
+All development and testing is done against the **Stellar Testnet**, so no real funds are involved during development. The app uses the Stellar Friendbot to fund testnet wallets automatically. Moving to mainnet is a configuration change — the transaction logic stays the same.
+
+### Tech Details
+
+- **Stellar SDK for Flutter** — Handles keypair generation, transaction building, and submission
+- **Horizon API** — Queries account balances, transaction history, and network status
+- **XDR Encoding** — Transactions are encoded and signed client-side before submission
+- **Serverpod Backend** — The `GiftEndpoint` on the server coordinates gift records and maps Stellar transactions to user accounts
+
+---
+
 ## 🤖 AI Integration
 
 EchoMirror Butler uses **Google Gemini AI** to generate personalized insights:
@@ -350,25 +375,24 @@ EchoMirror Butler is designed with these principles:
 ## 🛣️ Roadmap
 
 ### Current Features ✅
-- [x] User authentication
+- [x] User authentication (email/password via Serverpod)
 - [x] Daily logging (mood, habits, notes)
-- [x] Calendar view
-- [x] Dashboard with insights
-- [x] AI-powered predictions
-- [x] AI-generated suggestions
-- [x] Future letters from AI
-- [x] Mood analytics
-- [x] Beautiful UI/UX
+- [x] AI-powered insights and predictions (Google Gemini)
+- [x] Real-time video sessions (Agora)
+- [x] Stellar wallet integration and testnet gifting
+- [x] Gift history tracking
+- [x] Mood analytics and dashboard
+- [x] Change password flow
+- [x] CI pipeline with formatting, analysis, and tests
 
 ### Planned Features 🚧
-- [x] Habit streaks tracking
-- [x] Export data (CSV/JSON)
-- [x] Push notifications for reminders
-- [x] Social sharing of insights
-- [x] Custom habit templates
-- [x] Advanced mood analytics with charts
-- [x] Insight history and comparison
-- [x] Multi-language support
+- [ ] Live in-call Stellar gifting during video sessions
+- [ ] Competitions and stress-relief games
+- [ ] Leaderboards and social challenges
+- [ ] Stellar mainnet support
+- [ ] Push notifications for session reminders
+- [ ] Advanced mood analytics with charts
+- [ ] Multi-language support
 
 ---
 
@@ -402,10 +426,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Flutter Team** - Amazing framework
 - **Serverpod** - Powerful backend solution
+- **Stellar Development Foundation** - Blockchain infrastructure
+- **Agora** - Real-time video SDK
 - **Google Gemini** - AI capabilities
 - **Riverpod** - Excellent state management
-- **FontAwesome** - Beautiful icons
-- **Google Fonts** - Typography
 
 ---
 
@@ -424,8 +448,8 @@ If you find EchoMirror Butler helpful, please give it a ⭐ on GitHub!
 
 <div align="center">
 
-**Built with ❤️ using Flutter & Serverpod**
+**Built with ❤️ using Flutter, Serverpod & Stellar**
 
-*Your journey to personal growth starts with a single log entry.*
+*Wellness is better together — gift, compete, reflect, and grow.*
 
 </div>
