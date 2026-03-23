@@ -25,11 +25,7 @@ jobs:
       # Only format Flutter/Dart app files — the server package (echomirror_server/)
       # uses its own analysis_options and is not a Flutter project.
       - name: Check formatting
-        run: |
-          dart format --set-exit-if-changed lib test backend || (
-            echo "Auto-formatting generated mismatch to keep CI moving..."
-            dart format lib/features/socials/data/repositories/socials_repository.dart
-          )
+        run: dart format --set-exit-if-changed lib test backend
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
