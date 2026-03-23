@@ -24,14 +24,14 @@ jobs:
 
       # Only format Flutter/Dart app files — the server package (echomirror_server/)
       # uses its own analysis_options and is not a Flutter project.
-      - name: Check formatting
-        run: dart format --set-exit-if-changed lib test backend
-
       - name: Debug socials formatter output
         run: |
           echo "=== SOCIALS_FORMATTED_START ==="
           dart format --output=show lib/features/socials/data/repositories/socials_repository.dart
           echo "=== SOCIALS_FORMATTED_END ==="
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed lib test backend
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
