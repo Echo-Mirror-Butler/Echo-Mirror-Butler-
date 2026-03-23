@@ -33,7 +33,8 @@ class SocialsRepository {
   void _ensureSupabaseConfigured() {
     if (_supabaseUrl.isEmpty || _supabaseAnonKey.isEmpty) {
       throw StateError(
-        'Missing Supabase config. Provide SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.',
+        'Missing Supabase config. '
+        'Provide SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.',
       );
     }
   }
@@ -256,7 +257,10 @@ class SocialsRepository {
   }
 
   /// Agora credentials now come from Supabase Edge Functions in later phase.
-  Future<Map<String, String>> getAgoraCredentials(String sessionId, int userId) async {
+  Future<Map<String, String>> getAgoraCredentials(
+    String sessionId,
+    int userId,
+  ) async {
     throw UnimplementedError(
       'Moved to Supabase Edge Functions (migration phase 7).',
     );
@@ -315,7 +319,9 @@ class SocialsRepository {
           .map(_scheduledSessionFromSupabase)
           .toList();
     } catch (e) {
-      debugPrint('[SocialsRepository] getUpcomingScheduledSessions error -> $e');
+      debugPrint(
+        '[SocialsRepository] getUpcomingScheduledSessions error -> $e',
+      );
       return [];
     }
   }
@@ -401,7 +407,8 @@ class SocialsRepository {
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception(
-          'Failed to upload story image (${response.statusCode}): ${response.body}',
+          'Failed to upload story image '
+          '(${response.statusCode}): ${response.body}',
         );
       }
 
