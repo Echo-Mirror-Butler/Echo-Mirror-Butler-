@@ -4,13 +4,13 @@ import 'core/routing/app_router.dart';
 import 'core/themes/app_theme.dart';
 import 'core/viewmodel/providers/theme_provider.dart';
 import 'core/viewmodel/providers/notification_provider.dart';
-import 'core/services/serverpod_client_service.dart';
+import 'core/services/supabase_client_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Serverpod client service with persistent authentication
-  await ServerpodClientService.instance.ensureInitialized();
+  // Initialize Supabase client service before app start.
+  await SupabaseClientService.instance.ensureInitialized();
 
   runApp(const ProviderScope(child: EchoMirrorApp()));
 }
