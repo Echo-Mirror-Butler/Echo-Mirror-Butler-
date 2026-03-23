@@ -77,17 +77,6 @@ class SocialsRepository {
     return <dynamic>[];
   }
 
-  Future<Map<String, dynamic>> _decodeMap(http.Response response) async {
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
-        'Supabase request failed (${response.statusCode}): ${response.body}',
-      );
-    }
-    final decoded = jsonDecode(response.body);
-    if (decoded is Map<String, dynamic>) return decoded;
-    throw Exception('Unexpected response payload: ${response.body}');
-  }
-
   VideoSessionModel _videoSessionFromSupabase(Map<String, dynamic> data) {
     return VideoSessionModel(
       id: (data['id'] ?? '').toString(),
