@@ -29,7 +29,8 @@ class SupabaseClientService {
   Future<void> ensureInitialized() async {
     if (_isInitialized) return;
 
-    if (ApiConstants.supabaseUrl.isEmpty || ApiConstants.supabaseAnonKey.isEmpty) {
+    if (ApiConstants.supabaseUrl.isEmpty ||
+        ApiConstants.supabaseAnonKey.isEmpty) {
       throw StateError(
         'Missing Supabase configuration. Provide SUPABASE_URL and SUPABASE_ANON_KEY via --dart-define.',
       );
