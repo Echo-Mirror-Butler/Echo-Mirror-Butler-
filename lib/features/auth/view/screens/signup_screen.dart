@@ -54,30 +54,25 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final router = GoRouter.of(context);
 
     try {
-      // Perform signup - this returns accountRequestId
+      // Perform signup - this returns userId
       final authNotifier = ref.read(authProvider.notifier);
-      final accountRequestId = await authNotifier.signUp(email, password, name);
+      final userId = await authNotifier.signUp(email, password, name);
 
-      debugPrint(
-        '[SignupScreen] signUp returned -> accountRequestId: $accountRequestId',
-      );
+      debugPrint('[SignupScreen] signUp returned -> userId: $userId');
 
-      if (accountRequestId != null && accountRequestId.isNotEmpty) {
-        // Build verification URL
-        final encodedEmail = Uri.encodeComponent(email);
-        final encodedPassword = Uri.encodeComponent(password);
-        final encodedName = name != null ? Uri.encodeComponent(name) : '';
-        final verifyUrl =
-            '/verify?email=$encodedEmail&accountRequestId=${Uri.encodeComponent(accountRequestId)}&password=$encodedPassword${name != null ? '&name=$encodedName' : ''}';
-
-        debugPrint('[SignupScreen] Navigating to: $verifyUrl');
-
-        // Use the router instance we got before async operation
-        router.go(verifyUrl);
-
-        // Clear loading state after navigation
-        authNotifier.clearLoadingState();
-        debugPrint('[SignupScreen] Navigation complete');
+      if (userId != null && userId.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _isProcessingSignup = false;
+          });
+          ErrorHandler.showSuccess(
+            context,
+            'Registration successful! Please check your email '
+            'to verify your account.',
+          );
+          // Go to login screen
+          router.go('/login');
+        }
       } else {
         // Signup failed
         final error = ref.read(authProvider).error;
