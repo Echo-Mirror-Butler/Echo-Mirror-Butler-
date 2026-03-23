@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -235,7 +234,9 @@ class GlobalMirrorRepository {
           timestamp: DateTime.parse(p['created_at'] as String),
           expiresAt: p['expires_at'] != null
               ? DateTime.parse(p['expires_at'] as String)
-              : null,
+              : DateTime.parse(
+                  p['created_at'] as String,
+                ).add(const Duration(hours: 24)),
         );
       }).toList();
     } catch (e) {
