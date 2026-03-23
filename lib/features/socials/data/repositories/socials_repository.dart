@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/services/serverpod_client_service.dart';
@@ -161,10 +162,15 @@ class SocialsRepository {
         '[SocialsRepository] getAgoraCredentials -> sessionId: $sessionId, userId: $userId',
       );
 
-      final credentials = await _client.socials.getAgoraCredentials(
-        sessionId,
-        userId,
+      final response = await Supabase.instance.client.functions.invoke(
+        'get-agora-credentials',
+        body: {'sessionId': sessionId, 'userId': userId.toString()},
       );
+
+      final token = response.data['token'] as String;
+      final appId = response.data['appId'] as String;
+
+      final credentials = {'token': token, 'appId': appId};
 
       debugPrint(
         '[SocialsRepository] Got Agora credentials: ${credentials['appId']}',
