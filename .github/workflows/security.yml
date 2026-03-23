@@ -1,0 +1,20 @@
+name: Security · Vulnerability Scan
+
+on:
+  pull_request:
+    branches: [main, development]
+  schedule:
+    - cron: '0 3 * * 1'  # Every Monday at 3am
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  osv-scan:
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.3
+    with:
+      scan-args: |-
+        --lockfile=pubspec.lock
+        --lockfile=echomirror_server/echomirror_server_server/pubspec.lock
