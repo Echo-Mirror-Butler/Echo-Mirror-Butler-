@@ -40,19 +40,19 @@ class GlobalMirrorRepository {
           .stream(primaryKey: ['id'])
           .gt('expires_at', DateTime.now().toIso8601String())
           .map((events) {
-        return events.map((p) {
-          return MoodPinModel(
-            id: p['id'].toString(),
-            sentiment: p['sentiment'] as String,
-            gridLat: (p['grid_lat'] as num).toDouble(),
-            gridLon: (p['grid_lon'] as num).toDouble(),
-            timestamp: DateTime.parse(p['created_at'] as String),
-            expiresAt: p['expires_at'] != null
-                ? DateTime.parse(p['expires_at'] as String)
-                : null,
-          );
-        }).toList();
-      });
+            return events.map((p) {
+              return MoodPinModel(
+                id: p['id'].toString(),
+                sentiment: p['sentiment'] as String,
+                gridLat: (p['grid_lat'] as num).toDouble(),
+                gridLon: (p['grid_lon'] as num).toDouble(),
+                timestamp: DateTime.parse(p['created_at'] as String),
+                expiresAt: p['expires_at'] != null
+                    ? DateTime.parse(p['expires_at'] as String)
+                    : null,
+              );
+            }).toList();
+          });
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorRepository] Fatal error in streamMoodPins: $e');
       debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
@@ -89,11 +89,15 @@ class GlobalMirrorRepository {
         '$sentiment at ($gridLat, $gridLon)',
       );
 
-      final response = await supabase.from('mood_pins').insert({
-        'sentiment': sentiment,
-        'grid_lat': gridLat,
-        'grid_lon': gridLon,
-      }).select('id').single();
+      final response = await supabase
+          .from('mood_pins')
+          .insert({
+            'sentiment': sentiment,
+            'grid_lat': gridLat,
+            'grid_lon': gridLon,
+          })
+          .select('id')
+          .single();
 
       final pinId = response['id'].toString();
       debugPrint('[GlobalMirrorRepository] Added mood pin - Pin ID: $pinId');
@@ -135,10 +139,7 @@ class GlobalMirrorRepository {
       debugPrint(
         '[GlobalMirrorRepository] Uploading video to Supabase Storage...',
       );
-      await supabase.storage.from('videos').uploadBinary(
-        path,
-        bytes,
-      );
+      await supabase.storage.from('videos').uploadBinary(path, bytes);
 
       final videoUrl = supabase.storage.from('videos').getPublicUrl(path);
 
@@ -188,10 +189,7 @@ class GlobalMirrorRepository {
       debugPrint(
         '[GlobalMirrorRepository] Uploading image to Supabase Storage...',
       );
-      await supabase.storage.from('images').uploadBinary(
-        path,
-        bytes,
-      );
+      await supabase.storage.from('images').uploadBinary(path, bytes);
 
       final imageUrl = supabase.storage.from('images').getPublicUrl(path);
 
@@ -278,20 +276,26 @@ class GlobalMirrorRepository {
     try {
       if (_useMockData) {
         final commentId = DateTime.now().millisecondsSinceEpoch.toString();
-        _mockComments.add(MoodPinCommentModel(
-          id: commentId,
-          moodPinId: moodPinId,
-          text: text,
-          timestamp: DateTime.now(),
-        ));
+        _mockComments.add(
+          MoodPinCommentModel(
+            id: commentId,
+            moodPinId: moodPinId,
+            text: text,
+            timestamp: DateTime.now(),
+          ),
+        );
         return commentId;
       }
 
-      final response = await supabase.from('mood_pin_comments').insert({
-        'mood_pin_id': moodPinId,
-        'text': text,
-        'user_id': supabase.auth.currentUser?.id
-      }).select('id').single();
+      final response = await supabase
+          .from('mood_pin_comments')
+          .insert({
+            'mood_pin_id': moodPinId,
+            'text': text,
+            'user_id': supabase.auth.currentUser?.id,
+          })
+          .select('id')
+          .single();
 
       return response['id'].toString();
     } catch (e) {
