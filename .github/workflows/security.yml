@@ -13,13 +13,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run OSV Scanner (Flutter app)
-        uses: google/osv-scanner-action@v1
+        uses: google/osv-scanner-action@v1.4.1
         with:
           scan-args: |-
             --lockfile=pubspec.lock
 
       - name: Run OSV Scanner (Serverpod server)
-        uses: google/osv-scanner-action@v1
+        uses: google/osv-scanner-action@v1.4.1
         with:
           scan-args: |-
             --lockfile=echomirror_server/echomirror_server_server/pubspec.lock
