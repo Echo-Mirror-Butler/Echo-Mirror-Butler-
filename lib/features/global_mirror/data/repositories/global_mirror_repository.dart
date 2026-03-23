@@ -24,10 +24,16 @@ class GlobalMirrorRepository {
   Stream<List<MoodPinModel>> streamMoodPins() {
     if (_useMockData) {
       // Simulate mock pins
-      return Stream.periodic(const Duration(seconds: 5), (_) => List.from(_mockPins));
+      return Stream.periodic(
+        const Duration(seconds: 5),
+        (_) => List.from(_mockPins),
+      );
     }
 
-    debugPrint('[GlobalMirrorRepository] Connecting to streamMoodPins using Supabase Realtime...');
+    debugPrint(
+      '[GlobalMirrorRepository] Connecting to '
+      'streamMoodPins using Supabase Realtime...',
+    );
     try {
       return supabase
           .from('mood_pins')
@@ -78,14 +84,17 @@ class GlobalMirrorRepository {
         return pinId;
       }
 
-      debugPrint('[GlobalMirrorRepository] Adding mood pin: $sentiment at ($gridLat, $gridLon)');
-      
+      debugPrint(
+        '[GlobalMirrorRepository] Adding mood pin: '
+        '$sentiment at ($gridLat, $gridLon)',
+      );
+
       final response = await supabase.from('mood_pins').insert({
         'sentiment': sentiment,
         'grid_lat': gridLat,
         'grid_lon': gridLon,
       }).select('id').single();
-      
+
       final pinId = response['id'].toString();
       debugPrint('[GlobalMirrorRepository] Added mood pin - Pin ID: $pinId');
       return pinId;
@@ -102,7 +111,10 @@ class GlobalMirrorRepository {
     required String moodTag,
   }) async {
     try {
-      debugPrint('[GlobalMirrorRepository] Starting video upload: path=$videoPath, moodTag=$moodTag');
+      debugPrint(
+        '[GlobalMirrorRepository] Starting video upload: '
+        'path=$videoPath, moodTag=$moodTag',
+      );
 
       final file = File(videoPath);
       if (!await file.exists()) {
@@ -120,15 +132,19 @@ class GlobalMirrorRepository {
       final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
       final path = '${supabase.auth.currentUser?.id ?? "anon"}/$fileName';
 
-      debugPrint('[GlobalMirrorRepository] Uploading video to Supabase Storage...');
+      debugPrint(
+        '[GlobalMirrorRepository] Uploading video to Supabase Storage...',
+      );
       await supabase.storage.from('videos').uploadBinary(
         path,
         bytes,
       );
-      
+
       final videoUrl = supabase.storage.from('videos').getPublicUrl(path);
-      
-      debugPrint('[GlobalMirrorRepository] Inserting video post to database...');
+
+      debugPrint(
+        '[GlobalMirrorRepository] Inserting video post to database...',
+      );
       await supabase.from('video_posts').insert({
         'video_url': videoUrl,
         'mood_tag': moodTag,
@@ -148,7 +164,10 @@ class GlobalMirrorRepository {
     required String moodTag,
   }) async {
     try {
-      debugPrint('[GlobalMirrorRepository] Starting image upload: path=$imagePath, moodTag=$moodTag');
+      debugPrint(
+        '[GlobalMirrorRepository] Starting image upload: '
+        'path=$imagePath, moodTag=$moodTag',
+      );
 
       final file = File(imagePath);
       if (!await file.exists()) {
@@ -166,15 +185,20 @@ class GlobalMirrorRepository {
       final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
       final path = '${supabase.auth.currentUser?.id ?? "anon"}/$fileName';
 
-      debugPrint('[GlobalMirrorRepository] Uploading image to Supabase Storage...');
+      debugPrint(
+        '[GlobalMirrorRepository] Uploading image to Supabase Storage...',
+      );
       await supabase.storage.from('images').uploadBinary(
         path,
         bytes,
       );
-      
+
       final imageUrl = supabase.storage.from('images').getPublicUrl(path);
-      
-      debugPrint('[GlobalMirrorRepository] Inserting image post as video_posts record...');
+
+      debugPrint(
+        '[GlobalMirrorRepository] Inserting image post '
+        'as video_posts record...',
+      );
       await supabase.from('video_posts').insert({
         'video_url': imageUrl,
         'mood_tag': moodTag,
@@ -211,8 +235,8 @@ class GlobalMirrorRepository {
           videoUrl: p['video_url'] as String,
           moodTag: p['mood_tag'] as String? ?? '',
           timestamp: DateTime.parse(p['created_at'] as String),
-          expiresAt: p['expires_at'] != null 
-              ? DateTime.parse(p['expires_at'] as String) 
+          expiresAt: p['expires_at'] != null
+              ? DateTime.parse(p['expires_at'] as String)
               : null,
         );
       }).toList();
@@ -236,7 +260,9 @@ class GlobalMirrorRepository {
         return null;
       }
       return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low,
+        ),
       );
     } catch (e) {
       debugPrint('[GlobalMirrorRepository] Error getting location: $e');
@@ -309,7 +335,8 @@ class GlobalMirrorRepository {
     int nearbyCount,
   ) async {
     if (_useMockData) {
-      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+      return 'Others nearby are feeling similar—many found short '
+          'walks or deep breathing helped today.';
     }
 
     try {
@@ -317,15 +344,18 @@ class GlobalMirrorRepository {
         'generate_cluster_encouragement',
         body: {'sentiment': sentiment, 'nearbyCount': nearbyCount},
       );
-      
+
       final data = response.data;
       if (data != null && data is Map && data.containsKey('message')) {
         return data['message'] as String;
       }
       return 'Others nearby are feeling similar.';
     } catch (e) {
-      debugPrint('[GlobalMirrorRepository] Error generating cluster encouragement: $e');
-      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+      debugPrint(
+        '[GlobalMirrorRepository] Error generating cluster encouragement: $e',
+      );
+      return 'Others nearby are feeling similar—many found short '
+          'walks or deep breathing helped today.';
     }
   }
 
