@@ -5,6 +5,9 @@
 class ApiConstants {
   ApiConstants._();
 
+  // Legacy Serverpod compatibility
+  static const String serverUrl = 'http://localhost:8080/';
+
   // Supabase Configuration
   // Example: 'https://your-project-id.supabase.co'
   static const String supabaseUrl = 'YOUR_SUPABASE_URL_HERE';
