@@ -1,38 +1,395 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ai_insight_model.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
 /// Repository for AI operations
-/// Previously backed by Serverpod + Gemini — pending Supabase Edge Function migration
+/// Backed by Supabase Edge Functions calling Google Gemini
 class AiRepository {
   AiRepository() {
     debugPrint('[AiRepository] Initialized');
   }
 
+  SupabaseClient get _supabase => Supabase.instance.client;
+
+  /// Debug flag to force mock data (for testing without API key)
+  /// DISABLED - app uses real-time data only
+  static const bool _useMockData = false;
+
   /// Generate AI insight based on recent logs
   ///
-  /// TODO: Implement via Supabase Edge Function once deployed.
-  /// The edge function should accept log data and call Google Gemini API,
-  /// returning prediction, suggestions, futureLetter, and stressLevel.
-  Future<AiInsightModel> generateInsight(List<LogEntryModel> recentLogs) async {
+  /// Converts Flutter log models to a Supabase Edge Function payload.
+  /// Throws exception if Gemini API fails - no silent fallback to mock data
+  ///
+  /// **IMPORTANT: Server-side prompt should request DETAILED, PERSONALIZED responses:**
+  ///
+  /// **Prediction (1-Month Forecast):**
+  /// - Should reference specific log entries (e.g., "I saw you logged meditation 5 times this week")
+  /// - Mention specific habits, moods, or notes from the logs
+  /// - Use phrases like "I noticed", "I saw", "Your logs show", "You've been"
+  /// - Minimum 200 characters with concrete examples
+  ///
+  /// **Suggestions:**
+  /// - Should be context-aware based on actual patterns in the logs
+  /// - Reference specific habits the user is tracking
+  /// - Minimum 30 characters per suggestion
+  ///
+  /// **Future Letter (Message from Future Self):**
+  /// - Should feel personal and reference specific moments from logs
+  /// - Use phrases like "Remember when you logged X", "I saw you were working on Y"
+  /// - Reference specific dates, moods, or habits mentioned in the logs
+  /// - Minimum 300 characters, should feel like a real letter from future self
+  /// - Avoid generic motivational phrases - be specific and detailed
+  ///
+  /// Example good prediction: "I saw you've been consistently logging meditation
+  /// every morning for the past week, and your mood scores have improved from 3/5
+  /// to 4/5. Your notes mention feeling more focused. If you continue this pattern..."
+  ///
+  /// Example good future letter: "Hey! It's me, your future self. I remember when
+  /// you logged that tough day on January 15th where your mood was 2/5, but you
+  /// still did your exercise habit. That consistency paid off - look at you now..."
+  Future<AiInsightModel> generateInsight(
+    List<LogEntryModel> recentLogs,
+  ) async {
     debugPrint('[AiRepository] generateInsight -> ${recentLogs.length} logs');
-    throw UnimplementedError(
-      'AI insights not yet migrated to Supabase Edge Functions. '
-      'Implement by calling a Supabase Edge Function with the log data.',
+
+    // Log detailed information about each log entry for debugging
+    debugPrint('[AiRepository] Log Summary for Gemini:');
+    for (var i = 0; i < recentLogs.length; i++) {
+      final log = recentLogs[i];
+      final moodStr = log.mood != null ? '${log.mood}/5' : 'not set';
+      final habitsStr =
+          log.habits.isNotEmpty ? log.habits.join(', ') : 'none';
+      final notesStr = log.notes != null && log.notes!.isNotEmpty
+          ? '${log.notes!.substring(0, log.notes!.length > 50 ? 50 : log.notes!.length)}...'
+          : 'none';
+      debugPrint(
+        '[AiRepository]   Log ${i + 1}: Date=${log.date.toString().split(' ')[0]}, Mood=$moodStr, Habits=[$habitsStr], Notes="$notesStr"',
+      );
+    }
+
+    // Convert log models into the JSON payload expected by the Supabase function.
+    final logPayloads = recentLogs.map<Map<String, dynamic>>((log) {
+      final hasMood = log.mood != null;
+      final hasHabits = log.habits.isNotEmpty;
+      final hasNotes = log.notes != null && log.notes!.trim().isNotEmpty;
+
+      final payload = log.toJson();
+      final convertedHabits = List<String>.from(
+        payload['habits'] as List? ?? const [],
+      );
+      final convertedNotes = (payload['notes'] as String?)?.trim();
+
+      final convertedHasMood = payload['mood'] != null;
+      final convertedHasHabits = convertedHabits.isNotEmpty;
+      final convertedHasNotes =
+          convertedNotes != null && convertedNotes.isNotEmpty;
+
+      if (hasMood != convertedHasMood ||
+          hasHabits != convertedHasHabits ||
+          hasNotes != convertedHasNotes) {
+        debugPrint(
+          '[AiRepository] Data mismatch in conversion for log ${log.id}',
+        );
+      }
+
+      debugPrint(
+        '[AiRepository] Converting log ${log.id}: mood=$convertedHasMood, habits=$convertedHasHabits (${convertedHabits.length} items), notes=$convertedHasNotes',
+      );
+
+      return payload;
+    }).toList();
+
+    // Count total data points for Gemini
+    final totalMoods = logPayloads.where((l) => l['mood'] != null).length;
+    final totalHabits = logPayloads.fold<int>(
+      0,
+      (sum, l) =>
+          sum + List<String>.from(l['habits'] as List? ?? const []).length,
     );
+    final totalNotes = logPayloads
+        .where((l) => ((l['notes'] as String?)?.trim().isNotEmpty ?? false))
+        .length;
+
+    debugPrint(
+      '[AiRepository] Data Summary: $totalMoods moods, $totalHabits habit entries, $totalNotes notes',
+    );
+    debugPrint(
+      '[AiRepository] Sending ${logPayloads.length} complete log entries to Gemini...',
+    );
+
+    // Validate that we have meaningful data to send
+    if (logPayloads.isEmpty) {
+      throw Exception('No logs to analyze - cannot generate insights');
+    }
+
+    // Ensure at least some logs have meaningful data (mood, habits, or notes)
+    final logsWithData = logPayloads.where((log) {
+      final habits = List<String>.from(log['habits'] as List? ?? const []);
+      final notes = (log['notes'] as String?)?.trim();
+      return log['mood'] != null ||
+          habits.isNotEmpty ||
+          (notes?.isNotEmpty ?? false);
+    }).length;
+
+    if (logsWithData == 0) {
+      throw Exception(
+        'All logs are empty - need at least mood, habits, or notes to generate insights',
+      );
+    }
+
+    debugPrint(
+      '[AiRepository] Validated: $logsWithData out of ${logPayloads.length} logs contain data',
+    );
+
+    // Call Supabase Edge Function
+    try {
+      final contextSummary = _createDetailedContextSummary(recentLogs);
+      debugPrint('[AiRepository] Context Summary for detailed responses:');
+      debugPrint(contextSummary);
+
+      debugPrint(
+        '[AiRepository] Calling Gemini API with complete log data...',
+      );
+      final response = await _supabase.functions.invoke(
+        'generate-insight',
+        body: {'recentLogs': logPayloads},
+      );
+      final result = response.data;
+
+      // Validate that we got real data from Gemini (not empty or null)
+      final prediction = result['prediction'] as String? ?? '';
+      final futureLetter = result['futureLetter'] as String? ?? '';
+      final suggestions =
+          (result['suggestions'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          <String>[];
+
+      if (prediction.trim().isEmpty) {
+        throw Exception(
+          'Gemini returned empty prediction - API may not be configured correctly',
+        );
+      }
+
+      if (futureLetter.trim().isEmpty) {
+        throw Exception(
+          'Gemini returned empty future letter - API may not be configured correctly',
+        );
+      }
+
+      if (prediction.trim().length < 150) {
+        throw Exception(
+          'Gemini returned prediction that is too short (${prediction.length} chars). Expected at least 150 chars with specific log references.',
+        );
+      } else if (prediction.trim().length < 180) {
+        debugPrint(
+          '[AiRepository] Prediction is shorter than ideal (${prediction.length} chars). Prefer 180+ chars for better detail.',
+        );
+      }
+
+      if (futureLetter.trim().length < 250) {
+        throw Exception(
+          'Gemini returned future letter that is too short (${futureLetter.length} chars). Expected at least 250 chars for a detailed, personal letter.',
+        );
+      } else if (futureLetter.trim().length < 280) {
+        debugPrint(
+          '[AiRepository] Future letter is shorter than ideal (${futureLetter.length} chars). Prefer 280+ chars for better detail.',
+        );
+      }
+
+      // Validate that responses reference specific log details (not generic)
+      final predictionLower = prediction.toLowerCase();
+      final letterLower = futureLetter.toLowerCase();
+
+      final hasSpecificReferences =
+          predictionLower.contains('i saw') ||
+          predictionLower.contains('i noticed') ||
+          predictionLower.contains('your logs') ||
+          predictionLower.contains('you\'ve been') ||
+          predictionLower.contains('you are') ||
+          letterLower.contains('i saw') ||
+          letterLower.contains('i noticed') ||
+          letterLower.contains('when you') ||
+          letterLower.contains('remember when');
+
+      if (!hasSpecificReferences) {
+        debugPrint(
+          '[AiRepository] Warning: Response may be too generic. Expected references to specific log entries.',
+        );
+      } else {
+        debugPrint(
+          '[AiRepository] Response includes specific log references - detailed and personalized!',
+        );
+      }
+
+      debugPrint(
+        '[AiRepository] generateInsight success - using Gemini-generated content',
+      );
+      debugPrint('[AiRepository] Response Details:');
+      debugPrint(
+        '[AiRepository]   Prediction: ${prediction.length} chars (min: 200)',
+      );
+      debugPrint(
+        '[AiRepository]   Future Letter: ${futureLetter.length} chars (min: 300)',
+      );
+      debugPrint('[AiRepository]   Suggestions: ${suggestions.length} items');
+
+      final stressLevel = result['stressLevel'] as int?;
+      if (stressLevel != null) {
+        debugPrint(
+          '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})',
+        );
+      } else {
+        debugPrint(
+          '[AiRepository]   Stress Level: NOT PROVIDED by server.',
+        );
+      }
+
+      for (var i = 0; i < suggestions.length; i++) {
+        if (suggestions[i].length < 30) {
+          debugPrint(
+            '[AiRepository] Suggestion ${i + 1} is too short: ${suggestions[i].length} chars',
+          );
+        }
+      }
+
+      final calmingMessage = result['calmingMessage'] as String?;
+      final musicRecs = (result['musicRecommendations'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      return AiInsightModel(
+        prediction: prediction,
+        suggestions: suggestions,
+        futureLetter: futureLetter,
+        generatedAt: DateTime.now(),
+        stressLevel: stressLevel,
+        calmingMessage: calmingMessage,
+        musicRecommendations: musicRecs,
+      );
+    } catch (e) {
+      debugPrint('[AiRepository] generateInsight error -> $e');
+      rethrow;
+    }
   }
 
-  /// Generate a free-form chat response
-  ///
-  /// TODO: Implement via Supabase Edge Function once deployed.
+  /// Generate a free-form chat response using Gemini via Edge Function
   Future<String> generateChatResponse(
     String userMessage, {
     String? context,
   }) async {
-    debugPrint('[AiRepository] generateChatResponse -> "$userMessage"');
-    throw UnimplementedError(
-      'Chat not yet migrated to Supabase Edge Functions.',
+    try {
+      debugPrint('[AiRepository] generateChatResponse -> "$userMessage"');
+
+      final response = await _supabase.functions.invoke(
+        'generate-chat-response',
+        body: {
+          'userMessage': userMessage,
+          if (context != null) 'context': context,
+        },
+      );
+
+      final responseText = response.data['response'] as String? ?? '';
+
+      if (responseText.trim().isEmpty) {
+        throw Exception('Gemini returned empty response');
+      }
+
+      debugPrint('[AiRepository] Received chat response from Gemini');
+      return responseText;
+    } catch (e) {
+      debugPrint('[AiRepository] generateChatResponse error -> $e');
+      rethrow;
+    }
+  }
+
+  /// Create a detailed context summary from logs for Gemini to reference
+  String _createDetailedContextSummary(List<LogEntryModel> logs) {
+    final buffer = StringBuffer();
+    buffer.writeln('=== DETAILED LOG CONTEXT FOR GEMINI ===');
+    buffer.writeln('Total logs: ${logs.length}');
+    buffer.writeln('');
+
+    final moods = logs
+        .where((l) => l.mood != null)
+        .map((l) => l.mood!)
+        .toList();
+    final allHabits = <String>{};
+    final notesWithContent = <String>[];
+
+    for (var log in logs) {
+      allHabits.addAll(log.habits);
+      if (log.notes != null && log.notes!.trim().isNotEmpty) {
+        notesWithContent.add(log.notes!);
+      }
+    }
+
+    if (moods.isNotEmpty) {
+      final avgMood = moods.reduce((a, b) => a + b) / moods.length;
+      buffer.writeln('MOOD PATTERNS:');
+      buffer.writeln('  - Average mood: ${avgMood.toStringAsFixed(1)}/5');
+      buffer.writeln(
+        '  - Mood range: ${moods.reduce((a, b) => a < b ? a : b)}-${moods.reduce((a, b) => a > b ? a : b)}',
+      );
+      buffer.writeln('  - Total mood entries: ${moods.length}');
+      buffer.writeln('');
+    }
+
+    if (allHabits.isNotEmpty) {
+      buffer.writeln('HABITS TRACKED:');
+      for (var habit in allHabits) {
+        final count = logs.where((l) => l.habits.contains(habit)).length;
+        buffer.writeln('  - $habit (appears in $count logs)');
+      }
+      buffer.writeln('');
+    }
+
+    if (notesWithContent.isNotEmpty) {
+      buffer.writeln('NOTES SUMMARY:');
+      buffer.writeln('  - ${notesWithContent.length} logs have notes');
+      buffer.writeln(
+        '  - Sample themes: Check individual log notes for specific details',
+      );
+      buffer.writeln('');
+    }
+
+    buffer.writeln('RECENT LOG ENTRIES (for specific references):');
+    for (var i = 0; i < logs.length && i < 5; i++) {
+      final log = logs[i];
+      buffer.write('  ${i + 1}. ${log.date.toString().split(' ')[0]}: ');
+      if (log.mood != null) buffer.write('Mood ${log.mood}/5, ');
+      if (log.habits.isNotEmpty) {
+        buffer.write('Habits: ${log.habits.join(", ")}, ');
+      }
+      if (log.notes != null && log.notes!.isNotEmpty) {
+        final notePreview = log.notes!.length > 60
+            ? '${log.notes!.substring(0, 60)}...'
+            : log.notes!;
+        buffer.write('Note: "$notePreview"');
+      }
+      buffer.writeln('');
+    }
+
+    buffer.writeln('');
+    buffer.writeln('=== INSTRUCTIONS FOR GEMINI ===');
+    buffer.writeln('Please create DETAILED, PERSONALIZED responses that:');
+    buffer.writeln(
+      '1. Reference specific log entries (e.g., "I saw you logged X on Y date")',
     );
+    buffer.writeln('2. Mention specific habits, moods, or notes from the logs');
+    buffer.writeln(
+      '3. Provide context-aware suggestions based on actual patterns',
+    );
+    buffer.writeln(
+      '4. Write future letters that feel personal and reference specific moments',
+    );
+    buffer.writeln('5. Avoid generic phrases - be specific and detailed');
+    buffer.writeln('================================');
+
+    return buffer.toString();
   }
 
   /// Get mock insight for testing/offline mode

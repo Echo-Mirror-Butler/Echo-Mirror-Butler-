@@ -1,39 +1,80 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/supabase_client_service.dart';
 import '../models/log_entry_model.dart';
 
 /// Repository for logging operations
-/// Backed by Supabase — full implementation pending migration phase
+/// Handles all Supabase table queries for daily logging
 class LoggingRepository {
   LoggingRepository() {
-    debugPrint('[LoggingRepository] Initialized');
+    debugPrint('[LoggingRepository] Using shared Supabase client');
   }
 
-  /// Check if a string is a UUID format
-  bool _isUuid(String? str) {
-    if (str == null || str.isEmpty) return false;
-    final uuidRegex = RegExp(
-      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-      caseSensitive: false,
-    );
-    return uuidRegex.hasMatch(str);
+  SupabaseClient get _supabase => SupabaseClientService.instance.client;
+
+  String _toDateString(DateTime date) {
+    final utcDate = date.isUtc
+        ? date
+        : DateTime.utc(date.year, date.month, date.day);
+    final year = utcDate.year.toString().padLeft(4, '0');
+    final month = utcDate.month.toString().padLeft(2, '0');
+    final day = utcDate.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 
   /// Create a new log entry
   Future<LogEntryModel> createLogEntry(LogEntryModel entry) async {
-    debugPrint('[LoggingRepository] createLogEntry -> ${entry.toJson()}');
-    throw UnimplementedError(
-      'Logging endpoints not yet implemented for Supabase. '
-      'Implement using supabase_flutter client against the log_entries table.',
-    );
+    try {
+      debugPrint('[LoggingRepository] createLogEntry -> ${entry.toJson()}');
+      final result = await _supabase
+          .from('log_entries')
+          .insert({
+            'user_id': entry.userId,
+            'date': _toDateString(entry.date),
+            'mood': entry.mood,
+            'habits': entry.habits,
+            'notes': entry.notes,
+          })
+          .select()
+          .single();
+
+      debugPrint('[LoggingRepository] createLogEntry success');
+      return LogEntryModel.fromJson(result);
+    } catch (e, stackTrace) {
+      debugPrint('[LoggingRepository] createLogEntry error -> $e');
+      debugPrint(
+        '[LoggingRepository] createLogEntry stackTrace -> $stackTrace',
+      );
+      throw Exception('Failed to create log entry: ${e.toString()}');
+    }
   }
 
   /// Update an existing log entry
   Future<LogEntryModel> updateLogEntry(LogEntryModel entry) async {
-    debugPrint('[LoggingRepository] updateLogEntry -> ${entry.id}');
-    throw UnimplementedError(
-      'Logging endpoints not yet implemented for Supabase.',
-    );
+    try {
+      debugPrint('[LoggingRepository] updateLogEntry -> ${entry.id}');
+      final result = await _supabase
+          .from('log_entries')
+          .update({
+            'date': _toDateString(entry.date),
+            'mood': entry.mood,
+            'habits': entry.habits,
+            'notes': entry.notes,
+          })
+          .eq('id', entry.id)
+          .eq('user_id', entry.userId)
+          .select()
+          .single();
+
+      debugPrint('[LoggingRepository] updateLogEntry success');
+      return LogEntryModel.fromJson(result);
+    } catch (e, stackTrace) {
+      debugPrint('[LoggingRepository] updateLogEntry error -> $e');
+      debugPrint(
+        '[LoggingRepository] updateLogEntry stackTrace -> $stackTrace',
+      );
+      throw Exception('Failed to update log entry: ${e.toString()}');
+    }
   }
 
   /// Get log entry for a specific date
@@ -42,11 +83,25 @@ class LoggingRepository {
     String userId,
   ) async {
     try {
+      final normalizedDate = _toDateString(date);
       debugPrint(
-        '[LoggingRepository] getLogEntryForDate -> date: $date, userId: $userId',
+        '[LoggingRepository] getLogEntryForDate -> date: $normalizedDate, userId: $userId',
       );
-      return null;
-    } catch (e) {
+      final result = await _supabase
+          .from('log_entries')
+          .select()
+          .eq('user_id', userId)
+          .eq('date', normalizedDate)
+          .maybeSingle();
+
+      if (result == null) {
+        debugPrint('[LoggingRepository] getLogEntryForDate -> no entry found');
+        return null;
+      }
+
+      debugPrint('[LoggingRepository] getLogEntryForDate success');
+      return LogEntryModel.fromJson(result);
+    } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntryForDate error -> $e');
       return null;
     }
@@ -60,27 +115,46 @@ class LoggingRepository {
   }) async {
     try {
       debugPrint('[LoggingRepository] getLogEntries -> userId: $userId');
-
-      if (_isUuid(userId)) {
-        final prefs = await SharedPreferences.getInstance();
-        final email = prefs.getString('user_email');
-        debugPrint(
-          '[LoggingRepository] UUID userId detected, email: ${email ?? "not found"}',
-        );
+      var query = _supabase.from('log_entries').select().eq('user_id', userId);
+      if (startDate != null) {
+        query = query.gte('date', _toDateString(startDate));
+      }
+      if (endDate != null) {
+        query = query.lte('date', _toDateString(endDate));
       }
 
-      return [];
-    } catch (e) {
+      final results = await query.order('date');
+      debugPrint(
+        '[LoggingRepository] getLogEntries success -> ${results.length} entries',
+      );
+      return results.map((result) => LogEntryModel.fromJson(result)).toList();
+    } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntries error -> $e');
+      debugPrint(
+        '[LoggingRepository] getLogEntries stackTrace -> $stackTrace',
+      );
+      // Return empty list on error instead of throwing
       return [];
     }
   }
 
   /// Delete a log entry
   Future<void> deleteLogEntry(String entryId, String userId) async {
-    debugPrint('[LoggingRepository] deleteLogEntry -> $entryId');
-    throw UnimplementedError(
-      'Logging endpoints not yet implemented for Supabase.',
-    );
+    try {
+      debugPrint('[LoggingRepository] deleteLogEntry -> $entryId');
+      await _supabase
+          .from('log_entries')
+          .delete()
+          .eq('id', entryId)
+          .eq('user_id', userId);
+
+      debugPrint('[LoggingRepository] deleteLogEntry success');
+    } catch (e, stackTrace) {
+      debugPrint('[LoggingRepository] deleteLogEntry error -> $e');
+      debugPrint(
+        '[LoggingRepository] deleteLogEntry stackTrace -> $stackTrace',
+      );
+      throw Exception('Failed to delete log entry: ${e.toString()}');
+    }
   }
 }

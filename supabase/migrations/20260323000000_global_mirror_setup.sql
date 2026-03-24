@@ -24,5 +24,17 @@ create policy "Authenticated users can upload images"
   on storage.objects for insert
   with check ( bucket_id = 'images' and auth.role() = 'authenticated' );
 
--- Enable Realtime on mood_pins table
-alter publication supabase_realtime add table mood_pins;
+-- Keep realtime publication setup idempotent for clean resets.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'mood_pins'
+  ) then
+    alter publication supabase_realtime add table public.mood_pins;
+  end if;
+end
+$$;
