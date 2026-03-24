@@ -127,7 +127,9 @@ class LoggingRepository {
       }
 
       final results = await query.order('date');
-      debugPrint('[LoggingRepository] getLogEntries success -> ${results.length} entries');
+      debugPrint(
+        '[LoggingRepository] getLogEntries success -> ${results.length} entries',
+      );
       return results
           .map((result) => LogEntryModel.fromJson(result))
           .toList();
