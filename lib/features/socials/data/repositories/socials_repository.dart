@@ -84,7 +84,8 @@ class SocialsRepository {
       hostName: (data['host_name'] ?? '').toString(),
       hostAvatarUrl: data['host_avatar_url'] as String?,
       title: (data['title'] ?? '').toString(),
-      createdAt: DateTime.tryParse((data['created_at'] ?? '').toString()) ??
+      createdAt:
+          DateTime.tryParse((data['created_at'] ?? '').toString()) ??
           DateTime.now(),
       expiresAt: data['expires_at'] != null
           ? DateTime.tryParse(data['expires_at'].toString())
@@ -107,9 +108,11 @@ class SocialsRepository {
       imageUrls: imageUrlsRaw is List
           ? imageUrlsRaw.map((e) => e.toString()).toList()
           : const [],
-      createdAt: DateTime.tryParse((data['created_at'] ?? '').toString()) ??
+      createdAt:
+          DateTime.tryParse((data['created_at'] ?? '').toString()) ??
           DateTime.now(),
-      expiresAt: DateTime.tryParse((data['expires_at'] ?? '').toString()) ??
+      expiresAt:
+          DateTime.tryParse((data['expires_at'] ?? '').toString()) ??
           DateTime.now().add(const Duration(hours: 24)),
       viewCount: (data['view_count'] as num?)?.toInt() ?? 0,
       viewedBy: viewedByRaw is List
@@ -129,8 +132,9 @@ class SocialsRepository {
       description: data['description'] as String?,
       scheduledTime:
           DateTime.tryParse((data['scheduled_time'] ?? '').toString()) ??
-              DateTime.now(),
-      createdAt: DateTime.tryParse((data['created_at'] ?? '').toString()) ??
+          DateTime.now(),
+      createdAt:
+          DateTime.tryParse((data['created_at'] ?? '').toString()) ??
           DateTime.now(),
       isVideoEnabled: data['is_video_enabled'] as bool? ?? true,
       isVoiceOnly: data['is_voice_only'] as bool? ?? false,
@@ -380,8 +384,9 @@ class SocialsRepository {
       final extension = imageFile.path.split('.').last.toLowerCase();
       final objectPath =
           '$userId/${DateTime.now().millisecondsSinceEpoch}.$extension';
-      final uploadUrl =
-          Uri.parse('$_supabaseUrl/storage/v1/object/stories/$objectPath');
+      final uploadUrl = Uri.parse(
+        '$_supabaseUrl/storage/v1/object/stories/$objectPath',
+      );
 
       final response = await http.post(
         uploadUrl,
