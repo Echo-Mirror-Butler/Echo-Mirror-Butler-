@@ -31,7 +31,8 @@ dependencies:
   smooth_page_indicator: ^1.1.0
   shimmer: ^3.0.0
 
-  # Backend (Serverpod)
+  # Backend (Moving to Supabase)
+  supabase_flutter: ^2.8.3
   serverpod_client: ^3.0.1
   serverpod_auth_idp_client: ^3.0.1
   echomirror_server_client:
