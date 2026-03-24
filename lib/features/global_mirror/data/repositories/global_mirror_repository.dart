@@ -12,7 +12,7 @@ import '../models/mood_pin_comment_model.dart';
 class GlobalMirrorRepository {
   final bool _useMockData = false;
 
-  final SupabaseClient supabase = Supabase.instance.client;
+  SupabaseClient get supabase => Supabase.instance.client;
 
   final List<MoodPinModel> _mockPins = [];
   final List<VideoPostModel> _mockVideos = [];
