@@ -1,6 +1,5 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ai_insight_model.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
@@ -21,7 +20,7 @@ class AiRepository {
 
   /// Generate AI insight based on recent logs
   ///
-  /// Converts Flutter LogEntryModel to Serverpod LogEntry and calls the endpoint
+  /// Converts Flutter log models to a Supabase Edge Function payload.
   /// Throws exception if Gemini API fails - no silent fallback to mock data
   ///
   /// **IMPORTANT: Server-side prompt should request DETAILED, PERSONALIZED responses:**
@@ -74,31 +73,24 @@ class AiRepository {
       );
     }
 
-    // Convert LogEntryModel to Serverpod LogEntry
-    // Ensure all fields are properly included for Gemini analysis
-    final serverpodLogs = recentLogs.map((log) {
+    // Convert log models into the JSON payload expected by the Supabase function.
+    final serverpodLogs = recentLogs.map<Map<String, dynamic>>((log) {
       // Validate that important data is present BEFORE conversion
       final hasMood = log.mood != null;
       final hasHabits = log.habits.isNotEmpty;
       final hasNotes = log.notes != null && log.notes!.trim().isNotEmpty;
 
-      // Create Serverpod LogEntry with all data preserved
-      final serverpodLog = LogEntry(
-        id: int.tryParse(log.id),
-        userId: log.userId,
-        date: log.date,
-        mood: log.mood,
-        habits: log.habits, // Ensure habits list is preserved (List<String>)
-        notes: log.notes, // Ensure notes are preserved (String? - can be null)
-        createdAt: log.createdAt,
-        updatedAt: log.updatedAt,
+      final payload = log.toJson();
+      final convertedHabits = List<String>.from(
+        payload['habits'] as List? ?? const [],
       );
+      final convertedNotes = (payload['notes'] as String?)?.trim();
 
       // Validate AFTER conversion to ensure data was preserved
-      final convertedHasMood = serverpodLog.mood != null;
-      final convertedHasHabits = serverpodLog.habits.isNotEmpty;
+      final convertedHasMood = payload['mood'] != null;
+      final convertedHasHabits = convertedHabits.isNotEmpty;
       final convertedHasNotes =
-          serverpodLog.notes != null && serverpodLog.notes!.trim().isNotEmpty;
+          convertedNotes != null && convertedNotes.isNotEmpty;
 
       if (hasMood != convertedHasMood ||
           hasHabits != convertedHasHabits ||
@@ -109,20 +101,21 @@ class AiRepository {
       }
 
       debugPrint(
-        '[AiRepository] Converting log ${log.id}: mood=$convertedHasMood, habits=$convertedHasHabits (${serverpodLog.habits.length} items), notes=$convertedHasNotes',
+        '[AiRepository] Converting log ${log.id}: mood=$convertedHasMood, habits=$convertedHasHabits (${convertedHabits.length} items), notes=$convertedHasNotes',
       );
 
-      return log.toJson();
+      return payload;
     }).toList();
 
     // Count total data points for Gemini
-    final totalMoods = serverpodLogs.where((l) => l.mood != null).length;
+    final totalMoods = serverpodLogs.where((l) => l['mood'] != null).length;
     final totalHabits = serverpodLogs.fold<int>(
       0,
-      (sum, l) => sum + l.habits.length,
+      (sum, l) =>
+          sum + List<String>.from(l['habits'] as List? ?? const []).length,
     );
     final totalNotes = serverpodLogs
-        .where((l) => l.notes != null && l.notes!.trim().isNotEmpty)
+        .where((l) => ((l['notes'] as String?)?.trim().isNotEmpty ?? false))
         .length;
 
     debugPrint(
@@ -139,9 +132,11 @@ class AiRepository {
 
     // Ensure at least some logs have meaningful data (mood, habits, or notes)
     final logsWithData = serverpodLogs.where((log) {
-      return (log.mood != null) ||
-          log.habits.isNotEmpty ||
-          (log.notes != null && log.notes!.trim().isNotEmpty);
+      final habits = List<String>.from(log['habits'] as List? ?? const []);
+      final notes = (log['notes'] as String?)?.trim();
+      return log['mood'] != null ||
+          habits.isNotEmpty ||
+          (notes?.isNotEmpty ?? false);
     }).length;
 
     if (logsWithData == 0) {
