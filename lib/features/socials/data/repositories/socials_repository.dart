@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/scheduled_session_model.dart';
 import '../models/story_model.dart';
 import '../models/video_session_model.dart';
 

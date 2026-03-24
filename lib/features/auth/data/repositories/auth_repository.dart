@@ -1,114 +1,36 @@
-import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/services/serverpod_client_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Repository for authentication operations
-/// This handles all Serverpod backend calls for auth
+/// Repository for authentication operations backed by Supabase
 class AuthRepository {
-  final Client? _injectedClient;
-  AuthRepository({Client? client}) : _injectedClient = client {
-    debugPrint(
-      '[AuthRepository] Initialized - client will be accessed when needed',
-    );
+  final SupabaseClient? _injectedClient;
+  AuthRepository({SupabaseClient? supabaseClient})
+      : _injectedClient = supabaseClient {
+    debugPrint('[AuthRepository] Initialized');
   }
 
-  /// Get the client instance (lazy initialization)
-  Client get _client {
-    final injected = _injectedClient;
-    if (injected != null) return injected;
-    // Ensure client is initialized before use
-    if (!ServerpodClientService.instance.isInitialized) {
-      throw StateError(
-        'ServerpodClientService not initialized. Call ensureInitialized() in main() first.',
-      );
-    }
-    return ServerpodClientService.instance.client;
-  }
+  SupabaseClient get _supabase =>
+      _injectedClient ?? Supabase.instance.client;
+  GoTrueClient get _auth => _supabase.auth;
 
   /// Sign in with email and password
-  /// Returns user ID on success, throws exception on failure
   Future<String> signIn(String email, String password) async {
     try {
       debugPrint('[AuthRepository] signIn -> $email');
-
-      // Check if we have a key before login
-      final keyBefore = await _client.authenticationKeyManager?.get();
-      debugPrint(
-        '[AuthRepository] Key before login: ${keyBefore != null ? "exists" : "null"}',
-      );
-
-      // Login and get the response
-      final authResult = await _client.emailIdp.login(
+      final response = await _auth.signInWithPassword(
         email: email,
         password: password,
       );
-
-      // Extract the JWT token and user info from the AuthSuccess response
-      final dynamic result = authResult;
-      final String? token = result.token as String?;
-
-      // authUserId might be UuidValue or String, handle both
-      String? authUserId;
-      try {
-        final authUserIdValue = result.authUserId;
-        if (authUserIdValue != null) {
-          // Try to access .uuid property (for UuidValue) or use toString()
-          try {
-            // If it has a .uuid property, use it (UuidValue)
-            final dynamic uuidValue = authUserIdValue;
-            authUserId = uuidValue.uuid as String?;
-          } catch (_) {
-            // If .uuid doesn't work, try toString()
-            authUserId = authUserIdValue.toString();
-          }
-        }
-      } catch (e) {
-        debugPrint('[AuthRepository] Error extracting authUserId: $e');
-        authUserId = null;
+      final user = response.user;
+      if (user == null) {
+        throw Exception('Sign in failed: no user returned');
       }
-
-      debugPrint(
-        '[AuthRepository] Login response - token: ${token != null ? "${token.length} chars" : "null"}, authUserId: $authUserId',
-      );
-
-      if (token == null || token.isEmpty) {
-        debugPrint('[AuthRepository] ⚠️ No token found in login response');
-        throw Exception('Login succeeded but no authentication token received');
-      }
-
-      // Save the JWT token to SharedPreferences for persistence
-      debugPrint(
-        '[AuthRepository] Saving JWT authentication token (${token.length} chars)...',
-      );
-      await _client.authenticationKeyManager?.put(token);
-
-      // Save user info (email and authUserId) to SharedPreferences for persistence
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', email);
-      if (authUserId != null && authUserId.isNotEmpty) {
-        await prefs.setString('user_id', authUserId);
-        debugPrint('[AuthRepository] Saved user ID from server: $authUserId');
-      } else {
-        // Fallback to email hash if authUserId not available
-        final fallbackUserId = 'user_${email.hashCode}';
-        await prefs.setString('user_id', fallbackUserId);
-        debugPrint('[AuthRepository] Using fallback user ID: $fallbackUserId');
-      }
-
-      // Verify the token was saved
-      final savedToken = await _client.authenticationKeyManager?.get();
-      if (savedToken == null || savedToken != token) {
-        debugPrint('[AuthRepository] ❌ ERROR: Token was not saved correctly!');
-        throw Exception('Failed to save authentication token');
-      }
-
-      debugPrint('[AuthRepository] ✅ Authentication token and user info saved');
-
-      // Return the user ID (prefer server's authUserId, fallback to email hash)
-      final userId = authUserId ?? 'user_${email.hashCode}';
-      debugPrint('[AuthRepository] signIn success -> $email, userId: $userId');
-      return userId;
+      await prefs.setString('user_id', user.id);
+      debugPrint('[AuthRepository] signIn success -> ${user.id}');
+      return user.id;
     } catch (e) {
       debugPrint('[AuthRepository] signIn error -> $e');
       throw Exception('Sign in failed: ${e.toString()}');
@@ -116,27 +38,20 @@ class AuthRepository {
   }
 
   /// Sign up with email and password
-  /// Note: Serverpod requires email verification, so this is a two-step process
-  /// Returns account request ID for verification
   Future<String> signUp(String email, String password, String? name) async {
     try {
       debugPrint('[AuthRepository] signUp -> $email | name: $name');
-      // Step 1: Start registration (sends verification email)
-      final accountRequestId = await _client.emailIdp.startRegistration(
+      final response = await _auth.signUp(
         email: email,
+        password: password,
+        data: name != null ? {'name': name} : null,
       );
-
-      // In a real app, you'd need to:
-      // 1. Show a screen for the user to enter the verification code from email
-      // 2. Call verifyRegistrationCode with the code
-      // 3. Call finishRegistration with the token and password
-
-      // Convert UuidValue to string - use the uuid property for proper formatting
-      final accountRequestIdString = accountRequestId.uuid;
-      debugPrint(
-        '[AuthRepository] signUp started. accountRequestId=$accountRequestIdString (original type: ${accountRequestId.runtimeType})',
-      );
-      return accountRequestIdString;
+      final user = response.user;
+      if (user == null) {
+        throw Exception('Sign up failed: no user returned');
+      }
+      debugPrint('[AuthRepository] signUp success -> ${user.id}');
+      return user.id;
     } catch (e, stackTrace) {
       debugPrint('[AuthRepository] signUp error -> $e');
       debugPrint('[AuthRepository] signUp stackTrace -> $stackTrace');
@@ -144,65 +59,23 @@ class AuthRepository {
     }
   }
 
-  /// Verify registration code and complete signup
+  /// Complete signup — Supabase handles verification automatically via email link
   Future<String> completeSignUp({
     required String accountRequestId,
     required String verificationCode,
     required String password,
   }) async {
-    try {
-      debugPrint(
-        '[AuthRepository] completeSignUp -> accountRequestId=$accountRequestId, verificationCode=$verificationCode',
-      );
-
-      // Convert string back to UuidValue
-      UuidValue uuidValue;
-      try {
-        uuidValue = UuidValue.fromString(accountRequestId);
-        debugPrint(
-          '[AuthRepository] Successfully parsed accountRequestId to UuidValue',
-        );
-      } catch (e) {
-        debugPrint('[AuthRepository] Failed to parse accountRequestId: $e');
-        throw Exception('Invalid accountRequestId format: $accountRequestId');
-      }
-
-      // Step 2: Verify the code
-      debugPrint('[AuthRepository] Calling verifyRegistrationCode...');
-      final registrationToken = await _client.emailIdp.verifyRegistrationCode(
-        accountRequestId: uuidValue,
-        verificationCode: verificationCode,
-      );
-      debugPrint(
-        '[AuthRepository] verifyRegistrationCode successful, got registrationToken',
-      );
-
-      // Step 3: Finish registration
-      debugPrint('[AuthRepository] Calling finishRegistration...');
-      await _client.emailIdp.finishRegistration(
-        registrationToken: registrationToken,
-        password: password,
-      );
-
-      // Registration complete - key is stored automatically
-      debugPrint('[AuthRepository] completeSignUp success.');
-      return accountRequestId;
-    } catch (e, stackTrace) {
-      debugPrint('[AuthRepository] completeSignUp error -> $e');
-      debugPrint('[AuthRepository] completeSignUp stackTrace -> $stackTrace');
-      throw Exception('Complete sign up failed: ${e.toString()}');
-    }
+    debugPrint(
+      '[AuthRepository] completeSignUp -> Supabase handles verification automatically',
+    );
+    return accountRequestId;
   }
 
   /// Sign out current user
   Future<void> signOut() async {
     try {
-      // Serverpod handles sign out through session management
-      // Clear the authentication key and user info
       debugPrint('[AuthRepository] signOut');
-      await _client.authenticationKeyManager?.remove();
-
-      // Clear saved user info
+      await _auth.signOut();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_email');
       await prefs.remove('user_id');
@@ -213,35 +86,25 @@ class AuthRepository {
     }
   }
 
-  /// Get current user
-  /// Returns user data if authenticated, null otherwise
+  /// Get current user data
   Future<Map<String, dynamic>?> getCurrentUser() async {
     try {
-      // Check if we have an authentication key
-      final key = await _client.authenticationKeyManager?.get();
-      if (key == null) {
-        debugPrint('[AuthRepository] getCurrentUser: No authentication key');
-        return null;
+      final user = _auth.currentUser;
+      if (user != null) {
+        return {
+          'id': user.id,
+          'email': user.email ?? '',
+          'name': user.userMetadata?['name'],
+          'createdAt': user.createdAt,
+        };
       }
-
-      // Retrieve saved user info from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      final savedEmail = prefs.getString('user_email');
       final savedUserId = prefs.getString('user_id');
-
-      if (savedUserId == null) {
-        debugPrint('[AuthRepository] getCurrentUser: No saved user ID found');
-        return null;
-      }
-
-      debugPrint(
-        '[AuthRepository] getCurrentUser: Found saved user - id: $savedUserId, email: ${savedEmail ?? "not saved"}',
-      );
-
+      if (savedUserId == null) return null;
       return {
         'id': savedUserId,
-        'email': savedEmail ?? '',
-        'name': null, // Get from custom endpoint if needed
+        'email': prefs.getString('user_email') ?? '',
+        'name': null,
         'createdAt': DateTime.now().toIso8601String(),
       };
     } catch (e) {
@@ -253,8 +116,9 @@ class AuthRepository {
   /// Check if user is authenticated
   Future<bool> isAuthenticated() async {
     try {
-      final key = await _client.authenticationKeyManager?.get();
-      return key != null;
+      if (_auth.currentSession != null) return true;
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('user_id') != null;
     } catch (e) {
       debugPrint('[AuthRepository] isAuthenticated error -> $e');
       return false;
@@ -268,67 +132,27 @@ class AuthRepository {
   ) async {
     try {
       debugPrint('[AuthRepository] changePassword');
-
-      // Get current user email from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final email = prefs.getString('user_email');
-
-      if (email == null) {
-        throw Exception('User email not found. Please log in again.');
-      }
-
-      // Verify current password by attempting to authenticate
-      try {
-        await _client.emailIdp.login(email: email, password: currentPassword);
-      } catch (e) {
-        debugPrint('[AuthRepository] Current password verification failed: $e');
-        throw Exception('Current password is incorrect');
-      }
-
-      // Use dynamic client to call changePassword endpoint if it exists
-      // This follows the same pattern as password reset
-      final dynamic client = _client;
-      try {
-        final result =
-            await client.emailIdp.changePassword(
-                  oldPassword: currentPassword,
-                  newPassword: newPassword,
-                )
-                as bool;
-        debugPrint('[AuthRepository] changePassword success -> $result');
-        return result;
-      } catch (e) {
-        // If the endpoint doesn't exist, throw a clear error
-        debugPrint('[AuthRepository] changePassword endpoint error: $e');
-        throw Exception(
-          'Password change is not yet available. Please contact support.',
-        );
-      }
+      await _auth.updateUser(UserAttributes(password: newPassword));
+      return true;
     } catch (e) {
       debugPrint('[AuthRepository] changePassword error -> $e');
       rethrow;
     }
   }
 
-  /// Request password reset
+  /// Request password reset email
   Future<bool> requestPasswordReset(String email) async {
     try {
       debugPrint('[AuthRepository] requestPasswordReset -> $email');
-      // Call the password reset endpoint
-      // Note: This will be available after running 'serverpod generate'
-      final dynamic client = _client;
-      final result =
-          await client.passwordReset.requestPasswordReset(email) as bool;
-      debugPrint('[AuthRepository] requestPasswordReset success -> $result');
-      return result;
+      await _auth.resetPasswordForEmail(email);
+      return true;
     } catch (e) {
       debugPrint('[AuthRepository] requestPasswordReset error -> $e');
-      // Return false on error, but don't throw to prevent email enumeration
       return false;
     }
   }
 
-  /// Reset password with token
+  /// Reset password using Supabase session token
   Future<bool> resetPassword(
     String email,
     String token,
@@ -336,13 +160,8 @@ class AuthRepository {
   ) async {
     try {
       debugPrint('[AuthRepository] resetPassword -> $email');
-      // Call the password reset endpoint
-      final dynamic client = _client;
-      final result =
-          await client.passwordReset.resetPassword(email, token, newPassword)
-              as bool;
-      debugPrint('[AuthRepository] resetPassword success -> $result');
-      return result;
+      await _auth.updateUser(UserAttributes(password: newPassword));
+      return true;
     } catch (e) {
       debugPrint('[AuthRepository] resetPassword error -> $e');
       throw Exception('Password reset failed: ${e.toString()}');

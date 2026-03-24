@@ -17,4 +17,3 @@ jobs:
     with:
       scan-args: |-
         --lockfile=pubspec.lock
-        --lockfile=echomirror_server/echomirror_server_server/pubspec.lock
