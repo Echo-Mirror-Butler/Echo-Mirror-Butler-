@@ -6,12 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthRepository {
   final SupabaseClient? _injectedClient;
   AuthRepository({SupabaseClient? supabaseClient})
-      : _injectedClient = supabaseClient {
+    : _injectedClient = supabaseClient {
     debugPrint('[AuthRepository] Initialized');
   }
 
-  SupabaseClient get _supabase =>
-      _injectedClient ?? Supabase.instance.client;
+  SupabaseClient get _supabase => _injectedClient ?? Supabase.instance.client;
   GoTrueClient get _auth => _supabase.auth;
 
   /// Sign in with email and password

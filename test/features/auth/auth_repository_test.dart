@@ -49,7 +49,10 @@ void main() {
       expect(userId, '123e4567-e89b-12d3-a456-426614174000');
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('user_email'), 'user@example.com');
-      expect(prefs.getString('user_id'), '123e4567-e89b-12d3-a456-426614174000');
+      expect(
+        prefs.getString('user_id'),
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
     });
 
     test('signIn throws on wrong password', () async {
@@ -95,7 +98,9 @@ void main() {
 
     test('resetPassword returns true with valid token', () async {
       final mockResponse = MockUserResponse();
-      when(() => mockAuth.updateUser(any())).thenAnswer((_) async => mockResponse);
+      when(
+        () => mockAuth.updateUser(any()),
+      ).thenAnswer((_) async => mockResponse);
 
       final repo = AuthRepository(supabaseClient: mockSupabase);
       final ok = await repo.resetPassword(

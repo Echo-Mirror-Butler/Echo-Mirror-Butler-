@@ -48,9 +48,7 @@ class AiRepository {
   /// Example good future letter: "Hey! It's me, your future self. I remember when
   /// you logged that tough day on January 15th where your mood was 2/5, but you
   /// still did your exercise habit. That consistency paid off - look at you now..."
-  Future<AiInsightModel> generateInsight(
-    List<LogEntryModel> recentLogs,
-  ) async {
+  Future<AiInsightModel> generateInsight(List<LogEntryModel> recentLogs) async {
     debugPrint('[AiRepository] generateInsight -> ${recentLogs.length} logs');
 
     // Log detailed information about each log entry for debugging
@@ -58,8 +56,7 @@ class AiRepository {
     for (var i = 0; i < recentLogs.length; i++) {
       final log = recentLogs[i];
       final moodStr = log.mood != null ? '${log.mood}/5' : 'not set';
-      final habitsStr =
-          log.habits.isNotEmpty ? log.habits.join(', ') : 'none';
+      final habitsStr = log.habits.isNotEmpty ? log.habits.join(', ') : 'none';
       final notesStr = log.notes != null && log.notes!.isNotEmpty
           ? '${log.notes!.substring(0, log.notes!.length > 50 ? 50 : log.notes!.length)}...'
           : 'none';
@@ -148,9 +145,7 @@ class AiRepository {
       debugPrint('[AiRepository] Context Summary for detailed responses:');
       debugPrint(contextSummary);
 
-      debugPrint(
-        '[AiRepository] Calling Gemini API with complete log data...',
-      );
+      debugPrint('[AiRepository] Calling Gemini API with complete log data...');
       final response = await _supabase.functions.invoke(
         'generate-insight',
         body: {'recentLogs': logPayloads},
@@ -242,9 +237,7 @@ class AiRepository {
           '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})',
         );
       } else {
-        debugPrint(
-          '[AiRepository]   Stress Level: NOT PROVIDED by server.',
-        );
+        debugPrint('[AiRepository]   Stress Level: NOT PROVIDED by server.');
       }
 
       for (var i = 0; i < suggestions.length; i++) {

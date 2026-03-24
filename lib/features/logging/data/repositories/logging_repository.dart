@@ -130,9 +130,7 @@ class LoggingRepository {
       return results.map((result) => LogEntryModel.fromJson(result)).toList();
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntries error -> $e');
-      debugPrint(
-        '[LoggingRepository] getLogEntries stackTrace -> $stackTrace',
-      );
+      debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
       // Return empty list on error instead of throwing
       return [];
     }
