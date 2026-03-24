@@ -5,6 +5,7 @@ import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/story_model.dart';
 import '../models/video_session_model.dart';
@@ -249,14 +250,34 @@ class SocialsRepository {
     }
   }
 
-  /// Agora credentials now come from Supabase Edge Functions in later phase.
+  /// Get Agora credentials from Supabase Edge Function.
   Future<Map<String, String>> getAgoraCredentials(
     String sessionId,
     int userId,
   ) async {
-    throw UnimplementedError(
-      'Moved to Supabase Edge Functions (migration phase 7).',
-    );
+    try {
+      debugPrint(
+        '[SocialsRepository] getAgoraCredentials -> sessionId: $sessionId, userId: $userId',
+      );
+
+      final response = await Supabase.instance.client.functions.invoke(
+        'get-agora-credentials',
+        body: {'sessionId': sessionId, 'userId': userId.toString()},
+      );
+
+      final token = response.data['token'] as String;
+      final appId = response.data['appId'] as String;
+
+      final credentials = {'token': token, 'appId': appId};
+
+      debugPrint(
+        '[SocialsRepository] Got Agora credentials: ${credentials['appId']}',
+      );
+      return credentials;
+    } catch (e) {
+      debugPrint('[SocialsRepository] getAgoraCredentials error -> $e');
+      rethrow;
+    }
   }
 
   /// Create a scheduled session.

@@ -1,6 +1,5 @@
-import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
-import '../../../../core/services/serverpod_client_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ai_insight_model.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
@@ -13,7 +12,7 @@ class AiRepository {
     );
   }
 
-  Client get _client => ServerpodClientService.instance.client;
+  SupabaseClient get _supabase => Supabase.instance.client;
 
   /// Debug flag to force mock data (for testing without API key)
   /// DISABLED - app uses real-time data only
@@ -21,7 +20,7 @@ class AiRepository {
 
   /// Generate AI insight based on recent logs
   ///
-  /// Converts Flutter LogEntryModel to Serverpod LogEntry and calls the endpoint
+  /// Converts Flutter log models to a Supabase Edge Function payload.
   /// Throws exception if Gemini API fails - no silent fallback to mock data
   ///
   /// **IMPORTANT: Server-side prompt should request DETAILED, PERSONALIZED responses:**
@@ -74,31 +73,24 @@ class AiRepository {
       );
     }
 
-    // Convert LogEntryModel to Serverpod LogEntry
-    // Ensure all fields are properly included for Gemini analysis
-    final serverpodLogs = recentLogs.map((log) {
+    // Convert log models into the JSON payload expected by the Supabase function.
+    final serverpodLogs = recentLogs.map<Map<String, dynamic>>((log) {
       // Validate that important data is present BEFORE conversion
       final hasMood = log.mood != null;
       final hasHabits = log.habits.isNotEmpty;
       final hasNotes = log.notes != null && log.notes!.trim().isNotEmpty;
 
-      // Create Serverpod LogEntry with all data preserved
-      final serverpodLog = LogEntry(
-        id: int.tryParse(log.id),
-        userId: log.userId,
-        date: log.date,
-        mood: log.mood,
-        habits: log.habits, // Ensure habits list is preserved (List<String>)
-        notes: log.notes, // Ensure notes are preserved (String? - can be null)
-        createdAt: log.createdAt,
-        updatedAt: log.updatedAt,
+      final payload = log.toJson();
+      final convertedHabits = List<String>.from(
+        payload['habits'] as List? ?? const [],
       );
+      final convertedNotes = (payload['notes'] as String?)?.trim();
 
       // Validate AFTER conversion to ensure data was preserved
-      final convertedHasMood = serverpodLog.mood != null;
-      final convertedHasHabits = serverpodLog.habits.isNotEmpty;
+      final convertedHasMood = payload['mood'] != null;
+      final convertedHasHabits = convertedHabits.isNotEmpty;
       final convertedHasNotes =
-          serverpodLog.notes != null && serverpodLog.notes!.trim().isNotEmpty;
+          convertedNotes != null && convertedNotes.isNotEmpty;
 
       if (hasMood != convertedHasMood ||
           hasHabits != convertedHasHabits ||
@@ -109,20 +101,21 @@ class AiRepository {
       }
 
       debugPrint(
-        '[AiRepository] Converting log ${log.id}: mood=$convertedHasMood, habits=$convertedHasHabits (${serverpodLog.habits.length} items), notes=$convertedHasNotes',
+        '[AiRepository] Converting log ${log.id}: mood=$convertedHasMood, habits=$convertedHasHabits (${convertedHabits.length} items), notes=$convertedHasNotes',
       );
 
-      return serverpodLog;
+      return payload;
     }).toList();
 
     // Count total data points for Gemini
-    final totalMoods = serverpodLogs.where((l) => l.mood != null).length;
+    final totalMoods = serverpodLogs.where((l) => l['mood'] != null).length;
     final totalHabits = serverpodLogs.fold<int>(
       0,
-      (sum, l) => sum + l.habits.length,
+      (sum, l) =>
+          sum + List<String>.from(l['habits'] as List? ?? const []).length,
     );
     final totalNotes = serverpodLogs
-        .where((l) => l.notes != null && l.notes!.trim().isNotEmpty)
+        .where((l) => ((l['notes'] as String?)?.trim().isNotEmpty ?? false))
         .length;
 
     debugPrint(
@@ -139,9 +132,11 @@ class AiRepository {
 
     // Ensure at least some logs have meaningful data (mood, habits, or notes)
     final logsWithData = serverpodLogs.where((log) {
-      return (log.mood != null) ||
-          log.habits.isNotEmpty ||
-          (log.notes != null && log.notes!.trim().isNotEmpty);
+      final habits = List<String>.from(log['habits'] as List? ?? const []);
+      final notes = (log['notes'] as String?)?.trim();
+      return log['mood'] != null ||
+          habits.isNotEmpty ||
+          (notes?.isNotEmpty ?? false);
     }).length;
 
     if (logsWithData == 0) {
@@ -156,11 +151,6 @@ class AiRepository {
 
     // Call Serverpod endpoint with Gemini
     try {
-      final dynamic client = _client;
-      if (client == null) {
-        throw Exception('Client is null - cannot connect to server');
-      }
-
       // Create detailed context summary for Gemini to reference specific logs
       final contextSummary = _createDetailedContextSummary(recentLogs);
       debugPrint('[AiRepository] 📝 Context Summary for detailed responses:');
@@ -175,13 +165,17 @@ class AiRepository {
       debugPrint(
         '[AiRepository] 💡 Requesting DETAILED, PERSONALIZED responses that reference specific log entries',
       );
-      final result = await client.ai.generateInsight(serverpodLogs) as dynamic;
+      final response = await _supabase.functions.invoke(
+        'generate-insight',
+        body: {'recentLogs': serverpodLogs},
+      );
+      final result = response.data;
 
       // Validate that we got real data from Gemini (not empty or null)
-      final prediction = result.prediction as String? ?? '';
-      final futureLetter = result.futureLetter as String? ?? '';
+      final prediction = result['prediction'] as String? ?? '';
+      final futureLetter = result['futureLetter'] as String? ?? '';
       final suggestions =
-          (result.suggestions as List<dynamic>?)
+          (result['suggestions'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .where((s) => s.isNotEmpty)
               .toList() ??
@@ -266,7 +260,7 @@ class AiRepository {
       debugPrint('[AiRepository]   Suggestions: ${suggestions.length} items');
 
       // Log stress level if present
-      final stressLevel = result.stressLevel as int?;
+      final stressLevel = result['stressLevel'] as int?;
       if (stressLevel != null) {
         debugPrint(
           '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})',
@@ -287,8 +281,8 @@ class AiRepository {
       }
 
       // Extract new fields if available
-      final calmingMessage = result.calmingMessage as String?;
-      final musicRecs = (result.musicRecommendations as List<dynamic>?)
+      final calmingMessage = result['calmingMessage'] as String?;
+      final musicRecs = (result['musicRecommendations'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .where((s) => s.isNotEmpty)
           .toList();
@@ -298,8 +292,8 @@ class AiRepository {
         prediction: prediction,
         suggestions: suggestions,
         futureLetter: futureLetter,
-        generatedAt: result.generatedAt as DateTime? ?? DateTime.now(),
-        stressLevel: result.stressLevel as int?,
+        generatedAt: DateTime.now(),
+        stressLevel: stressLevel,
         calmingMessage: calmingMessage,
         musicRecommendations: musicRecs,
       );
@@ -328,21 +322,22 @@ class AiRepository {
     try {
       debugPrint('[AiRepository] generateChatResponse -> "$userMessage"');
 
-      final dynamic client = _client;
-      if (client == null) {
-        throw Exception('Client is null - cannot connect to server');
-      }
+      final response = await _supabase.functions.invoke(
+        'generate-chat-response',
+        body: {
+          'userMessage': userMessage,
+          if (context != null) 'context': context,
+        },
+      );
 
-      debugPrint('[AiRepository] 🤖 Calling Gemini chat API...');
-      final response =
-          await client.ai.generateChatResponse(userMessage, context) as String;
+      final responseText = response.data['response'] as String? ?? '';
 
-      if (response.trim().isEmpty) {
+      if (responseText.trim().isEmpty) {
         throw Exception('Gemini returned empty response');
       }
 
       debugPrint('[AiRepository] ✅ Received chat response from Gemini');
-      return response;
+      return responseText;
     } catch (e) {
       debugPrint('[AiRepository] ❌ generateChatResponse error -> $e');
       rethrow;
