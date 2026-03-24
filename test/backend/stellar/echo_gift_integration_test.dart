@@ -33,10 +33,12 @@ void main() {
         expect(walletB.accountId, isNotEmpty);
 
         // 2. Establish trustlines for ECHO on both wallets
-        final trustA =
-            await StellarService.establishTrustline(walletA.secretSeed);
-        final trustB =
-            await StellarService.establishTrustline(walletB.secretSeed);
+        final trustA = await StellarService.establishTrustline(
+          walletA.secretSeed,
+        );
+        final trustB = await StellarService.establishTrustline(
+          walletB.secretSeed,
+        );
 
         expect(
           trustA,
@@ -59,8 +61,10 @@ void main() {
         }
 
         final issuerKp = KeyPair.fromSecretSeed(issuerSecret);
-        final echoAsset =
-            AssetTypeCreditAlphaNum4(EchoToken.code, issuerKp.accountId);
+        final echoAsset = AssetTypeCreditAlphaNum4(
+          EchoToken.code,
+          issuerKp.accountId,
+        );
 
         // Issue 10.0 ECHO
         final issuerAccount = await sdk.accounts.account(issuerKp.accountId);
@@ -86,10 +90,12 @@ void main() {
         await Future.delayed(const Duration(seconds: 5));
 
         // 4. Record initial balances
-        final initialBalA =
-            await StellarService.getEchoBalance(walletA.accountId);
-        final initialBalB =
-            await StellarService.getEchoBalance(walletB.accountId);
+        final initialBalA = await StellarService.getEchoBalance(
+          walletA.accountId,
+        );
+        final initialBalB = await StellarService.getEchoBalance(
+          walletB.accountId,
+        );
 
         expect(
           initialBalA,
@@ -121,22 +127,16 @@ void main() {
         // Wait for ledger settle
         await Future.delayed(const Duration(seconds: 5));
 
-        final finalBalA =
-            await StellarService.getEchoBalance(walletA.accountId);
-        final finalBalB =
-            await StellarService.getEchoBalance(walletB.accountId);
+        final finalBalA = await StellarService.getEchoBalance(
+          walletA.accountId,
+        );
+        final finalBalB = await StellarService.getEchoBalance(
+          walletB.accountId,
+        );
 
         // Verify the math: 10 - 5 = 5
-        expect(
-          finalBalA,
-          5.0,
-          reason: 'Wallet A balance failed to decrease',
-        );
-        expect(
-          finalBalB,
-          5.0,
-          reason: 'Wallet B balance failed to increase',
-        );
+        expect(finalBalA, 5.0, reason: 'Wallet A balance failed to decrease');
+        expect(finalBalB, 5.0, reason: 'Wallet B balance failed to increase');
       },
       timeout: const Timeout(Duration(minutes: 5)),
     );
