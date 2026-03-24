@@ -346,7 +346,7 @@ class GlobalMirrorRepository {
 
     try {
       final response = await supabase.functions.invoke(
-        'generate_cluster_encouragement',
+        'generate-encouragement',
         body: {'sentiment': sentiment, 'nearbyCount': nearbyCount},
       );
 

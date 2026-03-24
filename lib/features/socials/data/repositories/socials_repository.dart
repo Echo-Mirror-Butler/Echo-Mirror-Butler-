@@ -5,6 +5,7 @@ import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/story_model.dart';
 import '../models/video_session_model.dart';
@@ -84,7 +85,8 @@ class SocialsRepository {
       hostName: (data['host_name'] ?? '').toString(),
       hostAvatarUrl: data['host_avatar_url'] as String?,
       title: (data['title'] ?? '').toString(),
-      createdAt: DateTime.tryParse((data['created_at'] ?? '').toString()) ??
+      createdAt:
+          DateTime.tryParse((data['created_at'] ?? '').toString()) ??
           DateTime.now(),
       expiresAt: data['expires_at'] != null
           ? DateTime.tryParse(data['expires_at'].toString())
@@ -107,9 +109,11 @@ class SocialsRepository {
       imageUrls: imageUrlsRaw is List
           ? imageUrlsRaw.map((e) => e.toString()).toList()
           : const [],
-      createdAt: DateTime.tryParse((data['created_at'] ?? '').toString()) ??
+      createdAt:
+          DateTime.tryParse((data['created_at'] ?? '').toString()) ??
           DateTime.now(),
-      expiresAt: DateTime.tryParse((data['expires_at'] ?? '').toString()) ??
+      expiresAt:
+          DateTime.tryParse((data['expires_at'] ?? '').toString()) ??
           DateTime.now().add(const Duration(hours: 24)),
       viewCount: (data['view_count'] as num?)?.toInt() ?? 0,
       viewedBy: viewedByRaw is List
@@ -129,8 +133,9 @@ class SocialsRepository {
       description: data['description'] as String?,
       scheduledTime:
           DateTime.tryParse((data['scheduled_time'] ?? '').toString()) ??
-              DateTime.now(),
-      createdAt: DateTime.tryParse((data['created_at'] ?? '').toString()) ??
+          DateTime.now(),
+      createdAt:
+          DateTime.tryParse((data['created_at'] ?? '').toString()) ??
           DateTime.now(),
       isVideoEnabled: data['is_video_enabled'] as bool? ?? true,
       isVoiceOnly: data['is_voice_only'] as bool? ?? false,
@@ -245,14 +250,34 @@ class SocialsRepository {
     }
   }
 
-  /// Agora credentials now come from Supabase Edge Functions in later phase.
+  /// Get Agora credentials from Supabase Edge Function.
   Future<Map<String, String>> getAgoraCredentials(
     String sessionId,
     int userId,
   ) async {
-    throw UnimplementedError(
-      'Moved to Supabase Edge Functions (migration phase 7).',
-    );
+    try {
+      debugPrint(
+        '[SocialsRepository] getAgoraCredentials -> sessionId: $sessionId, userId: $userId',
+      );
+
+      final response = await Supabase.instance.client.functions.invoke(
+        'get-agora-credentials',
+        body: {'sessionId': sessionId, 'userId': userId.toString()},
+      );
+
+      final token = response.data['token'] as String;
+      final appId = response.data['appId'] as String;
+
+      final credentials = {'token': token, 'appId': appId};
+
+      debugPrint(
+        '[SocialsRepository] Got Agora credentials: ${credentials['appId']}',
+      );
+      return credentials;
+    } catch (e) {
+      debugPrint('[SocialsRepository] getAgoraCredentials error -> $e');
+      rethrow;
+    }
   }
 
   /// Create a scheduled session.
@@ -380,8 +405,9 @@ class SocialsRepository {
       final extension = imageFile.path.split('.').last.toLowerCase();
       final objectPath =
           '$userId/${DateTime.now().millisecondsSinceEpoch}.$extension';
-      final uploadUrl =
-          Uri.parse('$_supabaseUrl/storage/v1/object/stories/$objectPath');
+      final uploadUrl = Uri.parse(
+        '$_supabaseUrl/storage/v1/object/stories/$objectPath',
+      );
 
       final response = await http.post(
         uploadUrl,

@@ -1,0 +1,18 @@
+Fixes #88
+
+This PR completes Migration Phase 7 by introducing Supabase Edge Functions for handling secrets and secure logic (Google Gemini API & Agora App Certificates) outside the client application.
+
+**Changes included:**
+1. Created 4 new standalone Supabase Edge Functions (\deno\/\	ypescript\):
+   - \generate-insight\ (Provides structured JSON context-aware predictions, suggestions, and letters)
+   - \generate-chat-response\ (Processes free-form AI chats)
+   - \get-agora-credentials\ (Grants 24h RTC Tokens as PUBLISHER)
+   - \generate-encouragement\ (Produces concise, uplifting sentiment descriptions via Gemini flash)
+2. Refactored \AiRepository\ from Serverpod AI endpoints to securely execute the Supabase edge functions natively.
+3. Updated \SocialsRepository\ to obtain Agora temporary tokens via Supabase.
+4. Corrected the edge-function route inside \GlobalMirrorRepository\ for generating cluster encouragements.
+5. All code perfectly conforms strictly to Dart AST format checks!
+
+**Required subsequent setup logic (Not in codebase):**
+- Execute \supabase secrets set GEMINI_API_KEY=your_key AGORA_APP_ID=id AGORA_APP_CERT=cert\ from the Supabase CLI to hydrate function requirements.
+- Execute \supabase functions deploy\ across all 4 environments to release them to production.
