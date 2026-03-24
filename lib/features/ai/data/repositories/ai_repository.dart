@@ -12,10 +12,6 @@ class AiRepository {
 
   SupabaseClient get _supabase => Supabase.instance.client;
 
-  /// Debug flag to force mock data (for testing without API key)
-  /// DISABLED - app uses real-time data only
-  static const bool _useMockData = false;
-
   /// Generate AI insight based on recent logs
   ///
   /// Converts Flutter log models to a Supabase Edge Function payload.
