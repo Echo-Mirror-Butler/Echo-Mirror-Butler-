@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:echomirror_server_client/echomirror_server_client.dart';
+import '../../data/models/scheduled_session_model.dart';
 import '../../data/models/video_session_model.dart';
 import '../../data/models/story_model.dart';
 import '../../data/repositories/socials_repository.dart';
