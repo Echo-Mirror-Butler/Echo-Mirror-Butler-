@@ -3,8 +3,12 @@ import 'package:echomirror/features/global_mirror/data/repositories/gift_reposit
 import 'package:echomirror/features/global_mirror/viewmodel/providers/gift_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockGiftRepository implements GiftRepository {
+  @override
+  final SupabaseClient? client = null;
+
   double _balance = 100.0;
   final List<GiftTransactionModel> _history = [];
   bool _shouldFailSendGift = false;

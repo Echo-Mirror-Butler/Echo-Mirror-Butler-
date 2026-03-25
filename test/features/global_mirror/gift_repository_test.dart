@@ -1,10 +1,11 @@
 import 'package:echomirror/features/global_mirror/data/models/gift_transaction_model.dart';
 import 'package:echomirror/features/global_mirror/data/repositories/gift_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockGiftRepository implements GiftRepository {
   @override
-  SupabaseClient? get client => null;
+  final SupabaseClient? client = null;
 
   @override
   Future<double> getEchoBalance() async => 10.0;

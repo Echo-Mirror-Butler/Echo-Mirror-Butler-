@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:echomirror/features/global_mirror/viewmodel/providers/'
@@ -10,6 +11,9 @@ import 'package:echomirror/features/global_mirror/data/models/'
 
 /// Mock implementation of GiftRepository for testing
 class MockGiftRepository implements GiftRepository {
+  @override
+  final SupabaseClient? client = null;
+
   double _mockBalance = 0.0;
   List<GiftTransactionModel> _mockHistory = [];
   bool _shouldFailGetBalance = false;
