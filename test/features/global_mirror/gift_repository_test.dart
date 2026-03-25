@@ -2,17 +2,43 @@ import 'package:echomirror/features/global_mirror/data/models/gift_transaction_m
 import 'package:echomirror/features/global_mirror/data/repositories/gift_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+class MockGiftRepository implements GiftRepository {
+  @override
+  SupabaseClient? get client => null;
+
+  @override
+  Future<double> getEchoBalance() async => 10.0;
+
+  @override
+  Future<GiftTransactionModel?> sendGift({
+    required String recipientUserId,
+    required double amount,
+    String? message,
+  }) async {
+    return GiftTransactionModel(
+      id: 'mock_tx_1',
+      senderUserId: 'sender_1',
+      recipientUserId: recipientUserId,
+      echoAmount: amount,
+      createdAt: DateTime.now(),
+      status: 'completed',
+      message: message,
+    );
+  }
+
+  @override
+  Future<List<GiftTransactionModel>> getGiftHistory() async => [];
+}
+
 void main() {
-  // TODO: replace with mock client when serverpod generate is run
-  late GiftRepository repository;
+  late MockGiftRepository repository;
 
   setUp(() {
-    repository = GiftRepository();
+    repository = MockGiftRepository();
   });
 
   test('getEchoBalance returns a non-negative value', () async {
     final balance = await repository.getEchoBalance();
-
     expect(balance, greaterThanOrEqualTo(0));
   });
 
@@ -36,7 +62,6 @@ void main() {
 
   test('getGiftHistory returns a list', () async {
     final history = await repository.getGiftHistory();
-
     expect(history, isA<List<GiftTransactionModel>>());
   });
 }

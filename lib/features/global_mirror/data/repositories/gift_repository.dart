@@ -4,9 +4,13 @@ import '../models/gift_transaction_model.dart';
 
 /// Repository for ECHO token gifting operations backed by Supabase.
 class GiftRepository {
-  SupabaseClient get _supabase => Supabase.instance.client;
+  final SupabaseClient? client;
+  GiftRepository([this.client]);
 
-  String get _currentUserId => _supabase.auth.currentUser!.id;
+  SupabaseClient get _supabase => client ?? Supabase.instance.client;
+
+  String get _currentUserId =>
+      _supabase.auth.currentUser?.id ?? '00000000-0000-0000-0000-000000000000';
 
   /// Returns the current user's ECHO balance.
   /// Creates a wallet with a 10 ECHO welcome bonus if one does not exist.
