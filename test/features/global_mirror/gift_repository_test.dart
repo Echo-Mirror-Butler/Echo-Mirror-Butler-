@@ -17,7 +17,7 @@ void main() {
   });
 
   test('sendGift returns a transaction model', () async {
-    const recipientUserId = 42;
+    const recipientUserId = '42';
     const amount = 10.5;
     const message = 'Thanks for your help';
 
