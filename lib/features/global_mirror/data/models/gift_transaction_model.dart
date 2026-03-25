@@ -21,4 +21,36 @@ class GiftTransactionModel {
   final String? message;
 
   bool get isCompleted => status == 'completed';
+
+  factory GiftTransactionModel.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic value) {
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return int.tryParse(value?.toString() ?? '') ?? 0;
+    }
+
+    double parseDouble(dynamic value) {
+      if (value is double) return value;
+      if (value is num) return value.toDouble();
+      return double.tryParse(value?.toString() ?? '') ?? 0.0;
+    }
+
+    DateTime parseDateTime(dynamic value) {
+      if (value is DateTime) return value;
+      return DateTime.tryParse(value?.toString() ?? '') ?? DateTime.now();
+    }
+
+    return GiftTransactionModel(
+      id: parseInt(json['id']),
+      senderUserId: parseInt(json['sender_user_id'] ?? json['senderUserId']),
+      recipientUserId: parseInt(
+        json['recipient_user_id'] ?? json['recipientUserId'],
+      ),
+      echoAmount: parseDouble(json['echo_amount'] ?? json['echoAmount']),
+      createdAt: parseDateTime(json['created_at'] ?? json['createdAt']),
+      status: (json['status'] ?? 'completed').toString(),
+      stellarTxHash: json['stellar_tx_hash']?.toString(),
+      message: json['message']?.toString(),
+    );
+  }
 }

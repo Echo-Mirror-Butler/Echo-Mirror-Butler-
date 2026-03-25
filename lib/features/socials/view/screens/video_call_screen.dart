@@ -7,6 +7,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/gift_notification_service.dart';
 import '../../../../core/services/pip_service.dart';
 import '../../../../core/services/pip_overlay_service.dart';
 import '../../viewmodel/providers/socials_provider.dart';
@@ -43,7 +44,10 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   String? _agoraAppId;
   String? _agoraToken;
   String? _currentUserName;
+  String? _currentUserId;
   final PipService _pipService = PipService();
+  final GiftNotificationService _giftNotificationService =
+      GiftNotificationService();
   bool _isPipSupported = false;
   bool _isInPipMode = false;
   bool _isNavigatingAway =
@@ -88,12 +92,41 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       final authRepository = ref.read(authRepositoryProvider);
       final currentUser = await authRepository.getCurrentUser();
       final userEmail = currentUser?['email'] as String? ?? 'User';
+      final userId = currentUser?['id']?.toString();
       setState(() {
         _currentUserName = userEmail.split('@').first;
+        _currentUserId = userId;
       });
+      _startGiftNotificationsIfReady();
     } catch (e) {
       debugPrint('[VideoCallScreen] Error loading user info: $e');
     }
+  }
+
+  void _startGiftNotificationsIfReady() {
+    if (!_isConnected || _currentUserId == null || _currentUserId!.isEmpty) {
+      return;
+    }
+
+    _giftNotificationService.startListening(_currentUserId!, (gift) {
+      if (!mounted) return;
+
+      final senderLabel = 'User ${gift.senderUserId}';
+      final amountText = gift.echoAmount.toStringAsFixed(1);
+      final messageText = (gift.message != null && gift.message!.isNotEmpty)
+          ? ' • ${gift.message}'
+          : '';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '🎁 You received $amountText ECHO from @$senderLabel$messageText',
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: AppTheme.primaryColor,
+        ),
+      );
+    });
   }
 
   Future<void> _initializeAgora() async {
@@ -113,6 +146,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
         });
         // Re-register event handlers for this new screen instance
         _registerEventHandlers();
+        _startGiftNotificationsIfReady();
         return;
       }
 
@@ -207,6 +241,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               _isConnected = true;
             });
           }
+          _startGiftNotificationsIfReady();
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
           debugPrint('[VideoCallScreen] User joined: $remoteUid');
@@ -489,6 +524,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   Future<void> _leaveCall() async {
     try {
       WakelockPlus.disable(); // Allow screen to sleep when leaving call
+      _giftNotificationService.stopListening();
 
       // Clean up the PiP overlay and engine
       PipOverlayService().disposeOverlay();
@@ -510,6 +546,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
 
   @override
   void dispose() {
+    _giftNotificationService.stopListening();
     // Only end the call if we're not navigating away (PiP mode)
     if (!_isNavigatingAway) {
       WakelockPlus.disable(); // Allow screen to sleep again
