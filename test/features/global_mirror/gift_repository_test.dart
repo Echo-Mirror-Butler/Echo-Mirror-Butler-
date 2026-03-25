@@ -65,4 +65,54 @@ void main() {
     final history = await repository.getGiftHistory();
     expect(history, isA<List<GiftTransactionModel>>());
   });
+
+  group('GiftTransactionModel', () {
+    test('isCompleted returns true when status is completed', () {
+      final tx = GiftTransactionModel(
+        id: '1',
+        senderUserId: 's',
+        recipientUserId: 'r',
+        echoAmount: 10.0,
+        createdAt: DateTime.now(),
+        status: 'completed',
+      );
+      expect(tx.isCompleted, isTrue);
+    });
+
+    test('isCompleted returns false when status is not completed', () {
+      final tx = GiftTransactionModel(
+        id: '1',
+        senderUserId: 's',
+        recipientUserId: 'r',
+        echoAmount: 10.0,
+        createdAt: DateTime.now(),
+        status: 'pending',
+      );
+      expect(tx.isCompleted, isFalse);
+    });
+
+    test('fromSupabase creates model from row', () {
+      final now = DateTime.now();
+      final row = {
+        'id': 'uuid-1',
+        'sender_user_id': 'user-a',
+        'recipient_user_id': 'user-b',
+        'echo_amount': 25.5,
+        'created_at': now.toIso8601String(),
+        'status': 'completed',
+        'stellar_tx_hash': 'hashxyz',
+        'message': 'Hello',
+      };
+
+      final model = GiftTransactionModel.fromSupabase(row);
+
+      expect(model.id, 'uuid-1');
+      expect(model.senderUserId, 'user-a');
+      expect(model.recipientUserId, 'user-b');
+      expect(model.echoAmount, 25.5);
+      expect(model.status, 'completed');
+      expect(model.stellarTxHash, 'hashxyz');
+      expect(model.message, 'Hello');
+    });
+  });
 }
