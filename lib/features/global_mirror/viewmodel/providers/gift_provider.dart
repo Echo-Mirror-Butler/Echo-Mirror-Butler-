@@ -67,7 +67,7 @@ class GiftNotifier extends StateNotifier<GiftState> {
   /// Sends [amount] ECHO to [recipientUserId].
   /// Returns true on success.
   Future<bool> sendGift({
-    required int recipientUserId,
+    required String recipientUserId,
     required double amount,
     String? message,
   }) async {

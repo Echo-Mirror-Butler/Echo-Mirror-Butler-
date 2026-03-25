@@ -13,7 +13,7 @@ class GiftButtonWidget extends ConsumerWidget {
     this.compact = false,
   });
 
-  final int recipientUserId;
+  final String recipientUserId;
   final bool compact;
 
   @override
