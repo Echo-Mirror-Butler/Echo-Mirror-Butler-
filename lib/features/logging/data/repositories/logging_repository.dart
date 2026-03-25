@@ -101,11 +101,8 @@ class LoggingRepository {
 
       debugPrint('[LoggingRepository] getLogEntryForDate success');
       return LogEntryModel.fromJson(result);
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('[LoggingRepository] getLogEntryForDate error -> $e');
-      debugPrint(
-        '[LoggingRepository] getLogEntryForDate stackTrace -> $stackTrace',
-      );
       return null;
     }
   }
@@ -127,10 +124,10 @@ class LoggingRepository {
       }
 
       final results = await query.order('date');
-      debugPrint('[LoggingRepository] getLogEntries success -> ${results.length} entries');
-      return results
-          .map((result) => LogEntryModel.fromJson(result))
-          .toList();
+      debugPrint(
+        '[LoggingRepository] getLogEntries success -> ${results.length} entries',
+      );
+      return results.map((result) => LogEntryModel.fromJson(result)).toList();
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntries error -> $e');
       debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
