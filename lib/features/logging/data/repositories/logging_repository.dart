@@ -101,11 +101,8 @@ class LoggingRepository {
 
       debugPrint('[LoggingRepository] getLogEntryForDate success');
       return LogEntryModel.fromJson(result);
-    } catch (e, stackTrace) {
+    } catch (e) {
       debugPrint('[LoggingRepository] getLogEntryForDate error -> $e');
-      debugPrint(
-        '[LoggingRepository] getLogEntryForDate stackTrace -> $stackTrace',
-      );
       return null;
     }
   }

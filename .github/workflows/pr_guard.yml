@@ -17,6 +17,12 @@ jobs:
             const deletions = pr.deletions;
             const total = additions + deletions;
 
+            const labels = pr.labels.map(l => l.name);
+            if (labels.includes('large-pr-approved')) {
+              core.info(`PR size check skipped — "large-pr-approved" label is present (${total} lines).`);
+              return;
+            }
+
             if (total > 600) {
               core.warning(
                 `This PR changes ${total} lines (+${additions}/-${deletions}). ` +
@@ -26,6 +32,7 @@ jobs:
             if (total > 1000) {
               core.setFailed(
                 `PR is too large (${total} lines changed). ` +
-                "Please split into smaller focused PRs."
+                "Please split into smaller focused PRs. " +
+                'Add the "large-pr-approved" label to bypass this check.'
               );
             }

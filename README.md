@@ -9,6 +9,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Stellar](https://img.shields.io/badge/Stellar-Blockchain-7C3AED?logo=stellar&logoColor=white)](https://stellar.org)
 [![Agora](https://img.shields.io/badge/Agora-Video%20Calls-099DFD?logo=agora&logoColor=white)](https://www.agora.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
@@ -68,6 +69,7 @@ We believe wellness is better together. EchoMirror Butler helps you:
 ### 🔐 Authentication & Security
 - **Secure Login**: Email/password authentication via Supabase Auth
 - **User Sessions**: Persistent sessions managed by Supabase
+- **User Sessions**: Persistent sessions with JWT tokens
 - **Protected Routes**: Route guards ensure authenticated access
 
 ---
@@ -90,6 +92,13 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **Edge Functions** - Server-side logic for AI and blockchain interactions
 - **Google Generative AI** - Gemini AI integration
 - **Stellar SDK (Node.js)** - Server-side transaction handling
+### Backend (Supabase)
+- **Supabase** - Backend as a Service (PostgreSQL + Auth + Storage + Edge Functions)
+- **PostgreSQL** - Database (managed by Supabase)
+- **Supabase Auth** - Authentication with JWT
+- **Supabase Edge Functions** - Serverless functions for AI and custom logic
+- **Google Generative AI** - Gemini AI integration via Edge Functions
+- **Resend** - Email delivery
 
 ### Blockchain (Stellar)
 - **Stellar SDK** - Wallet creation, token transfers, and transaction signing
@@ -126,6 +135,8 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **Docker Desktop** (for local Supabase)
 - **Supabase CLI** (for local development)
 - **Node.js 20+** (for Edge Functions)
+- **Dart SDK** 3.10 or higher
+- **Supabase account** (free tier works)
 
 ### Installation
 
@@ -166,6 +177,13 @@ We believe wellness is better together. EchoMirror Butler helps you:
    - Add as a Supabase Secret: `supabase secrets set GEMINI_API_KEY=your_key`
    - Edge Functions use this automatically
    - App works without it (uses mock data)
+1. **Supabase Project Setup**
+   - Create a project at [supabase.com](https://supabase.com)
+   - Copy your Project URL and anon key from Project Settings → API
+   - Pass them via `--dart-define` flags at runtime
+
+2. **Add Gemini API Key** (for AI features)
+   - Add `GEMINI_API_KEY` as a secret in your Supabase Edge Function environment
 
 ---
 
@@ -393,6 +411,9 @@ Contributions are welcome! Please feel free to submit a Pull Request. For more d
 - Add tests for new features
 - Update documentation as needed
 - Follow MVVM architecture pattern
+## 🤝 Contributing
+
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide before opening a PR — it covers branching strategy, PR checklist, commit format, code style, and local Supabase setup.
 
 ---
 

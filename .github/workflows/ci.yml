@@ -22,8 +22,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Only format Flutter/Dart app files — the server package (echomirror_server/)
-      # uses its own analysis_options and is not a Flutter project.
+      # Only format Flutter/Dart app files (lib, test, backend)
       - name: Debug socials formatter output
         run: |
           echo "=== SOCIALS_FORMATTED_START ==="
