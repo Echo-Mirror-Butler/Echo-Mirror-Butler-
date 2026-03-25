@@ -5,34 +5,45 @@ import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
+
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 
-class FakePostgrestBuilder extends Fake 
-    implements PostgrestFilterBuilder<PostgrestList>, 
-               PostgrestTransformBuilder<PostgrestList>,
-               PostgrestTransformBuilder<PostgrestMap>,
-               PostgrestTransformBuilder<PostgrestMap?> {
-  
+class FakePostgrestBuilder extends Fake
+    implements
+        PostgrestFilterBuilder<PostgrestList>,
+        PostgrestTransformBuilder<PostgrestList>,
+        PostgrestTransformBuilder<PostgrestMap>,
+        PostgrestTransformBuilder<PostgrestMap?> {
   final dynamic _result;
   FakePostgrestBuilder([this._result]);
 
   @override
   PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) => this;
   @override
-  PostgrestFilterBuilder<PostgrestList> gte(String column, Object value) => this;
+  PostgrestFilterBuilder<PostgrestList> gte(String column, Object value) =>
+      this;
   @override
-  PostgrestFilterBuilder<PostgrestList> lte(String column, Object value) => this;
+  PostgrestFilterBuilder<PostgrestList> lte(String column, Object value) =>
+      this;
   @override
-  PostgrestTransformBuilder<PostgrestList> order(String column, {bool ascending = true, bool nullsFirst = false}) => this;
+  PostgrestTransformBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = true,
+    bool nullsFirst = false,
+  }) => this;
   @override
-  PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) => this;
+  PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
+      this;
   @override
   PostgrestTransformBuilder<PostgrestMap> single() => this;
   @override
   PostgrestTransformBuilder<PostgrestMap?> maybeSingle() => this;
 
   @override
-  Future<dynamic> then(FutureOr<dynamic> Function(dynamic) onValue, {Function? onError}) {
+  Future<dynamic> then(
+    FutureOr<dynamic> Function(dynamic) onValue, {
+    Function? onError,
+  }) {
     return Future.value(_result).then(onValue, onError: onError);
   }
 }
@@ -87,7 +98,7 @@ void main() {
     test('createLogEntry returns LogEntryModel on success', () async {
       final entry = buildEntry();
       final fakeBuilder = FakePostgrestBuilder(buildLogJson());
-      
+
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.insert(any())).thenReturn(fakeBuilder);
 
@@ -108,7 +119,7 @@ void main() {
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
       final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
-      
+
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.update(any())).thenReturn(fakeBuilder);
 
@@ -120,7 +131,7 @@ void main() {
 
     test('getLogEntryForDate returns null when no entry exists', () async {
       final fakeBuilder = FakePostgrestBuilder(null);
-      
+
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.select()).thenReturn(fakeBuilder);
 
@@ -139,7 +150,7 @@ void main() {
 
     test('deleteLogEntry completes without error on success', () async {
       final fakeBuilder = FakePostgrestBuilder([]);
-      
+
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.delete()).thenReturn(fakeBuilder);
 
@@ -160,8 +171,8 @@ void main() {
         startDate: startDate,
         endDate: endDate,
       );
-      
-      // Verification of filters would require capturing calls on Fake, 
+
+      // Verification of filters would require capturing calls on Fake,
       // but the main goal here is fixing CI types.
     });
   });
