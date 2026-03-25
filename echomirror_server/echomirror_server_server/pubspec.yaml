@@ -14,7 +14,6 @@ dependencies:
   crypto: ^3.0.5
   agora_token_service: ^0.1.2
   http: ^1.2.0
-  stellar_flutter_sdk: ^2.0.0
 
 dev_dependencies:
   lints: '>=3.0.0 <7.0.0'
