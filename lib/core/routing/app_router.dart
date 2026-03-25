@@ -202,9 +202,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/gift/:userId',
         name: 'gift',
-        builder: (context, state) => GiftScreen(
-          recipientUserId: state.pathParameters['userId']!,
-        ),
+        builder: (context, state) =>
+            GiftScreen(recipientUserId: state.pathParameters['userId']!),
       ),
     ],
   );
