@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:http/http.dart' as http_client;
-import 'package:http/http.dart' as http;
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import 'stellar_config.dart';
 import 'echo_token.dart';
