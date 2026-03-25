@@ -21,9 +21,9 @@ void main() {
     });
 
     test('createWallet funds via Friendbot and returns a keypair', () async {
-      when(() => httpClient.get(any())).thenAnswer(
-        (invocation) async => http.Response('{}', 200),
-      );
+      when(
+        () => httpClient.get(any()),
+      ).thenAnswer((invocation) async => http.Response('{}', 200));
 
       final keypair = await StellarService.createWallet(httpClient: httpClient);
 
@@ -38,9 +38,9 @@ void main() {
     });
 
     test('createWallet throws when Friendbot funding fails', () async {
-      when(() => httpClient.get(any())).thenAnswer(
-        (_) async => http.Response('nope', 500),
-      );
+      when(
+        () => httpClient.get(any()),
+      ).thenAnswer((_) async => http.Response('nope', 500));
 
       expect(
         () => StellarService.createWallet(httpClient: httpClient),
@@ -48,18 +48,23 @@ void main() {
       );
     });
 
-    test('establishTrustline returns false when issuer is not configured', () async {
-      final ok = await StellarService.establishTrustline(
-        'SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-        issuerPublicKey: '',
-      );
-      expect(ok, isFalse);
-    });
+    test(
+      'establishTrustline returns false when issuer is not configured',
+      () async {
+        final ok = await StellarService.establishTrustline(
+          'SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+          issuerPublicKey: '',
+        );
+        expect(ok, isFalse);
+      },
+    );
 
     test('sendEcho returns null when issuer is not configured', () async {
       final tx = await StellarService.sendEcho(
-        senderSecret: 'SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-        recipientPublicKey: 'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+        senderSecret:
+            'SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+        recipientPublicKey:
+            'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
         amount: 1.0,
         issuerPublicKey: '',
       );
@@ -75,4 +80,3 @@ void main() {
     });
   });
 }
-

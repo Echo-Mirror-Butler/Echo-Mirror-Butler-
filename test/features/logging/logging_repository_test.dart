@@ -85,17 +85,16 @@ void main() {
       final entry = buildEntry();
       when(() => mockSupabase.from('log_entries')).thenThrow(Exception('db'));
 
-      expect(
-        () => repository.createLogEntry(entry),
-        throwsA(isA<Exception>()),
-      );
+      expect(() => repository.createLogEntry(entry), throwsA(isA<Exception>()));
     });
 
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.update(any())).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+      when(
+        () => mockFilterBuilder.eq(any(), any()),
+      ).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.select()).thenReturn(mockTransformBuilder);
       when(
         () => mockTransformBuilder.single(),
@@ -110,7 +109,9 @@ void main() {
     test('getLogEntryForDate returns null when no entry exists', () async {
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+      when(
+        () => mockFilterBuilder.eq(any(), any()),
+      ).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.maybeSingle()).thenAnswer((_) async => null);
 
       final result = await repository.getLogEntryForDate(now, userId);
@@ -129,7 +130,9 @@ void main() {
     test('deleteLogEntry completes without error on success', () async {
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.delete()).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+      when(
+        () => mockFilterBuilder.eq(any(), any()),
+      ).thenReturn(mockFilterBuilder);
 
       await repository.deleteLogEntry('log-1', userId);
 
@@ -143,9 +146,15 @@ void main() {
 
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.gte(any(), any())).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.lte(any(), any())).thenReturn(mockFilterBuilder);
+      when(
+        () => mockFilterBuilder.eq(any(), any()),
+      ).thenReturn(mockFilterBuilder);
+      when(
+        () => mockFilterBuilder.gte(any(), any()),
+      ).thenReturn(mockFilterBuilder);
+      when(
+        () => mockFilterBuilder.lte(any(), any()),
+      ).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.order(any())).thenAnswer((_) async => []);
 
       await repository.getLogEntries(

@@ -24,7 +24,9 @@ class GiftRepository {
           .maybeSingle();
 
       if (wallet == null) return 0.0;
-      return await StellarService.getEchoBalance(wallet['public_key'] as String);
+      return await StellarService.getEchoBalance(
+        wallet['public_key'] as String,
+      );
     } catch (e) {
       debugPrint('[GiftRepository] getEchoBalance error: $e');
       return 0.0;
@@ -114,7 +116,11 @@ class GiftRepository {
           .or('sender_user_id.eq.$userId,recipient_user_id.eq.$userId')
           .order('created_at', ascending: false);
 
-      return (results as List).map((r) => GiftTransactionModel.fromSupabase(r as Map<String, dynamic>)).toList();
+      return (results as List)
+          .map(
+            (r) => GiftTransactionModel.fromSupabase(r as Map<String, dynamic>),
+          )
+          .toList();
     } catch (e) {
       debugPrint('[GiftRepository] getGiftHistory error: $e');
       return [];
