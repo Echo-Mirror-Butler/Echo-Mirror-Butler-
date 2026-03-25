@@ -1,5 +1,5 @@
-import 'package:echomirror/backend/stellar/stellar_config.dart';
-import 'package:echomirror/backend/stellar/stellar_service.dart';
+import 'package:echomirror/features/global_mirror/data/services/stellar/stellar_config.dart';
+import 'package:echomirror/features/global_mirror/data/services/stellar/stellar_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
