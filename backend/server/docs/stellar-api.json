@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "EchoMirror Stellar API",
+    "description": "REST API routes for Stellar wallet creation, balance checks, and ECHO gifting. All routes except /health require a Supabase JWT in the Authorization header.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "YOUR_SUPABASE_JWT_TOKEN",
+      "type": "string"
+    },
+    {
+      "key": "recipient_user_id",
+      "value": "RECIPIENT_USER_UUID",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "description": "Server health check — returns { status: 'ok' }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stellar — Wallet",
+      "item": [
+        {
+          "name": "POST /stellar/wallet/create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/stellar/wallet/create",
+            "description": "Creates a Stellar testnet wallet for the authenticated user. Funds it via Friendbot, establishes an ECHO trustline, and stores the public key in Supabase. Returns { publicKey, funded: true }. Returns 409 if wallet already exists."
+          }
+        },
+        {
+          "name": "GET /stellar/wallet/balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": "{{base_url}}/stellar/wallet/balance",
+            "description": "Returns XLM and ECHO balances for the authenticated user's wallet. Requires wallet to exist (call POST /stellar/wallet/create first). Returns { publicKey, xlm, echo }."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stellar — Gifting",
+      "item": [
+        {
+          "name": "POST /stellar/gift",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipientUserId\": \"{{recipient_user_id}}\",\n  \"amount\": \"5\",\n  \"message\": \"Great mood pin!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/stellar/gift",
+            "description": "Sends ECHO tokens from the authenticated user to a recipient. Validates sufficient balance. Records the transaction in gift_transactions. Returns { txHash, amount, recipient }.\n\nError codes:\n- 400: Missing/invalid fields, self-gift\n- 404: Sender or recipient wallet not found\n- 422: Insufficient balance or recipient has no ECHO trustline"
+          }
+        },
+        {
+          "name": "GET /stellar/transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/stellar/transactions?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["stellar", "transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page (default: 20, max: 100)"
+                }
+              ]
+            },
+            "description": "Returns paginated gift transaction history (sent and received) for the authenticated user. Ordered by newest first. Returns { data: [], pagination: { page, limit, total, totalPages } }."
+          }
+        }
+      ]
+    }
+  ]
+}
