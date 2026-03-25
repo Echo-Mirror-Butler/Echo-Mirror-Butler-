@@ -353,7 +353,7 @@ class SettingsScreen extends ConsumerWidget {
                 size: 14,
                 color: theme.colorScheme.onSurface.withOpacity(0.4),
               ),
-              onTap: () => context.push('/gift/0'),
+              onTap: () => context.push('/gift/${authState.user?.id ?? ''}'),
             ),
             Divider(
               height: 1,
