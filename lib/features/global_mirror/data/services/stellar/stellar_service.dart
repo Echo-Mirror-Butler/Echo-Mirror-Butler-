@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:http/http.dart' as http_client;
-import 'package:http/http.dart' as http;
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import 'stellar_config.dart';
 import 'echo_token.dart';
@@ -63,12 +62,11 @@ class StellarService {
     }
     try {
       final userKeypair = KeyPair.fromSecretSeed(userSecret);
-      final account = await (sdk ?? _sdk).accounts.account(userKeypair.accountId);
-
-      final echoAsset = AssetTypeCreditAlphaNum4(
-        EchoToken.code,
-        issuer,
+      final account = await (sdk ?? _sdk).accounts.account(
+        userKeypair.accountId,
       );
+
+      final echoAsset = AssetTypeCreditAlphaNum4(EchoToken.code, issuer);
 
       final transaction = TransactionBuilder(account)
           .addOperation(
@@ -104,12 +102,11 @@ class StellarService {
     }
     try {
       final senderKeypair = KeyPair.fromSecretSeed(senderSecret);
-      final account = await (sdk ?? _sdk).accounts.account(senderKeypair.accountId);
-
-      final echoAsset = AssetTypeCreditAlphaNum4(
-        EchoToken.code,
-        issuer,
+      final account = await (sdk ?? _sdk).accounts.account(
+        senderKeypair.accountId,
       );
+
+      final echoAsset = AssetTypeCreditAlphaNum4(EchoToken.code, issuer);
 
       final builder = TransactionBuilder(account).addOperation(
         PaymentOperationBuilder(
