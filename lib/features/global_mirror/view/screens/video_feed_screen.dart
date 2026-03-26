@@ -372,6 +372,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   File? _localVideoFile;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -436,9 +437,6 @@ class _VideoReelItemState extends State<VideoReelItem> {
             _controller!.play();
           }
         }
-        debugPrint(
-          '[VideoReelItem] Video initialized successfully from local file',
-        );
       } else {
         throw Exception('Failed to download video: ${response.statusCode}');
       }
@@ -447,14 +445,23 @@ class _VideoReelItemState extends State<VideoReelItem> {
       if (mounted) {
         setState(() {
           _isInitialized = false;
+          _hasError = true;
         });
       }
     }
   }
 
+  Future<void> _disposeController() async {
+    if (_controller != null) {
+      final oldController = _controller!;
+      _controller = null;
+      await oldController.dispose();
+    }
+  }
+
   @override
   void dispose() {
-    _controller?.dispose();
+    _disposeController();
     // Clean up local video file after a delay (in case video is still playing)
     if (_localVideoFile != null && _localVideoFile!.existsSync()) {
       Future.delayed(const Duration(seconds: 5), () {
@@ -540,28 +547,10 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 child: VideoPlayer(_controller!),
               ),
             )
+          else if (_hasError)
+            _buildVideoErrorState()
           else
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const ShimmerLoading(
-                    width: 40,
-                    height: 40,
-                    baseColor: Colors.white24,
-                    highlightColor: Colors.white70,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading video...',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildVideoLoadingState(),
 
           // Video info overlay
           Positioned(
@@ -704,5 +693,64 @@ class _VideoReelItemState extends State<VideoReelItem> {
     if (diff.inHours > 0) return '${diff.inHours}h';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m';
     return 'soon';
+  }
+
+  Widget _buildVideoLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const ShimmerLoading(
+            width: 40,
+            height: 40,
+            baseColor: Colors.white24,
+            highlightColor: Colors.white70,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Loading video...',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const FaIcon(
+            FontAwesomeIcons.circleExclamation,
+            color: Colors.white70,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Error loading video',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                _hasError = false;
+                _initializeVideo();
+              });
+            },
+            icon: const FaIcon(FontAwesomeIcons.rotateRight, size: 14),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
