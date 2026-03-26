@@ -4,12 +4,13 @@ import 'package:geolocator/geolocator.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../data/models/video_post_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
+import '../../data/repositories/abstract_global_mirror_repository.dart';
 import '../../data/repositories/global_mirror_repository.dart';
 import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import 'mood_comment_notification_provider.dart';
 
 /// Provider for Global Mirror repository
-final globalMirrorRepositoryProvider = Provider<GlobalMirrorRepository>((ref) {
+final globalMirrorRepositoryProvider = Provider<AbstractGlobalMirrorRepository>((ref) {
   return GlobalMirrorRepository();
 });
 
@@ -84,7 +85,7 @@ class GlobalMirrorState {
 
 /// State notifier for Global Mirror
 class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
-  final GlobalMirrorRepository _repository;
+  final AbstractGlobalMirrorRepository _repository;
 
   GlobalMirrorNotifier(this._repository) : super(GlobalMirrorState());
 

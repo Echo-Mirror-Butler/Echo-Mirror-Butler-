@@ -1,13 +1,14 @@
-import 'package:echomirror/features/global_mirror/data/repositories/global_mirror_repository.dart';
+import 'package:echomirror/features/global_mirror/data/repositories/abstract_global_mirror_repository.dart';
 import 'package:echomirror/features/global_mirror/view/screens/video_feed_screen.dart';
 import 'package:echomirror/features/global_mirror/viewmodel/providers/global_mirror_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'fake_global_mirror_repository.dart';
 
 class _FakeGlobalMirrorNotifier extends GlobalMirrorNotifier {
   _FakeGlobalMirrorNotifier(this._initialState)
-    : super(GlobalMirrorRepository()) {
+    : super(FakeGlobalMirrorRepository()) {
     state = _initialState;
   }
 

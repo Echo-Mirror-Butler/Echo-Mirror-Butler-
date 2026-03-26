@@ -3,7 +3,6 @@ import 'package:echomirror/features/global_mirror/data/repositories/gift_reposit
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  // TODO: replace with mock client when serverpod generate is run
   late GiftRepository repository;
 
   setUp(() {
@@ -13,7 +12,7 @@ void main() {
   test('getEchoBalance returns a non-negative value', () async {
     final balance = await repository.getEchoBalance();
 
-    expect(balance, greaterThanOrEqualTo(0));
+    expect(balance, equals(0.0));
   });
 
   test('sendGift returns a transaction model', () async {
@@ -37,6 +36,6 @@ void main() {
   test('getGiftHistory returns a list', () async {
     final history = await repository.getGiftHistory();
 
-    expect(history, isA<List<GiftTransactionModel>>());
+    expect(history, isEmpty);
   });
 }
