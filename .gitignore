@@ -64,3 +64,4 @@ build/
 .flutter-plugins-dependencies
 *.iml
 *.lock
+node_modules/

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/serverpod_client_service.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -43,9 +42,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _isCheckingAuth = true;
     state = state.copyWith(isLoading: true);
     try {
-      // Ensure client is initialized before checking auth
-      await ServerpodClientService.instance.ensureInitialized();
-
       final isAuth = await _repository.isAuthenticated();
       debugPrint('[AuthNotifier] Auth check result: $isAuth');
 

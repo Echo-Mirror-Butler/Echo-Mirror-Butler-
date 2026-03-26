@@ -8,7 +8,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![Serverpod](https://img.shields.io/badge/Serverpod-3.0+-FF6B6B?logo=serverpod&logoColor=white)](https://serverpod.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Stellar](https://img.shields.io/badge/Stellar-Blockchain-7C3AED?logo=stellar&logoColor=white)](https://stellar.org)
 [![Agora](https://img.shields.io/badge/Agora-Video%20Calls-099DFD?logo=agora&logoColor=white)](https://www.agora.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
@@ -66,7 +66,7 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **Pattern Detection**: AI analyzes mood trends, habit consistency, and note themes
 
 ### 🔐 Authentication & Security
-- **Secure Login**: Email/password authentication via Serverpod
+- **Secure Login**: Email/password authentication via Supabase Auth
 - **User Sessions**: Persistent sessions with JWT tokens
 - **Protected Routes**: Route guards ensure authenticated access
 
@@ -83,12 +83,12 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **FL Chart** - Data visualization
 - **Table Calendar** - Calendar widget
 
-### Backend (Serverpod)
-- **Serverpod** 3.0+ - Dart server framework
-- **PostgreSQL** - Database
-- **Redis** - Caching
-- **JWT** - Authentication
-- **Google Generative AI** - Gemini AI integration
+### Backend (Supabase)
+- **Supabase** - Backend as a Service (PostgreSQL + Auth + Storage + Edge Functions)
+- **PostgreSQL** - Database (managed by Supabase)
+- **Supabase Auth** - Authentication with JWT
+- **Supabase Edge Functions** - Serverless functions for AI and custom logic
+- **Google Generative AI** - Gemini AI integration via Edge Functions
 - **Resend** - Email delivery
 
 ### Blockchain (Stellar)
@@ -124,10 +124,7 @@ We believe wellness is better together. EchoMirror Butler helps you:
 
 - **Flutter SDK** 3.10 or higher
 - **Dart SDK** 3.10 or higher
-- **Serverpod CLI** installed
-- **Docker** (for local database)
-- **PostgreSQL** (via Docker)
-- **Redis** (via Docker)
+- **Supabase account** (free tier works)
 
 ### Installation
 
@@ -142,44 +139,21 @@ We believe wellness is better together. EchoMirror Butler helps you:
    flutter pub get
    ```
 
-3. **Set up Serverpod server**
+3. **Run the Flutter app**
    ```bash
-   cd ../echomirror_server/echomirror_server_server
-   dart pub get
-   ```
-
-4. **Start the database**
-   ```bash
-   docker compose up --build --detach
-   ```
-
-5. **Apply database migrations**
-   ```bash
-   dart run bin/main.dart --apply-migrations
-   ```
-
-6. **Start the server**
-   ```bash
-   dart run bin/main.dart
-   ```
-
-7. **Run the Flutter app**
-   ```bash
-   cd ../../echomirror
-   flutter run
+   flutter run --dart-define=SUPABASE_URL=<your-supabase-url> \
+               --dart-define=SUPABASE_ANON_KEY=<your-anon-key>
    ```
 
 ### Configuration
 
-1. **Update Server URL** (if needed)
-   - Edit `lib/core/constants/api_constants.dart`
-   - Default: `http://localhost:8080` (local)
-   - Production: Your Serverpod Cloud URL
+1. **Supabase Project Setup**
+   - Create a project at [supabase.com](https://supabase.com)
+   - Copy your Project URL and anon key from Project Settings → API
+   - Pass them via `--dart-define` flags at runtime
 
-2. **Add Gemini API Key** (Optional - for AI features)
-   - Go to Serverpod Cloud dashboard
-   - Add secret: `GEMINI_API_KEY`
-   - App works without it (uses mock data)
+2. **Add Gemini API Key** (for AI features)
+   - Add `GEMINI_API_KEY` as a secret in your Supabase Edge Function environment
 
 ---
 
@@ -398,21 +372,7 @@ EchoMirror Butler is designed with these principles:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-- Follow MVVM architecture pattern
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide before opening a PR — it covers branching strategy, PR checklist, commit format, code style, and local Supabase setup.
 
 ---
 
