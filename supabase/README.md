@@ -86,3 +86,37 @@ cp supabase/.env.example supabase/.env
 # Set secrets for local dev
 supabase secrets set --env-file supabase/.env
 ```
+
+## New User Wallet Function
+
+The `create-stellar-wallet` Edge Function creates a Stellar wallet when a new auth user is inserted.
+
+Location:
+
+```text
+supabase/functions/create-stellar-wallet/index.ts
+```
+
+Behavior:
+
+- Generates a new Stellar keypair
+- Funds it with Friendbot on testnet
+- Skips Friendbot on mainnet
+- Establishes an ECHO trustline
+- Encrypts the secret key with `WALLET_ENCRYPTION_KEY`
+- Inserts the wallet into `public.user_wallets` using the service role client
+
+Local testing:
+
+```bash
+supabase functions serve create-stellar-wallet --env-file supabase/.env --no-verify-jwt
+```
+
+Database webhook:
+
+1. Table: `auth.users`
+2. Event: `INSERT`
+3. Method: `POST`
+4. URL: `{SUPABASE_URL}/functions/v1/create-stellar-wallet`
+
+The webhook should point to the function endpoint in the Supabase Dashboard. Use `supabase/.env.example` as the template for the new secrets required by this function.
