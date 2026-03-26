@@ -119,7 +119,7 @@ void main() {
       final fakeBuilder = FakePostgrestBuilder<PostgrestList>(buildLogJson());
 
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.insert(any())).thenReturn(fakeBuilder);
+      when(() => mockQueryBuilder.insert(any())).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.createLogEntry(entry);
 
@@ -142,7 +142,7 @@ void main() {
       );
 
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.update(any())).thenReturn(fakeBuilder);
+      when(() => mockQueryBuilder.update(any())).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.updateLogEntry(entry);
 
@@ -154,7 +154,7 @@ void main() {
       final fakeBuilder = FakePostgrestBuilder<PostgrestList>(null);
 
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenReturn(fakeBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.getLogEntryForDate(now, userId);
 
@@ -173,7 +173,7 @@ void main() {
       final fakeBuilder = FakePostgrestBuilder<PostgrestList>([]);
 
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.delete()).thenReturn(fakeBuilder);
+      when(() => mockQueryBuilder.delete()).thenAnswer((_) => fakeBuilder);
 
       await repository.deleteLogEntry('log-1', userId);
       // Success means no exception thrown
@@ -185,7 +185,7 @@ void main() {
       final fakeBuilder = FakePostgrestBuilder<PostgrestList>([]);
 
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenReturn(fakeBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
 
       await repository.getLogEntries(
         userId,
