@@ -14,6 +14,7 @@ class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 class FakePostgrestBuilder extends Fake
     implements PostgrestFilterBuilder<PostgrestList> {
   final dynamic _result;
+
   FakePostgrestBuilder([this._result]);
 
   @override
@@ -194,7 +195,7 @@ void main() {
     });
 
     test('deleteLogEntry completes without error on success', () async {
-      final fakeBuilder = FakePostgrestBuilder([]);
+      final fakeBuilder = FakePostgrestBuilder(<Map<String, dynamic>>[]);
 
       when(
         () => mockSupabase.from('log_entries'),
@@ -208,7 +209,7 @@ void main() {
     test('getLogEntries filters by startDate and endDate correctly', () async {
       final startDate = DateTime.utc(2026, 3, 1);
       final endDate = DateTime.utc(2026, 3, 31);
-      final fakeBuilder = FakePostgrestBuilder([]);
+      final fakeBuilder = FakePostgrestBuilder(<Map<String, dynamic>>[]);
 
       when(
         () => mockSupabase.from('log_entries'),
