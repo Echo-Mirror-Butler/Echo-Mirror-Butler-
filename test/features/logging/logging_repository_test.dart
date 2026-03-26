@@ -160,9 +160,7 @@ void main() {
 
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
-      final fakeBuilder = FakePostgrestBuilder(
-        buildLogJson(mood: 5),
-      );
+      final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
 
       when(
         () => mockSupabase.from('log_entries'),
@@ -197,9 +195,7 @@ void main() {
     });
 
     test('deleteLogEntry completes without error on success', () async {
-      final fakeBuilder = FakePostgrestBuilder(
-        <Map<String, dynamic>>[],
-      );
+      final fakeBuilder = FakePostgrestBuilder(<Map<String, dynamic>>[]);
 
       when(
         () => mockSupabase.from('log_entries'),
@@ -213,9 +209,7 @@ void main() {
     test('getLogEntries filters by startDate and endDate correctly', () async {
       final startDate = DateTime.utc(2026, 3, 1);
       final endDate = DateTime.utc(2026, 3, 31);
-      final fakeBuilder = FakePostgrestBuilder(
-        <Map<String, dynamic>>[],
-      );
+      final fakeBuilder = FakePostgrestBuilder(<Map<String, dynamic>>[]);
 
       when(
         () => mockSupabase.from('log_entries'),
