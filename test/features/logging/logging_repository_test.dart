@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
 import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,12 +10,9 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 
+/// A lightweight fake that covers filter → transform chains returning a list.
 class FakePostgrestBuilder extends Fake
-    implements
-        PostgrestFilterBuilder<PostgrestList>,
-        PostgrestTransformBuilder<PostgrestList>,
-        PostgrestTransformBuilder<PostgrestMap>,
-        PostgrestTransformBuilder<PostgrestMap?> {
+    implements PostgrestFilterBuilder<PostgrestList> {
   final dynamic _result;
   FakePostgrestBuilder([this._result]);
 
@@ -30,21 +29,61 @@ class FakePostgrestBuilder extends Fake
     String column, {
     bool ascending = true,
     bool nullsFirst = false,
+    String? referencedTable,
   }) => this;
   @override
   PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
       this;
   @override
-  PostgrestTransformBuilder<PostgrestMap> single() => this;
+  PostgrestTransformBuilder<PostgrestMap> single() =>
+      _FakeSingleBuilder(_result);
   @override
-  PostgrestTransformBuilder<PostgrestMap?> maybeSingle() => this;
+  PostgrestTransformBuilder<PostgrestMap?> maybeSingle() =>
+      _FakeMaybeSingleBuilder(_result);
 
   @override
-  Future<dynamic> then(
-    FutureOr<dynamic> Function(dynamic) onValue, {
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestList) onValue, {
     Function? onError,
   }) {
-    return Future.value(_result).then(onValue, onError: onError);
+    final list = _result is List<Map<String, dynamic>>
+        ? _result
+        : _result is List
+        ? _result.cast<Map<String, dynamic>>()
+        : <Map<String, dynamic>>[];
+    return Future.value(list).then(onValue, onError: onError);
+  }
+}
+
+class _FakeSingleBuilder extends Fake
+    implements PostgrestTransformBuilder<PostgrestMap> {
+  final dynamic _result;
+  _FakeSingleBuilder(this._result);
+
+  @override
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestMap) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(
+      _result as PostgrestMap,
+    ).then(onValue, onError: onError);
+  }
+}
+
+class _FakeMaybeSingleBuilder extends Fake
+    implements PostgrestTransformBuilder<PostgrestMap?> {
+  final dynamic _result;
+  _FakeMaybeSingleBuilder(this._result);
+
+  @override
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestMap?) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(
+      _result as PostgrestMap?,
+    ).then(onValue, onError: onError);
   }
 }
 
@@ -99,8 +138,10 @@ void main() {
       final entry = buildEntry();
       final fakeBuilder = FakePostgrestBuilder(buildLogJson());
 
-      when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.insert(any())).thenReturn(fakeBuilder);
+      when(
+        () => mockSupabase.from('log_entries'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(() => mockQueryBuilder.insert(any())).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.createLogEntry(entry);
 
@@ -120,8 +161,10 @@ void main() {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
       final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
 
-      when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.update(any())).thenReturn(fakeBuilder);
+      when(
+        () => mockSupabase.from('log_entries'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(() => mockQueryBuilder.update(any())).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.updateLogEntry(entry);
 
@@ -132,8 +175,10 @@ void main() {
     test('getLogEntryForDate returns null when no entry exists', () async {
       final fakeBuilder = FakePostgrestBuilder(null);
 
-      when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenReturn(fakeBuilder);
+      when(
+        () => mockSupabase.from('log_entries'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.getLogEntryForDate(now, userId);
 
@@ -151,8 +196,10 @@ void main() {
     test('deleteLogEntry completes without error on success', () async {
       final fakeBuilder = FakePostgrestBuilder([]);
 
-      when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.delete()).thenReturn(fakeBuilder);
+      when(
+        () => mockSupabase.from('log_entries'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(() => mockQueryBuilder.delete()).thenAnswer((_) => fakeBuilder);
 
       await repository.deleteLogEntry('log-1', userId);
       // Success means no exception thrown
@@ -163,8 +210,10 @@ void main() {
       final endDate = DateTime.utc(2026, 3, 31);
       final fakeBuilder = FakePostgrestBuilder([]);
 
-      when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenReturn(fakeBuilder);
+      when(
+        () => mockSupabase.from('log_entries'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
 
       await repository.getLogEntries(
         userId,
