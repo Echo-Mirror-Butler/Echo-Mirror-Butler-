@@ -15,7 +15,7 @@ import '../../viewmodel/providers/gift_provider.dart';
 class GiftScreen extends ConsumerStatefulWidget {
   const GiftScreen({super.key, required this.recipientUserId});
 
-  final int recipientUserId;
+  final String recipientUserId;
 
   @override
   ConsumerState<GiftScreen> createState() => _GiftScreenState();
@@ -411,9 +411,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final tx = history[index];
-        // Handle ID mismatch (String vs int) by comparing as strings
-        final isSent =
-            tx.senderUserId.toString() == currentUserId || tx.senderUserId == 0;
+        final isSent = tx.senderUserId == currentUserId;
 
         final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
         final name = isSent && tx.recipientUserId == widget.recipientUserId

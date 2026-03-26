@@ -53,6 +53,22 @@ supabase migration new my_migration_name
 supabase db diff
 ```
 
+## Access Model
+
+The Supabase schema uses Row Level Security on every application table.
+
+- `log_entries`, `stories`, and `mood_comment_notifications` are owner-scoped by `user_id`.
+- `video_sessions` and `scheduled_sessions` are owner-scoped by `host_id`.
+- `mood_pins` and `video_posts` are publicly readable feeds.
+- `mood_pin_comments` are publicly readable, but inserts require an authenticated user whose `user_id` matches `auth.uid()`.
+
+For a clean local verification run, start Supabase first and then reset the database:
+
+```bash
+supabase start
+supabase db reset
+```
+
 ## Stopping
 
 ```bash

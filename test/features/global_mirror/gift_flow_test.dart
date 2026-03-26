@@ -3,8 +3,12 @@ import 'package:echomirror/features/global_mirror/data/repositories/gift_reposit
 import 'package:echomirror/features/global_mirror/viewmodel/providers/gift_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockGiftRepository implements GiftRepository {
+  @override
+  final SupabaseClient? client = null;
+
   double _balance = 100.0;
   final List<GiftTransactionModel> _history = [];
   bool _shouldFailSendGift = false;
@@ -35,7 +39,7 @@ class MockGiftRepository implements GiftRepository {
 
   @override
   Future<GiftTransactionModel?> sendGift({
-    required int recipientUserId,
+    required String recipientUserId,
     required double amount,
     String? message,
   }) async {
@@ -50,8 +54,8 @@ class MockGiftRepository implements GiftRepository {
     _balance -= amount;
 
     final transaction = GiftTransactionModel(
-      id: _history.length + 1,
-      senderUserId: 1, // Mock sender ID
+      id: (_history.length + 1).toString(),
+      senderUserId: '1', // Mock sender ID
       recipientUserId: recipientUserId,
       echoAmount: amount,
       createdAt: DateTime.now(),
@@ -104,7 +108,7 @@ void main() {
         await giftNotifier.loadBalance();
 
         final initialBalance = giftNotifier.state.echoBalance;
-        const recipientUserId = 42;
+        const recipientUserId = '42';
         const amount = 5.0;
 
         final success = await giftNotifier.sendGift(
@@ -126,7 +130,7 @@ void main() {
       mockRepo.setBalance(100.0);
       await giftNotifier.loadBalance();
 
-      const recipientUserId = 123;
+      const recipientUserId = '123';
       const amount = 10.0;
       const message = 'History test gift';
 
@@ -152,7 +156,7 @@ void main() {
       mockRepo.setBalance(25.0);
       await giftNotifier.loadBalance();
 
-      const recipientUserId = 456;
+      const recipientUserId = '456';
       const amount = 50.0; // More than balance
 
       final success = await giftNotifier.sendGift(
@@ -176,7 +180,7 @@ void main() {
         mockRepo.setBalance(200.0);
         await giftNotifier.loadBalance();
 
-        const recipientUserId = 789;
+        const recipientUserId = '789';
         const firstAmount = 30.0;
         const secondAmount = 20.0;
 
@@ -223,17 +227,17 @@ void main() {
 
         // Send multiple gifts
         await giftNotifier.sendGift(
-          recipientUserId: 1,
+          recipientUserId: '1',
           amount: 10.0,
           message: 'First',
         );
         await giftNotifier.sendGift(
-          recipientUserId: 2,
+          recipientUserId: '2',
           amount: 15.0,
           message: 'Second',
         );
         await giftNotifier.sendGift(
-          recipientUserId: 3,
+          recipientUserId: '3',
           amount: 5.0,
           message: 'Third',
         );
@@ -272,7 +276,7 @@ void main() {
       expect(giftNotifier.state.isSending, isFalse);
 
       final sendGiftFuture = giftNotifier.sendGift(
-        recipientUserId: 999,
+        recipientUserId: '999',
         amount: 5.0,
         message: 'Loading test',
       );

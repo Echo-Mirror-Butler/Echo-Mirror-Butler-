@@ -1,6 +1,3 @@
-import 'package:echomirror_server_client/echomirror_server_client.dart'
-    as serverpod;
-
 /// Story model for Instagram-style stories
 class StoryModel {
   final int id;
@@ -26,21 +23,6 @@ class StoryModel {
     required this.viewedBy,
     required this.isActive,
   });
-
-  factory StoryModel.fromServerpod(serverpod.Story story) {
-    return StoryModel(
-      id: story.id!,
-      userId: story.userId,
-      userName: story.userName,
-      userAvatarUrl: story.userAvatarUrl,
-      imageUrls: story.imageUrls,
-      createdAt: story.createdAt,
-      expiresAt: story.expiresAt,
-      viewCount: story.viewCount,
-      viewedBy: story.viewedBy,
-      isActive: story.isActive,
-    );
-  }
 
   bool get isExpired => DateTime.now().isAfter(expiresAt);
   bool get hasViewed => false; // Will be set based on current user
