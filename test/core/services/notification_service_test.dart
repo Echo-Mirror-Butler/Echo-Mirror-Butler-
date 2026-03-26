@@ -14,10 +14,10 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall call) async {
-      if (call.method == 'initialize') return true;
-      // cancel, zonedSchedule, show, requestPermissionsFromSystem, etc.
-      return null;
-    });
+          if (call.method == 'initialize') return true;
+          // cancel, zonedSchedule, show, requestPermissionsFromSystem, etc.
+          return null;
+        });
   });
 
   tearDown(() {
@@ -32,16 +32,18 @@ void main() {
       expect(result, isTrue);
     });
 
-    test('scheduleDailyReminder() saves hour, minute, and enabled to prefs',
-        () async {
-      final service = NotificationService();
-      await service.scheduleDailyReminder(hour: 9, minute: 30);
+    test(
+      'scheduleDailyReminder() saves hour, minute, and enabled to prefs',
+      () async {
+        final service = NotificationService();
+        await service.scheduleDailyReminder(hour: 9, minute: 30);
 
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getInt('reminder_hour'), 9);
-      expect(prefs.getInt('reminder_minute'), 30);
-      expect(prefs.getBool('reminder_enabled'), isTrue);
-    });
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getInt('reminder_hour'), 9);
+        expect(prefs.getInt('reminder_minute'), 30);
+        expect(prefs.getBool('reminder_enabled'), isTrue);
+      },
+    );
 
     test('cancelDailyReminder() sets reminder_enabled to false', () async {
       final prefs = await SharedPreferences.getInstance();
@@ -68,46 +70,49 @@ void main() {
     });
 
     test(
-        'checkAndNotifyIfNoLogToday() skips scheduling when already checked today',
-        () async {
-      final today = DateTime.now();
-      final todayKey = '${today.year}-${today.month}-${today.day}';
-      SharedPreferences.setMockInitialValues({
-        'last_log_check_date': todayKey,
-      });
+      'checkAndNotifyIfNoLogToday() skips scheduling when already checked today',
+      () async {
+        final today = DateTime.now();
+        final todayKey = '${today.year}-${today.month}-${today.day}';
+        SharedPreferences.setMockInitialValues({
+          'last_log_check_date': todayKey,
+        });
 
-      final service = NotificationService();
-      // Even though hasLoggedToday is false, it should not update anything
-      // because last_log_check_date already matches today.
-      await service.checkAndNotifyIfNoLogToday(hasLoggedToday: false);
+        final service = NotificationService();
+        // Even though hasLoggedToday is false, it should not update anything
+        // because last_log_check_date already matches today.
+        await service.checkAndNotifyIfNoLogToday(hasLoggedToday: false);
 
-      final prefs = await SharedPreferences.getInstance();
-      // Key should remain unchanged (early return before any write).
-      expect(prefs.getString('last_log_check_date'), todayKey);
-    });
-
-    test(
-        'checkAndNotifyIfNoLogToday() records check date when user has not logged',
-        () async {
-      final service = NotificationService();
-      await service.checkAndNotifyIfNoLogToday(hasLoggedToday: false);
-
-      final prefs = await SharedPreferences.getInstance();
-      final today = DateTime.now();
-      final expectedKey = '${today.year}-${today.month}-${today.day}';
-      expect(prefs.getString('last_log_check_date'), expectedKey);
-    });
+        final prefs = await SharedPreferences.getInstance();
+        // Key should remain unchanged (early return before any write).
+        expect(prefs.getString('last_log_check_date'), todayKey);
+      },
+    );
 
     test(
-        'checkAndNotifyIfNoLogToday() records check date and cancels notification when user has logged',
-        () async {
-      final service = NotificationService();
-      await service.checkAndNotifyIfNoLogToday(hasLoggedToday: true);
+      'checkAndNotifyIfNoLogToday() records check date when user has not logged',
+      () async {
+        final service = NotificationService();
+        await service.checkAndNotifyIfNoLogToday(hasLoggedToday: false);
 
-      final prefs = await SharedPreferences.getInstance();
-      final today = DateTime.now();
-      final expectedKey = '${today.year}-${today.month}-${today.day}';
-      expect(prefs.getString('last_log_check_date'), expectedKey);
-    });
+        final prefs = await SharedPreferences.getInstance();
+        final today = DateTime.now();
+        final expectedKey = '${today.year}-${today.month}-${today.day}';
+        expect(prefs.getString('last_log_check_date'), expectedKey);
+      },
+    );
+
+    test(
+      'checkAndNotifyIfNoLogToday() records check date and cancels notification when user has logged',
+      () async {
+        final service = NotificationService();
+        await service.checkAndNotifyIfNoLogToday(hasLoggedToday: true);
+
+        final prefs = await SharedPreferences.getInstance();
+        final today = DateTime.now();
+        final expectedKey = '${today.year}-${today.month}-${today.day}';
+        expect(prefs.getString('last_log_check_date'), expectedKey);
+      },
+    );
   });
 }
