@@ -6,16 +6,21 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "build": "tsc",
-    "lint": "eslint 'src/**/*.ts' --max-warnings 0 --config .eslintrc.cjs",
+    "lint": "eslint \"src/**/*.ts\" --max-warnings 0 --config .eslintrc.cjs",
     "type-check": "tsc --noEmit",
     "test": "jest --config jest.config.cjs --passWithNoTests"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "@stellar/stellar-sdk": "^12.0.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.11.5",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
