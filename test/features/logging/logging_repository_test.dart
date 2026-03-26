@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
 import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,12 +10,9 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 
+/// A lightweight fake that covers filter → transform chains returning a list.
 class FakePostgrestBuilder extends Fake
-    implements
-        PostgrestFilterBuilder<PostgrestList>,
-        PostgrestTransformBuilder<PostgrestList>,
-        PostgrestTransformBuilder<PostgrestMap>,
-        PostgrestTransformBuilder<PostgrestMap?> {
+    implements PostgrestFilterBuilder<PostgrestList> {
   final dynamic _result;
   FakePostgrestBuilder([this._result]);
 
@@ -30,21 +29,58 @@ class FakePostgrestBuilder extends Fake
     String column, {
     bool ascending = true,
     bool nullsFirst = false,
+    String? referencedTable,
   }) => this;
   @override
   PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
       this;
   @override
-  PostgrestTransformBuilder<PostgrestMap> single() => this;
+  PostgrestTransformBuilder<PostgrestMap> single() =>
+      _FakeSingleBuilder(_result);
   @override
-  PostgrestTransformBuilder<PostgrestMap?> maybeSingle() => this;
+  PostgrestTransformBuilder<PostgrestMap?> maybeSingle() =>
+      _FakeMaybeSingleBuilder(_result);
 
   @override
-  Future<dynamic> then(
-    FutureOr<dynamic> Function(dynamic) onValue, {
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestList) onValue, {
     Function? onError,
   }) {
-    return Future.value(_result).then(onValue, onError: onError);
+    final list =
+        (_result is List ? _result : <Map<String, dynamic>>[]) as PostgrestList;
+    return Future.value(list).then(onValue, onError: onError);
+  }
+}
+
+class _FakeSingleBuilder extends Fake
+    implements PostgrestTransformBuilder<PostgrestMap> {
+  final dynamic _result;
+  _FakeSingleBuilder(this._result);
+
+  @override
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestMap) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(
+      _result as PostgrestMap,
+    ).then(onValue, onError: onError);
+  }
+}
+
+class _FakeMaybeSingleBuilder extends Fake
+    implements PostgrestTransformBuilder<PostgrestMap?> {
+  final dynamic _result;
+  _FakeMaybeSingleBuilder(this._result);
+
+  @override
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestMap?) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(
+      _result as PostgrestMap?,
+    ).then(onValue, onError: onError);
   }
 }
 
