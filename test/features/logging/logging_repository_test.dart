@@ -10,7 +10,8 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 
-class FakePostgrestBuilder<T> extends Fake implements PostgrestFilterBuilder<T> {
+class FakePostgrestBuilder<T> extends Fake
+    implements PostgrestFilterBuilder<T> {
   final dynamic _result;
 
   FakePostgrestBuilder([this._result]);
@@ -53,11 +54,7 @@ class FakePostgrestBuilder<T> extends Fake implements PostgrestFilterBuilder<T> 
   PostgrestFilterBuilder<T> limit(int count, {String? referencedTable}) => this;
 
   @override
-  PostgrestFilterBuilder<T> range(
-    int from,
-    int to, {
-    String? referencedTable,
-  }) {
+  PostgrestFilterBuilder<T> range(int from, int to, {String? referencedTable}) {
     return this;
   }
 
@@ -140,7 +137,9 @@ void main() {
 
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
-      final fakeBuilder = FakePostgrestBuilder<PostgrestList>(buildLogJson(mood: 5));
+      final fakeBuilder = FakePostgrestBuilder<PostgrestList>(
+        buildLogJson(mood: 5),
+      );
 
       when(() => mockSupabase.from('log_entries')).thenReturn(mockQueryBuilder);
       when(() => mockQueryBuilder.update(any())).thenReturn(fakeBuilder);
