@@ -24,7 +24,7 @@ void main() {
     test('loadInsights returns empty when userId is null/empty', () async {
       await notifier.loadInsights(userId: null);
       expect(notifier.state, const AsyncValue<List<InsightModel>>.data([]));
-      
+
       await notifier.loadInsights(userId: '');
       expect(notifier.state, const AsyncValue<List<InsightModel>>.data([]));
     });
@@ -39,17 +39,19 @@ void main() {
           date: DateTime.now(),
           type: InsightType.general,
           createdAt: DateTime.now(),
-        )
+        ),
       ];
-      when(() => mockRepo.getInsights('user1')).thenAnswer((_) async => insights);
+      when(
+        () => mockRepo.getInsights('user1'),
+      ).thenAnswer((_) async => insights);
 
       await notifier.loadInsights(userId: 'user1');
       expect(notifier.state, AsyncValue<List<InsightModel>>.data(insights));
-      
+
       // Call again without forceReload, should not call repo
       await notifier.loadInsights(userId: 'user1');
       verify(() => mockRepo.getInsights('user1')).called(1);
-      
+
       // Call with forceReload, should call repo again
       await notifier.loadInsights(userId: 'user1', forceReload: true);
       verify(() => mockRepo.getInsights('user1')).called(1);
@@ -64,33 +66,35 @@ void main() {
 
     test('loadPredictions returns data', () async {
       when(() => mockRepo.getPredictions('user1')).thenAnswer((_) async => []);
-      
+
       final result = await notifier.loadPredictions(userId: 'user1');
       expect(result, isEmpty);
-      
+
       when(() => mockRepo.getPredictions('user1')).thenThrow(Exception());
       final errorResult = await notifier.loadPredictions();
       expect(errorResult, isEmpty);
     });
 
     test('loadFutureLetters returns data', () async {
-      when(() => mockRepo.getFutureLetters('user1')).thenAnswer((_) async => []);
-      
+      when(
+        () => mockRepo.getFutureLetters('user1'),
+      ).thenAnswer((_) async => []);
+
       final result = await notifier.loadFutureLetters(userId: 'user1');
       expect(result, isEmpty);
-      
+
       when(() => mockRepo.getFutureLetters('user1')).thenThrow(Exception());
       final errorResult = await notifier.loadFutureLetters();
       expect(errorResult, isEmpty);
     });
-    
+
     test('loadPredictions returns empty when userId is null', () async {
       // Create new notifier to ensure _currentUserId is null
       final newNotifier = DashboardNotifier(mockRepo);
       final result = await newNotifier.loadPredictions();
       expect(result, isEmpty);
     });
-    
+
     test('loadFutureLetters returns empty when userId is null', () async {
       // Create new notifier to ensure _currentUserId is null
       final newNotifier = DashboardNotifier(mockRepo);
