@@ -89,6 +89,15 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final giftState = ref.watch(giftProvider);
+    final isActionLoading = giftState.isSending || giftState.isLoading;
+
+    ref.listen<GiftState>(giftProvider, (previous, next) {
+      final previousError = previous?.error;
+      final nextError = next.error;
+      if (nextError != null && nextError.isNotEmpty && nextError != previousError) {
+        _showError(nextError);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -148,11 +157,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                 // Send button
                 FilledButton.icon(
                   onPressed:
-                      giftState.isSending ||
+                      isActionLoading ||
+                          widget.recipientUserId.trim().isEmpty ||
                           _selectedAmount > giftState.echoBalance
                       ? null
                       : _handleSend,
-                  icon: giftState.isSending
+                  icon: isActionLoading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
@@ -163,7 +173,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                         )
                       : const Icon(FontAwesomeIcons.gift),
                   label: Text(
-                    giftState.isSending
+                    isActionLoading
                         ? 'Sending...'
                         : 'Send ${_selectedAmount.toStringAsFixed(0)} ECHO',
                   ),
