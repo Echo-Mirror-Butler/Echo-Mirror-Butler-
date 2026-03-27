@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
@@ -9,6 +10,9 @@ interface AuthenticatedRequest extends Request {
     role: string;
   };
 }
+
+// Apply authentication middleware to all routes
+router.use(authMiddleware);
 
 // Mock Stellar transaction processing
 router.post('/transaction', async (req: AuthenticatedRequest, res: Response) => {
