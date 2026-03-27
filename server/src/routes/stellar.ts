@@ -15,14 +15,15 @@ interface AuthenticatedRequest extends Request {
 router.use(authMiddleware);
 
 // Mock Stellar transaction processing
-router.post('/transaction', async (req: AuthenticatedRequest, res: Response) => {
+router.post('/transaction', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { transaction, destination, amount, asset } = req.body;
     
     if (!transaction || !destination || !amount) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Missing required fields: transaction, destination, amount'
       });
+      return;
     }
 
     console.log(`Processing Stellar transaction for user: ${req.user?.id}`);
@@ -53,14 +54,15 @@ router.post('/transaction', async (req: AuthenticatedRequest, res: Response) => 
 });
 
 // Mock account balance fetching
-router.get('/balance/:accountId', async (req: AuthenticatedRequest, res: Response) => {
+router.get('/balance/:accountId', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { accountId } = req.params;
     
     if (!accountId) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Account ID is required'
       });
+      return;
     }
 
     console.log(`Fetching Stellar balance for account: ${accountId} (User: ${req.user?.id})`);

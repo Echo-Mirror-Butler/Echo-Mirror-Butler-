@@ -1,10 +1,9 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
 
 // Import routes
 import healthRoutes from './routes/health';
@@ -47,7 +46,7 @@ app.use('/stellar', stellarRoutes);
 app.use('/webhooks', webhookRoutes);
 
 // Root endpoint
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({
     message: 'Echo Mirror Butler Server API',
     version: '1.0.0',
@@ -61,7 +60,7 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     error: 'Endpoint not found',
     message: `Cannot ${req.method} ${req.originalUrl}`,
@@ -70,12 +69,12 @@ app.use('*', (req, res) => {
 });
 
 // Global error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.status(err.status || 500).json({
+app.use((error: any, req: Request, res: Response) => {
+  console.error('Unhandled error:', error);
+  res.status(error.status || 500).json({
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong',
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
   });
 });
 

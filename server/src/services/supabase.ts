@@ -33,7 +33,7 @@ class SupabaseService {
       .eq('id', userId)
       .single();
 
-    if (error) throw error;
+    if (error) {throw error;}
     return data;
   }
 
@@ -45,7 +45,7 @@ class SupabaseService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {throw error;}
     return data;
   }
 
@@ -57,7 +57,7 @@ class SupabaseService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {throw error;}
     return data;
   }
 
@@ -69,7 +69,7 @@ class SupabaseService {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw error;
+    if (error) {throw error;}
     return data;
   }
 
@@ -81,14 +81,14 @@ class SupabaseService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {throw error;}
     return data;
   }
 
   // Health check
   async healthCheck() {
     try {
-      const { data, error } = await this.client
+      const { error } = await this.client
         .from('profiles')
         .select('count')
         .limit(1);

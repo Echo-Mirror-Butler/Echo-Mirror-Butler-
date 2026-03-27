@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -6,12 +6,11 @@ export interface AppError extends Error {
 }
 
 export const errorHandler = (
-  err: AppError,
+  err: Error | AppError,
   req: Request,
-  res: Response,
-  _next: NextFunction
+  res: Response
 ) => {
-  let error = { ...err };
+  const error = { ...err } as AppError;
   error.message = err.message;
 
   // Log error
@@ -53,8 +52,8 @@ export const errorHandler = (
   }
 
   // Custom operational errors
-  if (err.isOperational) {
-    statusCode = err.statusCode || 500;
+  if ((err as AppError).isOperational) {
+    statusCode = (err as AppError).statusCode || 500;
     message = err.message;
   }
 

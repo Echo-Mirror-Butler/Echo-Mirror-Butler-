@@ -2,15 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 
 // Validation middleware factory
 export const validateBody = (schema: any) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const { error } = schema.validate(req.body);
     
     if (error) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Validation failed',
         message: error.details[0].message,
         details: error.details
       });
+      return;
     }
     
     next();
@@ -66,14 +67,15 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction) =
 
 // Content type validation
 export const validateContentType = (allowedTypes: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const contentType = req.header('Content-Type');
     
     if (!contentType || !allowedTypes.some(type => contentType.includes(type))) {
-      return res.status(415).json({
+      res.status(415).json({
         error: 'Unsupported Media Type',
         message: `Content-Type must be one of: ${allowedTypes.join(', ')}`
       });
+      return;
     }
     
     next();

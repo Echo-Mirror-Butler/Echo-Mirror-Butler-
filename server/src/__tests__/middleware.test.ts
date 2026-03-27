@@ -30,8 +30,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         jwtError,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(401);
@@ -50,8 +49,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         expiredError,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(401);
@@ -70,8 +68,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         validationError,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
@@ -89,8 +86,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         supabaseError,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
@@ -110,8 +106,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         operationalError,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(418);
@@ -129,8 +124,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         genericError,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
@@ -152,8 +146,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         error,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       expect(mockResponse.json).toHaveBeenCalledWith(
@@ -176,8 +169,7 @@ describe('Error Handler Middleware', () => {
       errorHandler(
         error,
         mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
+        mockResponse as Response
       );
 
       const response = (mockResponse.json as jest.Mock).mock.calls[0][0];
