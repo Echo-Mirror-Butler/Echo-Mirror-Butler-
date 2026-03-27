@@ -23,28 +23,27 @@ class MockAuthRepository extends Mock implements AuthRepository {}
 
 class _FakeDashboardNotifier extends DashboardNotifier {
   _FakeDashboardNotifier(
-    DashboardRepository repository,
+    super.repository,
     AsyncValue<List<InsightModel>> initialState,
-  ) : super(repository) {
+  ) {
     state = initialState;
   }
 }
 
 class _FakeLoggingNotifier extends LoggingNotifier {
   _FakeLoggingNotifier(
-    LoggingRepository repository,
+    super.repository,
     AsyncValue<List<LogEntryModel>> initialState,
-  ) : super(repository) {
+  ) {
     state = initialState;
   }
 }
 
 class _FakeAiInsightNotifier extends AiInsightNotifier {
-  _FakeAiInsightNotifier(this._repo, this._initialState) : super(_repo) {
+  _FakeAiInsightNotifier(super.repository, this._initialState) {
     state = _initialState;
   }
 
-  final AiRepository _repo;
   final AsyncValue<AiInsightModel?> _initialState;
 }
 
