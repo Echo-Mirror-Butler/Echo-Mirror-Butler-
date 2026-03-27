@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:echomirror/features/dashboard/data/models/mood_analytics_model.dart';
-import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
 
 void main() {
   group('MoodAnalyticsModel.fromEntries', () {
