@@ -207,7 +207,7 @@ void main() {
         loggingState: const AsyncValue.data([]),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.byType(ShimmerLoading), findsOneWidget);
     expect(find.text('No insights yet'), findsNothing);
