@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/gift_transaction_model.dart';
+import '../services/stellar/stellar_service.dart';
 
 /// Repository for ECHO token gifting operations backed by Supabase.
 class GiftRepository {
@@ -13,27 +14,19 @@ class GiftRepository {
       _supabase.auth.currentUser?.id ?? '00000000-0000-0000-0000-000000000000';
 
   /// Returns the current user's ECHO balance.
-  /// Creates a wallet with a 10 ECHO welcome bonus if one does not exist.
   Future<double> getEchoBalance() async {
     try {
-      final row = await _supabase
-          .from('echo_wallets')
-          .select('balance')
-          .eq('user_id', _currentUserId)
+      final userId = _currentUserId;
+      final wallet = await _supabase
+          .from('user_wallets')
+          .select('public_key')
+          .eq('user_id', userId)
           .maybeSingle();
 
-      if (row != null) {
-        return (row['balance'] as num).toDouble();
-      }
-
-      // First access — provision a wallet with the welcome bonus.
-      final inserted = await _supabase
-          .from('echo_wallets')
-          .insert({'user_id': _currentUserId, 'balance': 10.0})
-          .select('balance')
-          .single();
-
-      return (inserted['balance'] as num).toDouble();
+      if (wallet == null) return 0.0;
+      return await StellarService.getEchoBalance(
+        wallet['public_key'] as String,
+      );
     } catch (e) {
       debugPrint('[GiftRepository] getEchoBalance error: $e');
       return 0.0;
@@ -41,10 +34,8 @@ class GiftRepository {
   }
 
   /// Sends [amount] ECHO to [recipientUserId] with an optional [message].
-  /// Deducts from sender's wallet and credits recipient's wallet atomically
-  /// by using two sequential updates (best-effort; replace with a Supabase
-  /// Edge Function / RPC for true atomicity in production).
-  /// Returns the created transaction on success, null on failure.
+  /// On success, inserts a row into the gift_transactions table and returns
+  /// the created transaction model.
   Future<GiftTransactionModel?> sendGift({
     required String recipientUserId,
     required double amount,
@@ -58,58 +49,56 @@ class GiftRepository {
         return null;
       }
 
-      // Verify sender has sufficient balance.
-      final senderBalance = await getEchoBalance();
-      if (senderBalance < amount) {
-        debugPrint('[GiftRepository] sendGift: insufficient balance');
+      // 1. Fetch sender's secret key from user_wallets (encrypted field)
+      final senderWallet = await _supabase
+          .from('user_wallets')
+          .select('encrypted_secret')
+          .eq('user_id', senderId)
+          .maybeSingle();
+      if (senderWallet == null) {
+        debugPrint('[GiftRepository] sendGift: sender wallet not found');
         return null;
       }
 
-      // Deduct from sender.
-      await _supabase
-          .from('echo_wallets')
-          .update({
-            'balance': senderBalance - amount,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('user_id', senderId);
-
-      // Credit recipient — create wallet with welcome bonus if needed.
-      final recipientRow = await _supabase
-          .from('echo_wallets')
-          .select('balance')
+      // 2. Fetch recipient's public key from user_wallets using recipientUserId
+      final recipientWallet = await _supabase
+          .from('user_wallets')
+          .select('public_key')
           .eq('user_id', recipientUserId)
           .maybeSingle();
-
-      if (recipientRow != null) {
-        final recipientBalance = (recipientRow['balance'] as num).toDouble();
-        await _supabase
-            .from('echo_wallets')
-            .update({
-              'balance': recipientBalance + amount,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('user_id', recipientUserId);
-      } else {
-        await _supabase.from('echo_wallets').insert({
-          'user_id': recipientUserId,
-          'balance': 10.0 + amount,
-        });
+      if (recipientWallet == null) {
+        debugPrint('[GiftRepository] sendGift: recipient wallet not found');
+        return null;
       }
 
-      // Record the transaction.
+      // 3. Call StellarService.sendEcho(...) to execute the Stellar transaction
+      final txHash = await StellarService.sendEcho(
+        senderSecret: senderWallet['encrypted_secret'] as String,
+        recipientPublicKey: recipientWallet['public_key'] as String,
+        amount: amount,
+        memo: message,
+      );
+
+      if (txHash == null) {
+        debugPrint('[GiftRepository] sendGift: stellar transaction failed');
+        return null;
+      }
+
+      // 4. On success, insert a row into gift_transactions table with the tx hash
       final row = await _supabase
           .from('gift_transactions')
           .insert({
             'sender_user_id': senderId,
             'recipient_user_id': recipientUserId,
             'echo_amount': amount,
+            'stellar_tx_hash': txHash,
+            'message': message,
             'status': 'completed',
-            if (message != null && message.isNotEmpty) 'message': message,
           })
           .select()
           .single();
 
+      // 5. Return a populated GiftTransactionModel
       return GiftTransactionModel.fromSupabase(row);
     } catch (e) {
       debugPrint('[GiftRepository] sendGift error: $e');
@@ -121,14 +110,17 @@ class GiftRepository {
   Future<List<GiftTransactionModel>> getGiftHistory() async {
     try {
       final userId = _currentUserId;
-      final rows = await _supabase
+      final results = await _supabase
           .from('gift_transactions')
           .select()
           .or('sender_user_id.eq.$userId,recipient_user_id.eq.$userId')
-          .order('created_at', ascending: false)
-          .limit(50);
+          .order('created_at', ascending: false);
 
-      return rows.map(GiftTransactionModel.fromSupabase).toList();
+      return (results as List)
+          .map(
+            (r) => GiftTransactionModel.fromSupabase(r as Map<String, dynamic>),
+          )
+          .toList();
     } catch (e) {
       debugPrint('[GiftRepository] getGiftHistory error: $e');
       return [];

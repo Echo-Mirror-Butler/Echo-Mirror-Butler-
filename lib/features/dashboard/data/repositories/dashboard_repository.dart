@@ -5,10 +5,8 @@ import '../../../logging/data/models/log_entry_model.dart';
 /// Repository for dashboard operations
 /// Handles all Serverpod backend calls for insights and predictions
 class DashboardRepository {
-  DashboardRepository(
-    this._loggingRepository, {
-    DateTime Function()? now,
-  }) : _now = now ?? DateTime.now;
+  DashboardRepository(this._loggingRepository, {DateTime Function()? now})
+    : _now = now ?? DateTime.now;
 
   final LoggingRepository _loggingRepository;
   final DateTime Function() _now;
@@ -176,7 +174,7 @@ class DashboardRepository {
             userId: userId,
             title: 'Logging Milestone',
             description:
-                'You\'ve logged ${totalEntries} entries! Your consistency is building valuable insights.',
+                'You\'ve logged $totalEntries entries! Your consistency is building valuable insights.',
             date: now,
             type: InsightType.general,
             createdAt: now,

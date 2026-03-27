@@ -1,6 +1,8 @@
 # EchoMirror Backend — Stellar Integration
 
-This folder contains the Stellar blockchain integration for the **ECHO token**, the in-app currency used in the Global Mirror gifting feature.
+This folder contains:
+1. **`server/`** — Node.js + Express REST API for Stellar wallet management and ECHO gifting (issue #103)
+2. **`stellar/`** — Dart Stellar service used by the Flutter client (reference implementation)
 
 ## What is ECHO?
 
@@ -18,12 +20,78 @@ Users can gift ECHO to other users to show appreciation directly from the Global
 
 ```
 backend/
+├── server/                        # Node.js Express API server (issue #103)
+│   ├── src/
+│   │   ├── index.ts               # Express entry point (port 3000)
+│   │   ├── routes/
+│   │   │   └── stellar.ts         # POST /wallet/create, GET /wallet/balance,
+│   │   │                          # POST /gift, GET /transactions
+│   │   ├── middleware/
+│   │   │   ├── auth.ts            # Supabase JWT verification
+│   │   │   └── errorHandler.ts    # Global error handler
+│   │   └── services/
+│   │       ├── supabase.ts        # Supabase admin client (service role)
+│   │       └── stellar.ts         # Stellar SDK — wallet, trustline, payments
+│   ├── docs/
+│   │   └── stellar-api.json       # Postman/Bruno collection
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example
 ├── stellar/
-│   ├── stellar_config.dart    # Network config, asset code, Horizon URL
-│   ├── echo_token.dart        # ECHO asset definition and reward constants
-│   └── stellar_service.dart   # Wallet creation, trustlines, payments
-└── .env.example               # Environment variable template
+│   ├── stellar_config.dart        # Network config, asset code, Horizon URL
+│   ├── echo_token.dart            # ECHO asset definition and reward constants
+│   └── stellar_service.dart       # Dart Stellar service (Flutter client)
+└── .env.example                   # Stellar keypair environment template
 ```
+
+---
+
+## Node.js Server (issue #103)
+
+### Setup
+
+```bash
+cd backend/server
+npm install
+cp .env.example .env   # fill in all values
+npm run dev            # starts on http://localhost:3000
+```
+
+### API Routes
+
+All routes (except `GET /health`) require a valid Supabase JWT:
+```
+Authorization: Bearer <supabase_jwt>
+```
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/health` | Server health check |
+| `POST` | `/stellar/wallet/create` | Create + fund testnet wallet, store public key |
+| `GET` | `/stellar/wallet/balance` | Get XLM and ECHO balances |
+| `POST` | `/stellar/gift` | Send ECHO to another user |
+| `GET` | `/stellar/transactions` | Paginated gift history |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `PORT` | Server port (default `3000`) |
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS — keep secret) |
+| `JWT_SECRET` | Supabase JWT secret (from project settings) |
+| `STELLAR_ISSUER_PUBLIC` | ECHO token issuer public key |
+| `STELLAR_ISSUER_SECRET` | ECHO token issuer secret key |
+| `STELLAR_HORIZON_URL` | Horizon endpoint (default: testnet) |
+| `STELLAR_NETWORK_PASSPHRASE` | Stellar network passphrase |
+| `STELLAR_ASSET_CODE` | Token code (default: `ECHO`) |
+
+### Testing with Postman/Bruno
+
+Import `backend/server/docs/stellar-api.json` into Postman or Bruno.
+Set the `base_url` and `jwt_token` collection variables before running requests.
+
+---
 
 ---
 
