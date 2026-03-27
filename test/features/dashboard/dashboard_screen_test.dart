@@ -40,10 +40,7 @@ class _FakeLoggingNotifier extends LoggingNotifier {
 }
 
 class _FakeAiInsightNotifier extends AiInsightNotifier {
-  _FakeAiInsightNotifier(
-    this._repo,
-    this._initialState,
-  ) : super(_repo) {
+  _FakeAiInsightNotifier(this._repo, this._initialState) : super(_repo) {
     state = _initialState;
   }
 
@@ -80,10 +77,7 @@ void main() {
     );
   }
 
-  InsightModel _insight({
-    required String id,
-    required InsightType type,
-  }) {
+  InsightModel _insight({required String id, required InsightType type}) {
     final now = _today();
     return InsightModel(
       id: id,
@@ -96,10 +90,7 @@ void main() {
     );
   }
 
-  AiInsightModel _aiInsight({
-    required String futureLetter,
-    int? stressLevel,
-  }) {
+  AiInsightModel _aiInsight({required String futureLetter, int? stressLevel}) {
     return AiInsightModel(
       prediction: 'Test prediction',
       suggestions: const ['Suggestion 1', 'Suggestion 2'],
@@ -117,8 +108,9 @@ void main() {
     AsyncValue<AiInsightModel?>? aiInsightState,
   }) {
     final mockAuthRepository = MockAuthRepository();
-    when(() => mockAuthRepository.isAuthenticated())
-        .thenAnswer((_) async => false);
+    when(
+      () => mockAuthRepository.isAuthenticated(),
+    ).thenAnswer((_) async => false);
 
     final loggingRepo = LoggingRepository();
     final dashboardRepo = DashboardRepository(loggingRepo);
@@ -140,9 +132,7 @@ void main() {
         // Ensure the chart provider doesn't depend on auth state in tests.
         moodChartDataProvider.overrideWithValue(const <LogEntryModel>[]),
       ],
-      child: const MaterialApp(
-        home: DashboardScreen(),
-      ),
+      child: const MaterialApp(home: DashboardScreen()),
     );
   }
 
@@ -162,9 +152,7 @@ void main() {
     expect(find.textContaining('day streak'), findsNothing);
   });
 
-  testWidgets('mood streak card renders correct streak count', (
-    tester,
-  ) async {
+  testWidgets('mood streak card renders correct streak count', (tester) async {
     final today = _today();
     final yesterday = today.subtract(const Duration(days: 1));
 
@@ -178,9 +166,9 @@ void main() {
 
     await tester.pumpWidget(
       _buildScreen(
-        dashboardState: AsyncValue.data(
-          [_insight(id: '1', type: InsightType.general)],
-        ),
+        dashboardState: AsyncValue.data([
+          _insight(id: '1', type: InsightType.general),
+        ]),
         loggingState: AsyncValue.data(logs),
         aiInsightState: const AsyncValue.data(null),
       ),
@@ -194,16 +182,13 @@ void main() {
   testWidgets('AI insight section renders when insight is available', (
     tester,
   ) async {
-    final insight = _aiInsight(
-      futureLetter: 'Letter body',
-      stressLevel: 1,
-    );
+    final insight = _aiInsight(futureLetter: 'Letter body', stressLevel: 1);
 
     await tester.pumpWidget(
       _buildScreen(
-        dashboardState: AsyncValue.data(
-          [_insight(id: '1', type: InsightType.prediction)],
-        ),
+        dashboardState: AsyncValue.data([
+          _insight(id: '1', type: InsightType.prediction),
+        ]),
         loggingState: const AsyncValue.data([]),
         aiInsightState: AsyncValue.data(insight),
       ),
@@ -233,16 +218,13 @@ void main() {
     tester,
   ) async {
     const letterText = 'Test future letter body';
-    final insight = _aiInsight(
-      futureLetter: letterText,
-      stressLevel: 1,
-    );
+    final insight = _aiInsight(futureLetter: letterText, stressLevel: 1);
 
     await tester.pumpWidget(
       _buildScreen(
-        dashboardState: AsyncValue.data(
-          [_insight(id: '1', type: InsightType.general)],
-        ),
+        dashboardState: AsyncValue.data([
+          _insight(id: '1', type: InsightType.general),
+        ]),
         loggingState: const AsyncValue.data([]),
         aiInsightState: AsyncValue.data(insight),
       ),
@@ -253,4 +235,3 @@ void main() {
     expect(find.text(letterText), findsOneWidget);
   });
 }
-

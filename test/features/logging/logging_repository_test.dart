@@ -35,9 +35,9 @@ void _stubListAwait(
   MockPostgrestListBuilder builder,
   List<Map<String, dynamic>> result,
 ) {
-  when(
-    () => builder.then(any(), onError: any(named: 'onError')),
-  ).thenAnswer((invocation) async {
+  when(() => builder.then(any(), onError: any(named: 'onError'))).thenAnswer((
+    invocation,
+  ) async {
     final onValue =
         invocation.positionalArguments.first
             as FutureOr<dynamic> Function(PostgrestList);
@@ -49,9 +49,9 @@ void _stubMapAwait(
   MockPostgrestMapBuilder builder,
   Map<String, dynamic> result,
 ) {
-  when(
-    () => builder.then(any(), onError: any(named: 'onError')),
-  ).thenAnswer((invocation) async {
+  when(() => builder.then(any(), onError: any(named: 'onError'))).thenAnswer((
+    invocation,
+  ) async {
     final onValue =
         invocation.positionalArguments.first
             as FutureOr<dynamic> Function(PostgrestMap);
@@ -63,9 +63,9 @@ void _stubNullableMapAwait(
   MockPostgrestNullableMapBuilder builder,
   Map<String, dynamic>? result,
 ) {
-  when(
-    () => builder.then(any(), onError: any(named: 'onError')),
-  ).thenAnswer((invocation) async {
+  when(() => builder.then(any(), onError: any(named: 'onError'))).thenAnswer((
+    invocation,
+  ) async {
     final onValue =
         invocation.positionalArguments.first
             as FutureOr<dynamic> Function(PostgrestMap?);
@@ -148,7 +148,9 @@ void main() {
     ).thenReturn(mockListBuilder);
     when(() => mockListBuilder.select(any())).thenReturn(mockListBuilder);
     when(() => mockListBuilder.single()).thenReturn(mockMapBuilder);
-    when(() => mockListBuilder.maybeSingle()).thenReturn(mockNullableMapBuilder);
+    when(
+      () => mockListBuilder.maybeSingle(),
+    ).thenReturn(mockNullableMapBuilder);
   });
 
   group('LoggingRepository', () {
@@ -206,9 +208,7 @@ void main() {
     });
 
     test('deleteLogEntry completes without error on success', () async {
-      when(
-        () => mockQueryBuilder.delete(),
-      ).thenAnswer((_) => mockListBuilder);
+      when(() => mockQueryBuilder.delete()).thenAnswer((_) => mockListBuilder);
       _stubListAwait(mockListBuilder, <Map<String, dynamic>>[]);
 
       await repository.deleteLogEntry('log-1', userId);

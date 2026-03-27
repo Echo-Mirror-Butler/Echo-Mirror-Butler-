@@ -128,9 +128,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      buildScreen(
-        SocialsState(activeSessions: [buildSession()]),
-      ),
+      buildScreen(SocialsState(activeSessions: [buildSession()])),
     );
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -139,11 +137,7 @@ void main() {
   });
 
   testWidgets('renders stories bar items', (tester) async {
-    await tester.pumpWidget(
-      buildScreen(
-        SocialsState(stories: [buildStory()]),
-      ),
-    );
+    await tester.pumpWidget(buildScreen(SocialsState(stories: [buildStory()])));
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Your Story'), findsOneWidget);
