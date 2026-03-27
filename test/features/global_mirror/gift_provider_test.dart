@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:echomirror/features/global_mirror/viewmodel/providers/'
@@ -10,6 +11,9 @@ import 'package:echomirror/features/global_mirror/data/models/'
 
 /// Mock implementation of GiftRepository for testing
 class MockGiftRepository implements GiftRepository {
+  @override
+  final SupabaseClient? client = null;
+
   double _mockBalance = 0.0;
   List<GiftTransactionModel> _mockHistory = [];
   bool _shouldFailGetBalance = false;
@@ -57,7 +61,7 @@ class MockGiftRepository implements GiftRepository {
 
   @override
   Future<GiftTransactionModel?> sendGift({
-    required int recipientUserId,
+    required String recipientUserId,
     required double amount,
     String? message,
   }) async {
@@ -76,8 +80,8 @@ class MockGiftRepository implements GiftRepository {
     }
 
     final tx = GiftTransactionModel(
-      id: 1,
-      senderUserId: 0,
+      id: '1',
+      senderUserId: '0',
       recipientUserId: recipientUserId,
       echoAmount: amount,
       createdAt: DateTime.now(),
@@ -175,7 +179,7 @@ void main() {
 
       // Call sendGift (will pause due to Completer)
       final sendingFuture = notifier.sendGift(
-        recipientUserId: 123,
+        recipientUserId: '123',
         amount: 25.0,
         message: 'Happy birthday!',
       );
@@ -211,7 +215,7 @@ void main() {
       expect(container.read(giftProvider).echoBalance, 50.0);
 
       final success = await notifier.sendGift(
-        recipientUserId: 123,
+        recipientUserId: '123',
         amount: 20.0,
       );
 
@@ -232,7 +236,7 @@ void main() {
         await notifier.loadBalance();
 
         final success = await notifier.sendGift(
-          recipientUserId: 123,
+          recipientUserId: '123',
           amount: 50.0, // More than available balance
         );
 
@@ -260,7 +264,7 @@ void main() {
       await notifier.loadBalance();
 
       final success = await notifier.sendGift(
-        recipientUserId: 123,
+        recipientUserId: '123',
         amount: 25.0,
       );
 
@@ -277,9 +281,9 @@ void main() {
 
     test('loadHistory() updates the history list', () async {
       final mockTx = GiftTransactionModel(
-        id: 1,
-        senderUserId: 0,
-        recipientUserId: 456,
+        id: '1',
+        senderUserId: '0',
+        recipientUserId: '456',
         echoAmount: 25.0,
         createdAt: DateTime.now(),
         status: 'completed',
@@ -299,8 +303,8 @@ void main() {
       await notifier.loadHistory();
 
       expect(container.read(giftProvider).history, hasLength(1));
-      expect(container.read(giftProvider).history.first.id, 1);
-      expect(container.read(giftProvider).history.first.recipientUserId, 456);
+      expect(container.read(giftProvider).history.first.id, '1');
+      expect(container.read(giftProvider).history.first.recipientUserId, '456');
     });
 
     test('sendGift() clears previous error on new attempt', () async {
@@ -313,13 +317,13 @@ void main() {
       final notifier = container.read(giftProvider.notifier);
 
       // First attempt fails with insufficient balance
-      await notifier.sendGift(recipientUserId: 123, amount: 100.0);
+      await notifier.sendGift(recipientUserId: '123', amount: 100.0);
 
       expect(container.read(giftProvider).error, isNotNull);
 
       // Second attempt succeeds
       final success = await notifier.sendGift(
-        recipientUserId: 456,
+        recipientUserId: '456',
         amount: 20.0,
       );
 
@@ -337,7 +341,7 @@ void main() {
       final notifier = container.read(giftProvider.notifier);
 
       final success = await notifier.sendGift(
-        recipientUserId: 789,
+        recipientUserId: '789',
         amount: 35.0,
         message: 'Test gift',
       );
@@ -345,7 +349,7 @@ void main() {
       expect(success, true);
       final lastTx = container.read(giftProvider).lastSentTx;
       expect(lastTx, isNotNull);
-      expect(lastTx!.recipientUserId, 789);
+      expect(lastTx!.recipientUserId, '789');
       expect(lastTx.echoAmount, 35.0);
       expect(lastTx.message, 'Test gift');
     });
@@ -360,12 +364,12 @@ void main() {
       final notifier = container.read(giftProvider.notifier);
 
       // First gift
-      await notifier.sendGift(recipientUserId: 123, amount: 20.0);
+      await notifier.sendGift(recipientUserId: '123', amount: 20.0);
       expect(container.read(giftProvider).lastSentTx, isNotNull);
 
       // Start second gift (which will fail)
       await notifier.sendGift(
-        recipientUserId: 456,
+        recipientUserId: '456',
         amount: 100.0, // Insufficient balance
       );
 
@@ -384,7 +388,7 @@ void main() {
       final notifier = container.read(giftProvider.notifier);
 
       // Create an error state
-      await notifier.sendGift(recipientUserId: 123, amount: 25.0);
+      await notifier.sendGift(recipientUserId: '123', amount: 25.0);
       expect(container.read(giftProvider).error, isNotNull);
 
       // Reset mock to allow success

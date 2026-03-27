@@ -6,11 +6,19 @@ import '../models/log_entry_model.dart';
 /// Repository for logging operations
 /// Handles all Supabase table queries for daily logging
 class LoggingRepository {
-  LoggingRepository() {
-    debugPrint('[LoggingRepository] Using shared Supabase client');
+  LoggingRepository({SupabaseClient? supabaseClient})
+    : _injectedClient = supabaseClient {
+    debugPrint(
+      supabaseClient == null
+          ? '[LoggingRepository] Using shared Supabase client'
+          : '[LoggingRepository] Using injected Supabase client',
+    );
   }
 
-  SupabaseClient get _supabase => SupabaseClientService.instance.client;
+  final SupabaseClient? _injectedClient;
+
+  SupabaseClient get _supabase =>
+      _injectedClient ?? SupabaseClientService.instance.client;
 
   String _toDateString(DateTime date) {
     final utcDate = date.isUtc
