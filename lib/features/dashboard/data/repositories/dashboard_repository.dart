@@ -1,15 +1,23 @@
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
 import '../../../logging/data/models/log_entry_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for dashboard operations
 /// Handles all Serverpod backend calls for insights and predictions
 class DashboardRepository {
-  DashboardRepository(this._loggingRepository, {DateTime Function()? now})
-    : _now = now ?? DateTime.now;
+  DashboardRepository(
+    this._loggingRepository, {
+    SupabaseClient? supabaseClient,
+    DateTime Function()? now,
+  }) : _supabase = supabaseClient,
+       _now = now ?? DateTime.now;
 
   final LoggingRepository _loggingRepository;
+  final SupabaseClient? _supabase;
   final DateTime Function() _now;
+
+  SupabaseClient get _client => _supabase ?? Supabase.instance.client;
 
   /// Get insights for a user
   /// Generates insights from log entries
@@ -279,13 +287,28 @@ class DashboardRepository {
   /// Get future letters (time capsule feature)
   Future<List<InsightModel>> getFutureLetters(String userId) async {
     try {
-      // Example Serverpod call
-      // final results = await _client.dashboard.getFutureLetters(userId);
-      // return results.map((r) => InsightModel.fromJson(r)).toList();
+      final response = await _client
+          .from('future_letters')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
 
-      // Placeholder implementation
-      await Future.delayed(const Duration(seconds: 1));
-      return [];
+      return (response as List<dynamic>)
+          .whereType<Map<String, dynamic>>()
+          .map((row) {
+            final createdAt = DateTime.parse(row['created_at'] as String);
+            final unlockAt = DateTime.parse(row['unlock_at'] as String);
+            return InsightModel(
+              id: row['id'].toString(),
+              userId: row['user_id'].toString(),
+              title: 'Letter from Future You',
+              description: row['content'] as String? ?? '',
+              date: unlockAt,
+              type: InsightType.general,
+              createdAt: createdAt,
+            );
+          })
+          .toList();
     } catch (e) {
       throw Exception('Failed to get future letters: ${e.toString()}');
     }
