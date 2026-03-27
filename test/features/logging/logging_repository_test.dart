@@ -10,88 +10,76 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 
-/// A lightweight fake that covers filter → transform chains returning a list.
-class FakePostgrestBuilder extends Fake
-    implements PostgrestFilterBuilder<PostgrestList> {
-  final dynamic _result;
+class MockPostgrestListBuilder extends Mock
+    implements PostgrestFilterBuilder<PostgrestList> {}
 
-  FakePostgrestBuilder([this._result]);
+class MockPostgrestMapBuilder extends Mock
+    implements PostgrestTransformBuilder<PostgrestMap> {}
 
-  @override
-  PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) => this;
-  @override
-  PostgrestFilterBuilder<PostgrestList> gte(String column, Object value) =>
-      this;
-  @override
-  PostgrestFilterBuilder<PostgrestList> lte(String column, Object value) =>
-      this;
-  @override
-  PostgrestTransformBuilder<PostgrestList> order(
-    String column, {
-    bool ascending = true,
-    bool nullsFirst = false,
-    String? referencedTable,
-  }) => this;
-  @override
-  PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
-      this;
-  @override
-  PostgrestTransformBuilder<PostgrestMap> single() =>
-      _FakeSingleBuilder(_result);
-  @override
-  PostgrestTransformBuilder<PostgrestMap?> maybeSingle() =>
-      _FakeMaybeSingleBuilder(_result);
+class MockPostgrestNullableMapBuilder extends Mock
+    implements PostgrestTransformBuilder<PostgrestMap?> {}
 
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(PostgrestList) onValue, {
-    Function? onError,
-  }) {
-    final list = _result is List<Map<String, dynamic>>
-        ? _result
-        : _result is List
-        ? _result.cast<Map<String, dynamic>>()
-        : <Map<String, dynamic>>[];
-    return Future.value(list).then(onValue, onError: onError);
-  }
+class FakeMapCallback extends Fake {
+  PostgrestMap call(PostgrestMap value) => value;
 }
 
-class _FakeSingleBuilder extends Fake
-    implements PostgrestTransformBuilder<PostgrestMap> {
-  final dynamic _result;
-  _FakeSingleBuilder(this._result);
-
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(PostgrestMap) onValue, {
-    Function? onError,
-  }) {
-    return Future.value(
-      _result as PostgrestMap,
-    ).then(onValue, onError: onError);
-  }
+class FakeNullableMapCallback extends Fake {
+  PostgrestMap? call(PostgrestMap? value) => value;
 }
 
-class _FakeMaybeSingleBuilder extends Fake
-    implements PostgrestTransformBuilder<PostgrestMap?> {
-  final dynamic _result;
-  _FakeMaybeSingleBuilder(this._result);
+class FakeListCallback extends Fake {
+  PostgrestList call(PostgrestList value) => value;
+}
 
-  @override
-  Future<U> then<U>(
-    FutureOr<U> Function(PostgrestMap?) onValue, {
-    Function? onError,
-  }) {
-    return Future.value(
-      _result as PostgrestMap?,
-    ).then(onValue, onError: onError);
-  }
+void _stubListAwait(
+  MockPostgrestListBuilder builder,
+  List<Map<String, dynamic>> result,
+) {
+  when(
+    () => builder.then(any(), onError: any(named: 'onError')),
+  ).thenAnswer((invocation) async {
+    final onValue =
+        invocation.positionalArguments.first
+            as FutureOr<dynamic> Function(PostgrestList);
+    return onValue(result);
+  });
+}
+
+void _stubMapAwait(
+  MockPostgrestMapBuilder builder,
+  Map<String, dynamic> result,
+) {
+  when(
+    () => builder.then(any(), onError: any(named: 'onError')),
+  ).thenAnswer((invocation) async {
+    final onValue =
+        invocation.positionalArguments.first
+            as FutureOr<dynamic> Function(PostgrestMap);
+    return onValue(result);
+  });
+}
+
+void _stubNullableMapAwait(
+  MockPostgrestNullableMapBuilder builder,
+  Map<String, dynamic>? result,
+) {
+  when(
+    () => builder.then(any(), onError: any(named: 'onError')),
+  ).thenAnswer((invocation) async {
+    final onValue =
+        invocation.positionalArguments.first
+            as FutureOr<dynamic> Function(PostgrestMap?);
+    return onValue(result);
+  });
 }
 
 void main() {
   late LoggingRepository repository;
   late MockSupabaseClient mockSupabase;
   late MockSupabaseQueryBuilder mockQueryBuilder;
+  late MockPostgrestListBuilder mockListBuilder;
+  late MockPostgrestMapBuilder mockMapBuilder;
+  late MockPostgrestNullableMapBuilder mockNullableMapBuilder;
 
   const userId = '123e4567-e89b-12d3-a456-426614174000';
   final now = DateTime.utc(2026, 3, 25, 12, 0, 0);
@@ -128,21 +116,49 @@ void main() {
     );
   }
 
+  setUpAll(() {
+    registerFallbackValue(<String, dynamic>{});
+    registerFallbackValue(FakeMapCallback());
+    registerFallbackValue(FakeNullableMapCallback());
+    registerFallbackValue(FakeListCallback());
+  });
+
   setUp(() {
     mockSupabase = MockSupabaseClient();
     mockQueryBuilder = MockSupabaseQueryBuilder();
+    mockListBuilder = MockPostgrestListBuilder();
+    mockMapBuilder = MockPostgrestMapBuilder();
+    mockNullableMapBuilder = MockPostgrestNullableMapBuilder();
     repository = LoggingRepository(supabaseClient: mockSupabase);
+
+    when(
+      () => mockSupabase.from('log_entries'),
+    ).thenAnswer((_) => mockQueryBuilder);
+
+    when(() => mockListBuilder.eq(any(), any())).thenReturn(mockListBuilder);
+    when(() => mockListBuilder.gte(any(), any())).thenReturn(mockListBuilder);
+    when(() => mockListBuilder.lte(any(), any())).thenReturn(mockListBuilder);
+    when(
+      () => mockListBuilder.order(
+        any(),
+        ascending: any(named: 'ascending'),
+        nullsFirst: any(named: 'nullsFirst'),
+        referencedTable: any(named: 'referencedTable'),
+      ),
+    ).thenReturn(mockListBuilder);
+    when(() => mockListBuilder.select(any())).thenReturn(mockListBuilder);
+    when(() => mockListBuilder.single()).thenReturn(mockMapBuilder);
+    when(() => mockListBuilder.maybeSingle()).thenReturn(mockNullableMapBuilder);
   });
 
   group('LoggingRepository', () {
     test('createLogEntry returns LogEntryModel on success', () async {
       final entry = buildEntry();
-      final fakeBuilder = FakePostgrestBuilder(buildLogJson());
 
       when(
-        () => mockSupabase.from('log_entries'),
-      ).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.insert(any())).thenAnswer((_) => fakeBuilder);
+        () => mockQueryBuilder.insert(any()),
+      ).thenAnswer((_) => mockListBuilder);
+      _stubMapAwait(mockMapBuilder, buildLogJson());
 
       final result = await repository.createLogEntry(entry);
 
@@ -160,12 +176,11 @@ void main() {
 
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
-      final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
 
       when(
-        () => mockSupabase.from('log_entries'),
-      ).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.update(any())).thenAnswer((_) => fakeBuilder);
+        () => mockQueryBuilder.update(any()),
+      ).thenAnswer((_) => mockListBuilder);
+      _stubMapAwait(mockMapBuilder, buildLogJson(mood: 5));
 
       final result = await repository.updateLogEntry(entry);
 
@@ -174,12 +189,8 @@ void main() {
     });
 
     test('getLogEntryForDate returns null when no entry exists', () async {
-      final fakeBuilder = FakePostgrestBuilder(null);
-
-      when(
-        () => mockSupabase.from('log_entries'),
-      ).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => mockListBuilder);
+      _stubNullableMapAwait(mockNullableMapBuilder, null);
 
       final result = await repository.getLogEntryForDate(now, userId);
 
@@ -195,26 +206,20 @@ void main() {
     });
 
     test('deleteLogEntry completes without error on success', () async {
-      final fakeBuilder = FakePostgrestBuilder(<Map<String, dynamic>>[]);
-
       when(
-        () => mockSupabase.from('log_entries'),
-      ).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.delete()).thenAnswer((_) => fakeBuilder);
+        () => mockQueryBuilder.delete(),
+      ).thenAnswer((_) => mockListBuilder);
+      _stubListAwait(mockListBuilder, <Map<String, dynamic>>[]);
 
       await repository.deleteLogEntry('log-1', userId);
-      // Success means no exception thrown
     });
 
     test('getLogEntries filters by startDate and endDate correctly', () async {
       final startDate = DateTime.utc(2026, 3, 1);
       final endDate = DateTime.utc(2026, 3, 31);
-      final fakeBuilder = FakePostgrestBuilder(<Map<String, dynamic>>[]);
 
-      when(
-        () => mockSupabase.from('log_entries'),
-      ).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => mockListBuilder);
+      _stubListAwait(mockListBuilder, <Map<String, dynamic>>[]);
 
       await repository.getLogEntries(
         userId,
@@ -222,8 +227,8 @@ void main() {
         endDate: endDate,
       );
 
-      // Verification of filters would require capturing calls on Fake,
-      // but the main goal here is fixing CI types.
+      verify(() => mockListBuilder.gte('date', '2026-03-01')).called(1);
+      verify(() => mockListBuilder.lte('date', '2026-03-31')).called(1);
     });
   });
 }

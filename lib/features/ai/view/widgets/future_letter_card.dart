@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:lottie/lottie.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/animations/lottie_animations.dart';
 import '../../data/models/ai_insight_model.dart';
@@ -19,6 +20,7 @@ class FutureLetterCard extends StatefulWidget {
 class _FutureLetterCardState extends State<FutureLetterCard>
     with TickerProviderStateMixin {
   bool _hasPlayedAnimation = false;
+  bool _hasPersistedLetter = false;
   int _envelopePlayCount = 0;
   late AnimationController _lottieController;
   late AnimationController _sparkleController;
@@ -44,6 +46,7 @@ class _FutureLetterCardState extends State<FutureLetterCard>
         });
         // Start sparkle animation and stop after 5 seconds
         _sparkleController.repeat();
+        _persistFutureLetter();
         Future.delayed(const Duration(seconds: 5), () {
           if (mounted) {
             _sparkleController.stop();
@@ -58,6 +61,40 @@ class _FutureLetterCardState extends State<FutureLetterCard>
     _lottieController.dispose();
     _sparkleController.dispose();
     super.dispose();
+  }
+
+  Future<void> _persistFutureLetter() async {
+    if (_hasPersistedLetter) return;
+
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
+    final content = widget.insight.futureLetter.trim();
+    if (userId == null || userId.isEmpty || content.isEmpty) return;
+
+    try {
+      final existing = await client
+          .from('future_letters')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('content', content)
+          .maybeSingle();
+
+      if (existing == null) {
+        await client.from('future_letters').insert({
+          'user_id': userId,
+          'content': content,
+          'created_at': widget.insight.generatedAt.toUtc().toIso8601String(),
+          'unlock_at': widget.insight.generatedAt
+              .add(const Duration(days: 30))
+              .toUtc()
+              .toIso8601String(),
+        });
+      }
+
+      _hasPersistedLetter = true;
+    } catch (e) {
+      debugPrint('[FutureLetterCard] Failed to persist future letter: $e');
+    }
   }
 
   @override
