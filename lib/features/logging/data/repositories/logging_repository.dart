@@ -135,9 +135,7 @@ class LoggingRepository {
       debugPrint(
         '[LoggingRepository] getLogEntries success -> ${results.length} entries',
       );
-      return results
-          .map((result) => LogEntryModel.fromJson(result))
-          .toList();
+      return results.map((result) => LogEntryModel.fromJson(result)).toList();
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntries error -> $e');
       debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');

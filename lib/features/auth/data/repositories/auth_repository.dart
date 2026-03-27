@@ -7,7 +7,7 @@ class AuthRepository {
   final SupabaseClient? _injectedClient;
 
   AuthRepository({SupabaseClient? supabaseClient})
-      : _injectedClient = supabaseClient {
+    : _injectedClient = supabaseClient {
     debugPrint('[AuthRepository] Initialized');
   }
 
