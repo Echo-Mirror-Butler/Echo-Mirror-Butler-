@@ -7,7 +7,10 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
+    "test": "jest"
   },
   "keywords": ["express", "nodejs", "typescript", "supabase", "stellar"],
   "author": "Echo Mirror Butler Team",
@@ -28,8 +31,16 @@
     "@types/cors": "^2.8.17",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.5",
+    "@types/jest": "^29.5.8",
+    "@types/supertest": "^2.0.16",
     "typescript": "^5.3.3",
     "ts-node-dev": "^2.0.0",
-    "rimraf": "^5.0.5"
+    "rimraf": "^5.0.5",
+    "eslint": "^8.55.0",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "supertest": "^6.3.3"
   }
 }

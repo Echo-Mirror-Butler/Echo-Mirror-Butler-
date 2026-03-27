@@ -19,48 +19,53 @@ export const authMiddleware = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const authHeader = req.header('Authorization');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Access denied. No token provided.',
         message: 'Authorization header must be in format: Bearer <token>'
       });
+      return;
     }
 
     const token = authHeader.substring(7);
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Access denied. No token provided.'
       });
+      return;
     }
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       console.error('JWT_SECRET not configured');
-      return res.status(500).json({
+      res.status(500).json({
         error: 'Server configuration error'
       });
+      return;
     }
 
-    let decodedToken: any;
     try {
-      decodedToken = jwt.verify(token, jwtSecret);
+      jwt.verify(token, jwtSecret);
+      // Token is valid, proceed with user verification
     } catch (jwtError) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Invalid token',
         message: jwtError instanceof Error ? jwtError.message : 'Token verification failed'
       });
+      return;
     }
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
     if (error || !user) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Invalid user token',
         message: 'User not found or token expired'
       });
+      return;
     }
 
     const { data: profile, error: profileError } = await supabase
