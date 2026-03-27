@@ -79,16 +79,15 @@ Widget buildSubject({
   bool shouldThrow = false,
   FakeGiftRepository? repo,
 }) {
-  final fakeRepo = repo ?? FakeGiftRepository(balance: balance, shouldThrow: shouldThrow);
+  final fakeRepo =
+      repo ?? FakeGiftRepository(balance: balance, shouldThrow: shouldThrow);
   return ProviderScope(
     overrides: [
       giftRepositoryProvider.overrideWithValue(fakeRepo),
       // Override authProvider so no real auth/network calls happen
       authProvider.overrideWith((_) => _FakeAuthNotifier()),
     ],
-    child: MaterialApp(
-      home: GiftScreen(recipientUserId: 99),
-    ),
+    child: MaterialApp(home: GiftScreen(recipientUserId: 99)),
   );
 }
 
@@ -115,8 +114,9 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 2 — Send button disabled at default state (amount=5, balance=0)
     // -----------------------------------------------------------------------
-    testWidgets('send button is disabled when amount exceeds balance',
-        (tester) async {
+    testWidgets('send button is disabled when amount exceeds balance', (
+      tester,
+    ) async {
       // Arrange — balance 0 so default selected amount (5 ECHO) exceeds it
       await tester.pumpWidget(buildSubject(balance: 0.0));
       await tester.pumpAndSettle();
@@ -133,8 +133,9 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 3 — Send button enabled when valid amount is selected
     // -----------------------------------------------------------------------
-    testWidgets('send button is enabled when valid amount is selected',
-        (tester) async {
+    testWidgets('send button is enabled when valid amount is selected', (
+      tester,
+    ) async {
       // Arrange — balance 100, default selected amount is 5 ECHO
       await tester.pumpWidget(buildSubject(balance: 100.0));
       await tester.pumpAndSettle();
@@ -181,8 +182,9 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 5 (bonus) — Validation error when amount exceeds balance
     // -----------------------------------------------------------------------
-    testWidgets('shows insufficient balance text when amount exceeds balance',
-        (tester) async {
+    testWidgets('shows insufficient balance text when amount exceeds balance', (
+      tester,
+    ) async {
       // Arrange — balance 3, default selected amount is 5 ECHO
       await tester.pumpWidget(buildSubject(balance: 3.0));
       await tester.pumpAndSettle();
@@ -200,8 +202,9 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 6 (bonus) — Custom amount dialog opens
     // -----------------------------------------------------------------------
-    testWidgets('custom amount dialog opens on picker interaction',
-        (tester) async {
+    testWidgets('custom amount dialog opens on picker interaction', (
+      tester,
+    ) async {
       // Arrange
       await tester.pumpWidget(buildSubject(balance: 100.0));
       await tester.pumpAndSettle();
@@ -218,23 +221,25 @@ void main() {
     // -----------------------------------------------------------------------
     // Test 7 (bonus) — sendGift is called with the correct amount
     // -----------------------------------------------------------------------
-    testWidgets('send button triggers sendGift on repository with correct amount',
-        (tester) async {
-      // Arrange
-      final fakeRepo = FakeGiftRepository(balance: 100.0);
-      await tester.pumpWidget(buildSubject(repo: fakeRepo));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'send button triggers sendGift on repository with correct amount',
+      (tester) async {
+        // Arrange
+        final fakeRepo = FakeGiftRepository(balance: 100.0);
+        await tester.pumpWidget(buildSubject(repo: fakeRepo));
+        await tester.pumpAndSettle();
 
-      // Act — tap the send button (default 5 ECHO selected)
-      await tester.tap(find.widgetWithText(FilledButton, 'Send 5 ECHO'));
+        // Act — tap the send button (default 5 ECHO selected)
+        await tester.tap(find.widgetWithText(FilledButton, 'Send 5 ECHO'));
 
-      // Pump enough to let the async sendGift call complete
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+        // Pump enough to let the async sendGift call complete
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pump(const Duration(milliseconds: 500));
 
-      // Assert — repository received the correct amount
-      expect(fakeRepo.lastSentAmount, 5.0);
-      expect(fakeRepo.lastSentRecipient, 99);
-    });
+        // Assert — repository received the correct amount
+        expect(fakeRepo.lastSentAmount, 5.0);
+        expect(fakeRepo.lastSentRecipient, 99);
+      },
+    );
   });
 }

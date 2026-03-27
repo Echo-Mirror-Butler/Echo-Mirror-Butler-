@@ -15,28 +15,22 @@ class FakeGlobalMirrorRepository implements AbstractGlobalMirrorRepository {
     required String sentiment,
     required double latitude,
     required double longitude,
-  }) =>
-      Future.value(null);
+  }) => Future.value(null);
 
   @override
   Future<String?> uploadVideo({
     required String videoPath,
     required String moodTag,
-  }) =>
-      Future.value(null);
+  }) => Future.value(null);
 
   @override
   Future<String?> uploadImage({
     required String imagePath,
     required String moodTag,
-  }) =>
-      Future.value(null);
+  }) => Future.value(null);
 
   @override
-  Future<List<VideoPostModel>> getVideoFeed({
-    int offset = 0,
-    int limit = 10,
-  }) =>
+  Future<List<VideoPostModel>> getVideoFeed({int offset = 0, int limit = 10}) =>
       Future.value([]);
 
   @override
@@ -46,8 +40,7 @@ class FakeGlobalMirrorRepository implements AbstractGlobalMirrorRepository {
   Future<String?> addComment({
     required String moodPinId,
     required String text,
-  }) =>
-      Future.value(null);
+  }) => Future.value(null);
 
   @override
   Future<List<MoodPinCommentModel>> getCommentsForPin(String moodPinId) =>
@@ -57,8 +50,7 @@ class FakeGlobalMirrorRepository implements AbstractGlobalMirrorRepository {
   Future<String> generateClusterEncouragement(
     String sentiment,
     int nearbyCount,
-  ) =>
-      Future.value('');
+  ) => Future.value('');
 
   @override
   void dispose() {}

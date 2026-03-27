@@ -24,17 +24,11 @@ abstract class AbstractGlobalMirrorRepository {
     required String moodTag,
   });
 
-  Future<List<VideoPostModel>> getVideoFeed({
-    int offset = 0,
-    int limit = 10,
-  });
+  Future<List<VideoPostModel>> getVideoFeed({int offset = 0, int limit = 10});
 
   Future<Position?> getCurrentLocation();
 
-  Future<String?> addComment({
-    required String moodPinId,
-    required String text,
-  });
+  Future<String?> addComment({required String moodPinId, required String text});
 
   Future<List<MoodPinCommentModel>> getCommentsForPin(String moodPinId);
 

@@ -10,9 +10,11 @@ import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import 'mood_comment_notification_provider.dart';
 
 /// Provider for Global Mirror repository
-final globalMirrorRepositoryProvider = Provider<AbstractGlobalMirrorRepository>((ref) {
-  return GlobalMirrorRepository();
-});
+final globalMirrorRepositoryProvider = Provider<AbstractGlobalMirrorRepository>(
+  (ref) {
+    return GlobalMirrorRepository();
+  },
+);
 
 /// Provider for streaming mood pins
 final moodPinsStreamProvider = StreamProvider<List<MoodPinModel>>((ref) {
