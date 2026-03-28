@@ -21,6 +21,8 @@ import 'package:mocktail/mocktail.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
+class MockLoggingRepository extends Mock implements LoggingRepository {}
+
 class _FakeDashboardNotifier extends DashboardNotifier {
   _FakeDashboardNotifier(
     DashboardRepository repository,
@@ -120,7 +122,7 @@ void main() {
     when(() => mockAuthRepository.isAuthenticated())
         .thenAnswer((_) async => false);
 
-    final loggingRepo = LoggingRepository();
+    final loggingRepo = MockLoggingRepository();
     final dashboardRepo = DashboardRepository(loggingRepo);
     final aiRepo = AiRepository();
 

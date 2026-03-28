@@ -45,4 +45,24 @@ class SupabaseClientService {
     _isInitialized = true;
     debugPrint('[SupabaseClientService] Supabase initialized');
   }
+
+  /// Initializes Supabase with placeholder credentials for `flutter test`.
+  ///
+  /// Avoids [StateError] when code paths touch [client] without
+  /// `--dart-define=SUPABASE_*`. No network calls occur until a repository
+  /// issues a real request.
+  @visibleForTesting
+  static Future<void> ensureInitializedForTesting() async {
+    final self = instance;
+    if (self._isInitialized) return;
+
+    await Supabase.initialize(
+      url: 'https://placeholder.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.test-placeholder-signature',
+      debug: false,
+    );
+    self._isInitialized = true;
+    debugPrint('[SupabaseClientService] Supabase initialized for tests');
+  }
 }

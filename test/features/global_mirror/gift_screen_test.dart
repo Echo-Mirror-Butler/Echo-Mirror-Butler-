@@ -1,4 +1,3 @@
-import 'package:echomirror/features/auth/viewmodel/providers/auth_provider.dart';
 import 'package:echomirror/features/global_mirror/data/models/gift_transaction_model.dart';
 import 'package:echomirror/features/global_mirror/data/repositories/gift_repository.dart';
 import 'package:echomirror/features/global_mirror/view/screens/gift_screen.dart';
