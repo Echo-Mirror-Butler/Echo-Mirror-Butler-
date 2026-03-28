@@ -88,7 +88,7 @@ class SupabaseService {
   // Health check
   async healthCheck() {
     try {
-      const { data, error } = await this.client
+      const { error } = await this.client
         .from('profiles')
         .select('count')
         .limit(1);

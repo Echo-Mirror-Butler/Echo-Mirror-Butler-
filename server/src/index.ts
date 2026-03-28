@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
 
 // Import routes
 import healthRoutes from './routes/health';
@@ -70,7 +69,7 @@ app.use('*', (req, res) => {
 });
 
 // Global error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: express.Request, res: express.Response) => {
   console.error('Unhandled error:', err);
   res.status(err.status || 500).json({
     error: 'Internal server error',
