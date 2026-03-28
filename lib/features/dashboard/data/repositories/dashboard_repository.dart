@@ -270,21 +270,33 @@ class DashboardRepository {
   }
 
   /// Get predictions for a user
+ /// Get predictions for a user by calling the Supabase Edge Function
   Future<List<InsightModel>> getPredictions(String userId) async {
     try {
-      // Example Serverpod call
-      // final results = await _client.dashboard.getPredictions(userId);
-      // return results.map((r) => InsightModel.fromJson(r)).toList();
+      // Invoke the 'generate-insight' Edge Function
+      final response = await _client.functions.invoke(
+        'generate-insight',
+        body: {'user_id': userId},
+      );
 
-      // Placeholder implementation
-      await Future.delayed(const Duration(seconds: 1));
-      return [];
+      // Extract data (Edge Functions typically return data in the response.data property)
+      final data = response.data as List<dynamic>? ?? [];
+
+      // Map the JSON response to InsightModel objects
+      return data
+          .whereType<Map<String, dynamic>>()
+          .map((json) => InsightModel.fromJson(json))
+          .toList();
+    } on FunctionException catch (e) {
+      // Gracefully handle specific Edge Function errors
+      throw Exception('Failed to generate insights (Edge Function): ${e.reason ?? e.details}');
     } catch (e) {
+      // Fallback for network or parsing errors
       throw Exception('Failed to get predictions: ${e.toString()}');
     }
   }
 
-  /// Get future letters (time capsule feature)
+  /// Get future letters (time capsule feature) from Supabase
   Future<List<InsightModel>> getFutureLetters(String userId) async {
     try {
       final response = await _client
@@ -309,7 +321,11 @@ class DashboardRepository {
             );
           })
           .toList();
+    } on PostgrestException catch (e) {
+      // Gracefully handle specific Database query errors
+      throw Exception('Database error fetching future letters: ${e.message}');
     } catch (e) {
+      // Fallback for network or parsing errors
       throw Exception('Failed to get future letters: ${e.toString()}');
     }
   }
