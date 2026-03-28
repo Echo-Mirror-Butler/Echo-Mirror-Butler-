@@ -56,6 +56,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
   Future<void> _handleSend() async {
     final currentBalance = ref.read(giftProvider).echoBalance;
 
@@ -80,6 +86,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
     if (success && mounted) {
       _confettiController.play();
+      _showSuccess('Gift sent successfully!');
       await Future.delayed(const Duration(seconds: 3));
       if (mounted) context.pop();
     }
@@ -94,7 +101,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     ref.listen<GiftState>(giftProvider, (previous, next) {
       final previousError = previous?.error;
       final nextError = next.error;
-      if (nextError != null && nextError.isNotEmpty && nextError != previousError) {
+      if (nextError != null &&
+          nextError.isNotEmpty &&
+          nextError != previousError) {
         _showError(nextError);
       }
     });
