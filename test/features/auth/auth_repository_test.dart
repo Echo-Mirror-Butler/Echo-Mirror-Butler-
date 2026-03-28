@@ -1,5 +1,4 @@
-import 'package:echomirror/features/auth/data/repositories/'
-    'auth_repository.dart';
+import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';

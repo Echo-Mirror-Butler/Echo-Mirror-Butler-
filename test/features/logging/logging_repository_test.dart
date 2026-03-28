@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
-import 'package:echomirror/features/logging/data/repositories/'
-    'logging_repository.dart';
+import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

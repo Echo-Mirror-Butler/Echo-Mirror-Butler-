@@ -23,8 +23,7 @@ class MoodCommentNotificationModel {
       id: json['id']?.toString() ?? '',
       moodPinId: (json['moodPinId'] ?? json['mood_pin_id'])?.toString() ?? '',
       commentId: (json['commentId'] ?? json['comment_id'])?.toString() ?? '',
-      commentText:
-          (json['commentText'] ?? json['comment_text']) ?? '',
+      commentText: (json['commentText'] ?? json['comment_text']) ?? '',
       sentiment: json['sentiment'] ?? 'neutral',
       timestamp: (json['timestamp'] ?? json['created_at']) != null
           ? DateTime.parse((json['timestamp'] ?? json['created_at']) as String)
