@@ -1,11 +1,46 @@
+import 'dart:async';
+
 import 'package:echomirror/features/dashboard/data/models/insight_model.dart';
 import 'package:echomirror/features/dashboard/data/repositories/dashboard_repository.dart';
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
 import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockLoggingRepository extends Mock implements LoggingRepository {}
+
+class MockSupabaseClient extends Mock implements SupabaseClient {}
+
+class MockFunctionsClient extends Mock implements FunctionsClient {}
+
+class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
+
+class FakeFutureLettersBuilder extends Fake
+    implements PostgrestFilterBuilder<PostgrestList> {
+  FakeFutureLettersBuilder(this._result);
+
+  final PostgrestList _result;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) => this;
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = true,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) => this;
+
+  @override
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestList) onValue, {
+    Function? onError,
+  }) {
+    return Future.value(_result).then(onValue, onError: onError);
+  }
+}
 
 LogEntryModel _entry({
   required String userId,
@@ -32,11 +67,22 @@ void main() {
     final fixedNow = DateTime(2026, 3, 25, 12, 0);
 
     late MockLoggingRepository loggingRepository;
+    late MockSupabaseClient supabaseClient;
+    late MockFunctionsClient functionsClient;
+    late MockSupabaseQueryBuilder queryBuilder;
     late DashboardRepository repository;
 
     setUp(() {
       loggingRepository = MockLoggingRepository();
-      repository = DashboardRepository(loggingRepository, now: () => fixedNow);
+      supabaseClient = MockSupabaseClient();
+      functionsClient = MockFunctionsClient();
+      queryBuilder = MockSupabaseQueryBuilder();
+      when(() => supabaseClient.functions).thenReturn(functionsClient);
+      repository = DashboardRepository(
+        loggingRepository,
+        supabaseClient: supabaseClient,
+        now: () => fixedNow,
+      );
     });
 
     test('returns empty list when there are no log entries', () async {
@@ -296,5 +342,106 @@ void main() {
         );
       },
     );
+
+    test('getPredictions returns mapped prediction from edge function', () async {
+      final entries = <LogEntryModel>[
+        _entry(
+          userId: userId,
+          date: fixedNow.subtract(const Duration(days: 1)),
+          mood: 4,
+          habits: const ['Meditation'],
+          notes: 'Felt grounded',
+        ),
+      ];
+
+      when(
+        () => loggingRepository.getLogEntries(userId),
+      ).thenAnswer((_) async => entries);
+      when(
+        () => functionsClient.invoke(
+          'generate-insight',
+          body: any(named: 'body'),
+        ),
+      ).thenAnswer(
+        (_) async => FunctionResponse(
+          data: {
+            'prediction':
+                'Your recent consistency suggests your mood will stay steady if you keep journaling and meditation in place.',
+            'futureLetter': 'Keep going.',
+          },
+          status: 200,
+        ),
+      );
+
+      final predictions = await repository.getPredictions(userId);
+
+      expect(predictions, hasLength(1));
+      expect(predictions.first.type, InsightType.prediction);
+      expect(predictions.first.title, 'AI Prediction');
+      expect(
+        predictions.first.description,
+        contains('Your recent consistency suggests'),
+      );
+    });
+
+    test(
+      'getPredictions returns empty list when edge function fails',
+      () async {
+        when(
+          () => loggingRepository.getLogEntries(userId),
+        ).thenAnswer((_) async => [_entry(userId: userId, date: fixedNow)]);
+        when(
+          () => functionsClient.invoke(
+            'generate-insight',
+            body: any(named: 'body'),
+          ),
+        ).thenThrow(Exception('edge down'));
+
+        final predictions = await repository.getPredictions(userId);
+
+        expect(predictions, isEmpty);
+      },
+    );
+
+    test('getFutureLetters returns mapped rows from Supabase', () async {
+      final futureLettersBuilder = FakeFutureLettersBuilder([
+        {
+          'id': 'letter-1',
+          'user_id': userId,
+          'title': 'A note from tomorrow',
+          'content': 'You made it through a difficult stretch.',
+          'delivery_date': fixedNow.toIso8601String(),
+          'created_at': fixedNow
+              .subtract(const Duration(days: 2))
+              .toIso8601String(),
+        },
+      ]);
+
+      when(
+        () => supabaseClient.from('future_letters'),
+      ).thenAnswer((_) => queryBuilder);
+      when(() => queryBuilder.select()).thenAnswer((_) => futureLettersBuilder);
+
+      final futureLetters = await repository.getFutureLetters(userId);
+
+      expect(futureLetters, hasLength(1));
+      expect(futureLetters.first.userId, userId);
+      expect(futureLetters.first.title, 'A note from tomorrow');
+      expect(
+        futureLetters.first.description,
+        'You made it through a difficult stretch.',
+      );
+      expect(futureLetters.first.type, InsightType.general);
+    });
+
+    test('getFutureLetters returns empty list when query fails', () async {
+      when(
+        () => supabaseClient.from('future_letters'),
+      ).thenThrow(Exception('db'));
+
+      final futureLetters = await repository.getFutureLetters(userId);
+
+      expect(futureLetters, isEmpty);
+    });
   });
 }
