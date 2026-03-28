@@ -1,9 +1,13 @@
-import 'package:echomirror/core/viewmodel/providers/main_tab_index_provider.dart';
+import 'package:echomirror/core/viewmodel/providers/'
+    'main_tab_index_provider.dart';
 import 'package:echomirror/features/socials/data/models/story_model.dart';
-import 'package:echomirror/features/socials/data/models/video_session_model.dart';
-import 'package:echomirror/features/socials/data/repositories/socials_repository.dart';
+import 'package:echomirror/features/socials/data/models/'
+    'video_session_model.dart';
+import 'package:echomirror/features/socials/data/repositories/'
+    'socials_repository.dart';
 import 'package:echomirror/features/socials/view/screens/socials_screen.dart';
-import 'package:echomirror/features/socials/viewmodel/providers/socials_provider.dart';
+import 'package:echomirror/features/socials/viewmodel/providers/'
+    'socials_provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

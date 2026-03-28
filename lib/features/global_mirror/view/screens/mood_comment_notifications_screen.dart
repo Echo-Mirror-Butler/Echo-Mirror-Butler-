@@ -100,7 +100,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                   builder: (context) => AlertDialog(
                     title: const Text('Clear All Notifications?'),
                     content: const Text(
-                      'This will delete all notifications. This action cannot be undone.',
+                      'This will delete all notifications. This action '
+                      'cannot be undone.',
                     ),
                     actions: [
                       TextButton(
@@ -156,7 +157,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'When someone comments on your mood,\nyou\'ll see it here',
+                            'When someone comments on your mood,\n'
+                            'you\'ll see it here',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               color: theme.colorScheme.onSurface.withOpacity(
@@ -218,7 +220,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                  'Unable to locate the related mood pin right now.',
+                                  'Unable to locate the related mood pin '
+                                  'right now.',
                                 ),
                               ),
                             );
