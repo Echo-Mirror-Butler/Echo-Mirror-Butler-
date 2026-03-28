@@ -37,15 +37,16 @@ export const corsOptions = {
 };
 
 // CORS middleware with error handling
-export const corsMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const corsMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Origin', corsOptions.origin(req.header('origin'), () => {}) ? '*' : 'false');
+    res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
     res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
     res.header('Access-Control-Allow-Credentials', corsOptions.credentials.toString());
     res.header('Access-Control-Max-Age', corsOptions.maxAge.toString());
-    return res.status(200).send();
+    res.status(200).send();
+    return;
   }
   
   next();

@@ -3,15 +3,16 @@ import { Router, Request, Response } from 'express';
 const router = Router();
 
 // Supabase webhook handler
-router.post('/supabase', async (req: Request, res: Response) => {
+router.post('/supabase', async (req: Request, res: Response): Promise<void> => {
   try {
     const signature = req.header('x-supabase-signature');
     const timestamp = req.header('x-supabase-timestamp');
     
     if (!signature || !timestamp) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Missing Supabase webhook headers'
       });
+      return;
     }
 
     console.log('Received Supabase webhook:', {
@@ -34,14 +35,15 @@ router.post('/supabase', async (req: Request, res: Response) => {
 });
 
 // Stripe webhook handler
-router.post('/stripe', async (req: Request, res: Response) => {
+router.post('/stripe', async (req: Request, res: Response): Promise<void> => {
   try {
     const signature = req.header('stripe-signature');
     
     if (!signature) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Missing Stripe webhook signature'
       });
+      return;
     }
 
     console.log('Received Stripe webhook:', {
