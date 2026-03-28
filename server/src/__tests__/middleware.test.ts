@@ -1,10 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { errorHandler } from '../middleware/errorHandler';
 
 describe('Error Handler Middleware', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
-  let nextFunction: NextFunction;
 
   beforeEach(() => {
     mockRequest = {
@@ -19,7 +18,6 @@ describe('Error Handler Middleware', () => {
       json: jest.fn().mockReturnThis()
     };
     
-    nextFunction = jest.fn();
   });
 
   describe('Error Handling', () => {
