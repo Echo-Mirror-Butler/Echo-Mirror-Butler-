@@ -3,11 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../data/models/mood_pin_model.dart';
+import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../../viewmodel/providers/mood_comment_notification_provider.dart';
+import '../widgets/mood_pin_comment_dialog.dart';
 
 /// Screen showing notifications when someone comments on your mood pins
 class MoodCommentNotificationsScreen extends ConsumerWidget {
   const MoodCommentNotificationsScreen({super.key});
+
+  MoodPinModel? _findMoodPin(WidgetRef ref, String moodPinId) {
+    final moodPins = ref.read(moodPinsStreamProvider).valueOrNull ?? const [];
+
+    for (final pin in moodPins) {
+      if (pin.id == moodPinId) {
+        return pin;
+      }
+    }
+
+    return null;
+  }
 
   Color _getSentimentColor(String sentiment) {
     switch (sentiment.toLowerCase()) {
@@ -186,125 +201,158 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                           .read(moodCommentNotificationProvider.notifier)
                           .deleteNotification(notification.id);
                     },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: notification.isRead
-                            ? theme.colorScheme.surface
-                            : sentimentColor.withOpacity(0.1),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: notification.isRead
-                              ? theme.colorScheme.outline.withOpacity(0.2)
-                              : sentimentColor.withOpacity(0.3),
-                          width: notification.isRead ? 1 : 2,
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Sentiment indicator
-                          Container(
-                            width: 12,
-                            height: 12,
-                            margin: const EdgeInsets.only(top: 4),
-                            decoration: BoxDecoration(
-                              color: sentimentColor,
-                              shape: BoxShape.circle,
+                        onTap: () async {
+                          final pin = _findMoodPin(ref, notification.moodPinId);
+
+                          await ref
+                              .read(moodCommentNotificationProvider.notifier)
+                              .markAsRead(notification.id);
+
+                          if (!context.mounted) return;
+
+                          if (pin == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Unable to locate the related mood pin right now.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          await showDialog(
+                            context: context,
+                            builder: (context) => MoodPinCommentDialog(pin: pin),
+                          );
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: notification.isRead
+                                ? theme.colorScheme.surface
+                                : sentimentColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: notification.isRead
+                                  ? theme.colorScheme.outline.withOpacity(0.2)
+                                  : sentimentColor.withOpacity(0.3),
+                              width: notification.isRead ? 1 : 2,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          // Content
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 12,
+                                height: 12,
+                                margin: const EdgeInsets.only(top: 4),
+                                decoration: BoxDecoration(
+                                  color: sentimentColor,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      FontAwesomeIcons.heart,
-                                      size: 14,
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        'Someone sent you support',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: theme.colorScheme.onSurface
-                                              .withOpacity(0.7),
-                                        ),
-                                      ),
-                                    ),
-                                    if (!notification.isRead)
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: const BoxDecoration(
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          FontAwesomeIcons.heart,
+                                          size: 14,
                                           color: AppTheme.primaryColor,
-                                          shape: BoxShape.circle,
                                         ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: theme.colorScheme.outline
-                                          .withOpacity(0.1),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            'Someone sent you support',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme.colorScheme.onSurface
+                                                  .withOpacity(0.7),
+                                            ),
+                                          ),
+                                        ),
+                                        if (!notification.isRead)
+                                          Container(
+                                            width: 8,
+                                            height: 8,
+                                            decoration: const BoxDecoration(
+                                              color: AppTheme.primaryColor,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                  ),
-                                  child: Text(
-                                    notification.commentText,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text(
-                                      _getTimeAgo(notification.timestamp),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 11,
-                                        color: theme.colorScheme.onSurface
-                                            .withOpacity(0.5),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(height: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
+                                      padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: sentimentColor.withOpacity(0.2),
+                                        color: theme.colorScheme.surface,
                                         borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: theme.colorScheme.outline
+                                              .withOpacity(0.1),
+                                        ),
                                       ),
                                       child: Text(
-                                        notification.sentiment,
+                                        notification.commentText,
                                         style: GoogleFonts.poppins(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          color: sentimentColor,
+                                          fontSize: 14,
+                                          color: theme.colorScheme.onSurface,
                                         ),
                                       ),
                                     ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          _getTimeAgo(notification.timestamp),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 11,
+                                            color: theme.colorScheme.onSurface
+                                                .withOpacity(0.5),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: sentimentColor.withOpacity(
+                                              0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            notification.sentiment,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: sentimentColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   );

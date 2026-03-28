@@ -98,6 +98,7 @@ void main() {
 
     test('resetPassword returns true with valid token', () async {
       final mockResponse = MockUserResponse();
+      when(() => mockResponse.user).thenReturn(mockUser);
       when(
         () => mockAuth.updateUser(any()),
       ).thenAnswer((_) async => mockResponse);
