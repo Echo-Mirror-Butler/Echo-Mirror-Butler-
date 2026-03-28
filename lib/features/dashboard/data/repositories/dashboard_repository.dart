@@ -293,22 +293,21 @@ class DashboardRepository {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return (response as List<dynamic>)
-          .whereType<Map<String, dynamic>>()
-          .map((row) {
-            final createdAt = DateTime.parse(row['created_at'] as String);
-            final unlockAt = DateTime.parse(row['unlock_at'] as String);
-            return InsightModel(
-              id: row['id'].toString(),
-              userId: row['user_id'].toString(),
-              title: 'Letter from Future You',
-              description: row['content'] as String? ?? '',
-              date: unlockAt,
-              type: InsightType.general,
-              createdAt: createdAt,
-            );
-          })
-          .toList();
+      return (response as List<dynamic>).whereType<Map<String, dynamic>>().map((
+        row,
+      ) {
+        final createdAt = DateTime.parse(row['created_at'] as String);
+        final unlockAt = DateTime.parse(row['unlock_at'] as String);
+        return InsightModel(
+          id: row['id'].toString(),
+          userId: row['user_id'].toString(),
+          title: 'Letter from Future You',
+          description: row['content'] as String? ?? '',
+          date: unlockAt,
+          type: InsightType.general,
+          createdAt: createdAt,
+        );
+      }).toList();
     } catch (e) {
       throw Exception('Failed to get future letters: ${e.toString()}');
     }

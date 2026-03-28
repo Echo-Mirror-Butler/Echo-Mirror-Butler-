@@ -21,8 +21,7 @@ class MoodCommentNotificationModel {
   factory MoodCommentNotificationModel.fromJson(Map<String, dynamic> json) {
     return MoodCommentNotificationModel(
       id: json['id']?.toString() ?? '',
-      moodPinId:
-          (json['moodPinId'] ?? json['mood_pin_id'])?.toString() ?? '',
+      moodPinId: (json['moodPinId'] ?? json['mood_pin_id'])?.toString() ?? '',
       commentId: (json['commentId'] ?? json['comment_id'])?.toString() ?? '',
       commentText: (json['commentText'] ?? json['comment_text']) ?? '',
       sentiment: json['sentiment'] ?? 'neutral',
