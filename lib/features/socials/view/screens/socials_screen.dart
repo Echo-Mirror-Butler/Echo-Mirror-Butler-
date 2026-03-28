@@ -7,6 +7,8 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
+import '../../../global_mirror/view/screens/mood_comment_notifications_screen.dart';
+import '../../../global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../widgets/stories_bar.dart';
 import '../widgets/start_session_button.dart';
@@ -86,12 +88,55 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           ),
         ),
         actions: [
-          IconButton(
-            icon: const FaIcon(FontAwesomeIcons.bell),
-            onPressed: () {
-              // TODO: Show notifications
+          Consumer(
+            builder: (context, ref, child) {
+              final unreadCount = ref
+                  .watch(moodCommentNotificationProvider.notifier)
+                  .unreadCount;
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const FaIcon(FontAwesomeIcons.bell),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const MoodCommentNotificationsScreen(),
+                        ),
+                      );
+                    },
+                    color: theme.colorScheme.onSurface,
+                    tooltip: 'Mood comment notifications',
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 9 ? '9+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
-            color: theme.colorScheme.onSurface,
           ),
         ],
       ),
