@@ -38,25 +38,33 @@ void main() {
       expect(notifier.state, const AsyncValue<List<LogEntryModel>>.data([]));
     });
 
-    test('loadLogEntries returns empty data when userId is null or empty', () async {
-      await notifier.loadLogEntries(userId: null);
-      expect(notifier.state, const AsyncValue<List<LogEntryModel>>.data([]));
+    test(
+      'loadLogEntries returns empty data when userId is null or empty',
+      () async {
+        await notifier.loadLogEntries(userId: null);
+        expect(notifier.state, const AsyncValue<List<LogEntryModel>>.data([]));
 
-      await notifier.loadLogEntries(userId: '');
-      expect(notifier.state, const AsyncValue<List<LogEntryModel>>.data([]));
+        await notifier.loadLogEntries(userId: '');
+        expect(notifier.state, const AsyncValue<List<LogEntryModel>>.data([]));
 
-      verifyNever(() => mockRepo.getLogEntries(any()));
-    });
+        verifyNever(() => mockRepo.getLogEntries(any()));
+      },
+    );
 
-    test('loadLogEntries — success: state becomes AsyncData with list', () async {
-      final entries = [_makeEntry(id: 'e1'), _makeEntry(id: 'e2')];
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => entries);
+    test(
+      'loadLogEntries — success: state becomes AsyncData with list',
+      () async {
+        final entries = [_makeEntry(id: 'e1'), _makeEntry(id: 'e2')];
+        when(
+          () => mockRepo.getLogEntries('user_1'),
+        ).thenAnswer((_) async => entries);
 
-      await notifier.loadLogEntries(userId: 'user_1');
+        await notifier.loadLogEntries(userId: 'user_1');
 
-      expect(notifier.state, AsyncValue<List<LogEntryModel>>.data(entries));
-      verify(() => mockRepo.getLogEntries('user_1')).called(1);
-    });
+        expect(notifier.state, AsyncValue<List<LogEntryModel>>.data(entries));
+        verify(() => mockRepo.getLogEntries('user_1')).called(1);
+      },
+    );
 
     test('loadLogEntries — failure: state becomes AsyncError', () async {
       when(
@@ -68,36 +76,50 @@ void main() {
       expect(notifier.state, isA<AsyncError>());
     });
 
-    test('loadLogEntries does not reload when already loaded for same user', () async {
-      final entries = [_makeEntry()];
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => entries);
+    test(
+      'loadLogEntries does not reload when already loaded for same user',
+      () async {
+        final entries = [_makeEntry()];
+        when(
+          () => mockRepo.getLogEntries('user_1'),
+        ).thenAnswer((_) async => entries);
 
-      await notifier.loadLogEntries(userId: 'user_1');
-      await notifier.loadLogEntries(userId: 'user_1');
+        await notifier.loadLogEntries(userId: 'user_1');
+        await notifier.loadLogEntries(userId: 'user_1');
 
-      verify(() => mockRepo.getLogEntries('user_1')).called(1);
-    });
+        verify(() => mockRepo.getLogEntries('user_1')).called(1);
+      },
+    );
 
-    test('createLogEntry — returns true on success and appends entry to state', () async {
-      final existing = _makeEntry(id: 'e_old');
-      final newEntry = _makeEntry(id: 'e_new', mood: 5);
-      final created = _makeEntry(id: 'e_new_server', mood: 5);
+    test(
+      'createLogEntry — returns true on success and appends entry to state',
+      () async {
+        final existing = _makeEntry(id: 'e_old');
+        final newEntry = _makeEntry(id: 'e_new', mood: 5);
+        final created = _makeEntry(id: 'e_new_server', mood: 5);
 
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => [existing]);
-      when(() => mockRepo.createLogEntry(any())).thenAnswer((_) async => created);
+        when(
+          () => mockRepo.getLogEntries('user_1'),
+        ).thenAnswer((_) async => [existing]);
+        when(
+          () => mockRepo.createLogEntry(any()),
+        ).thenAnswer((_) async => created);
 
-      await notifier.loadLogEntries(userId: 'user_1');
-      final result = await notifier.createLogEntry(newEntry);
+        await notifier.loadLogEntries(userId: 'user_1');
+        final result = await notifier.createLogEntry(newEntry);
 
-      expect(result, isTrue);
-      final data = notifier.state.value;
-      expect(data, isNotNull);
-      expect(data!.length, 2);
-      expect(data.last, created);
-    });
+        expect(result, isTrue);
+        final data = notifier.state.value;
+        expect(data, isNotNull);
+        expect(data!.length, 2);
+        expect(data.last, created);
+      },
+    );
 
     test('createLogEntry — returns false on repository error', () async {
-      when(() => mockRepo.createLogEntry(any())).thenThrow(Exception('write failed'));
+      when(
+        () => mockRepo.createLogEntry(any()),
+      ).thenThrow(Exception('write failed'));
 
       final result = await notifier.createLogEntry(_makeEntry());
 
@@ -105,24 +127,33 @@ void main() {
       expect(notifier.state, isA<AsyncError>());
     });
 
-    test('updateLogEntry — returns true on success and updates entry in state', () async {
-      final original = _makeEntry(id: 'e1', mood: 2);
-      final updated = _makeEntry(id: 'e1', mood: 4);
+    test(
+      'updateLogEntry — returns true on success and updates entry in state',
+      () async {
+        final original = _makeEntry(id: 'e1', mood: 2);
+        final updated = _makeEntry(id: 'e1', mood: 4);
 
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => [original]);
-      when(() => mockRepo.updateLogEntry(any())).thenAnswer((_) async => updated);
+        when(
+          () => mockRepo.getLogEntries('user_1'),
+        ).thenAnswer((_) async => [original]);
+        when(
+          () => mockRepo.updateLogEntry(any()),
+        ).thenAnswer((_) async => updated);
 
-      await notifier.loadLogEntries(userId: 'user_1');
-      final result = await notifier.updateLogEntry(updated);
+        await notifier.loadLogEntries(userId: 'user_1');
+        final result = await notifier.updateLogEntry(updated);
 
-      expect(result, isTrue);
-      final data = notifier.state.value;
-      expect(data, isNotNull);
-      expect(data!.first.mood, 4);
-    });
+        expect(result, isTrue);
+        final data = notifier.state.value;
+        expect(data, isNotNull);
+        expect(data!.first.mood, 4);
+      },
+    );
 
     test('updateLogEntry — returns false on repository error', () async {
-      when(() => mockRepo.updateLogEntry(any())).thenThrow(Exception('update failed'));
+      when(
+        () => mockRepo.updateLogEntry(any()),
+      ).thenThrow(Exception('update failed'));
 
       final result = await notifier.updateLogEntry(_makeEntry());
 
@@ -134,8 +165,12 @@ void main() {
       final e1 = _makeEntry(id: 'e1');
       final e2 = _makeEntry(id: 'e2', mood: 5);
 
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => [e1, e2]);
-      when(() => mockRepo.deleteLogEntry(any(), any())).thenAnswer((_) async {});
+      when(
+        () => mockRepo.getLogEntries('user_1'),
+      ).thenAnswer((_) async => [e1, e2]);
+      when(
+        () => mockRepo.deleteLogEntry(any(), any()),
+      ).thenAnswer((_) async {});
 
       await notifier.loadLogEntries(userId: 'user_1');
       final result = await notifier.deleteLogEntry('e1', 'user_1');
@@ -148,8 +183,12 @@ void main() {
     });
 
     test('deleteLogEntry — returns false on repository error', () async {
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => [_makeEntry()]);
-      when(() => mockRepo.deleteLogEntry(any(), any())).thenThrow(Exception('delete failed'));
+      when(
+        () => mockRepo.getLogEntries('user_1'),
+      ).thenAnswer((_) async => [_makeEntry()]);
+      when(
+        () => mockRepo.deleteLogEntry(any(), any()),
+      ).thenThrow(Exception('delete failed'));
 
       await notifier.loadLogEntries(userId: 'user_1');
       final result = await notifier.deleteLogEntry('e1', 'user_1');
@@ -163,40 +202,48 @@ void main() {
       expect(result, isNull);
     });
 
-    test('getLogEntryForDate — returns entry from repository when userId is set', () async {
-      final date = DateTime(2025, 6, 1);
-      final entry = _makeEntry();
+    test(
+      'getLogEntryForDate — returns entry from repository when userId is set',
+      () async {
+        final date = DateTime(2025, 6, 1);
+        final entry = _makeEntry();
 
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => [entry]);
-      when(
-        () => mockRepo.getLogEntryForDate(date, 'user_1'),
-      ).thenAnswer((_) async => entry);
+        when(
+          () => mockRepo.getLogEntries('user_1'),
+        ).thenAnswer((_) async => [entry]);
+        when(
+          () => mockRepo.getLogEntryForDate(date, 'user_1'),
+        ).thenAnswer((_) async => entry);
 
-      await notifier.loadLogEntries(userId: 'user_1');
-      final result = await notifier.getLogEntryForDate(date);
+        await notifier.loadLogEntries(userId: 'user_1');
+        final result = await notifier.getLogEntryForDate(date);
 
-      expect(result, entry);
-    });
+        expect(result, entry);
+      },
+    );
 
-    test('getLogEntryForDate — returns null when repository returns null', () async {
-      final date = DateTime(2025, 6, 2);
+    test(
+      'getLogEntryForDate — returns null when repository returns null',
+      () async {
+        final date = DateTime(2025, 6, 2);
 
-      when(() => mockRepo.getLogEntries('user_1')).thenAnswer((_) async => []);
-      when(
-        () => mockRepo.getLogEntryForDate(date, 'user_1'),
-      ).thenAnswer((_) async => null);
+        when(
+          () => mockRepo.getLogEntries('user_1'),
+        ).thenAnswer((_) async => []);
+        when(
+          () => mockRepo.getLogEntryForDate(date, 'user_1'),
+        ).thenAnswer((_) async => null);
 
-      await notifier.loadLogEntries(userId: 'user_1');
-      final result = await notifier.getLogEntryForDate(date);
+        await notifier.loadLogEntries(userId: 'user_1');
+        final result = await notifier.getLogEntryForDate(date);
 
-      expect(result, isNull);
-    });
+        expect(result, isNull);
+      },
+    );
 
     test('loggingProvider creates a LoggingNotifier via ProviderContainer', () {
       final container = ProviderContainer(
-        overrides: [
-          loggingRepositoryProvider.overrideWithValue(mockRepo),
-        ],
+        overrides: [loggingRepositoryProvider.overrideWithValue(mockRepo)],
       );
       addTearDown(container.dispose);
 
