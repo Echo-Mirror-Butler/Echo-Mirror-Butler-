@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/services/supabase_client_service.dart';
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
 import '../../../logging/data/models/log_entry_model.dart';
@@ -13,15 +12,14 @@ class DashboardRepository {
     this._loggingRepository, {
     SupabaseClient? supabaseClient,
     DateTime Function()? now,
-  }) : _supabaseClient = supabaseClient,
+  }) : _supabase = supabaseClient,
        _now = now ?? DateTime.now;
 
   final LoggingRepository _loggingRepository;
-  final SupabaseClient? _supabaseClient;
+  final SupabaseClient? _supabase;
   final DateTime Function() _now;
 
-  SupabaseClient get _supabase =>
-      _supabaseClient ?? SupabaseClientService.instance.client;
+  SupabaseClient get _client => _supabase ?? Supabase.instance.client;
 
   /// Get insights for a user
   /// Generates insights from log entries
@@ -281,7 +279,7 @@ class DashboardRepository {
         return [];
       }
 
-      final response = await _supabase.functions.invoke(
+      final response = await _client.functions.invoke(
         'generate-insight',
         body: {
           'recentLogs': logEntries.map((entry) => entry.toJson()).toList(),
@@ -319,13 +317,13 @@ class DashboardRepository {
   /// Get future letters (time capsule feature)
   Future<List<InsightModel>> getFutureLetters(String userId) async {
     try {
-      final response = await _supabase
+      final response = await _client
           .from('future_letters')
           .select()
           .eq('user_id', userId)
-          .order('delivery_date', ascending: false);
+          .order('created_at', ascending: false);
 
-      return (response as List)
+      return (response as List<dynamic>)
           .whereType<Map<String, dynamic>>()
           .map(_mapFutureLetterToInsight)
           .toList();

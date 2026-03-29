@@ -11,7 +11,7 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 
 class FakePostgrestBuilder extends Fake
-  implements PostgrestFilterBuilder<PostgrestList> {
+    implements PostgrestFilterBuilder<PostgrestList> {
   final dynamic _result;
   FakePostgrestBuilder([this._result]);
 
@@ -158,12 +158,12 @@ void main() {
 
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
-      final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
+  final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
 
       when(
         () => mockSupabase.from('log_entries'),
       ).thenAnswer((_) => mockQueryBuilder);
-      when(() => mockQueryBuilder.update(any())).thenAnswer((_) => fakeBuilder);
+  when(() => mockQueryBuilder.update(any())).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.updateLogEntry(entry);
 
@@ -201,7 +201,6 @@ void main() {
       when(() => mockQueryBuilder.delete()).thenAnswer((_) => fakeBuilder);
 
       await repository.deleteLogEntry('log-1', userId);
-      // Success means no exception thrown
     });
 
     test('getLogEntries filters by startDate and endDate correctly', () async {
@@ -221,7 +220,7 @@ void main() {
       );
 
       // Verification of filters would require capturing calls on Fake,
-      // but the main goal here is fixing CI types.
+      // but the main goal here is keeping CI green with stable builder fakes.
     });
   });
 }
