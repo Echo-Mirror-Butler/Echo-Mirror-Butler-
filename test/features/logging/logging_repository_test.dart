@@ -158,12 +158,12 @@ void main() {
 
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
-  final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
+      final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
 
       when(
         () => mockSupabase.from('log_entries'),
       ).thenAnswer((_) => mockQueryBuilder);
-  when(() => mockQueryBuilder.update(any())).thenAnswer((_) => fakeBuilder);
+      when(() => mockQueryBuilder.update(any())).thenAnswer((_) => fakeBuilder);
 
       final result = await repository.updateLogEntry(entry);
 

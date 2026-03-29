@@ -227,7 +227,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
 
                           await showDialog(
                             context: context,
-                            builder: (context) => MoodPinCommentDialog(pin: pin),
+                            builder: (context) =>
+                                MoodPinCommentDialog(pin: pin),
                           );
                         },
                         child: Container(
