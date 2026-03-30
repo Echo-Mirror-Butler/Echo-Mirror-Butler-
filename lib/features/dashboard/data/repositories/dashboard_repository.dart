@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
 import '../../../logging/data/models/log_entry_model.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for dashboard operations
 /// Handles all Serverpod backend calls for insights and predictions
@@ -272,15 +274,43 @@ class DashboardRepository {
   /// Get predictions for a user
   Future<List<InsightModel>> getPredictions(String userId) async {
     try {
-      // Example Serverpod call
-      // final results = await _client.dashboard.getPredictions(userId);
-      // return results.map((r) => InsightModel.fromJson(r)).toList();
+      final logEntries = await _loggingRepository.getLogEntries(userId);
+      if (logEntries.isEmpty) {
+        return [];
+      }
 
-      // Placeholder implementation
-      await Future.delayed(const Duration(seconds: 1));
-      return [];
+      final response = await _client.functions.invoke(
+        'generate-insight',
+        body: {
+          'recentLogs': logEntries.map((entry) => entry.toJson()).toList(),
+        },
+      );
+
+      final result = response.data;
+      if (result is! Map) {
+        return [];
+      }
+
+      final prediction = result['prediction'] as String? ?? '';
+      if (prediction.trim().isEmpty) {
+        return [];
+      }
+
+      final now = _now();
+      return [
+        InsightModel(
+          id: 'prediction-${now.millisecondsSinceEpoch}',
+          userId: userId,
+          title: 'AI Prediction',
+          description: prediction,
+          date: now,
+          type: InsightType.prediction,
+          createdAt: now,
+        ),
+      ];
     } catch (e) {
-      throw Exception('Failed to get predictions: ${e.toString()}');
+      debugPrint('[DashboardRepository] getPredictions error -> $e');
+      return [];
     }
   }
 
@@ -295,22 +325,53 @@ class DashboardRepository {
 
       return (response as List<dynamic>)
           .whereType<Map<String, dynamic>>()
-          .map((row) {
-            final createdAt = DateTime.parse(row['created_at'] as String);
-            final unlockAt = DateTime.parse(row['unlock_at'] as String);
-            return InsightModel(
-              id: row['id'].toString(),
-              userId: row['user_id'].toString(),
-              title: 'Letter from Future You',
-              description: row['content'] as String? ?? '',
-              date: unlockAt,
-              type: InsightType.general,
-              createdAt: createdAt,
-            );
-          })
+          .map(_mapFutureLetterToInsight)
           .toList();
     } catch (e) {
-      throw Exception('Failed to get future letters: ${e.toString()}');
+      debugPrint('[DashboardRepository] getFutureLetters error -> $e');
+      return [];
     }
+  }
+
+  InsightModel _mapFutureLetterToInsight(Map<String, dynamic> row) {
+    final createdAt = _parseDateTime(
+      row['created_at'] ??
+          row['createdAt'] ??
+          row['delivery_date'] ??
+          row['date'],
+    );
+    final date = _parseDateTime(
+      row['delivery_date'] ??
+          row['open_at'] ??
+          row['date'] ??
+          row['created_at'],
+    );
+
+    return InsightModel(
+      id: row['id'].toString(),
+      userId: (row['user_id'] ?? row['userId'] ?? '').toString(),
+      title: (row['title'] ?? 'Future Letter').toString(),
+      description:
+          (row['content'] ??
+                  row['letter'] ??
+                  row['future_letter'] ??
+                  row['futureLetter'] ??
+                  row['description'] ??
+                  '')
+              .toString(),
+      date: date,
+      type: InsightType.general,
+      createdAt: createdAt,
+    );
+  }
+
+  DateTime _parseDateTime(dynamic value) {
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String && value.isNotEmpty) {
+      return DateTime.parse(value);
+    }
+    return _now();
   }
 }

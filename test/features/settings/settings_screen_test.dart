@@ -67,7 +67,9 @@ Widget _buildScreen({
     overrides: [
       authRepositoryProvider.overrideWithValue(mockAuth),
       giftProvider.overrideWith((_) => _FakeGiftNotifier()),
-      notificationEnabledProvider.overrideWith((_) async => notificationsEnabled),
+      notificationEnabledProvider.overrideWith(
+        (_) async => notificationsEnabled,
+      ),
       notificationTimeProvider.overrideWith((_) async => (hour: 8, minute: 0)),
     ],
     child: MaterialApp(
@@ -96,10 +98,7 @@ Widget _buildScreenWithRouter({MockAuthRepository? authRepo}) {
   final router = GoRouter(
     initialLocation: '/settings',
     routes: [
-      GoRoute(
-        path: '/settings',
-        builder: (_, __) => const SettingsScreen(),
-      ),
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       GoRoute(
         path: '/settings/change-password',
         builder: (_, __) =>
@@ -132,7 +131,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('renders all section headers and key setting tiles', (tester) async {
+  testWidgets('renders all section headers and key setting tiles', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
@@ -147,25 +148,29 @@ void main() {
     expect(find.text('Change Password'), findsOneWidget);
   });
 
-  testWidgets('dark mode switch changes themeProvider state to ThemeMode.dark',
-      (tester) async {
-    await tester.pumpWidget(_buildScreen());
-    await tester.pumpAndSettle();
+  testWidgets(
+    'dark mode switch changes themeProvider state to ThemeMode.dark',
+    (tester) async {
+      await tester.pumpWidget(_buildScreen());
+      await tester.pumpAndSettle();
 
-    // The switch for Dark Mode should start off (light theme)
-    final switchFinders = find.byType(Switch);
-    // The first Switch in the card is the Dark Mode switch
-    final darkModeSwitch = switchFinders.first;
-    expect(tester.widget<Switch>(darkModeSwitch).value, isFalse);
+      // The switch for Dark Mode should start off (light theme)
+      final switchFinders = find.byType(Switch);
+      // The first Switch in the card is the Dark Mode switch
+      final darkModeSwitch = switchFinders.first;
+      expect(tester.widget<Switch>(darkModeSwitch).value, isFalse);
 
-    await tester.tap(darkModeSwitch);
-    await tester.pumpAndSettle();
+      await tester.tap(darkModeSwitch);
+      await tester.pumpAndSettle();
 
-    // After tapping, the switch reflects dark mode on
-    expect(tester.widget<Switch>(darkModeSwitch).value, isTrue);
-  });
+      // After tapping, the switch reflects dark mode on
+      expect(tester.widget<Switch>(darkModeSwitch).value, isTrue);
+    },
+  );
 
-  testWidgets('system theme switch is visible and can be toggled', (tester) async {
+  testWidgets('system theme switch is visible and can be toggled', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
@@ -181,32 +186,34 @@ void main() {
   });
 
   testWidgets(
-      'tapping Change Password navigates to the change-password route',
-      (tester) async {
-    await tester.pumpWidget(_buildScreenWithRouter());
-    await tester.pumpAndSettle();
+    'tapping Change Password navigates to the change-password route',
+    (tester) async {
+      await tester.pumpWidget(_buildScreenWithRouter());
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Change Password'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Change Password'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Change Password Screen'), findsOneWidget);
-  });
+      expect(find.text('Change Password Screen'), findsOneWidget);
+    },
+  );
 
-  testWidgets('Daily Reflection Reminder tile is visible and interactive',
-      (tester) async {
+  testWidgets('Daily Reflection Reminder tile is visible and interactive', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
     expect(find.text('Daily Reflection Reminder'), findsOneWidget);
 
     // Notification toggle switch should be present
-    final notifSwitch = find.byWidgetPredicate(
-      (widget) => widget is Switch,
-    );
+    final notifSwitch = find.byWidgetPredicate((widget) => widget is Switch);
     expect(notifSwitch, findsWidgets);
   });
 
-  testWidgets('ECHO balance tile shows balance from giftProvider', (tester) async {
+  testWidgets('ECHO balance tile shows balance from giftProvider', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 

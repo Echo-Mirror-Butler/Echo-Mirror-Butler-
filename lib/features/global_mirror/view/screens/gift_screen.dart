@@ -94,7 +94,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     ref.listen<GiftState>(giftProvider, (previous, next) {
       final previousError = previous?.error;
       final nextError = next.error;
-      if (nextError != null && nextError.isNotEmpty && nextError != previousError) {
+      if (nextError != null &&
+          nextError.isNotEmpty &&
+          nextError != previousError) {
         _showError(nextError);
       }
     });

@@ -58,12 +58,8 @@ void main() {
 
     if (!withRouterPopFlow) {
       return ProviderScope(
-        overrides: [
-          giftProvider.overrideWith((ref) => fakeNotifier),
-        ],
-        child: MaterialApp(
-          home: GiftScreen(recipientUserId: recipientUserId),
-        ),
+        overrides: [giftProvider.overrideWith((ref) => fakeNotifier)],
+        child: MaterialApp(home: GiftScreen(recipientUserId: recipientUserId)),
       );
     }
 
@@ -72,7 +68,8 @@ void main() {
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => const Scaffold(body: Text('Root Screen')),
+          builder: (context, state) =>
+              const Scaffold(body: Text('Root Screen')),
         ),
         GoRoute(
           path: '/send',
@@ -83,17 +80,13 @@ void main() {
     );
 
     return ProviderScope(
-      overrides: [
-        giftProvider.overrideWith((ref) => fakeNotifier),
-      ],
+      overrides: [giftProvider.overrideWith((ref) => fakeNotifier)],
       child: MaterialApp.router(routerConfig: router),
     );
   }
 
   testWidgets('displays balance from giftProvider state', (tester) async {
-    await tester.pumpWidget(
-      buildScreen(const GiftState(echoBalance: 125)),
-    );
+    await tester.pumpWidget(buildScreen(const GiftState(echoBalance: 125)));
     await tester.pumpAndSettle();
 
     expect(find.text('Your ECHO Balance'), findsOneWidget);
@@ -103,9 +96,7 @@ void main() {
   testWidgets('renders amount chips and selecting one updates send label', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      buildScreen(const GiftState(echoBalance: 500)),
-    );
+    await tester.pumpWidget(buildScreen(const GiftState(echoBalance: 500)));
     await tester.pumpAndSettle();
 
     expect(find.byType(ChoiceChip), findsNWidgets(4));
@@ -117,12 +108,11 @@ void main() {
     expect(find.text('Send 10 ECHO'), findsOneWidget);
   });
 
-  testWidgets('send button is disabled when recipient is empty', (tester) async {
+  testWidgets('send button is disabled when recipient is empty', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      buildScreen(
-        const GiftState(echoBalance: 100),
-        recipientUserId: '',
-      ),
+      buildScreen(const GiftState(echoBalance: 100), recipientUserId: ''),
     );
     await tester.pumpAndSettle();
 
@@ -136,9 +126,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      buildScreen(
-        const GiftState(echoBalance: 100, isLoading: true),
-      ),
+      buildScreen(const GiftState(echoBalance: 100, isLoading: true)),
     );
     await tester.pumpAndSettle();
 
@@ -185,4 +173,3 @@ void main() {
     expect(find.text('Send ECHO Gift'), findsNothing);
   });
 }
-
