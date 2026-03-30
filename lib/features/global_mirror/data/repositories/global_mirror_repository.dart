@@ -9,7 +9,12 @@ import '../models/mood_pin_comment_model.dart';
 /// Repository for Global Mirror feature
 /// Handles anonymous mood sharing and video posts
 class GlobalMirrorRepository {
-  SupabaseClient get supabase => Supabase.instance.client;
+  final SupabaseClient? _supabaseClient;
+
+  GlobalMirrorRepository({SupabaseClient? supabaseClient})
+      : _supabaseClient = supabaseClient;
+
+  SupabaseClient get supabase => _supabaseClient ?? Supabase.instance.client;
 
   /// Stream mood pins in real-time
   Stream<List<MoodPinModel>> streamMoodPins() {
