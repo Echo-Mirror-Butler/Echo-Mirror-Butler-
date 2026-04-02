@@ -47,7 +47,8 @@ class DashboardRepository {
       }
 
       // Generate mood insights
-      // Normalize dates to local time for accurate comparisons (same as logging screen)
+      // Normalize dates to local time for accurate comparisons
+      // (same as logging screen)
       final moodEntries = logEntries.where((e) => e.mood != null).toList();
 
       if (moodEntries.isNotEmpty) {
@@ -55,7 +56,8 @@ class DashboardRepository {
             moodEntries.map((e) => e.mood!).reduce((a, b) => a + b) /
             moodEntries.length;
 
-        // Weekly mood trend - use local time for comparison (same as logging screen)
+        // Weekly mood trend - use local time for comparison
+        // (same as logging screen)
         final localNow = now.isUtc ? now.toLocal() : now;
         final weekAgo = localNow.subtract(const Duration(days: 7));
         final recentMoods = moodEntries.where((e) {
@@ -74,7 +76,8 @@ class DashboardRepository {
                 userId: userId,
                 title: 'Mood Improvement Detected',
                 description:
-                    'Your mood has been improving over the past week! Keep up the great work.',
+                    'Your mood has been improving over the past week! '
+                    'Keep up the great work.',
                 date: now,
                 type: InsightType.mood,
                 createdAt: now,
@@ -87,7 +90,8 @@ class DashboardRepository {
                 userId: userId,
                 title: 'Mood Trend Notice',
                 description:
-                    'Your mood has been lower recently. Consider taking some time for self-care.',
+                    'Your mood has been lower recently. Consider taking '
+                    'some time for self-care.',
                 date: now,
                 type: InsightType.mood,
                 createdAt: now,
@@ -110,7 +114,8 @@ class DashboardRepository {
               userId: userId,
               title: 'Great Mood Day',
               description:
-                  'You had an excellent mood on ${_formatDate(localDate)}. What made that day special?',
+                  'You had an excellent mood on ${_formatDate(localDate)}. '
+                  'What made that day special?',
               date: localDate,
               type: InsightType.mood,
               createdAt: now,
@@ -139,7 +144,8 @@ class DashboardRepository {
               userId: userId,
               title: 'Consistent Habit',
               description:
-                  'You\'ve logged "${topHabit.key}" ${topHabit.value} times. Consistency is key!',
+                  'You\'ve logged "${topHabit.key}" ${topHabit.value} times. '
+                  'Consistency is key!',
               date: now,
               type: InsightType.habit,
               createdAt: now,
@@ -166,7 +172,8 @@ class DashboardRepository {
               userId: userId,
               title: 'Habit Variety',
               description:
-                  'You\'ve been practicing ${recentHabits.length} different habits this week. Great diversity!',
+                  'You\'ve been practicing ${recentHabits.length} different '
+                  'habits this week. Great diversity!',
               date: now,
               type: InsightType.habit,
               createdAt: now,
@@ -184,7 +191,8 @@ class DashboardRepository {
             userId: userId,
             title: 'Logging Milestone',
             description:
-                'You\'ve logged $totalEntries entries! Your consistency is building valuable insights.',
+                'You\'ve logged $totalEntries entries! Your consistency is '
+                'building valuable insights.',
             date: now,
             type: InsightType.general,
             createdAt: now,
@@ -222,7 +230,9 @@ class DashboardRepository {
               userId: userId,
               title: 'Pattern Detected',
               description:
-                  'Based on your logs, you tend to have better moods on ${_getWeekdayName(bestWeekday.key)}. Plan something special!',
+                  'Based on your logs, you tend to have better moods on '
+                  '${_getWeekdayName(bestWeekday.key)}. '
+                  'Plan something special!',
               date: now,
               type: InsightType.prediction,
               createdAt: now,
