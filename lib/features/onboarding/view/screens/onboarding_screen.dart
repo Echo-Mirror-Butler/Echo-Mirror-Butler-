@@ -466,5 +466,6 @@ class OnboardingPageData {
     required this.icon,
     this.imageUrl,
     this.lottieAsset,
+    required this.gradient,
   });
 }
