@@ -35,7 +35,7 @@ class FakePostgrestBuilder extends Fake
   @override
   PostgrestFilterBuilder<PostgrestList> match(Map<String, Object> query) => this;
   @override
-  PostgrestFilterBuilder<PostgrestList> filter(String column, String operator, Object value) => this;
+  PostgrestFilterBuilder<PostgrestList> filter(String column, String operator, Object? value) => this;
 
   @override
   PostgrestTransformBuilder<PostgrestList> order(
