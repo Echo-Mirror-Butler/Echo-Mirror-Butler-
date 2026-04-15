@@ -41,7 +41,11 @@ class FakePostgrestBuilder extends Fake
   PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
       this;
   @override
-  PostgrestTransformBuilder<PostgrestList> range(int from, int to) => this;
+  PostgrestTransformBuilder<PostgrestList> range(
+    int from,
+    int to, {
+    String? referencedTable,
+  }) => this;
   @override
   PostgrestTransformBuilder<PostgrestMap> single() =>
       _FakeSingleBuilder(_result);
