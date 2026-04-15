@@ -1,6 +1,8 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:echomirror/features/logging/viewmodel/providers/logging_provider.dart';
 import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
@@ -25,8 +27,22 @@ LogEntryModel _makeEntry({
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  const MethodChannel notificationChannel = MethodChannel(
+    'dexterous.com/flutter/local_notifications',
+  );
+
   setUpAll(() {
+    SharedPreferences.setMockInitialValues({});
     registerFallbackValue(_makeEntry());
+  });
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(notificationChannel, (MethodCall call) async {
+      return null;
+    });
   });
 
   group('LoggingNotifier', () {
@@ -97,7 +113,6 @@ void main() {
 
     test(
       'createLogEntry — returns true on success and appends entry to state',
-      skip: true,
       () async {
         final existing = _makeEntry(id: 'e_old');
         final newEntry = _makeEntry(id: 'e_new', mood: 5);
