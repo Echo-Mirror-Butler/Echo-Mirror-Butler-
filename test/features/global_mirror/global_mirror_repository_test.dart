@@ -23,6 +23,9 @@ class MockGeolocatorPlatform extends Mock
 
 class MockPosition extends Mock implements Position {}
 
+class MockSupabaseStreamBuilder extends Mock
+    implements SupabaseStreamFilterBuilder {}
+
 class FakePostgrestBuilder extends Fake
     implements PostgrestFilterBuilder<PostgrestList> {
   final dynamic _result;
@@ -401,6 +404,14 @@ void main() {
   group('streamMoodPins', () {
     test('emits list of MoodPinModel from stream', () async {
       final mockStreamBuilder = MockSupabaseStreamBuilder();
+      final moodPinMap = {
+        'id': 'pin-1',
+        'sentiment': 'positive',
+        'grid_lat': 51.5,
+        'grid_lon': -0.1,
+        'created_at': _now.toIso8601String(),
+        'expires_at': _now.add(const Duration(hours: 24)).toIso8601String(),
+      };
 
       when(
         () => mockSupabase.from('mood_pins'),
@@ -411,18 +422,27 @@ void main() {
       when(
         () => mockStreamBuilder.gt(any(), any()),
       ).thenReturn(mockStreamBuilder);
-      when(() => mockStreamBuilder.map<List<MoodPinModel>>(any())).thenAnswer(
-        (_) => Stream.value([
-          MoodPinModel(
-            id: 'pin-1',
-            sentiment: 'positive',
-            gridLat: 51.5,
-            gridLon: -0.1,
-            timestamp: _now,
-            expiresAt: _expires,
-          ),
-        ]),
-      );
+      
+      // Instead of mocking map(), we provide the stream that repository calls map() on
+      when(() => mockStreamBuilder.listen(
+        any(),
+        onError: any(named: 'onError'),
+        onDone: any(named: 'onDone'),
+        cancelOnError: any(named: 'cancelOnError'),
+      )).thenAnswer((invocation) {
+        final onData = invocation.positionalArguments[0] as void Function(List<Map<String, dynamic>>);
+        final stream = Stream.value([moodPinMap]);
+        return stream.listen(onData);
+      });
+
+      // Alternatively, just mock the stream itself since SupabaseStreamFilterBuilder implements Stream
+      when(() => mockStreamBuilder.asyncMap<List<MoodPinModel>>(any())).thenAnswer((_) => Stream.value([]));
+      // Wait, repository calls .map() (from Stream)
+      // The easiest way is to mock the stream behavior
+      when(() => mockStreamBuilder.map<List<MoodPinModel>>(any())).thenAnswer((invocation) {
+        final mapper = invocation.positionalArguments[0] as List<MoodPinModel> Function(List<Map<String, dynamic>>);
+        return Stream.value(mapper([moodPinMap]));
+      });
 
       final stream = repository.streamMoodPins();
       final result = await stream.first;
