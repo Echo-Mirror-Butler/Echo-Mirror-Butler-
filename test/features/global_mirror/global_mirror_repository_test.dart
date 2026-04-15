@@ -235,8 +235,8 @@ void main() {
 
       verify(
         () => mockQueryBuilder.insert(
-          argThat(
-            predicate<Map<String, dynamic>>(
+          any(
+            that: predicate<Map<String, dynamic>>(
               (m) => m['mood_pin_id'] == 'pin-1' && m['text'] == 'Feeling this too',
             ),
           ),
