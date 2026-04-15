@@ -23,13 +23,20 @@ class FakePostgrestBuilder extends Fake
   @override
   PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) => this;
   @override
+  PostgrestFilterBuilder<PostgrestList> neq(String column, Object value) => this;
+  @override
   PostgrestFilterBuilder<PostgrestList> gt(String column, Object value) => this;
   @override
-  PostgrestFilterBuilder<PostgrestList> gte(String column, Object value) =>
-      this;
+  PostgrestFilterBuilder<PostgrestList> gte(String column, Object value) => this;
   @override
-  PostgrestFilterBuilder<PostgrestList> lte(String column, Object value) =>
-      this;
+  PostgrestFilterBuilder<PostgrestList> lt(String column, Object value) => this;
+  @override
+  PostgrestFilterBuilder<PostgrestList> lte(String column, Object value) => this;
+  @override
+  PostgrestFilterBuilder<PostgrestList> match(Map<String, Object> query) => this;
+  @override
+  PostgrestFilterBuilder<PostgrestList> filter(String column, String operator, Object value) => this;
+
   @override
   PostgrestTransformBuilder<PostgrestList> order(
     String column, {
@@ -37,18 +44,24 @@ class FakePostgrestBuilder extends Fake
     bool nullsFirst = false,
     String? referencedTable,
   }) => this;
+
   @override
-  PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
-      this;
+  PostgrestTransformBuilder<PostgrestList> limit(int count, {String? referencedTable}) => this;
+
   @override
   PostgrestTransformBuilder<PostgrestList> range(
     int from,
     int to, {
     String? referencedTable,
   }) => this;
+
+  @override
+  PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) => this;
+
   @override
   PostgrestTransformBuilder<PostgrestMap> single() =>
       _FakeSingleBuilder(_result);
+
   @override
   PostgrestTransformBuilder<PostgrestMap?> maybeSingle() =>
       _FakeMaybeSingleBuilder(_result);
@@ -78,6 +91,17 @@ class _FakeSingleBuilder extends Fake
   @override
   PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
       FakePostgrestBuilder(_result);
+
+  @override
+  PostgrestTransformBuilder<PostgrestMap> order(
+    String column, {
+    bool ascending = true,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) => this;
+
+  @override
+  PostgrestTransformBuilder<PostgrestMap> limit(int count, {String? referencedTable}) => this;
 
   @override
   Future<U> then<U>(
@@ -318,8 +342,10 @@ void main() {
         () => mockQueryBuilder.select(),
       ).thenReturn(FakePostgrestBuilder([_videoPostJson(id: 'post-2')]));
 
-      await repository.getVideoFeed(offset: 10, limit: 5);
-      // verify called in chain usually requires capturing the builder or just verifying the end result
+      final result = await repository.getVideoFeed(offset: 10, limit: 5);
+
+      expect(result, hasLength(1));
+      expect(result.first.id, 'post-2');
     });
 
 
