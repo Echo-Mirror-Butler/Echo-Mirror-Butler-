@@ -31,9 +31,6 @@ class MockPostgrestFilterBuilder extends Mock
 
 class MockPostgrestTransformBuilder extends Mock
     implements PostgrestTransformBuilder<PostgrestMap> {}
-
-class MockPostgrestListTransformBuilder extends Mock
-    implements PostgrestTransformBuilder<PostgrestList> {}
 // ---------------------------------------------------------------------------
 // Test data
 // ---------------------------------------------------------------------------
@@ -41,29 +38,12 @@ class MockPostgrestListTransformBuilder extends Mock
 final _now = DateTime.utc(2026, 3, 25, 12, 0, 0);
 final _expires = _now.add(const Duration(hours: 24));
 
-Map<String, dynamic> _moodPinJson({String id = 'pin-1'}) => {
-  'id': id,
-  'sentiment': 'positive',
-  'grid_lat': 51.5,
-  'grid_lon': -0.1,
-  'created_at': _now.toIso8601String(),
-  'expires_at': _expires.toIso8601String(),
-};
-
 Map<String, dynamic> _videoPostJson({String id = 'post-1'}) => {
   'id': id,
   'video_url': 'https://example.com/video.mp4',
   'mood_tag': 'happy',
   'created_at': _now.toIso8601String(),
   'expires_at': _expires.toIso8601String(),
-};
-
-Map<String, dynamic> _commentJson({String id = 'comment-1'}) => {
-  'id': id,
-  'mood_pin_id': 'pin-1',
-  'text': 'Feeling this too',
-  'created_at': _now.toIso8601String(),
-  'user_id': null,
 };
 
 // ---------------------------------------------------------------------------
@@ -103,14 +83,14 @@ void main() {
       referencedTable: any(named: 'referencedTable'),
     )).thenReturn(mockFilterBuilder);
 
-    when(() => mockListTransformBuilder.order(any(),
+    when(() => mockFilterBuilder.order(any(),
       ascending: any(named: 'ascending'),
       nullsFirst: any(named: 'nullsFirst'),
       referencedTable: any(named: 'referencedTable'),
-    )).thenReturn(mockListTransformBuilder);
-    when(() => mockListTransformBuilder.range(any(), any(),
+    )).thenReturn(mockFilterBuilder);
+    when(() => mockFilterBuilder.range(any(), any(),
       referencedTable: any(named: 'referencedTable'),
-    )).thenReturn(mockListTransformBuilder);
+    )).thenReturn(mockFilterBuilder);
 
     // Mock Geolocator
     final mockGeolocatorPlatform = MockGeolocatorPlatform();
@@ -285,8 +265,8 @@ void main() {
     });
 
     test('returns list of VideoPostModel on success', () async {
-      when(() => mockQueryBuilder.select()).thenReturn(mockListTransformBuilder);
-      when(() => mockListTransformBuilder.then(any()))
+      when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.then(any()))
           .thenAnswer((invocation) {
             final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestList> Function(PostgrestList);
             return Future.value(onValue([_videoPostJson()]));
@@ -300,8 +280,8 @@ void main() {
     });
 
     test('returns paginated results using offset and limit', () async {
-      when(() => mockQueryBuilder.select()).thenReturn(mockListTransformBuilder);
-      when(() => mockListTransformBuilder.then(any()))
+      when(() => mockQueryBuilder.select()).thenReturn(mockFilterBuilder);
+      when(() => mockFilterBuilder.then(any()))
           .thenAnswer((invocation) {
             final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestList> Function(PostgrestList);
             return Future.value(onValue([_videoPostJson(id: 'post-2')]));
