@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -93,7 +92,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         try {
           await markOnboardingCompleted();
           await Future.delayed(const Duration(milliseconds: 100));
-          context.go('/login');
+          if (mounted) {
+            context.go('/login');
+          }
         } catch (e2) {
           debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
         }
@@ -465,6 +466,5 @@ class OnboardingPageData {
     required this.icon,
     this.imageUrl,
     this.lottieAsset,
-    required this.gradient,
   });
 }
