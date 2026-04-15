@@ -262,13 +262,19 @@ class SocialsRepository {
 
       final response = await Supabase.instance.client.functions.invoke(
         'get-agora-credentials',
-        body: {'sessionId': sessionId, 'userId': userId.toString()},
+        body: {
+          'sessionId': sessionId,
+          'userId': userId.toString(),
+        },
       );
 
       final token = response.data['token'] as String;
       final appId = response.data['appId'] as String;
 
-      final credentials = {'token': token, 'appId': appId};
+      final credentials = {
+        'token': token,
+        'appId': appId,
+      };
 
       debugPrint(
         '[SocialsRepository] Got Agora credentials: ${credentials['appId']}',
