@@ -95,6 +95,8 @@ void main() {
     // Default builder chaining stubs
     when(() => mockFilterBuilder.select(any())).thenReturn(mockFilterBuilder);
     when(() => mockFilterBuilder.eq(any(), any())).thenReturn(mockFilterBuilder);
+    when(() => mockFilterBuilder.single()).thenReturn(mockTransformBuilder);
+    when(() => mockFilterBuilder.maybeSingle()).thenReturn(mockTransformBuilder);
     when(() => mockFilterBuilder.order(any(), 
       ascending: any(named: 'ascending'),
       nullsFirst: any(named: 'nullsFirst'),
@@ -150,8 +152,11 @@ void main() {
     test('returns non-null ID on success', () async {
       when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.select(any())).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.single())
-          .thenAnswer((_) async => {'id': 'pin-1'});
+      when(() => mockFilterBuilder.single()).thenReturn(mockTransformBuilder);
+      when(() => mockTransformBuilder.then(any())).thenAnswer((invocation) {
+        final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestMap> Function(PostgrestMap);
+        return Future.value(onValue({'id': 'pin-1'}));
+      });
 
       final result = await repository.addMoodPin(
         sentiment: 'positive',
@@ -165,8 +170,11 @@ void main() {
     test('inserts anonymized coordinates', () async {
       when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.select(any())).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.single())
-          .thenAnswer((_) async => {'id': 'pin-1'});
+      when(() => mockFilterBuilder.single()).thenReturn(mockTransformBuilder);
+      when(() => mockTransformBuilder.then(any())).thenAnswer((invocation) {
+        final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestMap> Function(PostgrestMap);
+        return Future.value(onValue({'id': 'pin-1'}));
+      });
 
       await repository.addMoodPin(
         sentiment: 'positive',
@@ -216,8 +224,11 @@ void main() {
       when(() => mockSupabase.auth).thenReturn(MockGoTrueClient());
       when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.select(any())).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.single())
-          .thenAnswer((_) async => {'id': 'comment-1'});
+      when(() => mockFilterBuilder.single()).thenReturn(mockTransformBuilder);
+      when(() => mockTransformBuilder.then(any())).thenAnswer((invocation) {
+        final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestMap> Function(PostgrestMap);
+        return Future.value(onValue({'id': 'comment-1'}));
+      });
 
       final result = await repository.addComment(
         moodPinId: 'pin-1',
@@ -231,8 +242,11 @@ void main() {
       when(() => mockSupabase.auth).thenReturn(MockGoTrueClient());
       when(() => mockQueryBuilder.insert(any())).thenReturn(mockFilterBuilder);
       when(() => mockFilterBuilder.select(any())).thenReturn(mockFilterBuilder);
-      when(() => mockFilterBuilder.single())
-          .thenAnswer((_) async => {'id': 'comment-1'});
+      when(() => mockFilterBuilder.single()).thenReturn(mockTransformBuilder);
+      when(() => mockTransformBuilder.then(any())).thenAnswer((invocation) {
+        final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestMap> Function(PostgrestMap);
+        return Future.value(onValue({'id': 'comment-1'}));
+      });
 
       await repository.addComment(moodPinId: 'pin-1', text: 'Great pin!');
 
@@ -274,7 +288,7 @@ void main() {
       when(() => mockQueryBuilder.select()).thenReturn(mockListTransformBuilder);
       when(() => mockListTransformBuilder.then(any()))
           .thenAnswer((invocation) {
-            final onValue = invocation.positionalArguments[0] as FutureOr<List<Map<String, dynamic>>> Function(List<Map<String, dynamic>>);
+            final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestList> Function(PostgrestList);
             return Future.value(onValue([_videoPostJson()]));
           });
 
@@ -289,7 +303,7 @@ void main() {
       when(() => mockQueryBuilder.select()).thenReturn(mockListTransformBuilder);
       when(() => mockListTransformBuilder.then(any()))
           .thenAnswer((invocation) {
-            final onValue = invocation.positionalArguments[0] as FutureOr<List<Map<String, dynamic>>> Function(List<Map<String, dynamic>>);
+            final onValue = invocation.positionalArguments[0] as FutureOr<PostgrestList> Function(PostgrestList);
             return Future.value(onValue([_videoPostJson(id: 'post-2')]));
           });
 
