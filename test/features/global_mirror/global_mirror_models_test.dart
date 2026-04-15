@@ -56,10 +56,10 @@ void main() {
     test('fromJson creates correct model', () {
       final json = {
         'id': 'c1',
-        'mood_pin_id': 'p1',
+        'moodPinId': 'p1',
         'text': 'Test comment',
-        'created_at': now.toIso8601String(),
-        'user_id': 'u1',
+        'timestamp': now.toIso8601String(),
+        'userId': 'u1',
       };
 
       final model = MoodPinCommentModel.fromJson(json);

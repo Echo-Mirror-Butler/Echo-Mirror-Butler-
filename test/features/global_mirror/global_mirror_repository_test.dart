@@ -61,10 +61,12 @@ class FakePostgrestBuilder extends Fake
     final list =
         _result is List<Map<String, dynamic>>
             ? _result
+            : _result is Map<String, dynamic>
+            ? [_result]
             : _result is List
             ? _result.cast<Map<String, dynamic>>()
             : <Map<String, dynamic>>[];
-    return Future.value(list).then(onValue, onError: onError);
+    return Future.value(list as PostgrestList).then(onValue, onError: onError);
   }
 }
 
@@ -74,11 +76,19 @@ class _FakeSingleBuilder extends Fake
   _FakeSingleBuilder(this._result);
 
   @override
+  PostgrestTransformBuilder<PostgrestMap> select([String columns = '*']) =>
+      this;
+
+  @override
   Future<U> then<U>(
     FutureOr<U> Function(PostgrestMap) onValue, {
     Function? onError,
   }) {
-    return Future.value(_result as PostgrestMap).then(onValue, onError: onError);
+    final map =
+        _result is List && (_result as List).isNotEmpty
+            ? (_result as List).first as Map<String, dynamic>
+            : _result as Map<String, dynamic>;
+    return Future.value(map as PostgrestMap).then(onValue, onError: onError);
   }
 }
 
