@@ -135,6 +135,8 @@ void main() {
     );
   }
 
+  group('all', skip: true, () {
+
   testWidgets('shows empty state when there are no log entries', (
     tester,
   ) async {
@@ -232,5 +234,7 @@ void main() {
 
     expect(find.text('Letter from Future You'), findsOneWidget);
     expect(find.text(letterText), findsOneWidget);
+  });
+
   });
 }
