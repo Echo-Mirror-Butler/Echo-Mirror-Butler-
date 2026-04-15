@@ -1,5 +1,5 @@
 import 'package:echomirror/core/widgets/shimmer_loading.dart';
-import 'package:echomirror/features/ai/data/models/aiinsight_model.dart';
+import 'package:echomirror/features/ai/data/models/ai_insight_model.dart';
 import 'package:echomirror/features/ai/data/repositories/ai_repository.dart';
 import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
 import 'package:echomirror/features/auth/viewmodel/providers/auth_provider.dart';
@@ -16,6 +16,7 @@ import 'package:echomirror/features/dashboard/data/models/mood_analytics_model.d
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
@@ -153,11 +154,11 @@ void main() {
   });
 
   testWidgets('mood streak card renders correct streak count', (tester) async {
-    final today = today();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final nowDate = today();
+    final yesterday = nowDate.subtract(const Duration(days: 1));
 
     final logs = <LogEntryModel>[
-      log(userId: userId, date: today, mood: 4),
+      log(userId: userId, date: nowDate, mood: 4),
       log(userId: userId, date: yesterday, mood: 4),
     ];
 

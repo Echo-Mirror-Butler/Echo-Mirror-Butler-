@@ -42,7 +42,7 @@ class AppTheme {
         surface: surfaceColor,
         onSurface: const Color(0xFF1F2937),
         surfaceContainerHighest: pastelPurple,
-        onsurfaceContainerHighest: const Color(0xFF4B5563),
+        onSurfaceVariant: const Color(0xFF4B5563),
       ),
       scaffoldBackgroundColor: backgroundColor,
       textTheme: _buildTextTheme(Brightness.light),
