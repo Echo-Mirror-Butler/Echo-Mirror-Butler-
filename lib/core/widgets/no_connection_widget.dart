@@ -31,7 +31,7 @@ class NoConnectionWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   ),
                   child: Icon(
                     FontAwesomeIcons.wifi,
@@ -68,7 +68,7 @@ class NoConnectionWidget extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: isMobile ? 14 : 16,
                     fontWeight: FontWeight.w400,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: theme.colorScheme.onsurfaceContainerHighest,
                   ),
                 ),
               ),

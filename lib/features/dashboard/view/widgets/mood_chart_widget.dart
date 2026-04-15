@@ -31,7 +31,7 @@ class MoodChartWidget extends StatelessWidget {
             child: Text(
               'No mood data available',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -53,7 +53,7 @@ class MoodChartWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.accentColor.withOpacity(0.1),
+                    color: AppTheme.accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -100,7 +100,7 @@ class MoodChartWidget extends StatelessWidget {
         horizontalInterval: 1,
         getDrawingHorizontalLine: (value) {
           return FlLine(
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
             strokeWidth: 1,
           );
         },
@@ -126,7 +126,7 @@ class MoodChartWidget extends StatelessWidget {
                     DateFormat('MMM\ndd').format(date),
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontSize: 10,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 );
@@ -147,7 +147,7 @@ class MoodChartWidget extends StatelessWidget {
                   '$mood',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 11,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 );
               }
@@ -158,7 +158,7 @@ class MoodChartWidget extends StatelessWidget {
       ),
       borderData: FlBorderData(
         show: true,
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
       ),
       minX: 0,
       maxX: (dataPoints.length - 1).toDouble(),
@@ -188,8 +188,8 @@ class MoodChartWidget extends StatelessWidget {
             show: true,
             gradient: LinearGradient(
               colors: [
-                AppTheme.accentColor.withOpacity(0.3),
-                AppTheme.primaryColor.withOpacity(0.1),
+                AppTheme.accentColor.withValues(alpha: 0.3),
+                AppTheme.primaryColor.withValues(alpha: 0.1),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
