@@ -56,7 +56,6 @@ void main() {
   late MockSupabaseQueryBuilder mockQueryBuilder;
   late MockPostgrestFilterBuilder mockFilterBuilder;
   late MockPostgrestTransformBuilder mockTransformBuilder;
-  late MockPostgrestListTransformBuilder mockListTransformBuilder;
 
   setUpAll(() {
     registerFallbackValue(<String, dynamic>{});
@@ -68,7 +67,6 @@ void main() {
     mockQueryBuilder = MockSupabaseQueryBuilder();
     mockFilterBuilder = MockPostgrestFilterBuilder();
     mockTransformBuilder = MockPostgrestTransformBuilder();
-    mockListTransformBuilder = MockPostgrestListTransformBuilder();
     
     repository = GlobalMirrorRepository(supabaseClient: mockSupabase);
 
