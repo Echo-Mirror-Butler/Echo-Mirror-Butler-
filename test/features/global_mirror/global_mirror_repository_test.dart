@@ -6,6 +6,8 @@ import 'package:echomirror/features/global_mirror/data/repositories/global_mirro
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -14,6 +16,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
+
+class MockGeolocatorPlatform extends Mock
+    with MockPlatformInterfaceMixin
+    implements GeolocatorPlatform {}
+
+class MockPosition extends Mock implements Position {}
 
 class FakePostgrestBuilder extends Fake
     implements PostgrestFilterBuilder<PostgrestList> {
@@ -179,12 +187,38 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(<String, dynamic>{});
+    registerFallbackValue(const LocationSettings());
   });
 
   setUp(() {
     mockSupabase = MockSupabaseClient();
     mockQueryBuilder = MockSupabaseQueryBuilder();
     repository = GlobalMirrorRepository(supabaseClient: mockSupabase);
+
+    // Mock Geolocator
+    final mockGeolocatorPlatform = MockGeolocatorPlatform();
+    GeolocatorPlatform.instance = mockGeolocatorPlatform;
+
+    when(() => mockGeolocatorPlatform.isLocationServiceEnabled())
+        .thenAnswer((_) async => true);
+    when(
+      () => mockGeolocatorPlatform.getCurrentPosition(
+        locationSettings: any(named: 'locationSettings'),
+      ),
+    ).thenAnswer(
+      (_) async => Position(
+        latitude: 51.52,
+        longitude: -0.13,
+        timestamp: DateTime.now(),
+        accuracy: 1.0,
+        altitude: 0.0,
+        heading: 0.0,
+        speed: 0.0,
+        speedAccuracy: 0.0,
+        altitudeAccuracy: 0.0,
+        headingAccuracy: 0.0,
+      ),
+    );
   });
 
   // -------------------------------------------------------------------------
