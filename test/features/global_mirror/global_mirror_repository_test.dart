@@ -84,10 +84,9 @@ class _FakeSingleBuilder extends Fake
     FutureOr<U> Function(PostgrestMap) onValue, {
     Function? onError,
   }) {
-    final map =
-        _result is List && (_result as List).isNotEmpty
-            ? (_result as List).first as Map<String, dynamic>
-            : _result as Map<String, dynamic>;
+    final map = _result is List && _result.isNotEmpty
+        ? _result.first as Map<String, dynamic>
+        : _result as Map<String, dynamic>;
     return Future.value(map).then(onValue, onError: onError);
   }
 }

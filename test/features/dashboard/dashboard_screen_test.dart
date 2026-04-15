@@ -183,7 +183,7 @@ void main() {
   testWidgets('AI insight section renders when insight is available', (
     tester,
   ) async {
-    final insight = aiInsight(futureLetter: 'Letter body', stressLevel: 1);
+    final aiInsightModel = aiInsight(futureLetter: 'Letter body', stressLevel: 1);
 
     await tester.pumpWidget(
       buildScreen(
@@ -191,7 +191,7 @@ void main() {
           insight(id: '1', type: InsightType.prediction),
         ]),
         loggingState: const AsyncValue.data([]),
-        aiInsightState: AsyncValue.data(insight),
+        aiInsightState: AsyncValue.data(aiInsightModel),
       ),
     );
     await tester.pumpAndSettle();
@@ -219,7 +219,7 @@ void main() {
     tester,
   ) async {
     const letterText = 'Test future letter body';
-    final insight = aiInsight(futureLetter: letterText, stressLevel: 1);
+    final aiInsightModel = aiInsight(futureLetter: letterText, stressLevel: 1);
 
     await tester.pumpWidget(
       buildScreen(
@@ -227,7 +227,7 @@ void main() {
           insight(id: '1', type: InsightType.general),
         ]),
         loggingState: const AsyncValue.data([]),
-        aiInsightState: AsyncValue.data(insight),
+        aiInsightState: AsyncValue.data(aiInsightModel),
       ),
     );
     await tester.pumpAndSettle();
