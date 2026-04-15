@@ -244,7 +244,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            color: AppTheme.primaryColor.withOpacity(0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -274,7 +274,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  color: AppTheme.primaryColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -293,7 +293,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                       style: theme.textTheme.labelMedium
                                           ?.copyWith(
                                             color: theme.colorScheme.onSurface
-                                                .withValues(alpha: 0.6),
+                                                .withOpacity(0.6),
                                           ),
                                     ),
                                     const SizedBox(height: 4),
@@ -354,7 +354,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                 height: 56,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? AppTheme.accentColor.withValues(alpha: 0.2)
+                                      ? AppTheme.accentColor.withOpacity(0.2)
                                       : theme.colorScheme.surface,
                                   shape: BoxShape.circle,
                                   border: Border.all(
@@ -516,15 +516,15 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          color: AppTheme.primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                            color: AppTheme.primaryColor.withOpacity(0.5),
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                              color: AppTheme.primaryColor.withOpacity(0.1),
                               blurRadius: 8,
                               spreadRadius: 2,
                             ),
@@ -570,7 +570,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                     'Help the global community by sharing your mood anonymously. Your location is anonymized (~11km) and data expires in 24 hours.',
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.7),
+                                          .withOpacity(0.7),
                                     ),
                                   ),
                                 ],

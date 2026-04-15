@@ -383,10 +383,10 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
         ),
       ),
       child: Column(
@@ -394,7 +394,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
           Icon(
             FontAwesomeIcons.gift,
             size: 40,
-            color: theme.colorScheme.outline.withValues(alpha: 0.5),
+            color: theme.colorScheme.outline.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -443,7 +443,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: Colors.black.withOpacity(0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -456,8 +456,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             ),
             leading: CircleAvatar(
               backgroundColor: isSent
-                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                  : Colors.green.withValues(alpha: 0.1),
+                  ? AppTheme.primaryColor.withOpacity(0.1)
+                  : Colors.green.withOpacity(0.1),
               child: Icon(
                 isSent
                     ? FontAwesomeIcons.gift
@@ -551,9 +551,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

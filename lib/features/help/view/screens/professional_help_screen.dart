@@ -325,7 +325,7 @@ class _ProfessionalHelpScreenState
                           fontSize: 14,
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.7),
+                          ).colorScheme.onSurface.withOpacity(0.7),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -374,14 +374,14 @@ class _ProfessionalHelpScreenState
                                 ? categoryData['color']
                                 : Theme.of(
                                     context,
-                                  ).colorScheme.outline.withValues(alpha: 0.3),
+                                  ).colorScheme.outline.withOpacity(0.3),
                             width: 2,
                           ),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
                                     color: (categoryData['color'] as Color)
-                                        .withValues(alpha: 0.3),
+                                        .withOpacity(0.3),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   ),
@@ -430,7 +430,7 @@ class _ProfessionalHelpScreenState
                         ? null
                         : [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 2),
                             ),
@@ -472,7 +472,7 @@ class _ProfessionalHelpScreenState
                                 fontSize: 14,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.8),
+                                ).colorScheme.onSurface.withOpacity(0.8),
                                 height: 1.5,
                               ),
                             ),
@@ -502,7 +502,7 @@ class _ProfessionalHelpScreenState
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.red.shade900.withValues(alpha: 0.3)
+                          ? Colors.red.shade900.withOpacity(0.3)
                           : Colors.red.shade50,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
@@ -576,7 +576,7 @@ class _ProfessionalHelpScreenState
         break;
       default:
         icon = FontAwesomeIcons.link;
-        iconColor = Theme.of(context).colorScheme.onsurfaceContainerHighest;
+        iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
     final theme = Theme.of(context);
@@ -589,7 +589,7 @@ class _ProfessionalHelpScreenState
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -633,7 +633,7 @@ class _ProfessionalHelpScreenState
                         resource['description']!,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -642,7 +642,7 @@ class _ProfessionalHelpScreenState
                 Icon(
                   FontAwesomeIcons.chevronRight,
                   size: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                  color: theme.colorScheme.onSurface.withOpacity(0.3),
                 ),
               ],
             ),
@@ -684,7 +684,7 @@ class _ProfessionalHelpScreenState
   Widget _buildChatOverlay() {
     final theme = Theme.of(context);
     return Material(
-      color: Colors.black.withValues(alpha: 0.5),
+      color: Colors.black.withOpacity(0.5),
       child: SafeArea(
         child: Container(
           margin: const EdgeInsets.all(16),
@@ -694,14 +694,14 @@ class _ProfessionalHelpScreenState
             boxShadow: theme.brightness == Brightness.dark
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: Colors.black.withOpacity(0.5),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Colors.black.withOpacity(0.2),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -724,7 +724,7 @@ class _ProfessionalHelpScreenState
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withValues(alpha: 0.2),
+                        color: theme.colorScheme.onPrimary.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -817,7 +817,7 @@ class _ProfessionalHelpScreenState
                             fontSize: 14,
                             color: isUser
                                 ? theme.colorScheme.onPrimary
-                                : theme.colorScheme.onsurfaceContainerHighest,
+                                : theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -862,7 +862,7 @@ class _ProfessionalHelpScreenState
                             'Thinking...',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: theme.colorScheme.onsurfaceContainerHighest,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -887,7 +887,7 @@ class _ProfessionalHelpScreenState
                   ),
                   border: Border(
                     top: BorderSide(
-                      color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                      color: theme.colorScheme.outline.withOpacity(0.2),
                     ),
                   ),
                 ),
@@ -904,7 +904,7 @@ class _ProfessionalHelpScreenState
                           hintText: 'Type your message...',
                           hintStyle: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            color: theme.colorScheme.onSurface.withOpacity(0.5),
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
