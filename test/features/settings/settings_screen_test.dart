@@ -1,5 +1,4 @@
 import 'package:echomirror/core/viewmodel/providers/notification_provider.dart';
-import 'package:echomirror/core/viewmodel/providers/theme_provider.dart';
 import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
 import 'package:echomirror/features/auth/viewmodel/providers/auth_provider.dart';
 import 'package:echomirror/features/global_mirror/data/models/gift_transaction_model.dart';

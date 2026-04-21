@@ -30,8 +30,6 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load active sessions and start auto-refresh only when Socials
-    // tab is active
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final currentIndex = ref.read(mainTabIndexProvider);
@@ -39,17 +37,6 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
         final notifier = ref.read(socialsProvider.notifier);
         notifier.loadActiveSessions();
         notifier.startAutoRefresh();
-      }
-    });
-
-    // React to tab index changes to start/stop auto-refresh
-    ref.listen<int>(mainTabIndexProvider, (previous, next) {
-      final notifier = ref.read(socialsProvider.notifier);
-      if (next == 2) {
-        notifier.loadActiveSessions();
-        notifier.startAutoRefresh();
-      } else {
-        notifier.stopAutoRefresh();
       }
     });
   }
@@ -73,6 +60,16 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final socialsState = ref.watch(socialsProvider);
+
+    ref.listen<int>(mainTabIndexProvider, (previous, next) {
+      final notifier = ref.read(socialsProvider.notifier);
+      if (next == 2) {
+        notifier.loadActiveSessions();
+        notifier.startAutoRefresh();
+      } else {
+        notifier.stopAutoRefresh();
+      }
+    });
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
