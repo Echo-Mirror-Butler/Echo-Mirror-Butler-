@@ -89,16 +89,24 @@ class _FakeGlobalMirrorRepository extends GlobalMirrorRepository {
     if (_error != null) return [];
     final data = _listResult ?? [];
     final end = (offset + limit).clamp(0, data.length);
-    final slice = offset < data.length ? data.sublist(offset, end) : <Map<String, dynamic>>[];
-    return slice.map((p) => VideoPostModel(
-      id: p['id'].toString(),
-      videoUrl: p['video_url'] as String,
-      moodTag: p['mood_tag'] as String? ?? '',
-      timestamp: DateTime.parse(p['created_at'] as String),
-      expiresAt: p['expires_at'] != null
-          ? DateTime.parse(p['expires_at'] as String)
-          : DateTime.parse(p['created_at'] as String).add(const Duration(hours: 24)),
-    )).toList();
+    final slice = offset < data.length
+        ? data.sublist(offset, end)
+        : <Map<String, dynamic>>[];
+    return slice
+        .map(
+          (p) => VideoPostModel(
+            id: p['id'].toString(),
+            videoUrl: p['video_url'] as String,
+            moodTag: p['mood_tag'] as String? ?? '',
+            timestamp: DateTime.parse(p['created_at'] as String),
+            expiresAt: p['expires_at'] != null
+                ? DateTime.parse(p['expires_at'] as String)
+                : DateTime.parse(
+                    p['created_at'] as String,
+                  ).add(const Duration(hours: 24)),
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -140,9 +148,7 @@ void main() {
     });
 
     test('returns null on Supabase error', () async {
-      final repo = _FakeGlobalMirrorRepository(
-        error: Exception('db error'),
-      );
+      final repo = _FakeGlobalMirrorRepository(error: Exception('db error'));
 
       final result = await repo.addMoodPin(
         sentiment: 'positive',
@@ -173,14 +179,9 @@ void main() {
     });
 
     test('returns null on Supabase error', () async {
-      final repo = _FakeGlobalMirrorRepository(
-        error: Exception('db error'),
-      );
+      final repo = _FakeGlobalMirrorRepository(error: Exception('db error'));
 
-      final result = await repo.addComment(
-        moodPinId: 'pin-1',
-        text: 'test',
-      );
+      final result = await repo.addComment(moodPinId: 'pin-1', text: 'test');
 
       expect(result, isNull);
     });
@@ -192,9 +193,7 @@ void main() {
 
   group('getVideoFeed', () {
     test('returns list of VideoPostModel on success', () async {
-      final repo = _FakeGlobalMirrorRepository(
-        listResult: [_videoPostJson()],
-      );
+      final repo = _FakeGlobalMirrorRepository(listResult: [_videoPostJson()]);
 
       final result = await repo.getVideoFeed();
 
@@ -206,10 +205,7 @@ void main() {
     });
 
     test('returns paginated results using offset and limit', () async {
-      final data = List.generate(
-        20,
-        (i) => _videoPostJson(id: 'post-$i'),
-      );
+      final data = List.generate(20, (i) => _videoPostJson(id: 'post-$i'));
       final repo = _FakeGlobalMirrorRepository(listResult: data);
 
       final result = await repo.getVideoFeed(offset: 5, limit: 3);
@@ -219,9 +215,7 @@ void main() {
     });
 
     test('returns empty list on Supabase error', () async {
-      final repo = _FakeGlobalMirrorRepository(
-        error: Exception('db error'),
-      );
+      final repo = _FakeGlobalMirrorRepository(error: Exception('db error'));
 
       final result = await repo.getVideoFeed();
 
