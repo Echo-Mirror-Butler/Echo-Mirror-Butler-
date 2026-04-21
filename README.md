@@ -86,17 +86,11 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **Table Calendar** - Calendar widget
 
 ### Backend (Supabase + Node.js)
-- **Supabase** - Backend-as-a-Service (Auth, Database, Edge Functions)
-- **PostgreSQL** - Real-time database
-- **Node.js 20+** - Edge Functions and custom logic
-- **Edge Functions** - Server-side logic for AI and blockchain interactions
-- **Google Generative AI** - Gemini AI integration
-- **Stellar SDK (Node.js)** - Server-side transaction handling
-### Backend (Supabase)
 - **Supabase** - Backend as a Service (PostgreSQL + Auth + Storage + Edge Functions)
 - **PostgreSQL** - Database (managed by Supabase)
 - **Supabase Auth** - Authentication with JWT
 - **Supabase Edge Functions** - Serverless functions for AI and custom logic
+- **Node.js 20+** - Custom server routes (Stellar integration)
 - **Google Generative AI** - Gemini AI integration via Edge Functions
 - **Resend** - Email delivery
 
@@ -131,59 +125,91 @@ We believe wellness is better together. EchoMirror Butler helps you:
 
 ### Prerequisites
 
-- **Flutter SDK** 3.10 or higher
-- **Docker Desktop** (for local Supabase)
-- **Supabase CLI** (for local development)
-- **Node.js 20+** (for Edge Functions)
-- **Dart SDK** 3.10 or higher
-- **Supabase account** (free tier works)
+- **Flutter SDK** 3.10 or higher ([install guide](https://docs.flutter.dev/get-started/install))
+- **Dart SDK** 3.10 or higher (bundled with Flutter)
+- **Xcode** 15+ (for iOS builds on macOS)
+- **CocoaPods** (for iOS plugins — install via `brew install cocoapods`)
+- **A Supabase project** (free tier works — [supabase.com](https://supabase.com))
+- **Node.js 20+** (only needed if working on Edge Functions)
 
-### Installation
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd echomirror
-   ```
+### 1. Clone & install dependencies
 
-2. **Install Flutter dependencies**
-   ```bash
-   flutter pub get
-   ```
+```bash
+git clone https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-.git
+cd Echo-Mirror-Butler-
+flutter pub get
+```
 
-3. **Start local Supabase**
-   ```bash
-   supabase start
-   # Take note of the local URL and anon key provided in the output
-   ```
+---
 
-4. **Run the Flutter app**
-   ```bash
-   flutter run --dart-define=SUPABASE_URL=YOUR_LOCAL_URL --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY
-   ```
+### 2. Set up your Supabase project
 
-5. **Stop Supabase when done**
-   ```bash
-   supabase stop
-   ```
+1. Go to [supabase.com](https://supabase.com) and create a free project (or ask the project lead to be added to the existing one).
+2. In your Supabase dashboard, navigate to **Project Settings → API**.
+3. Copy two values:
+   - **Project URL** — looks like `https://xxxxxxxxxxxx.supabase.co`
+   - **anon / public key** — a long JWT string
 
-### Configuration
+> **Never commit these values to git.** They are passed at runtime via `--dart-define`.
 
-1. **Update Supabase Config** (if not using dart-define)
-   - Edit `lib/core/config/supabase_config.dart`
-   - Default: Uses environment variables via `--dart-define`
+---
 
-2. **Add Gemini API Key** (Optional - for AI features)
-   - Add as a Supabase Secret: `supabase secrets set GEMINI_API_KEY=your_key`
-   - Edge Functions use this automatically
-   - App works without it (uses mock data)
-1. **Supabase Project Setup**
-   - Create a project at [supabase.com](https://supabase.com)
-   - Copy your Project URL and anon key from Project Settings → API
-   - Pass them via `--dart-define` flags at runtime
+### 3. Store your credentials locally
 
-2. **Add Gemini API Key** (for AI features)
-   - Add `GEMINI_API_KEY` as a secret in your Supabase Edge Function environment
+Add the following to your `~/.zshrc` (or `~/.bashrc` on Linux):
+
+```bash
+export SUPABASE_URL="https://your-project-id.supabase.co"
+export SUPABASE_ANON_KEY="your-anon-key-here"
+```
+
+Then reload your shell:
+
+```bash
+source ~/.zshrc
+```
+
+---
+
+### 4. Run the app
+
+**Terminal:**
+```bash
+flutter run -d "iPhone 16 Pro" \
+  --dart-define=SUPABASE_URL=$SUPABASE_URL \
+  --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+```
+
+**VS Code (recommended):**
+
+A `.vscode/launch.json` is already set up. It reads `SUPABASE_URL` and `SUPABASE_ANON_KEY` from your environment automatically. Just press **F5** after step 3.
+
+> **iOS note:** If you see a CocoaPods warning on first run, run `pod install --project-directory=ios` then try again.
+
+---
+
+### 5. Optional: AI features (Gemini)
+
+AI insights require a Google Gemini API key set as a Supabase Edge Function secret. Without it the app falls back to mock data — everything else works normally.
+
+```bash
+supabase secrets set GEMINI_API_KEY=your_gemini_key
+```
+
+---
+
+### 6. Optional: Stellar testnet gifting
+
+The gifting feature runs against the Stellar testnet — no real funds involved. No extra setup is needed to use it; wallet creation and testnet funding happen automatically in-app.
+
+If you are working on the **backend/server** routes, copy the example env file and fill in your testnet keypairs:
+
+```bash
+cp backend/.env.example backend/.env
+# edit backend/.env with your STELLAR_ISSUER_* and STELLAR_DISTRIBUTOR_* keys
+```
 
 ---
 
@@ -396,21 +422,6 @@ EchoMirror Butler is designed with these principles:
 
 ---
 
-Contributions are welcome! Please feel free to submit a Pull Request. For more details, see our [CONTRIBUTING.md](CONTRIBUTING.md).
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-- Follow MVVM architecture pattern
 ## 🤝 Contributing
 
 Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide before opening a PR — it covers branching strategy, PR checklist, commit format, code style, and local Supabase setup.
