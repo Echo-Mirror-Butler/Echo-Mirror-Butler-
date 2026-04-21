@@ -12,7 +12,7 @@ class GlobalMirrorRepository {
   final SupabaseClient? _supabaseClient;
 
   GlobalMirrorRepository({SupabaseClient? supabaseClient})
-      : _supabaseClient = supabaseClient;
+    : _supabaseClient = supabaseClient;
 
   SupabaseClient get supabase => _supabaseClient ?? Supabase.instance.client;
 

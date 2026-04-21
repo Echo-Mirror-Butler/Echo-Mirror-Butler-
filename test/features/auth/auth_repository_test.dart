@@ -294,52 +294,46 @@ void main() {
       },
     );
 
-    test(
-      'changePassword throws when current user email is missing',
-      () async {
-        when(() => mockAuth.currentUser).thenReturn(null);
+    test('changePassword throws when current user email is missing', () async {
+      when(() => mockAuth.currentUser).thenReturn(null);
 
-        final repo = AuthRepository(supabaseClient: mockSupabase);
+      final repo = AuthRepository(supabaseClient: mockSupabase);
 
-        expect(
-          () => repo.changePassword('current-password', 'new-password'),
-          throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
-              'message',
-              contains('User email not found'),
-            ),
+      expect(
+        () => repo.changePassword('current-password', 'new-password'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('User email not found'),
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
-    test(
-      'changePassword throws when current password is incorrect',
-      () async {
-        when(() => mockUser.email).thenReturn('user@example.com');
-        when(() => mockAuth.currentUser).thenReturn(mockUser);
-        when(
-          () => mockAuth.signInWithPassword(
-            email: 'user@example.com',
-            password: 'wrong-password',
+    test('changePassword throws when current password is incorrect', () async {
+      when(() => mockUser.email).thenReturn('user@example.com');
+      when(() => mockAuth.currentUser).thenReturn(mockUser);
+      when(
+        () => mockAuth.signInWithPassword(
+          email: 'user@example.com',
+          password: 'wrong-password',
+        ),
+      ).thenThrow(AuthException('Invalid login credentials'));
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+
+      expect(
+        () => repo.changePassword('wrong-password', 'new-password'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Current password is incorrect'),
           ),
-        ).thenThrow(AuthException('Invalid login credentials'));
-
-        final repo = AuthRepository(supabaseClient: mockSupabase);
-
-        expect(
-          () => repo.changePassword('wrong-password', 'new-password'),
-          throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
-              'message',
-              contains('Current password is incorrect'),
-            ),
-          ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
     test(
       'changePassword returns false when update user returns no user',
