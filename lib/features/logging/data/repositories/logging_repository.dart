@@ -139,8 +139,8 @@ class LoggingRepository {
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntries error -> $e');
       debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
-      // Return empty list on error instead of throwing
-      return [];
+      // Bubble up Supabase failures so the UI can show actionable errors.
+      throw Exception('Failed to fetch log entries: ${e.toString()}');
     }
   }
 

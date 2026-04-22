@@ -53,6 +53,30 @@ supabase migration new my_migration_name
 supabase db diff
 ```
 
+If you are using a hosted Supabase project (not local Docker), apply pending migrations with:
+
+```bash
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
+
+### Troubleshooting Missing Tables (PGRST205)
+
+If the app logs errors such as `Could not find the table 'public.log_entries' in the schema cache`, your connected Supabase project is missing one or more migrations.
+
+1. Ensure the project is linked (`supabase link --project-ref ...`)
+2. Push migrations (`supabase db push`)
+3. Verify these tables exist in the Supabase SQL editor:
+   - `public.log_entries`
+   - `public.mood_comment_notifications`
+   - `public.video_sessions`
+   - `public.stories`
+   - `public.scheduled_sessions`
+   - `public.user_wallets`
+   - `public.gift_transactions`
+
+After migrations are applied, restart the Flutter app and retry the affected screen.
+
 ## Access Model
 
 The Supabase schema uses Row Level Security on every application table.
