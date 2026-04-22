@@ -48,8 +48,8 @@ class LoggingScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(loggingProvider.notifier).loadLogEntries(
-              userId: userId,
-            ),
+          userId: userId,
+        ),
         child: loggingState.when(
           data: (entries) {
             if (entries.isEmpty) {
@@ -136,8 +136,9 @@ class LoggingScreen extends ConsumerWidget {
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
           error: (error, stack) => NoConnectionWidget(
-            message:
-                'We could not load your daily logs. This can happen when Supabase tables are missing. Run migrations and try again.',
+            message: 'We could not load your daily logs. '
+                'This can happen when Supabase tables are missing. '
+                'Run migrations and try again.',
             onRetry: () => _retryLoadEntries(ref, userId),
           ),
         ),
