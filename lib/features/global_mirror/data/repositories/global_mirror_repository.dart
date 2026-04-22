@@ -88,7 +88,9 @@ class GlobalMirrorRepository {
             'user_id': userId,
             'mood_pin_id': pinId,
           });
-          debugPrint('[GlobalMirrorRepository] Linked pin $pinId to user $userId');
+          debugPrint(
+            '[GlobalMirrorRepository] Linked pin $pinId to user $userId',
+          );
         } catch (e) {
           debugPrint('[GlobalMirrorRepository] Error linking pin to user: $e');
           // Non-critical, so we don't return null here

@@ -47,9 +47,9 @@ class LoggingScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref
-            .read(loggingProvider.notifier)
-            .loadLogEntries(userId: ref.read(authProvider).user?.id),
+        onRefresh: () => ref.read(loggingProvider.notifier).loadLogEntries(
+              userId: ref.read(authProvider).user?.id,
+            ),
         child: loggingState.when(
           data: (entries) {
             if (entries.isEmpty) {
@@ -135,8 +135,9 @@ class LoggingScreen extends ConsumerWidget {
           },
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
-          error: (error, stack) =>
-              NoConnectionWidget(onRetry: () => ref.refresh(loggingProvider)),
+          error: (error, stack) => NoConnectionWidget(
+            onRetry: () => ref.refresh(loggingProvider),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
