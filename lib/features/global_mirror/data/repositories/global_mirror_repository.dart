@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mood_pin_model.dart';
 import '../models/video_post_model.dart';
 import '../models/mood_pin_comment_model.dart';
+import '../core/services/user_mood_pins_service.dart';
 
 /// Repository for Global Mirror feature
 /// Handles anonymous mood sharing and video posts
@@ -75,6 +76,25 @@ class GlobalMirrorRepository {
 
       final pinId = response['id'].toString();
       debugPrint('[GlobalMirrorRepository] Added mood pin - Pin ID: $pinId');
+
+      // Track locally for UI purposes (my pins vs others)
+      await UserMoodPinsService.addMoodPinId(pinId);
+
+      // Link to user in database to enable notifications
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        try {
+          await supabase.from('user_mood_pins').insert({
+            'user_id': userId,
+            'mood_pin_id': pinId,
+          });
+          debugPrint('[GlobalMirrorRepository] Linked pin $pinId to user $userId');
+        } catch (e) {
+          debugPrint('[GlobalMirrorRepository] Error linking pin to user: $e');
+          // Non-critical, so we don't return null here
+        }
+      }
+
       return pinId;
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorRepository] Error adding mood pin: $e');
