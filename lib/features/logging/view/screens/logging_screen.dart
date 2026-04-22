@@ -20,14 +20,14 @@ class LoggingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loggingState = ref.watch(loggingProvider);
     final authState = ref.watch(authProvider);
+    final userId = authState.user?.id;
     final theme = Theme.of(context);
 
     // Load log entries when we have a user ID (only once)
     if (authState.isAuthenticated && authState.user != null) {
-      final userId = authState.user!.id;
       // Use addPostFrameCallback to avoid calling during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (userId.isNotEmpty) {
+        if (userId != null && userId.isNotEmpty) {
           ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
         }
       });
@@ -48,7 +48,7 @@ class LoggingScreen extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(loggingProvider.notifier).loadLogEntries(
-              userId: ref.read(authProvider).user?.id,
+              userId: userId,
             ),
         child: loggingState.when(
           data: (entries) {
@@ -136,7 +136,9 @@ class LoggingScreen extends ConsumerWidget {
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
           error: (error, stack) => NoConnectionWidget(
-            onRetry: () => ref.refresh(loggingProvider),
+            message:
+                'We could not load your daily logs. This can happen when Supabase tables are missing. Run migrations and try again.',
+            onRetry: () => _retryLoadEntries(ref, userId),
           ),
         ),
       ),
@@ -150,6 +152,11 @@ class LoggingScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
       ),
     );
+  }
+
+  void _retryLoadEntries(WidgetRef ref, String? userId) {
+    if (userId == null || userId.isEmpty) return;
+    ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
   }
 
   IconData _getMoodIcon(int? mood) {
