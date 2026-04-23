@@ -92,6 +92,23 @@ void main() {
     );
 
     test(
+      'loadLogEntries skips concurrent calls while already loading',
+      () async {
+        final entries = [_makeEntry()];
+        when(
+          () => mockRepo.getLogEntries('user_1'),
+        ).thenAnswer((_) async => entries);
+
+        // Fire two concurrent calls without awaiting the first
+        final first = notifier.loadLogEntries(userId: 'user_1');
+        final second = notifier.loadLogEntries(userId: 'user_1');
+        await Future.wait([first, second]);
+
+        verify(() => mockRepo.getLogEntries('user_1')).called(1);
+      },
+    );
+
+    test(
       'createLogEntry — returns true on success and appends entry to state',
       () async {
         final existing = _makeEntry(id: 'e_old');
