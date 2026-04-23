@@ -148,9 +148,7 @@ void main() {
   testWidgets('renders stories skeleton while stories are loading', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      buildScreen(const SocialsState(isLoading: true)),
-    );
+    await tester.pumpWidget(buildScreen(const SocialsState(isLoading: true)));
     await tester.pump();
 
     expect(find.byType(Shimmer), findsWidgets);

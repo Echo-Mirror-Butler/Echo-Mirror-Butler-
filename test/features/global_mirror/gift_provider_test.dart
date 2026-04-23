@@ -309,32 +309,38 @@ void main() {
       expect(container.read(giftProvider).history.first.recipientUserId, '456');
     });
 
-    test('loadBalance() stores a balance error when the wallet fetch fails', () async {
-      mockRepo.setFailGetBalance(true);
+    test(
+      'loadBalance() stores a balance error when the wallet fetch fails',
+      () async {
+        mockRepo.setFailGetBalance(true);
 
-      final container = ProviderContainer(
-        overrides: [giftRepositoryProvider.overrideWithValue(mockRepo)],
-      );
+        final container = ProviderContainer(
+          overrides: [giftRepositoryProvider.overrideWithValue(mockRepo)],
+        );
 
-      await container.read(giftProvider.notifier).loadBalance();
+        await container.read(giftProvider.notifier).loadBalance();
 
-      expect(container.read(giftProvider).isLoading, false);
-      expect(container.read(giftProvider).balanceError, isNotNull);
-      expect(container.read(giftProvider).echoBalance, 0.0);
-    });
+        expect(container.read(giftProvider).isLoading, false);
+        expect(container.read(giftProvider).balanceError, isNotNull);
+        expect(container.read(giftProvider).echoBalance, 0.0);
+      },
+    );
 
-    test('loadHistory() stores a history error when history fetch fails', () async {
-      mockRepo.setFailGetBalance(true);
+    test(
+      'loadHistory() stores a history error when history fetch fails',
+      () async {
+        mockRepo.setFailGetBalance(true);
 
-      final container = ProviderContainer(
-        overrides: [giftRepositoryProvider.overrideWithValue(mockRepo)],
-      );
+        final container = ProviderContainer(
+          overrides: [giftRepositoryProvider.overrideWithValue(mockRepo)],
+        );
 
-      await container.read(giftProvider.notifier).loadHistory();
+        await container.read(giftProvider.notifier).loadHistory();
 
-      expect(container.read(giftProvider).historyError, isNotNull);
-      expect(container.read(giftProvider).history, isEmpty);
-    });
+        expect(container.read(giftProvider).historyError, isNotNull);
+        expect(container.read(giftProvider).history, isEmpty);
+      },
+    );
 
     test('sendGift() clears previous error on new attempt', () async {
       mockRepo.setBalance(50.0);

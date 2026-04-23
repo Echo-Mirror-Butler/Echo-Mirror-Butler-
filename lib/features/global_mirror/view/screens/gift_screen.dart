@@ -446,17 +446,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.errorContainer.withOpacity(0.25),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.error.withOpacity(0.25),
-        ),
+        border: Border.all(color: theme.colorScheme.error.withOpacity(0.25)),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 36,
-            color: theme.colorScheme.error,
-          ),
+          Icon(Icons.error_outline, size: 36, color: theme.colorScheme.error),
           const SizedBox(height: 12),
           Text(
             message,
