@@ -9,6 +9,8 @@ class GiftState {
     this.isSending = false,
     this.isLoading = false,
     this.error,
+    this.balanceError,
+    this.historyError,
     this.lastSentTx,
   });
 
@@ -17,6 +19,8 @@ class GiftState {
   final bool isSending;
   final bool isLoading;
   final String? error;
+  final String? balanceError;
+  final String? historyError;
   final GiftTransactionModel? lastSentTx;
 
   GiftState copyWith({
@@ -25,8 +29,12 @@ class GiftState {
     bool? isSending,
     bool? isLoading,
     String? error,
+    String? balanceError,
+    String? historyError,
     GiftTransactionModel? lastSentTx,
     bool clearError = false,
+    bool clearBalanceError = false,
+    bool clearHistoryError = false,
     bool clearLastTx = false,
   }) {
     return GiftState(
@@ -35,6 +43,12 @@ class GiftState {
       isSending: isSending ?? this.isSending,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : error ?? this.error,
+      balanceError: clearBalanceError
+          ? null
+          : balanceError ?? this.balanceError,
+      historyError: clearHistoryError
+          ? null
+          : historyError ?? this.historyError,
       lastSentTx: clearLastTx ? null : lastSentTx ?? this.lastSentTx,
     );
   }
@@ -47,21 +61,39 @@ class GiftNotifier extends StateNotifier<GiftState> {
 
   Future<void> loadBalance() async {
     // 1. Immediate state update to 'true' so the test catches it
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+      clearBalanceError: true,
+    );
 
     try {
       final balance = await _repo.getEchoBalance();
       // 2. Success path
-      state = state.copyWith(echoBalance: balance, isLoading: false);
+      state = state.copyWith(
+        echoBalance: balance,
+        isLoading: false,
+        clearBalanceError: true,
+      );
     } catch (e) {
       // 3. Error path
-      state = state.copyWith(error: e.toString(), isLoading: false);
+      state = state.copyWith(
+        balanceError: 'Unable to load your ECHO balance.',
+        isLoading: false,
+      );
     }
   }
 
   Future<void> loadHistory() async {
-    final history = await _repo.getGiftHistory();
-    state = state.copyWith(history: history);
+    state = state.copyWith(clearHistoryError: true);
+    try {
+      final history = await _repo.getGiftHistory();
+      state = state.copyWith(history: history, clearHistoryError: true);
+    } catch (e) {
+      state = state.copyWith(
+        historyError: 'Unable to load gift history.',
+      );
+    }
   }
 
   /// Sends [amount] ECHO to [recipientUserId].

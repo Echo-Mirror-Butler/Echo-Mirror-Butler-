@@ -92,6 +92,35 @@ void main() {
     expect(find.text('125 ECHO'), findsOneWidget);
   });
 
+  testWidgets('displays balance placeholder when balance loading fails', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildScreen(
+        const GiftState(balanceError: 'Unable to load your ECHO balance.'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('-- ECHO'), findsOneWidget);
+    expect(find.text('Unable to load your ECHO balance.'), findsOneWidget);
+  });
+
+  testWidgets('displays retryable gift history error state', (tester) async {
+    await tester.pumpWidget(
+      buildScreen(
+        const GiftState(
+          echoBalance: 100,
+          historyError: 'Unable to load gift history.',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unable to load gift history.'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+  });
+
   testWidgets('renders amount chips and selecting one updates send label', (
     tester,
   ) async {

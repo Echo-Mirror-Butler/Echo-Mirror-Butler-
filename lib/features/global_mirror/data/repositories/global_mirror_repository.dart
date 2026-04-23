@@ -10,6 +10,7 @@ import '../models/mood_pin_comment_model.dart';
 /// Handles anonymous mood sharing and video posts
 class GlobalMirrorRepository {
   final SupabaseClient? _supabaseClient;
+  Stream<List<MoodPinModel>>? _moodPinsStream;
 
   GlobalMirrorRepository({SupabaseClient? supabaseClient})
     : _supabaseClient = supabaseClient;
@@ -18,12 +19,15 @@ class GlobalMirrorRepository {
 
   /// Stream mood pins in real-time
   Stream<List<MoodPinModel>> streamMoodPins() {
+    final existingStream = _moodPinsStream;
+    if (existingStream != null) return existingStream;
+
     debugPrint(
       '[GlobalMirrorRepository] Connecting to '
       'streamMoodPins using Supabase Realtime...',
     );
     try {
-      return supabase
+      _moodPinsStream = supabase
           .from('mood_pins')
           .stream(primaryKey: ['id'])
           .gt('expires_at', DateTime.now().toIso8601String())
@@ -40,7 +44,9 @@ class GlobalMirrorRepository {
                     : null,
               );
             }).toList();
-          });
+          })
+          .asBroadcastStream();
+      return _moodPinsStream!;
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorRepository] Fatal error in streamMoodPins: $e');
       debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
