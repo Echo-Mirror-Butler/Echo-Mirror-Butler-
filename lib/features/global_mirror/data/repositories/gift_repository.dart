@@ -29,7 +29,7 @@ class GiftRepository {
       );
     } catch (e) {
       debugPrint('[GiftRepository] getEchoBalance error: $e');
-      return 0.0;
+      rethrow;
     }
   }
 
@@ -123,7 +123,7 @@ class GiftRepository {
           .toList();
     } catch (e) {
       debugPrint('[GiftRepository] getGiftHistory error: $e');
-      return [];
+      rethrow;
     }
   }
 }

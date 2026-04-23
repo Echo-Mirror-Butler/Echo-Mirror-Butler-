@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../data/models/video_session_model.dart';
 import '../../data/models/story_model.dart';
@@ -13,6 +14,7 @@ class StoriesBar extends StatefulWidget {
   final Function(VideoSessionModel)? onSessionTap;
   final Function(StoryModel)? onStoryTap;
   final VoidCallback? onAddStory;
+  final bool isLoading;
 
   const StoriesBar({
     super.key,
@@ -21,6 +23,7 @@ class StoriesBar extends StatefulWidget {
     this.onSessionTap,
     this.onStoryTap,
     this.onAddStory,
+    this.isLoading = false,
   });
 
   @override
@@ -49,6 +52,11 @@ class _StoriesBarState extends State<StoriesBar>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (widget.isLoading && widget.stories.isEmpty) {
+      return _buildLoadingSkeleton(theme);
+    }
+
     final allItems = <_StoryItem>[];
 
     // Add "Your Story" button
@@ -100,6 +108,46 @@ class _StoriesBarState extends State<StoriesBar>
           final item = allItems[index];
           return _buildStoryItem(context, theme, item, index);
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      height: 120,
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      child: Shimmer.fromColors(
+        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 5,
+          itemBuilder: (context, index) {
+            return Container(
+              width: 80,
+              margin: const EdgeInsets.only(right: 12),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 52,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[900] : Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
