@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 
 class _FakeSocialsNotifier extends SocialsNotifier {
   _FakeSocialsNotifier(this._initialState) : super(SocialsRepository()) {
@@ -142,6 +143,30 @@ void main() {
 
     expect(find.text('Your Story'), findsOneWidget);
     expect(find.text('Bella'), findsOneWidget);
+  });
+
+  testWidgets('renders stories skeleton while stories are loading', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildScreen(const SocialsState(isLoading: true)),
+    );
+    await tester.pump();
+
+    expect(find.byType(Shimmer), findsWidgets);
+    expect(find.text('Your Story'), findsNothing);
+  });
+
+  testWidgets('renders retryable no connection state for socials errors', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildScreen(const SocialsState(error: 'Unable to load socials')),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('No Internet Connection'), findsOneWidget);
+    expect(find.text('Try Again'), findsOneWidget);
   });
 
   testWidgets('tapping a session card pushes a new route', (tester) async {

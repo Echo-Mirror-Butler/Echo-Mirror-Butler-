@@ -154,6 +154,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                     child: StoriesBar(
                       liveSessions: socialsState.activeSessions,
                       stories: socialsState.stories,
+                      isLoading: socialsState.isLoading,
                       onSessionTap: (session) async {
                         await Navigator.push(
                           context,

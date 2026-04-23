@@ -164,7 +164,7 @@ class SocialsRepository {
           .toList();
     } catch (e) {
       debugPrint('[SocialsRepository] getActiveSessions error -> $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -336,7 +336,7 @@ class SocialsRepository {
       debugPrint(
         '[SocialsRepository] getUpcomingScheduledSessions error -> $e',
       );
-      return [];
+      rethrow;
     }
   }
 
@@ -363,7 +363,7 @@ class SocialsRepository {
           .toList();
     } catch (e) {
       debugPrint('[SocialsRepository] getActiveStories error -> $e');
-      return [];
+      rethrow;
     }
   }
 
