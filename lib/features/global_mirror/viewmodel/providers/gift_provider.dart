@@ -90,9 +90,7 @@ class GiftNotifier extends StateNotifier<GiftState> {
       final history = await _repo.getGiftHistory();
       state = state.copyWith(history: history, clearHistoryError: true);
     } catch (e) {
-      state = state.copyWith(
-        historyError: 'Unable to load gift history.',
-      );
+      state = state.copyWith(historyError: 'Unable to load gift history.');
     }
   }
 

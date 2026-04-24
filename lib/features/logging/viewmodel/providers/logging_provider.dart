@@ -27,6 +27,9 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       _hasLoaded = false;
     }
 
+    // Prevent concurrent calls while a fetch is already in-flight
+    if (state.isLoading) return;
+
     // If no userId, return empty list instead of staying in loading state
     if (_currentUserId == null || _currentUserId!.isEmpty) {
       state = const AsyncValue.data([]);
