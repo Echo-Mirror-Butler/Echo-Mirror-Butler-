@@ -255,10 +255,7 @@ void main() {
     test('returns created session and reloads active sessions', () async {
       final created = _makeSession(id: 'new-1');
       final notifier = SocialsNotifier(
-        _FakeSocialsRepository(
-          createdSession: created,
-          sessions: [created],
-        ),
+        _FakeSocialsRepository(createdSession: created, sessions: [created]),
       );
 
       final result = await notifier.createSession(title: 'New Session');
