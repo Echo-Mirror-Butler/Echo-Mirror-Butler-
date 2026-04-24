@@ -18,8 +18,9 @@ class MockLoggingRepository extends Mock implements LoggingRepository {}
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class _FakeLoggingNotifier extends LoggingNotifier {
-  _FakeLoggingNotifier(AsyncValue<List<LogEntryModel>> initialState)
-      : super(MockLoggingRepository()) {
+  _FakeLoggingNotifier(
+    AsyncValue<List<LogEntryModel>> initialState,
+  ) : super(MockLoggingRepository()) {
     state = initialState;
   }
 
@@ -64,8 +65,9 @@ void main() {
         ),
         GoRoute(
           path: '/logging/create',
-          builder: (context, state) =>
-              const Scaffold(body: Text('Target: /logging/create')),
+          builder: (context, state) => const Scaffold(
+            body: Text('Target: /logging/create'),
+          ),
         ),
         GoRoute(
           path: '/logging/detail/:id',
@@ -78,9 +80,12 @@ void main() {
 
     return ProviderScope(
       overrides: [
-        loggingProvider
-            .overrideWith((ref) => _FakeLoggingNotifier(loggingState)),
-        authProvider.overrideWith((ref) => _FakeAuthNotifier(authState)),
+        loggingProvider.overrideWith(
+          (ref) => _FakeLoggingNotifier(loggingState),
+        ),
+        authProvider.overrideWith(
+          (ref) => _FakeAuthNotifier(authState),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -107,27 +112,37 @@ void main() {
   group('LoggingScreen Widget Tests', () {
     testWidgets('Empty state is shown when there are no log entries',
         (tester) async {
-      await tester.pumpWidget(buildScreen(
-        loggingState: const AsyncValue.data([]),
-        authState: AuthState(user: testUser),
-      ));
+      await tester.pumpWidget(
+        buildScreen(
+          loggingState: const AsyncValue.data([]),
+          authState: AuthState(user: testUser),
+        ),
+      );
 
       expect(find.text('No entries yet'), findsOneWidget);
-      expect(find.text('Start logging your daily mood and habits'),
-          findsOneWidget);
+      expect(
+        find.text('Start logging your daily mood and habits'),
+        findsOneWidget,
+      );
       expect(find.byIcon(FontAwesomeIcons.book), findsOneWidget);
     });
 
     testWidgets('Entry cards are rendered when entries exist', (tester) async {
       final entries = [
         testEntry,
-        testEntry.copyWith(id: 'entry-2', date: DateTime(2026, 4, 23), mood: 3),
+        testEntry.copyWith(
+          id: 'entry-2',
+          date: DateTime(2026, 4, 23),
+          mood: 3,
+        ),
       ];
 
-      await tester.pumpWidget(buildScreen(
-        loggingState: AsyncValue.data(entries),
-        authState: AuthState(user: testUser),
-      ));
+      await tester.pumpWidget(
+        buildScreen(
+          loggingState: AsyncValue.data(entries),
+          authState: AuthState(user: testUser),
+        ),
+      );
 
       // AnimatedCard takes some time, pump enough
       await tester.pumpAndSettle();
@@ -141,10 +156,12 @@ void main() {
 
     testWidgets('Loading spinner shown while entries are loading',
         (tester) async {
-      await tester.pumpWidget(buildScreen(
-        loggingState: const AsyncValue.loading(),
-        authState: AuthState(user: testUser),
-      ));
+      await tester.pumpWidget(
+        buildScreen(
+          loggingState: const AsyncValue.loading(),
+          authState: AuthState(user: testUser),
+        ),
+      );
 
       expect(find.byType(ShimmerLoading), findsOneWidget);
     });
@@ -152,11 +169,13 @@ void main() {
     testWidgets('Tapping the FAB navigates to CreateEntryScreen',
         (tester) async {
       final observer = MockNavigatorObserver();
-      await tester.pumpWidget(buildScreen(
-        loggingState: const AsyncValue.data([]),
-        authState: AuthState(user: testUser),
-        navigatorObserver: observer,
-      ));
+      await tester.pumpWidget(
+        buildScreen(
+          loggingState: const AsyncValue.data([]),
+          authState: AuthState(user: testUser),
+          navigatorObserver: observer,
+        ),
+      );
 
       await tester.tap(find.text('New Entry'));
       await tester.pumpAndSettle();
@@ -170,11 +189,13 @@ void main() {
     testWidgets('Tapping an entry card navigates to EntryDetailScreen',
         (tester) async {
       final observer = MockNavigatorObserver();
-      await tester.pumpWidget(buildScreen(
-        loggingState: AsyncValue.data([testEntry]),
-        authState: AuthState(user: testUser),
-        navigatorObserver: observer,
-      ));
+      await tester.pumpWidget(
+        buildScreen(
+          loggingState: AsyncValue.data([testEntry]),
+          authState: AuthState(user: testUser),
+          navigatorObserver: observer,
+        ),
+      );
 
       await tester.pumpAndSettle();
       await tester.tap(find.byType(ListTile));
