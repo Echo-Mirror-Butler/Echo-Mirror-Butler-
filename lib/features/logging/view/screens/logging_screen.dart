@@ -142,14 +142,11 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
               },
             );
           },
-          loading: () => const Center(
-            child: ShimmerLoading(
-              width: 40,
-              height: 40,
-            ),
-          ),
+          loading: () =>
+              const Center(child: ShimmerLoading(width: 40, height: 40)),
           error: (error, stack) => NoConnectionWidget(
-            message: 'We could not load your daily logs. '
+            message:
+                'We could not load your daily logs. '
                 'This can happen when Supabase tables are missing. '
                 'Run migrations and try again.',
             onRetry: () => _retryLoadEntries(userId),
