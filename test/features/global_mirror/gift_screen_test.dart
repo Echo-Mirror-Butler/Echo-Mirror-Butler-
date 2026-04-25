@@ -156,10 +156,27 @@ void main() {
     await tester.pumpWidget(
       buildScreen(const GiftState(echoBalance: 100, isLoading: true)),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsWidgets);
     expect(find.text('Sending...'), findsOneWidget);
+  });
+
+  testWidgets('send button shows Sending... text when isSending is true', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildScreen(const GiftState(echoBalance: 100, isSending: true)),
+    );
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
+    expect(find.text('Sending...'), findsOneWidget);
+
+    final sendButton = tester.widget<FilledButton>(
+      find.byType(FilledButton).first,
+    );
+    expect(sendButton.onPressed, isNull);
   });
 
   testWidgets('error state shows a SnackBar with the error message', (
