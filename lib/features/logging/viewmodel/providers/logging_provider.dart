@@ -65,9 +65,13 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       final currentData = state.value ?? [];
       state = AsyncValue.data([...currentData, created]);
 
-      // Cancel no-log-today notification since user has logged
-      final notificationService = NotificationService();
-      await notificationService.cancelNoLogTodayNotification();
+      // Wrap notification call so platform plugin failures (e.g. MissingPluginException
+      // in unit tests) do not fail the entire log entry creation.
+      try {
+        await NotificationService().cancelNoLogTodayNotification();
+      } catch (_) {
+        // Ignore notification errors (e.g., in unit tests where plugins are unavailable)
+      }
 
       return true;
     } catch (e) {
