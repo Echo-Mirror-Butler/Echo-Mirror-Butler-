@@ -25,7 +25,6 @@ LogEntryModel _makeEntry({
 }
 
 void main() {
-  // Register fallback value for LogEntryModel to avoid mocktail errors
   setUpAll(() {
     registerFallbackValue(_makeEntry());
   });

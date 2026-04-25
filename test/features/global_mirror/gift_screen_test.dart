@@ -63,17 +63,19 @@ void main() {
     }
 
     final router = GoRouter(
-      initialLocation: '/send',
+      initialLocation: '/',
       routes: [
         GoRoute(
           path: '/',
           builder: (context, state) =>
               const Scaffold(body: Text('Root Screen')),
-        ),
-        GoRoute(
-          path: '/send',
-          builder: (context, state) =>
-              GiftScreen(recipientUserId: recipientUserId),
+          routes: [
+            GoRoute(
+              path: 'send',
+              builder: (context, state) =>
+                  GiftScreen(recipientUserId: recipientUserId),
+            ),
+          ],
         ),
       ],
     );
@@ -144,8 +146,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final sendButton = tester.widget<FilledButton>(
-      find.byType(FilledButton).first,
+    // The send button is a FilledButton.icon with text 'Send X ECHO'
+    final sendButton = tester.widget<ButtonStyleButton>(
+      find
+          .ancestor(
+            of: find.textContaining('ECHO'),
+            matching: find.bySubtype<ButtonStyleButton>(),
+          )
+          .last,
     );
     expect(sendButton.onPressed, isNull);
   });
@@ -173,15 +181,13 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsWidgets);
     expect(find.text('Sending...'), findsOneWidget);
 
-    final sendButton = tester.widget<FilledButton>(
-      find.byType(FilledButton).first,
+    final sendButton = tester.widget<ButtonStyleButton>(
+      find.bySubtype<ButtonStyleButton>().first,
     );
     expect(sendButton.onPressed, isNull);
   });
 
-  testWidgets('error state shows a SnackBar with the error message', (
-    tester,
-  ) async {
+  testWidgets('error state shows the error message inline', (tester) async {
     await tester.pumpWidget(
       buildScreen(
         const GiftState(echoBalance: 100, error: 'Failed to send gift'),
@@ -189,8 +195,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(SnackBar), findsOneWidget);
-    expect(find.text('Failed to send gift'), findsWidgets);
+    // Error is rendered inline below the amount section (SnackBar only fires
+    // on state transitions via ref.listen, not on initial state)
+    expect(find.text('Failed to send gift'), findsOneWidget);
   });
 
   testWidgets('successful send navigates away from GiftScreen', (tester) async {
@@ -206,9 +213,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Navigate from Root to /send
+    final BuildContext ctx = tester.element(find.text('Root Screen'));
+    GoRouter.of(ctx).push('/send');
+    await tester.pumpAndSettle();
+
     expect(find.text('Send ECHO Gift'), findsOneWidget);
 
-    await tester.tap(find.byType(FilledButton).first);
+    await tester.tap(
+      find.byWidgetPredicate((w) => w is FilledButton && w.onPressed != null),
+    );
     await tester.pump();
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();

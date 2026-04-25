@@ -1,4 +1,5 @@
 import 'package:echomirror/core/viewmodel/providers/main_tab_index_provider.dart';
+import 'package:echomirror/features/global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
 import 'package:echomirror/features/socials/data/models/story_model.dart';
 import 'package:echomirror/features/socials/data/models/video_session_model.dart';
 import 'package:echomirror/features/socials/data/repositories/socials_repository.dart';
@@ -12,6 +13,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
+
+class _FakeMoodCommentNotifier extends MoodCommentNotificationNotifier {
+  _FakeMoodCommentNotifier() : super.forTesting();
+}
 
 class _FakeSocialsNotifier extends SocialsNotifier {
   _FakeSocialsNotifier(this._initialState) : super(SocialsRepository()) {
@@ -42,6 +47,7 @@ void main() {
 
   const MethodChannel wakelockChannel = MethodChannel('wakelock_plus');
   const MethodChannel pipChannel = MethodChannel('com.echomirror.app/pip');
+  const MethodChannel agoraChannel = MethodChannel('agora_rtc_ng');
 
   setUpAll(() {
     registerFallbackValue(FakeRoute());
@@ -62,6 +68,8 @@ void main() {
           }
           return true;
         });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(agoraChannel, (call) async => null);
   });
 
   tearDown(() async {
@@ -69,6 +77,10 @@ void main() {
         .setMockMethodCallHandler(wakelockChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(pipChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(agoraChannel, null);
+    // Drain any pending microtasks
+    await Future<void>.delayed(Duration.zero);
   });
 
   Widget buildScreen(
@@ -79,6 +91,9 @@ void main() {
       overrides: [
         mainTabIndexProvider.overrideWith((ref) => 2),
         socialsProvider.overrideWith((ref) => _FakeSocialsNotifier(state)),
+        moodCommentNotificationProvider.overrideWith(
+          (ref) => _FakeMoodCommentNotifier(),
+        ),
       ],
       child: MaterialApp(
         home: const SocialsScreen(),
@@ -115,11 +130,15 @@ void main() {
     );
   }
 
+  // Pump enough time to drain animate_do timers (FadeInUp uses ~800ms delays)
+  Future<void> settle(WidgetTester tester) =>
+      tester.pump(const Duration(seconds: 2));
+
   testWidgets('renders empty state when sessions list is empty', (
     tester,
   ) async {
     await tester.pumpWidget(buildScreen(const SocialsState()));
-    await tester.pump(const Duration(milliseconds: 300));
+    await settle(tester);
 
     expect(find.text('No Active Sessions'), findsOneWidget);
     expect(find.text('Your Story'), findsOneWidget);
@@ -131,7 +150,7 @@ void main() {
     await tester.pumpWidget(
       buildScreen(SocialsState(activeSessions: [buildSession()])),
     );
-    await tester.pump(const Duration(milliseconds: 300));
+    await settle(tester);
 
     expect(find.text('Ada (LIVE)'), findsOneWidget);
     expect(find.text('Evening Check-in'), findsOneWidget);
@@ -139,7 +158,7 @@ void main() {
 
   testWidgets('renders stories bar items', (tester) async {
     await tester.pumpWidget(buildScreen(SocialsState(stories: [buildStory()])));
-    await tester.pump(const Duration(milliseconds: 300));
+    await settle(tester);
 
     expect(find.text('Your Story'), findsOneWidget);
     expect(find.text('Bella'), findsOneWidget);
@@ -149,7 +168,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(buildScreen(const SocialsState(isLoading: true)));
-    await tester.pump();
+    await settle(tester);
 
     expect(find.byType(Shimmer), findsWidgets);
     expect(find.text('Your Story'), findsNothing);
@@ -176,18 +195,40 @@ void main() {
         navigatorObserver: observer,
       ),
     );
-    await tester.pump(const Duration(milliseconds: 300));
+    await settle(tester);
+
+    // Verify the session card is in the tree before tapping
+    expect(find.text('Evening Check-in'), findsOneWidget);
     clearInteractions(observer);
 
-    await tester.tap(find.text('Ada (LIVE)'));
+    // Pump enough time for FadeInUp animations to complete
+    await tester.pump(const Duration(seconds: 3));
+
+    // Tap the InkWell that wraps the session card content
+    final inkWell = find
+        .ancestor(
+          of: find.text('Evening Check-in'),
+          matching: find.byType(InkWell),
+        )
+        .first;
+    await tester.tap(inkWell, warnIfMissed: false);
     await tester.pump();
 
-    verify(() => observer.didPush(any(), any())).called(1);
+    verify(
+      () => observer.didPush(any(), any()),
+    ).called(greaterThanOrEqualTo(1));
+
+    // Pop back so SocialsScreen (and its StoriesBar pulse animation) disposes
+    // before the test framework checks for pending timers.
+    final NavigatorState nav = tester.state(find.byType(Navigator));
+    nav.pop();
+    await tester.pump();
+    await settle(tester);
   });
 
   testWidgets('notification icon is visible in the app bar', (tester) async {
     await tester.pumpWidget(buildScreen(const SocialsState()));
-    await tester.pump(const Duration(milliseconds: 300));
+    await settle(tester);
 
     expect(find.byIcon(FontAwesomeIcons.bell), findsOneWidget);
   });

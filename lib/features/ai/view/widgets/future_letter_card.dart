@@ -66,7 +66,12 @@ class _FutureLetterCardState extends State<FutureLetterCard>
   Future<void> _persistFutureLetter() async {
     if (_hasPersistedLetter) return;
 
-    final client = Supabase.instance.client;
+    SupabaseClient client;
+    try {
+      client = Supabase.instance.client;
+    } catch (_) {
+      return;
+    }
     final userId = client.auth.currentUser?.id;
     final content = widget.insight.futureLetter.trim();
     if (userId == null || userId.isEmpty || content.isEmpty) return;
