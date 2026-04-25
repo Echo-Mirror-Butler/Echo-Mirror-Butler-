@@ -7,17 +7,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeSocialsRepository extends SocialsRepository {
   _FakeSocialsRepository({
-    this.sessions = const [],
+    this._sessions = const [],
     this.stories = const [],
-    this.scheduledSessions = const [],
+    this._scheduledSessions = const [],
     this.failSessions = false,
     this.failStories = false,
     this.failScheduledSessions = false,
   });
 
-  final List<VideoSessionModel> sessions;
+  final List<VideoSessionModel> _sessions;
   final List<StoryModel> stories;
-  final List<ScheduledSession> scheduledSessions;
+  final List<ScheduledSession> _scheduledSessions;
   final bool failSessions;
   final bool failStories;
   final bool failScheduledSessions;
@@ -25,7 +25,7 @@ class _FakeSocialsRepository extends SocialsRepository {
   @override
   Future<List<VideoSessionModel>> getActiveSessions() async {
     if (failSessions) throw Exception('sessions unavailable');
-    return sessions;
+    return _sessions;
   }
 
   @override
@@ -39,7 +39,7 @@ class _FakeSocialsRepository extends SocialsRepository {
     if (failScheduledSessions) {
       throw Exception('scheduled sessions unavailable');
     }
-    return scheduledSessions;
+    return _scheduledSessions;
   }
 }
 
