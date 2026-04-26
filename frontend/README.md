@@ -8,6 +8,7 @@ React + TypeScript web dashboard for wallet gifting, daily logs, and AI insight 
 - React Router
 - TanStack Query
 - Supabase JS SDK
+- Custom CSS design system
 
 ## Routes
 

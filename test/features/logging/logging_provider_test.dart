@@ -25,6 +25,10 @@ LogEntryModel _makeEntry({
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(_makeEntry());
+  });
+
   group('LoggingNotifier', () {
     late MockLoggingRepository mockRepo;
     late LoggingNotifier notifier;

@@ -8,11 +8,6 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "private": true,
-  "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",
     "@tanstack/react-query": "^5.100.5",
