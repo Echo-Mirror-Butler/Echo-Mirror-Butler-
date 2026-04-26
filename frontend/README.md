@@ -1,78 +1,36 @@
 # EchoMirror Web Frontend
 
-This is the React web application for EchoMirror — a companion web dashboard to the Flutter mobile app.
+React + TypeScript web dashboard for wallet gifting, daily logs, and AI insight features.
 
-## Tech Stack
+## Stack
 
-- **Framework**: React 18 + TypeScript
-- **Routing**: React Router v6
-- **State management**: Zustand
-- **Data fetching**: TanStack Query v5
-- **Backend**: Supabase JS SDK (same project as the mobile app)
-- **Styling**: Tailwind CSS
-- **Build tool**: Vite
+- React + TypeScript (Vite)
+- React Router
+- TanStack Query
+- Supabase JS SDK
+- Custom CSS design system
 
-## Project Structure
+## Routes
 
-```
-frontend/
-├── src/
-│   ├── app/          # Router, providers, global layout
-│   ├── features/     # Feature slices (auth, dashboard, logging, socials)
-│   ├── components/   # Shared UI components
-│   ├── lib/          # Supabase client, utils
-│   └── types/        # Shared TypeScript types
-├── .env.example      # Environment variables template
-├── index.html
-├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
-└── vite.config.ts
+- `/wallet` — ECHO wallet balance, send gift, transaction history
+- `/logs` — paginated list of log entries
+- `/logs/new` — create a new log entry
+- `/logs/:id/edit` — edit and delete an existing log entry
+- `/insights` — generate and browse AI insights
+
+## Local setup
+
+```sh
+cd frontend
+npm install
+cp .env.example .env.local
+# Fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm run dev
 ```
 
-## Getting Started
+## Validation
 
-1. **Install dependencies**:
-   ```sh
-   cd frontend
-   npm install
-   ```
-
-2. **Set up environment variables**:
-   ```sh
-   cp .env.example .env.local
-   ```
-   Then fill in your Supabase credentials in `.env.local`:
-   ```
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-3. **Start the development server**:
-   ```sh
-   npm run dev
-   ```
-   The app will be available at `http://localhost:3000`
-
-4. **Build for production**:
-   ```sh
-   npm run build
-   ```
-   The optimized build will be in the `dist/` directory.
-
-## Theme Colors
-
-The app uses the EchoMirror brand colors:
-- **Primary Purple**: `#8B5CF6`
-- **Secondary Pink**: `#EC4899`
-
-These are configured in `tailwind.config.ts` and available as `primary` and `secondary` color utilities.
-
-## Development Notes
-
-- TypeScript strict mode is enabled
-- The Supabase client is initialized in `src/lib/supabase.ts` and will throw an error if environment variables are missing
-- All environment variables must be prefixed with `VITE_` to be accessible in the browser
-- The app uses TanStack Query for data fetching with a 5-minute stale time by default
-
-See open issues labelled `web` for contribution opportunities.
+```sh
+npm run typecheck
+npm run build
+```
