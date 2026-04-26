@@ -1,41 +1,35 @@
 # EchoMirror Web Frontend
 
-This directory will contain the React web application for EchoMirror — a companion web dashboard to the Flutter mobile app.
+React + TypeScript web dashboard for wallet gifting, daily logs, and AI insight features.
 
-## Planned stack
+## Stack
 
-- **Framework**: React 18 + TypeScript
-- **Routing**: React Router v6
-- **State management**: Zustand
-- **Data fetching**: TanStack Query (React Query)
-- **Backend**: Supabase JS SDK (same project as the mobile app)
-- **Styling**: Tailwind CSS
-- **Charts**: Recharts
-- **Build tool**: Vite
+- React + TypeScript (Vite)
+- React Router
+- TanStack Query
+- Supabase JS SDK
 
-## Structure (planned)
+## Routes
 
-```
-frontend/
-├── src/
-│   ├── app/          # Router, providers, global layout
-│   ├── features/     # Feature slices (auth, dashboard, logging, socials)
-│   ├── components/   # Shared UI components
-│   ├── lib/          # Supabase client, utils
-│   └── types/        # Shared TypeScript types
-├── public/
-├── index.html
-├── package.json
-└── vite.config.ts
-```
+- `/wallet` — ECHO wallet balance, send gift, transaction history
+- `/logs` — paginated list of log entries
+- `/logs/new` — create a new log entry
+- `/logs/:id/edit` — edit and delete an existing log entry
+- `/insights` — generate and browse AI insights
 
-## Getting started (once scaffolded)
+## Local setup
 
 ```sh
 cd frontend
 npm install
-cp .env.example .env.local   # fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+cp .env.example .env.local
+# Fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 npm run dev
 ```
 
-See open issues labelled `web` for contribution opportunities.
+## Validation
+
+```sh
+npm run typecheck
+npm run build
+```
