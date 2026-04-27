@@ -153,7 +153,7 @@ class LoggingScreen extends ConsumerWidget {
 
   IconData _getMoodIcon(int? mood) {
     if (mood == null) {
-      return FontAwesomeIcons.smile;
+      return FontAwesomeIcons.faceSmile;
     }
     switch (mood) {
       case 1:
