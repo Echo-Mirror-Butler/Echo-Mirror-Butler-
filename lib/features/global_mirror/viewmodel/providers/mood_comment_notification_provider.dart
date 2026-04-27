@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/mood_comment_notification_model.dart';
 
-/// Provider for mood comment notifications
 final moodCommentNotificationProvider =
     StateNotifierProvider<
       MoodCommentNotificationNotifier,
@@ -12,7 +11,6 @@ final moodCommentNotificationProvider =
       return MoodCommentNotificationNotifier();
     });
 
-/// State notifier for managing mood comment notifications
 class MoodCommentNotificationNotifier
     extends StateNotifier<List<MoodCommentNotificationModel>> {
   MoodCommentNotificationNotifier() : super([]) {
@@ -52,7 +50,6 @@ class MoodCommentNotificationNotifier
     }
   }
 
-  /// Refresh notifications from server
   Future<void> refreshNotifications() async {
     await _loadNotifications();
   }
@@ -146,6 +143,5 @@ class MoodCommentNotificationNotifier
     }
   }
 
-  /// Get unread count
   int get unreadCount => state.where((n) => !n.isRead).length;
 }
