@@ -354,9 +354,13 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           WakelockPlus.disable();
           await pipOverlay.engine?.leaveChannel();
           await pipOverlay.engine?.release();
-          // Try to leave session (might fail if widget is disposed, that's OK)
+          // Try to leave/end session (might fail if widget is disposed, that's OK)
           try {
-            await socialsNotifier.leaveSession(sessionId);
+            if (isHost) {
+              await socialsNotifier.endSession(sessionId);
+            } else {
+              await socialsNotifier.leaveSession(sessionId);
+            }
           } catch (e) {
             debugPrint(
               '[VideoCallScreen] Error leaving session from overlay: $e',
@@ -496,7 +500,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       await _engine?.leaveChannel();
       await _engine?.release();
 
-      await ref.read(socialsProvider.notifier).leaveSession(widget.sessionId);
+      // If host, end the session (mark as inactive). Otherwise, just leave.
+      if (widget.isHost) {
+        await ref.read(socialsProvider.notifier).endSession(widget.sessionId);
+      } else {
+        await ref.read(socialsProvider.notifier).leaveSession(widget.sessionId);
+      }
 
       // Check if we can pop before actually popping
       if (mounted && Navigator.canPop(context)) {
@@ -820,7 +829,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                           ),
                         _buildControlButton(
                           icon: FontAwesomeIcons.phone,
-                          label: 'Leave',
+                          label: widget.isHost ? 'End Call' : 'Leave',
                           isActive: false,
                           isDanger: true,
                           onTap: _leaveCall,
