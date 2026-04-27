@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/view/screens/login_screen.dart';
 import '../../features/auth/view/screens/signup_screen.dart';
-import '../../features/auth/view/screens/verification_screen.dart';
 import '../../features/auth/view/screens/forgot_password_screen.dart';
 import '../../features/auth/view/screens/reset_password_screen.dart';
 import '../../features/settings/view/screens/change_password_screen.dart';
@@ -52,8 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
-      final isVerifying = state.matchedLocation == '/verify';
-      final isAuthRoute = isLoggingIn || isSigningUp || isVerifying;
+      final isAuthRoute = isLoggingIn || isSigningUp;
 
       // Check if onboarding is completed
       // Use try-catch to handle any errors gracefully
@@ -105,19 +103,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/signup',
         name: 'signup',
         builder: (context, state) => const SignupScreen(),
-      ),
-      GoRoute(
-        path: '/verify',
-        name: 'verify',
-        builder: (context, state) {
-          final queryParams = state.uri.queryParameters;
-          return VerificationScreen(
-            email: queryParams['email'] ?? '',
-            accountRequestId: queryParams['accountRequestId'] ?? '',
-            password: queryParams['password'] ?? '',
-            name: queryParams['name'],
-          );
-        },
       ),
       GoRoute(
         path: '/forgot-password',
@@ -202,9 +187,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/gift/:userId',
         name: 'gift',
-        builder: (context, state) => GiftScreen(
-          recipientUserId: int.parse(state.pathParameters['userId']!),
-        ),
+        builder: (context, state) =>
+            GiftScreen(recipientUserId: state.pathParameters['userId']!),
       ),
     ],
   );

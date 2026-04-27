@@ -15,7 +15,7 @@ import '../../viewmodel/providers/gift_provider.dart';
 class GiftScreen extends ConsumerStatefulWidget {
   const GiftScreen({super.key, required this.recipientUserId});
 
-  final int recipientUserId;
+  final String recipientUserId;
 
   @override
   ConsumerState<GiftScreen> createState() => _GiftScreenState();
@@ -56,6 +56,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
   Future<void> _handleSend() async {
     final currentBalance = ref.read(giftProvider).echoBalance;
 
@@ -80,6 +86,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
     if (success && mounted) {
       _confettiController.play();
+      _showSuccess('Gift sent successfully!');
       await Future.delayed(const Duration(seconds: 3));
       if (mounted) context.pop();
     }
@@ -89,6 +96,17 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final giftState = ref.watch(giftProvider);
+    final isActionLoading = giftState.isSending || giftState.isLoading;
+
+    ref.listen<GiftState>(giftProvider, (previous, next) {
+      final previousError = previous?.error;
+      final nextError = next.error;
+      if (nextError != null &&
+          nextError.isNotEmpty &&
+          nextError != previousError) {
+        _showError(nextError);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -107,7 +125,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ECHO balance
-                _buildBalanceCard(theme, giftState.echoBalance),
+                _buildBalanceCard(
+                  theme,
+                  giftState.echoBalance,
+                  giftState.balanceError,
+                ),
                 const SizedBox(height: 28),
 
                 // Amount picker
@@ -148,11 +170,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                 // Send button
                 FilledButton.icon(
                   onPressed:
-                      giftState.isSending ||
+                      isActionLoading ||
+                          widget.recipientUserId.trim().isEmpty ||
                           _selectedAmount > giftState.echoBalance
                       ? null
                       : _handleSend,
-                  icon: giftState.isSending
+                  icon: isActionLoading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
@@ -163,7 +186,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                         )
                       : const Icon(FontAwesomeIcons.gift),
                   label: Text(
-                    giftState.isSending
+                    isActionLoading
                         ? 'Sending...'
                         : 'Send ${_selectedAmount.toStringAsFixed(0)} ECHO',
                   ),
@@ -206,7 +229,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                 const SizedBox(height: 16),
 
                 // Gift History List
-                giftState.history.isEmpty
+                giftState.historyError != null
+                    ? _buildHistoryErrorState(theme, giftState.historyError!)
+                    : giftState.history.isEmpty
                     ? _buildEmptyState(theme)
                     : _buildHistoryList(theme, giftState.history),
               ],
@@ -233,7 +258,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 
-  Widget _buildBalanceCard(ThemeData theme, double balance) {
+  Widget _buildBalanceCard(
+    ThemeData theme,
+    double balance,
+    String? balanceError,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -248,24 +277,37 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         children: [
           const Icon(FontAwesomeIcons.coins, color: Colors.white, size: 32),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Your ECHO Balance',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white70,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your ECHO Balance',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white70,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${balance.toStringAsFixed(0)} ECHO',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 4),
+                Text(
+                  balanceError == null
+                      ? '${balance.toStringAsFixed(0)} ECHO'
+                      : '-- ECHO',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                if (balanceError != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    balanceError,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -398,6 +440,37 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 
+  Widget _buildHistoryErrorState(ThemeData theme, String message) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.error.withOpacity(0.25)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, size: 36, color: theme.colorScheme.error),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => ref.read(giftProvider.notifier).loadHistory(),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHistoryList(
     ThemeData theme,
     List<GiftTransactionModel> history,
@@ -411,9 +484,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final tx = history[index];
-        // Handle ID mismatch (String vs int) by comparing as strings
-        final isSent =
-            tx.senderUserId.toString() == currentUserId || tx.senderUserId == 0;
+        final isSent = tx.senderUserId == currentUserId;
 
         final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
         final name = isSent && tx.recipientUserId == widget.recipientUserId

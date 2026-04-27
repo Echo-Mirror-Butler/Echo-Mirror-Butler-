@@ -6,11 +6,13 @@ import '../../../logging/data/models/log_entry_model.dart';
 /// Repository for AI operations
 /// Backed by Supabase Edge Functions calling Google Gemini
 class AiRepository {
-  AiRepository() {
+  final SupabaseClient? _injectedClient;
+
+  AiRepository({SupabaseClient? client}) : _injectedClient = client {
     debugPrint('[AiRepository] Initialized');
   }
 
-  SupabaseClient get _supabase => Supabase.instance.client;
+  SupabaseClient get _supabase => _injectedClient ?? Supabase.instance.client;
 
   /// Generate AI insight based on recent logs
   ///

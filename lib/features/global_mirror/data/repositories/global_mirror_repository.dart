@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,35 +5,30 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mood_pin_model.dart';
 import '../models/video_post_model.dart';
 import '../models/mood_pin_comment_model.dart';
+import '../../core/services/user_mood_pins_service.dart';
 
 /// Repository for Global Mirror feature
 /// Handles anonymous mood sharing and video posts
 class GlobalMirrorRepository {
-  final bool _useMockData = false;
+  final SupabaseClient? _supabaseClient;
+  Stream<List<MoodPinModel>>? _moodPinsStream;
 
-  SupabaseClient get supabase => Supabase.instance.client;
+  GlobalMirrorRepository({SupabaseClient? supabaseClient})
+    : _supabaseClient = supabaseClient;
 
-  final List<MoodPinModel> _mockPins = [];
-  final List<VideoPostModel> _mockVideos = [];
-  final List<MoodPinCommentModel> _mockComments = [];
-  Timer? _mockTimer;
+  SupabaseClient get supabase => _supabaseClient ?? Supabase.instance.client;
 
   /// Stream mood pins in real-time
   Stream<List<MoodPinModel>> streamMoodPins() {
-    if (_useMockData) {
-      // Simulate mock pins
-      return Stream.periodic(
-        const Duration(seconds: 5),
-        (_) => List.from(_mockPins),
-      );
-    }
+    final existingStream = _moodPinsStream;
+    if (existingStream != null) return existingStream;
 
     debugPrint(
       '[GlobalMirrorRepository] Connecting to '
       'streamMoodPins using Supabase Realtime...',
     );
     try {
-      return supabase
+      _moodPinsStream = supabase
           .from('mood_pins')
           .stream(primaryKey: ['id'])
           .gt('expires_at', DateTime.now().toIso8601String())
@@ -51,7 +45,9 @@ class GlobalMirrorRepository {
                     : null,
               );
             }).toList();
-          });
+          })
+          .asBroadcastStream();
+      return _moodPinsStream!;
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorRepository] Fatal error in streamMoodPins: $e');
       debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
@@ -68,20 +64,6 @@ class GlobalMirrorRepository {
     try {
       final gridLat = MoodPinModel.anonymizeCoordinate(latitude);
       final gridLon = MoodPinModel.anonymizeCoordinate(longitude);
-
-      if (_useMockData) {
-        final pinId = DateTime.now().millisecondsSinceEpoch.toString();
-        final pin = MoodPinModel(
-          id: pinId,
-          sentiment: sentiment,
-          gridLat: gridLat,
-          gridLon: gridLon,
-          timestamp: DateTime.now(),
-          expiresAt: DateTime.now().add(const Duration(hours: 24)),
-        );
-        _mockPins.add(pin);
-        return pinId;
-      }
 
       debugPrint(
         '[GlobalMirrorRepository] Adding mood pin: '
@@ -100,6 +82,27 @@ class GlobalMirrorRepository {
 
       final pinId = response['id'].toString();
       debugPrint('[GlobalMirrorRepository] Added mood pin - Pin ID: $pinId');
+
+      // Track locally for UI purposes (my pins vs others)
+      await UserMoodPinsService.addMoodPinId(pinId);
+
+      // Link to user in database to enable notifications
+      final userId = supabase.auth.currentUser?.id;
+      if (userId != null) {
+        try {
+          await supabase.from('user_mood_pins').insert({
+            'user_id': userId,
+            'mood_pin_id': pinId,
+          });
+          debugPrint(
+            '[GlobalMirrorRepository] Linked pin $pinId to user $userId',
+          );
+        } catch (e) {
+          debugPrint('[GlobalMirrorRepository] Error linking pin to user: $e');
+          // Non-critical, so we don't return null here
+        }
+      }
+
       return pinId;
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorRepository] Error adding mood pin: $e');
@@ -123,11 +126,6 @@ class GlobalMirrorRepository {
       if (!await file.exists()) {
         debugPrint('[GlobalMirrorRepository] ERROR: Video file does not exist');
         return null;
-      }
-
-      if (_useMockData) {
-        await Future.delayed(const Duration(seconds: 2));
-        return 'mock://video/${DateTime.now().millisecondsSinceEpoch}.mp4';
       }
 
       final bytes = await file.readAsBytes();
@@ -175,11 +173,6 @@ class GlobalMirrorRepository {
         return null;
       }
 
-      if (_useMockData) {
-        await Future.delayed(const Duration(seconds: 1));
-        return 'mock://image/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      }
-
       final bytes = await file.readAsBytes();
       final ext = imagePath.split('.').last;
       final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
@@ -215,11 +208,6 @@ class GlobalMirrorRepository {
     int limit = 10,
   }) async {
     try {
-      if (_useMockData) {
-        final end = (offset + limit).clamp(0, _mockVideos.length);
-        return _mockVideos.sublist(offset, end);
-      }
-
       final response = await supabase
           .from('video_posts')
           .select()
@@ -275,19 +263,6 @@ class GlobalMirrorRepository {
     required String text,
   }) async {
     try {
-      if (_useMockData) {
-        final commentId = DateTime.now().millisecondsSinceEpoch.toString();
-        _mockComments.add(
-          MoodPinCommentModel(
-            id: commentId,
-            moodPinId: moodPinId,
-            text: text,
-            timestamp: DateTime.now(),
-          ),
-        );
-        return commentId;
-      }
-
       final response = await supabase
           .from('mood_pin_comments')
           .insert({
@@ -308,11 +283,6 @@ class GlobalMirrorRepository {
   /// Get comments for a mood pin
   Future<List<MoodPinCommentModel>> getCommentsForPin(String moodPinId) async {
     try {
-      if (_useMockData) {
-        return _mockComments.where((c) => c.moodPinId == moodPinId).toList()
-          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      }
-
       final response = await supabase
           .from('mood_pin_comments')
           .select()
@@ -339,11 +309,6 @@ class GlobalMirrorRepository {
     String sentiment,
     int nearbyCount,
   ) async {
-    if (_useMockData) {
-      return 'Others nearby are feeling similar—many found short '
-          'walks or deep breathing helped today.';
-    }
-
     try {
       final response = await supabase.functions.invoke(
         'generate-encouragement',
@@ -362,9 +327,5 @@ class GlobalMirrorRepository {
       return 'Others nearby are feeling similar—many found short '
           'walks or deep breathing helped today.';
     }
-  }
-
-  void dispose() {
-    _mockTimer?.cancel();
   }
 }
