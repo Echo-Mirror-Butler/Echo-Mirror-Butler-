@@ -256,6 +256,17 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
       state = state.copyWith(error: e.toString());
     }
   }
+
+  /// End a session (host only - marks session as inactive)
+  Future<void> endSession(String sessionId) async {
+    try {
+      await _repository.endSession(sessionId);
+      await loadActiveSessions();
+    } catch (e) {
+      debugPrint('[SocialsNotifier] Error ending session: $e');
+      state = state.copyWith(error: e.toString());
+    }
+  }
 }
 
 /// Socials provider
