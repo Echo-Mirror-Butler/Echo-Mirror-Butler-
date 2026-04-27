@@ -172,7 +172,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
   IconData _getMoodIcon(int? mood) {
     if (mood == null) {
-      return FontAwesomeIcons.smile;
+      return FontAwesomeIcons.faceSmile;
     }
     switch (mood) {
       case 1:
