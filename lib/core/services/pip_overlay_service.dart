@@ -210,7 +210,7 @@ class _PipOverlayWidgetState extends State<_PipOverlayWidget> {
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),
@@ -248,7 +248,7 @@ class _PipOverlayWidgetState extends State<_PipOverlayWidget> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withValues(alpha: 0.6),
                           ],
                         ),
                       ),
