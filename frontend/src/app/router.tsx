@@ -7,6 +7,7 @@ import { LogsListPage } from '../features/logs/logs-list-page'
 import { LogFormPage } from '../features/logs/log-form-page'
 import { InsightsPage } from '../features/insights/insights-page'
 import { PlaceholderPage } from '../features/shared/placeholder-page'
+import { AnalyticsPage } from '../features/analytics/analytics-page'
 
 function RequireAuth() {
   const { user, isLoading } = useAuth()
@@ -45,15 +46,7 @@ export function AppRouter() {
         <Route path="/logs/new" element={<LogFormPage mode="create" />} />
         <Route path="/logs/:id/edit" element={<LogFormPage mode="edit" />} />
         <Route path="/insights" element={<InsightsPage />} />
-        <Route
-          path="/analytics"
-          element={
-            <PlaceholderPage
-              title="Analytics"
-              description="Trend charts and engagement metrics will appear here."
-            />
-          }
-        />
+        <Route path="/analytics" element={<AnalyticsPage />} />
         <Route
           path="/global-mirror"
           element={

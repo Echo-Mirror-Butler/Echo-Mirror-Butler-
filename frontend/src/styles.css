@@ -754,3 +754,239 @@ td {
     min-width: 120px;
   }
 }
+
+/* ── Analytics page ──────────────────────────────────────────────────────── */
+.analytics-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.analytics-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.analytics-header h2 {
+  margin: 0 0 0.25rem;
+}
+
+.analytics-range-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.analytics-range-btn {
+  background: var(--surface-soft);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.analytics-range-btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.analytics-range-btn.active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+/* Stats summary */
+.analytics-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.analytics-stat-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.2rem 1rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.analytics-stat-icon {
+  font-size: 1.5rem;
+}
+
+.analytics-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'Fraunces', serif;
+  color: var(--brand);
+  margin: 0.25rem 0 0.1rem;
+  line-height: 1.1;
+}
+
+.analytics-stat-value--sm {
+  font-size: 1.1rem;
+  word-break: break-word;
+}
+
+.analytics-stat-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* Charts grid */
+.analytics-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.analytics-chart-card {
+  padding: 1.25rem;
+  overflow: hidden;
+}
+
+.analytics-chart-card h3 {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+/* Horizontal scroll for wide charts */
+.analytics-chart-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+
+/* Tooltip */
+.analytics-tooltip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow);
+}
+
+.analytics-tooltip-date {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 0 0 0.3rem;
+}
+
+/* Loading */
+.analytics-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem 0;
+}
+
+/* Empty state */
+.analytics-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.analytics-empty-icon {
+  font-size: 3rem;
+}
+
+.analytics-empty h3 {
+  margin: 0;
+}
+
+.analytics-cta-link {
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.5rem 1.25rem;
+  border: 1.5px solid var(--brand);
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.analytics-cta-link:hover {
+  background: var(--brand);
+  color: #fff;
+}
+
+/* Streak calendar */
+.analytics-calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.calendar-grid {
+  display: flex;
+  gap: 3px;
+  min-width: max-content;
+}
+
+.calendar-day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 2px;
+  margin-right: 2px;
+}
+
+.calendar-day-label {
+  font-size: 0.65rem;
+  color: var(--muted);
+  height: 14px;
+  line-height: 14px;
+  width: 24px;
+}
+
+.calendar-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.calendar-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  display: inline-block;
+  transition: transform 0.1s ease;
+}
+
+.calendar-cell:hover {
+  transform: scale(1.4);
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .analytics-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .analytics-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-header {
+    flex-direction: column;
+  }
+}
