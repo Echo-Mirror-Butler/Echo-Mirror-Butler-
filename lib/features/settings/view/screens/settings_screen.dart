@@ -8,6 +8,7 @@ import '../../../../core/viewmodel/providers/theme_provider.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
 
 /// Modern settings screen with improved UI/UX
 class SettingsScreen extends ConsumerWidget {
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final authState = ref.watch(authProvider);
     final isDark = theme.brightness == Brightness.dark;
+    final echoBalance = ref.watch(giftProvider).echoBalance;
 
     return Scaffold(
       appBar: AppBar(
@@ -61,7 +63,7 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: 'Manage your account settings',
           ),
           const SizedBox(height: 12),
-          _buildAccountCard(context, theme, authState, ref),
+          _buildAccountCard(context, theme, authState, ref, echoBalance),
         ],
       ),
     );
@@ -79,7 +81,7 @@ class SettingsScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: FaIcon(icon, color: AppTheme.primaryColor, size: 20),
@@ -94,7 +96,7 @@ class SettingsScreen extends ConsumerWidget {
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -116,7 +118,7 @@ class SettingsScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -142,7 +144,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             Divider(
               height: 1,
-              color: theme.colorScheme.outline.withOpacity(0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
             ),
             _buildModernListTile(
               context,
@@ -180,7 +182,7 @@ class SettingsScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -217,7 +219,7 @@ class SettingsScreen extends ConsumerWidget {
                 if (enabled) ...[
                   Divider(
                     height: 1,
-                    color: theme.colorScheme.outline.withOpacity(0.1),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
                   ),
                   _buildModernListTile(
                     context,
@@ -230,7 +232,7 @@ class SettingsScreen extends ConsumerWidget {
                     trailing: FaIcon(
                       FontAwesomeIcons.chevronRight,
                       size: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                     onTap: () async {
                       final TimeOfDay? picked = await showTimePicker(
@@ -324,13 +326,14 @@ class SettingsScreen extends ConsumerWidget {
     ThemeData theme,
     dynamic authState,
     WidgetRef ref,
+    double echoBalance,
   ) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -338,6 +341,24 @@ class SettingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(4),
         child: Column(
           children: [
+            _buildModernListTile(
+              context,
+              theme,
+              icon: FontAwesomeIcons.coins,
+              iconColor: AppTheme.primaryColor,
+              title: 'ECHO Balance',
+              subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
+              trailing: FaIcon(
+                FontAwesomeIcons.chevronRight,
+                size: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+              onTap: () => context.push('/gift/${authState.user?.id ?? ''}'),
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            ),
             if (authState.user != null)
               _buildModernListTile(
                 context,
@@ -351,7 +372,7 @@ class SettingsScreen extends ConsumerWidget {
             if (authState.user != null)
               Divider(
                 height: 1,
-                color: theme.colorScheme.outline.withOpacity(0.1),
+                color: theme.colorScheme.outline.withValues(alpha: 0.1),
               ),
             _buildModernListTile(
               context,
@@ -363,7 +384,7 @@ class SettingsScreen extends ConsumerWidget {
               trailing: FaIcon(
                 FontAwesomeIcons.chevronRight,
                 size: 14,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               onTap: () {
                 context.push('/settings/change-password');
@@ -371,7 +392,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             Divider(
               height: 1,
-              color: theme.colorScheme.outline.withOpacity(0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
             ),
             _buildModernListTile(
               context,
@@ -413,7 +434,7 @@ class SettingsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: FaIcon(icon, color: iconColor, size: 18),
@@ -428,7 +449,9 @@ class SettingsScreen extends ConsumerWidget {
                     Text(
                       subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                   ],

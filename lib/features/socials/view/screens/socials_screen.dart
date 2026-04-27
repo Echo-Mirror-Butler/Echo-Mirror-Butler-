@@ -3,7 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
+import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
+import '../../../global_mirror/view/screens/mood_comment_notifications_screen.dart';
+import '../../../global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../widgets/stories_bar.dart';
 import '../widgets/start_session_button.dart';
@@ -25,9 +30,14 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load active sessions when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(socialsProvider.notifier).loadActiveSessions();
+      if (!mounted) return;
+      final currentIndex = ref.read(mainTabIndexProvider);
+      if (currentIndex == 2) {
+        final notifier = ref.read(socialsProvider.notifier);
+        notifier.loadActiveSessions();
+        notifier.startAutoRefresh();
+      }
     });
   }
 
@@ -51,6 +61,16 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
     final theme = Theme.of(context);
     final socialsState = ref.watch(socialsProvider);
 
+    ref.listen<int>(mainTabIndexProvider, (previous, next) {
+      final notifier = ref.read(socialsProvider.notifier);
+      if (next == 2) {
+        notifier.loadActiveSessions();
+        notifier.startAutoRefresh();
+      } else {
+        notifier.stopAutoRefresh();
+      }
+    });
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
@@ -65,12 +85,55 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           ),
         ),
         actions: [
-          IconButton(
-            icon: const FaIcon(FontAwesomeIcons.bell),
-            onPressed: () {
-              // TODO: Show notifications
+          Consumer(
+            builder: (context, ref, child) {
+              final unreadCount = ref
+                  .watch(moodCommentNotificationProvider.notifier)
+                  .unreadCount;
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const FaIcon(FontAwesomeIcons.bell),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const MoodCommentNotificationsScreen(),
+                        ),
+                      );
+                    },
+                    color: theme.colorScheme.onSurface,
+                    tooltip: 'Mood comment notifications',
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 9 ? '9+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
-            color: theme.colorScheme.onSurface,
           ),
         ],
       ),
@@ -78,88 +141,128 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
         onRefresh: () async {
           await ref.read(socialsProvider.notifier).loadActiveSessions();
         },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // Stories and Live Sessions Bar
-            SliverToBoxAdapter(
-              child: StoriesBar(
-                liveSessions: socialsState.activeSessions,
-                stories: socialsState.stories,
-                onSessionTap: (session) async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VideoCallScreen(
-                        sessionId: session.id,
-                        isHost: false,
-                        sessionTitle: session.title,
-                        hostName: session.hostName,
-                      ),
-                    ),
-                  );
-                  // Refresh sessions when returning from video call
-                  ref.read(socialsProvider.notifier).loadActiveSessions();
-                },
-                onStoryTap: (story) {
-                  // Filter stories to show only this user's stories (like Instagram)
-                  final userStories =
-                      socialsState.stories
-                          .where((s) => s.userId == story.userId)
-                          .toList()
-                        ..sort(
-                          (a, b) => b.createdAt.compareTo(a.createdAt),
-                        ); // Most recent first
+        child: socialsState.error != null
+            ? NoConnectionWidget(
+                onRetry: () =>
+                    ref.read(socialsProvider.notifier).loadActiveSessions(),
+              )
+            : CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Stories and Live Sessions Bar
+                  SliverToBoxAdapter(
+                    child: StoriesBar(
+                      liveSessions: socialsState.activeSessions,
+                      stories: socialsState.stories,
+                      isLoading: socialsState.isLoading,
+                      onSessionTap: (session) async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoCallScreen(
+                              sessionId: session.id,
+                              isHost: false,
+                              sessionTitle: session.title,
+                              hostName: session.hostName,
+                            ),
+                          ),
+                        );
+                        // Refresh sessions when returning from video call
+                        ref.read(socialsProvider.notifier).loadActiveSessions();
+                      },
+                      onStoryTap: (story) {
+                        // Filter stories to show only this user's stories
+                        // (like Instagram)
+                        final userStories =
+                            socialsState.stories
+                                .where((s) => s.userId == story.userId)
+                                .toList()
+                              ..sort(
+                                (a, b) => b.createdAt.compareTo(a.createdAt),
+                              ); // Most recent first
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StoryViewerScreen(
-                        stories: userStories,
-                        initialIndex:
-                            0, // Always start at the first (most recent) story
-                      ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StoryViewerScreen(
+                              stories: userStories,
+                              initialIndex: 0,
+                              // Always start at the first (most recent) story
+                            ),
+                          ),
+                        ).then((_) {
+                          // Refresh stories after viewing
+                          ref.read(socialsProvider.notifier).loadStories();
+                        });
+                      },
+                      onAddStory: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateStoryScreen(),
+                          ),
+                        );
+                        if (result == true) {
+                          // Refresh stories after creating
+                          ref.read(socialsProvider.notifier).loadStories();
+                        }
+                      },
                     ),
-                  ).then((_) {
-                    // Refresh stories after viewing
-                    ref.read(socialsProvider.notifier).loadStories();
-                  });
-                },
-                onAddStory: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateStoryScreen(),
-                    ),
-                  );
-                  if (result == true) {
-                    // Refresh stories after creating
-                    ref.read(socialsProvider.notifier).loadStories();
-                  }
-                },
-              ),
-            ),
-
-            // Start Session Button (Circle with Plus)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: StartSessionButton(
-                    onTap: () => _showStartSessionDialog(context),
                   ),
-                ),
-              ),
-            ),
 
-            // Recent Sessions or Empty State
-            SliverToBoxAdapter(
-              child: socialsState.activeSessions.isEmpty
-                  ? _buildEmptyState(theme)
-                  : _buildRecentSessionsList(socialsState, theme),
-            ),
-          ],
-        ),
+                  // Start Session Button (Circle with Plus)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: StartSessionButton(
+                          onTap: () => _showStartSessionDialog(context),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Scheduled Sessions
+                  if (socialsState.scheduledSessions.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _buildScheduledSessionsList(socialsState, theme),
+                    ),
+
+                  // Active Sessions or Empty State
+                  if (socialsState.isLoading &&
+                      socialsState.activeSessions.isEmpty)
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final isDark = theme.brightness == Brightness.dark;
+                        return Shimmer.fromColors(
+                          baseColor: isDark
+                              ? Colors.grey[800]!
+                              : Colors.grey[300]!,
+                          highlightColor: isDark
+                              ? Colors.grey[700]!
+                              : Colors.grey[100]!,
+                          child: Container(
+                            height: 100,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey[900] : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        );
+                      }, childCount: 3),
+                    )
+                  else
+                    SliverToBoxAdapter(
+                      child: socialsState.activeSessions.isEmpty
+                          ? _buildEmptyState(theme)
+                          : _buildRecentSessionsList(socialsState, theme),
+                    ),
+                ],
+              ),
       ),
     );
   }
@@ -175,7 +278,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: FaIcon(
@@ -204,7 +307,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               'Start a session to connect with others',
               style: GoogleFonts.poppins(
                 fontSize: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -264,7 +367,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               // Avatar
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                 backgroundImage: session.hostAvatarUrl != null
                     ? NetworkImage(session.hostAvatarUrl!)
                     : null,
@@ -296,14 +399,18 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                         FaIcon(
                           FontAwesomeIcons.user,
                           size: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${session.participantCount} participants',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                           ),
                         ),
                       ],
@@ -348,6 +455,116 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
     );
   }
 
+  Widget _buildScheduledSessionsList(dynamic state, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Scheduled Sessions',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...state.scheduledSessions.map((session) {
+            return FadeInUp(child: _buildScheduledSessionCard(session, theme));
+          }).toList(),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduledSessionCard(dynamic session, ThemeData theme) {
+    final scheduledTime = session.scheduledTime as DateTime;
+    final dateStr =
+        '${scheduledTime.day}/${scheduledTime.month}/${scheduledTime.year}';
+    final hour = scheduledTime.hour.toString().padLeft(2, '0');
+    final minute = scheduledTime.minute.toString().padLeft(2, '0');
+    final timeStr = '$hour:$minute';
+    final formattedTime = '$dateStr at $timeStr';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
+              child: FaIcon(
+                session.isVoiceOnly as bool
+                    ? FontAwesomeIcons.phone
+                    : FontAwesomeIcons.video,
+                color: AppTheme.secondaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    session.title as String,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.clock,
+                        size: 12,
+                        color: AppTheme.secondaryColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        formattedTime,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.secondaryColor),
+              ),
+              child: Text(
+                'Scheduled',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showStartSessionDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -356,12 +573,12 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
       builder: (bottomSheetContext) => _StartSessionBottomSheet(
         onCreateSession: (title, isVoiceOnly) async {
           Navigator.pop(bottomSheetContext);
+          final navigator = Navigator.of(context);
           final session = await ref
               .read(socialsProvider.notifier)
               .createSession(title: title, isVoiceOnly: isVoiceOnly);
           if (session != null && mounted) {
-            Navigator.push(
-              context, // Use outer context, not bottom sheet context
+            navigator.push(
               MaterialPageRoute(
                 builder: (context) => VideoCallScreen(
                   sessionId: session.id,
@@ -369,6 +586,38 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                   sessionTitle: session.title,
                   hostName: session.hostName,
                 ),
+              ),
+            );
+          }
+        },
+        onScheduleSession: (title, isVoiceOnly, scheduledTime) async {
+          final messenger = ScaffoldMessenger.of(context);
+          final scheduled = await ref
+              .read(socialsProvider.notifier)
+              .scheduleSession(
+                title: title,
+                isVoiceOnly: isVoiceOnly,
+                scheduledTime: scheduledTime,
+              );
+          if (!mounted) return;
+          if (scheduled != null) {
+            final day = scheduledTime.day;
+            final month = scheduledTime.month;
+            final hour = scheduledTime.hour;
+            final minute = scheduledTime.minute.toString().padLeft(2, '0');
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Session scheduled for $day/$month at $hour:$minute',
+                ),
+                backgroundColor: AppTheme.successColor,
+              ),
+            );
+          } else {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Failed to schedule session. Please try again.'),
+                backgroundColor: AppTheme.errorColor,
               ),
             );
           }
@@ -381,8 +630,13 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
 /// Bottom sheet for starting a new session
 class _StartSessionBottomSheet extends StatefulWidget {
   final Function(String title, bool isVoiceOnly) onCreateSession;
+  final Function(String title, bool isVoiceOnly, DateTime scheduledTime)
+  onScheduleSession;
 
-  const _StartSessionBottomSheet({required this.onCreateSession});
+  const _StartSessionBottomSheet({
+    required this.onCreateSession,
+    required this.onScheduleSession,
+  });
 
   @override
   State<_StartSessionBottomSheet> createState() =>
@@ -453,7 +707,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withOpacity(0.2),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -489,13 +743,15 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: !_isVoiceOnly
-                          ? AppTheme.primaryColor.withOpacity(0.1)
+                          ? AppTheme.primaryColor.withValues(alpha: 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: !_isVoiceOnly
                             ? AppTheme.primaryColor
-                            : theme.colorScheme.onSurface.withOpacity(0.2),
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.2,
+                              ),
                       ),
                     ),
                     child: Column(
@@ -504,7 +760,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                           FontAwesomeIcons.video,
                           color: !_isVoiceOnly
                               ? AppTheme.primaryColor
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -516,7 +774,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                                 : FontWeight.normal,
                             color: !_isVoiceOnly
                                 ? AppTheme.primaryColor
-                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                         ),
                       ],
@@ -532,13 +792,15 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: _isVoiceOnly
-                          ? AppTheme.primaryColor.withOpacity(0.1)
+                          ? AppTheme.primaryColor.withValues(alpha: 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _isVoiceOnly
                             ? AppTheme.primaryColor
-                            : theme.colorScheme.onSurface.withOpacity(0.2),
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.2,
+                              ),
                       ),
                     ),
                     child: Column(
@@ -547,7 +809,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                           FontAwesomeIcons.phone,
                           color: _isVoiceOnly
                               ? AppTheme.primaryColor
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -559,7 +823,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                                 : FontWeight.normal,
                             color: _isVoiceOnly
                                 ? AppTheme.primaryColor
-                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                         ),
                       ],
@@ -599,7 +865,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.primaryColor),
                 ),
@@ -612,7 +878,10 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '${_scheduledTime!.day}/${_scheduledTime!.month}/${_scheduledTime!.year} at ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                      '${_scheduledTime!.day}/${_scheduledTime!.month}/'
+                      '${_scheduledTime!.year} at '
+                      '${_scheduledTime!.hour.toString().padLeft(2, '0')}:'
+                      '${_scheduledTime!.minute.toString().padLeft(2, '0')}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -621,7 +890,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     const Spacer(),
                     const FaIcon(
-                      FontAwesomeIcons.edit,
+                      FontAwesomeIcons.penToSquare,
                       color: AppTheme.primaryColor,
                       size: 14,
                     ),
@@ -657,16 +926,11 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                 }
 
                 if (_scheduleForLater) {
-                  // Handle scheduled session
                   Navigator.pop(context);
-                  // TODO: Call schedule session endpoint
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Session scheduled for ${_scheduledTime!.day}/${_scheduledTime!.month} at ${_scheduledTime!.hour}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                      ),
-                      backgroundColor: AppTheme.successColor,
-                    ),
+                  widget.onScheduleSession(
+                    _titleController.text.trim(),
+                    _isVoiceOnly,
+                    _scheduledTime!,
                   );
                 } else {
                   // Start session immediately

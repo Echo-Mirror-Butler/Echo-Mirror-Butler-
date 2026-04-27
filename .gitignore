@@ -48,6 +48,7 @@ app.*.map.json
 **/local.properties
 **/.env
 **/.env.*
+!**/.env.example
 !supabase/.env.example
 **/*secret*
 **/config/passwords.yaml
@@ -64,3 +65,4 @@ build/
 .flutter-plugins-dependencies
 *.iml
 *.lock
+node_modules/

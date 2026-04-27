@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/animated_card.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
@@ -12,25 +13,32 @@ import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/logging_calendar.dart';
 
 /// Daily logging screen
-class LoggingScreen extends ConsumerWidget {
+class LoggingScreen extends ConsumerStatefulWidget {
   const LoggingScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoggingScreen> createState() => _LoggingScreenState();
+}
+
+class _LoggingScreenState extends ConsumerState<LoggingScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = ref.read(authProvider);
+      final userId = authState.user?.id;
+      if (userId != null && userId.isNotEmpty) {
+        ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final loggingState = ref.watch(loggingProvider);
     final authState = ref.watch(authProvider);
+    final userId = authState.user?.id;
     final theme = Theme.of(context);
-
-    // Load log entries when we have a user ID (only once)
-    if (authState.isAuthenticated && authState.user != null) {
-      final userId = authState.user!.id;
-      // Use addPostFrameCallback to avoid calling during build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (userId.isNotEmpty) {
-          ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
-        }
-      });
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -40,15 +48,17 @@ class LoggingScreen extends ConsumerWidget {
             icon: const Icon(FontAwesomeIcons.calendar),
             onPressed: () {
               final entries = loggingState.value ?? <LogEntryModel>[];
-              _showCalendar(context, ref, entries);
+              _showCalendar(context, entries);
             },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref
-            .read(loggingProvider.notifier)
-            .loadLogEntries(userId: ref.read(authProvider).user?.id),
+        onRefresh: () async {
+          await ref
+              .read(loggingProvider.notifier)
+              .loadLogEntries(userId: userId);
+        },
         child: loggingState.when(
           data: (entries) {
             if (entries.isEmpty) {
@@ -134,36 +144,12 @@ class LoggingScreen extends ConsumerWidget {
           },
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
-          error: (error, stack) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.7,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        FontAwesomeIcons.triangleExclamation,
-                        size: 64,
-                        color: AppTheme.errorColor,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading entries',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        error.toString(),
-                        style: theme.textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          error: (error, stack) => NoConnectionWidget(
+            message:
+                'We could not load your daily logs. '
+                'This can happen when Supabase tables are missing. '
+                'Run migrations and try again.',
+            onRetry: () => _retryLoadEntries(userId),
           ),
         ),
       ),
@@ -177,6 +163,11 @@ class LoggingScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
       ),
     );
+  }
+
+  void _retryLoadEntries(String? userId) {
+    if (userId == null || userId.isEmpty) return;
+    ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
   }
 
   IconData _getMoodIcon(int? mood) {
@@ -199,11 +190,7 @@ class LoggingScreen extends ConsumerWidget {
     }
   }
 
-  void _showCalendar(
-    BuildContext context,
-    WidgetRef ref,
-    List<LogEntryModel> entries,
-  ) {
+  void _showCalendar(BuildContext context, List<LogEntryModel> entries) {
     showDialog(
       context: context,
       builder: (context) => LoggingCalendar(

@@ -5,6 +5,7 @@ import '../../data/models/mood_pin_model.dart';
 import '../../data/models/video_post_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../data/repositories/global_mirror_repository.dart';
+import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import 'mood_comment_notification_provider.dart';
 
 /// Provider for Global Mirror repository
@@ -14,6 +15,12 @@ final globalMirrorRepositoryProvider = Provider<GlobalMirrorRepository>((ref) {
 
 /// Provider for streaming mood pins
 final moodPinsStreamProvider = StreamProvider<List<MoodPinModel>>((ref) {
+  final tabIndex = ref.watch(mainTabIndexProvider);
+  if (tabIndex != 1) {
+    // When the Globe tab is not visible, avoid maintaining a live stream
+    // connection and instead expose an empty stream.
+    return Stream<List<MoodPinModel>>.value(const []);
+  }
   final repository = ref.watch(globalMirrorRepositoryProvider);
   return repository.streamMoodPins();
 });
@@ -41,6 +48,7 @@ class GlobalMirrorState {
   final List<VideoPostModel> videoFeed;
   final int currentVideoPage;
   final bool isLoadingMore;
+  final bool isLoadingVideoFeed;
 
   GlobalMirrorState({
     this.isSharing = false,
@@ -49,6 +57,7 @@ class GlobalMirrorState {
     this.videoFeed = const [],
     this.currentVideoPage = 0,
     this.isLoadingMore = false,
+    this.isLoadingVideoFeed = false,
   });
 
   GlobalMirrorState copyWith({
@@ -58,6 +67,7 @@ class GlobalMirrorState {
     List<VideoPostModel>? videoFeed,
     int? currentVideoPage,
     bool? isLoadingMore,
+    bool? isLoadingVideoFeed,
   }) {
     return GlobalMirrorState(
       isSharing: isSharing ?? this.isSharing,
@@ -67,6 +77,7 @@ class GlobalMirrorState {
       videoFeed: videoFeed ?? this.videoFeed,
       currentVideoPage: currentVideoPage ?? this.currentVideoPage,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isLoadingVideoFeed: isLoadingVideoFeed ?? this.isLoadingVideoFeed,
     );
   }
 }
@@ -230,6 +241,8 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
         '[GlobalMirrorProvider] Loading video feed (refresh: $refresh)',
       );
 
+      state = state.copyWith(isLoadingVideoFeed: true, error: null);
+
       if (refresh) {
         state = state.copyWith(currentVideoPage: 0, videoFeed: [], error: null);
       }
@@ -244,11 +257,12 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       state = state.copyWith(
         videoFeed: refresh ? videos : [...state.videoFeed, ...videos],
         currentVideoPage: refresh ? 1 : state.currentVideoPage + 1,
+        isLoadingVideoFeed: false,
       );
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorProvider] Error loading video feed: $e');
       debugPrint('[GlobalMirrorProvider] Stack trace: $stackTrace');
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: e.toString(), isLoadingVideoFeed: false);
     }
   }
 

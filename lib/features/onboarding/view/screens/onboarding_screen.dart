@@ -93,6 +93,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         try {
           await markOnboardingCompleted();
           await Future.delayed(const Duration(milliseconds: 100));
+          if (!mounted) return;
           context.go('/login');
         } catch (e2) {
           debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');

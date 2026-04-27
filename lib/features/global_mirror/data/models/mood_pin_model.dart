@@ -8,7 +8,7 @@ class MoodPinModel {
   final DateTime timestamp;
   final DateTime? expiresAt;
   // Optional: non-null only when the pin owner has opted into gifting
-  final int? userId;
+  final String? userId;
 
   MoodPinModel({
     required this.id,
@@ -32,7 +32,7 @@ class MoodPinModel {
       expiresAt: json['expiresAt'] != null
           ? DateTime.parse(json['expiresAt'])
           : null,
-      userId: json['userId'] as int?,
+      userId: json['userId']?.toString(),
     );
   }
 
@@ -60,7 +60,7 @@ class MoodPinModel {
     double? gridLon,
     DateTime? timestamp,
     DateTime? expiresAt,
-    int? userId,
+    String? userId,
   }) {
     return MoodPinModel(
       id: id ?? this.id,

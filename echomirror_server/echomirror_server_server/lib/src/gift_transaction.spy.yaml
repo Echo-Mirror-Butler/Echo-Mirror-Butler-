@@ -1,0 +1,17 @@
+class: GiftTransaction
+table: gift_transactions
+
+fields:
+  senderUserId: int
+  recipientUserId: int
+  echoAmount: double
+  stellarTxHash: String?
+  message: String?
+  createdAt: DateTime, default=now
+  status: String, default='pending'
+
+indexes:
+  gift_tx_sender_idx:
+    fields: senderUserId
+  gift_tx_recipient_idx:
+    fields: recipientUserId

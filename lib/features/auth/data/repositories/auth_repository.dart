@@ -1,16 +1,18 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Repository for authentication operations
-/// This handles all Supabase backend calls for auth
+/// Repository for authentication operations backed by Supabase
 class AuthRepository {
-  AuthRepository() {
+  final SupabaseClient? _injectedClient;
+
+  AuthRepository({SupabaseClient? supabaseClient})
+    : _injectedClient = supabaseClient {
     debugPrint('[AuthRepository] Initialized');
   }
 
   /// Get the Supabase client instance
-  SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get _client => _injectedClient ?? Supabase.instance.client;
 
   /// Sign in with email and password
   /// Returns user ID on success, throws exception on failure
@@ -24,15 +26,15 @@ class AuthRepository {
       );
 
       final user = authResponse.user;
-      final session = authResponse.session;
-
-      if (user == null || session == null) {
-        throw Exception('Login succeeded but no user/session returned');
+      if (user == null) {
+        throw Exception('Sign in failed: no user returned');
       }
 
-      debugPrint('[AuthRepository] Auth token naturally handled by Supabase');
-      debugPrint('[AuthRepository] signIn success -> $email');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', email);
+      await prefs.setString('user_id', user.id);
 
+      debugPrint('[AuthRepository] signIn success -> ${user.id}');
       return user.id;
     } catch (e) {
       debugPrint('[AuthRepository] signIn error -> $e');
@@ -66,13 +68,24 @@ class AuthRepository {
     }
   }
 
+  /// Complete signup — Supabase handles verification automatically via email link
+  Future<String> completeSignUp({
+    required String accountRequestId,
+    required String verificationCode,
+    required String password,
+  }) async {
+    debugPrint(
+      '[AuthRepository] completeSignUp -> Supabase handles verification automatically',
+    );
+    return accountRequestId;
+  }
+
   /// Sign out current user
   Future<void> signOut() async {
     try {
       debugPrint('[AuthRepository] signOut');
       await _client.auth.signOut();
 
-      // Clean up any legacy shared preferences just in case
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_email');
       await prefs.remove('user_id');
@@ -160,8 +173,6 @@ class AuthRepository {
   Future<bool> requestPasswordReset(String email) async {
     try {
       debugPrint('[AuthRepository] requestPasswordReset -> $email');
-      // Pass the redirectTo URL if necessary, but typically configured
-      // in Supabase Dashboards
       await _client.auth.resetPasswordForEmail(email);
       debugPrint('[AuthRepository] requestPasswordReset success');
       return true;

@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../widgets/privacy_info_sheet.dart';
@@ -268,48 +269,8 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
         },
         loading: () =>
             const Center(child: ShimmerLoading(width: 40, height: 40)),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const FaIcon(
-                  FontAwesomeIcons.triangleExclamation,
-                  size: 48,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Error loading mood pins',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // Refresh the stream
-                    ref.invalidate(moodPinsStreamProvider);
-                  },
-                  icon: const FaIcon(FontAwesomeIcons.arrowRotateRight),
-                  label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        error: (error, stack) => NoConnectionWidget(
+          onRetry: () => ref.refresh(moodPinsStreamProvider),
         ),
       ),
     );

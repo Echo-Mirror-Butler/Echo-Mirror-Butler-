@@ -5,17 +5,21 @@ import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../../logging/data/models/log_entry_model.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../../help/view/screens/professional_help_screen.dart';
 import '../../data/models/insight_model.dart';
+import '../../data/models/mood_analytics_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
+import '../widgets/mood_streak_card.dart';
 import '../widgets/mood_trend_chart.dart';
 import '../../viewmodel/providers/mood_chart_provider.dart';
 
@@ -59,6 +63,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
+    final loggingState = ref.watch(loggingProvider);
+    final logEntries = loggingState.value ?? const <LogEntryModel>[];
+    final currentStreak = MoodAnalyticsModel.computeStreak(logEntries);
     final theme = Theme.of(context);
 
     // Load logs and insights when we have a user ID
@@ -185,6 +192,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       // Stats section
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
+                      // Mood streak card
+                      MoodStreakCard(streak: currentStreak),
+                      const SizedBox(height: 8),
                       // Mood Trend Chart
                       MoodTrendChart(
                         recentLogs: ref.watch(moodChartDataProvider),
@@ -240,8 +250,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             },
             loading: () =>
                 const Center(child: ShimmerLoading(width: 40, height: 40)),
-            error: (error, stack) =>
-                _buildErrorState(context, theme, error, ref),
+            error: (error, stack) => NoConnectionWidget(
+              onRetry: () => ref.refresh(dashboardProvider),
+            ),
           ),
           // Confetti overlay
           Align(
@@ -443,80 +454,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(
-    BuildContext context,
-    ThemeData theme,
-    Object error,
-    WidgetRef ref,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: AppTheme.errorColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                FontAwesomeIcons.triangleExclamation,
-                size: 48,
-                color: AppTheme.errorColor,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Error loading insights',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              error.toString(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                final authState = ref.read(authProvider);
-                if (authState.isAuthenticated && authState.user != null) {
-                  ref
-                      .read(dashboardProvider.notifier)
-                      .loadInsights(userId: authState.user!.id);
-                }
-              },
-              icon: const Icon(Icons.refresh, size: 20),
-              label: const Text(
-                'Retry',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
