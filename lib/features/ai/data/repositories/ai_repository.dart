@@ -148,6 +148,15 @@ class AiRepository {
         'generate-insight',
         body: {'recentLogs': logPayloads},
       );
+
+      // Check for rate limit error (429)
+      if (response.status != null && response.status! >= 400) {
+        final result = response.data;
+        if (result is Map && result['error']?.toString().contains('Rate limit') == true) {
+          throw Exception('You\'ve reached your AI insight limit for this hour. Please try again later.');
+        }
+      }
+
       final result = response.data;
 
       // Validate that we got real data from Gemini (not empty or null)
