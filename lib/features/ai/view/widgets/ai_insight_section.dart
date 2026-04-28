@@ -264,8 +264,8 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.1),
-                  AppTheme.secondaryColor.withOpacity(0.1),
+                  AppTheme.primaryColor.withValues(alpha: 0.1),
+                  AppTheme.secondaryColor.withValues(alpha: 0.1),
                 ],
               ),
             ),
@@ -275,7 +275,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                 Icon(
                   FontAwesomeIcons.wandMagicSparkles,
                   size: 48,
-                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -291,7 +291,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                   'Log at least 3 entries to receive personalized AI insights, predictions, and habit suggestions powered by Gemini AI.',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -380,7 +380,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
               Icon(
                 FontAwesomeIcons.triangleExclamation,
                 size: 48,
-                color: AppTheme.errorColor.withOpacity(0.5),
+                color: AppTheme.errorColor.withValues(alpha: 0.5),
               ),
               const SizedBox(height: 16),
               Text(
@@ -396,7 +396,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                 'Gemini AI is currently unavailable. Please check your connection and try again.',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
