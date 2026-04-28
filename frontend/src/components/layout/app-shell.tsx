@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
+import { NotificationDrawer } from '../../features/notifications/notification-drawer'
 
 const navItems = [
   { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
@@ -34,6 +35,7 @@ export function AppShell() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
 
   const unreadNotificationsQuery = useQuery({
     queryKey: ['unread-notifications', user?.id],
@@ -140,12 +142,24 @@ export function AppShell() {
           </label>
 
           <div className="shell-topbar-actions">
-            <button type="button" className="icon-btn notification-btn" aria-label="Notifications">
-              🔔
-              {(unreadNotificationsQuery.data ?? 0) > 0 ? (
-                <span className="badge">{unreadNotificationsQuery.data}</span>
-              ) : null}
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="icon-btn notification-btn"
+                aria-label="Notifications"
+                aria-expanded={isNotificationPanelOpen}
+                onClick={() => setIsNotificationPanelOpen((prev) => !prev)}
+              >
+                🔔
+                {(unreadNotificationsQuery.data ?? 0) > 0 ? (
+                  <span className="badge">{unreadNotificationsQuery.data}</span>
+                ) : null}
+              </button>
+              <NotificationDrawer
+                isOpen={isNotificationPanelOpen}
+                onClose={() => setIsNotificationPanelOpen(false)}
+              />
+            </div>
 
             <div className="avatar-menu-wrap">
               <button
