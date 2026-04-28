@@ -65,7 +65,7 @@ class MusicRecommendationsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor.withOpacity(0.05),
+      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.05),
       appBar: AppBar(
         title: Text(
           'Relaxing Music',
@@ -102,7 +102,7 @@ class MusicRecommendationsScreen extends StatelessWidget {
                     'Continue your relaxation with these calming playlists',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -164,7 +164,7 @@ class MusicRecommendationsScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         color: theme.colorScheme.onSurface
-                                            .withOpacity(0.6),
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
