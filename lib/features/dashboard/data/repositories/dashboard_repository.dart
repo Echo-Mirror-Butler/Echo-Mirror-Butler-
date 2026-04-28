@@ -299,8 +299,11 @@ class DashboardRepository {
       // Check for rate limit error (429)
       if (response.status != null && response.status! >= 400) {
         final data = response.data;
-        if (data is Map && data['error']?.toString().contains('Rate limit') == true) {
-          debugPrint('[DashboardRepository] Rate limit exceeded for generate-insight');
+        if (data is Map &&
+            data['error']?.toString().contains('Rate limit') == true) {
+          debugPrint(
+            '[DashboardRepository] Rate limit exceeded for generate-insight',
+          );
           return [];
         }
       }

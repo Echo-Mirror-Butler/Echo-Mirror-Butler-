@@ -318,7 +318,8 @@ class GlobalMirrorRepository {
       // Check for rate limit error (429)
       if (response.status != null && response.status! >= 400) {
         final data = response.data;
-        if (data is Map && data['error']?.toString().contains('Rate limit') == true) {
+        if (data is Map &&
+            data['error']?.toString().contains('Rate limit') == true) {
           return 'You\'ve reached your AI encouragement limit for this hour. Try again later.';
         }
       }

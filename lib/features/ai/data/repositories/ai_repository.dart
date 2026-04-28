@@ -152,8 +152,11 @@ class AiRepository {
       // Check for rate limit error (429)
       if (response.status != null && response.status! >= 400) {
         final result = response.data;
-        if (result is Map && result['error']?.toString().contains('Rate limit') == true) {
-          throw Exception('You\'ve reached your AI insight limit for this hour. Please try again later.');
+        if (result is Map &&
+            result['error']?.toString().contains('Rate limit') == true) {
+          throw Exception(
+            'You\'ve reached your AI insight limit for this hour. Please try again later.',
+          );
         }
       }
 
