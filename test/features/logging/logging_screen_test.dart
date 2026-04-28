@@ -72,7 +72,9 @@ void main() {
         GoRoute(
           path: '/logging/detail/:id',
           builder: (context, state) => Scaffold(
-            body: Text('Target: /logging/detail/${state.pathParameters['id']}'),
+            body: Text(
+              'Target: /logging/detail/${state.pathParameters['id']}',
+            ),
           ),
         ),
       ],
