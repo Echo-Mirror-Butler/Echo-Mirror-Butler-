@@ -331,7 +331,8 @@ class DashboardRepository {
           .from('future_letters')
           .select()
           .eq('user_id', userId)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .limit(10);
 
       return (response as List<dynamic>)
           .whereType<Map<String, dynamic>>()

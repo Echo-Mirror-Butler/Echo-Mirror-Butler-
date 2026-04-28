@@ -66,36 +66,17 @@ class _FutureLetterCardState extends State<FutureLetterCard>
   Future<void> _persistFutureLetter() async {
     if (_hasPersistedLetter) return;
 
-    SupabaseClient client;
-    try {
-      client = Supabase.instance.client;
-    } catch (_) {
-      return;
-    }
+    final client = Supabase.instance.client;
     final userId = client.auth.currentUser?.id;
     final content = widget.insight.futureLetter.trim();
     if (userId == null || userId.isEmpty || content.isEmpty) return;
 
     try {
-      final existing = await client
-          .from('future_letters')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('content', content)
-          .maybeSingle();
-
-      if (existing == null) {
-        await client.from('future_letters').insert({
-          'user_id': userId,
-          'content': content,
-          'created_at': widget.insight.generatedAt.toUtc().toIso8601String(),
-          'unlock_at': widget.insight.generatedAt
-              .add(const Duration(days: 30))
-              .toUtc()
-              .toIso8601String(),
-        });
-      }
-
+      await client.functions.invoke('save-future-letter', body: {
+        'userId': userId,
+        'content': content,
+        'generatedAt': widget.insight.generatedAt.toUtc().toIso8601String(),
+      });
       _hasPersistedLetter = true;
     } catch (e) {
       debugPrint('[FutureLetterCard] Failed to persist future letter: $e');
