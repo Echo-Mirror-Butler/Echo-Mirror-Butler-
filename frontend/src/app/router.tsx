@@ -6,6 +6,8 @@ import { WalletPage } from '../features/wallet/wallet-page'
 import { LogsListPage } from '../features/logs/logs-list-page'
 import { LogFormPage } from '../features/logs/log-form-page'
 import { InsightsPage } from '../features/insights/insights-page'
+import { AnalyticsPage } from '../features/analytics/analytics-page'
+import { GlobalMirrorPage } from '../features/global-mirror/global-mirror-page'
 import { PlaceholderPage } from '../features/shared/placeholder-page'
 
 function RequireAuth() {
@@ -45,24 +47,8 @@ export function AppRouter() {
         <Route path="/logs/new" element={<LogFormPage mode="create" />} />
         <Route path="/logs/:id/edit" element={<LogFormPage mode="edit" />} />
         <Route path="/insights" element={<InsightsPage />} />
-        <Route
-          path="/analytics"
-          element={
-            <PlaceholderPage
-              title="Analytics"
-              description="Trend charts and engagement metrics will appear here."
-            />
-          }
-        />
-        <Route
-          path="/global-mirror"
-          element={
-            <PlaceholderPage
-              title="Global Mirror"
-              description="Community mirror feed and world mood layers are coming next."
-            />
-          }
-        />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/global-mirror" element={<GlobalMirrorPage />} />
         <Route
           path="/settings"
           element={
