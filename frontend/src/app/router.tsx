@@ -8,7 +8,8 @@ import { LogFormPage } from '../features/logs/log-form-page'
 import { InsightsPage } from '../features/insights/insights-page'
 import { AnalyticsPage } from '../features/analytics/analytics-page'
 import { GlobalMirrorPage } from '../features/global-mirror/global-mirror-page'
-import { PlaceholderPage } from '../features/shared/placeholder-page'
+import { DashboardPage } from '../features/dashboard/dashboard-page'
+import { SettingsPage } from '../features/settings/settings-page'
 
 function RequireAuth() {
   const { user, isLoading } = useAuth()
@@ -33,15 +34,7 @@ export function AppRouter() {
 
       <Route element={<RequireAuth />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route
-          path="/dashboard"
-          element={
-            <PlaceholderPage
-              title="Dashboard"
-              description="Overview widgets will land here once connected to live metrics."
-            />
-          }
-        />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/wallet" element={<WalletPage />} />
         <Route path="/logs" element={<LogsListPage />} />
         <Route path="/logs/new" element={<LogFormPage mode="create" />} />
@@ -49,15 +42,7 @@ export function AppRouter() {
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/global-mirror" element={<GlobalMirrorPage />} />
-        <Route
-          path="/settings"
-          element={
-            <PlaceholderPage
-              title="Settings"
-              description="Profile, privacy, and app preference controls live here."
-            />
-          }
-        />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
