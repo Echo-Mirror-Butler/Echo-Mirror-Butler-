@@ -41,3 +41,17 @@ export type Insight = {
   stress_level: number
   created_at: string
 }
+
+// ── Global Mirror ──────────────────────────────────────────────────────────
+
+export type Sentiment = 'happy' | 'neutral' | 'sad'
+
+export type MoodPin = {
+  id: string
+  sentiment: Sentiment
+  grid_lat: number
+  grid_lon: number
+  user_id: string | null
+  expires_at: string
+  created_at: string
+}

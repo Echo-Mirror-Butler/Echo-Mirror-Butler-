@@ -784,7 +784,152 @@ td {
     grid-template-columns: auto 1fr auto;
   }
 
-  .shell-search {
-    min-width: 120px;
+}
+
+/* ==========================================================================
+   Global Mirror Feature Styles
+   ========================================================================== */
+
+/* Leaflet Container height fix */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 10;
+}
+
+/* Floating Action Button */
+.gm-fab {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(20, 99, 255, 0.4);
+  border: 2px solid white;
+  cursor: pointer;
+  z-index: 30; /* Above map */
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease;
+}
+
+.gm-fab:hover:enabled {
+  transform: scale(1.08);
+  background: var(--brand-strong);
+}
+
+.gm-fab:disabled {
+  background: var(--muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+@media (max-width: 767px) {
+  .gm-fab {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 56px;
+    height: 56px;
   }
+}
+
+/* Modal Overlay & Card */
+.gm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 24, 37, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.gm-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 420px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  z-index: 51;
+  animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 640px) {
+  .gm-modal {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    padding: 1.5rem 1.25rem 2.5rem;
+    animation: slideUpBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/* Sidebar Slide-over */
+.gm-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(100vw, 360px);
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.1);
+  z-index: 45;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.gm-sidebar.open {
+  transform: translateX(0);
+}
+
+/* Sentiment Selector Chips */
+.gm-sentiment-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.gm-sentiment-chip:hover {
+  border-color: var(--muted);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes slideUpBottom {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

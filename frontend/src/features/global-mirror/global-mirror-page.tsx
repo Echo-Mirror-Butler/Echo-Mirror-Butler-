@@ -1,293 +1,94 @@
-/**
- * Global Mirror Page  (#260)
- *
- * Sections:
- * 1. Live SVG world map with real-time mood pins from Supabase Realtime
- * 2. Drop-a-pin panel (sentiment selector + geolocation)
- */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { RealtimeChannel } from '@supabase/supabase-js'
-import { supabase } from '../../lib/supabase'
+import { useState } from 'react'
+import { Plus, Map as MapIcon, Layers } from 'lucide-react'
 import { useAuth } from '../../lib/auth-context'
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type MoodPin = {
-  id: string
-  grid_lat: number
-  grid_lon: number
-  sentiment: string
-  created_at: string
-  comment?: string
-}
-
-type Sentiment = 'happy' | 'sad' | 'stressed' | 'calm' | 'anxious'
-
-const SENTIMENTS: { value: Sentiment; label: string; emoji: string; color: string }[] = [
-  { value: 'happy',    label: 'Happy',    emoji: '😊', color: '#22c55e' },
-  { value: 'sad',      label: 'Sad',      emoji: '😔', color: '#60a5fa' },
-  { value: 'stressed', label: 'Stressed', emoji: '😤', color: '#f97316' },
-  { value: 'calm',     label: 'Calm',     emoji: '😌', color: '#818cf8' },
-  { value: 'anxious',  label: 'Anxious',  emoji: '😰', color: '#f43f5e' },
-]
-
-const SENTIMENT_COLOR: Record<string, string> = Object.fromEntries(
-  SENTIMENTS.map((s) => [s.value, s.color]),
-)
-
-// ── Coordinate helpers (match mobile MoodPinModel.anonymizeCoordinate) ─────────
-
-function anonymize(coord: number): number {
-  return Math.round(coord * 10) / 10
-}
-
-// Map geographic lon/lat to SVG x/y (simple equirectangular)
-function toSvgCoord(lat: number, lon: number): { x: number; y: number } {
-  const x = ((lon + 180) / 360) * 800
-  const y = ((90 - lat) / 180) * 400
-  return { x, y }
-}
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-
-async function fetchPins(): Promise<MoodPin[]> {
-  const { data, error } = await supabase
-    .from('mood_pins')
-    .select('id, grid_lat, grid_lon, sentiment, created_at')
-    .order('created_at', { ascending: false })
-    .limit(500)
-  if (error) throw error
-  return (data ?? []) as MoodPin[]
-}
-
-async function insertPin(
-  userId: string,
-  lat: number,
-  lon: number,
-  sentiment: Sentiment,
-): Promise<void> {
-  const { error } = await supabase.from('mood_pins').insert({
-    user_id: userId,
-    grid_lat: anonymize(lat),
-    grid_lon: anonymize(lon),
-    sentiment,
-  })
-  if (error) throw error
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function PinPopover({
-  pin,
-  x,
-  y,
-  onClose,
-}: {
-  pin: MoodPin
-  x: number
-  y: number
-  onClose: () => void
-}) {
-  const [comment, setComment] = useState('')
-  const sentiment = SENTIMENTS.find((s) => s.value === pin.sentiment)
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: x,
-        top: y,
-        transform: 'translate(-50%, -110%)',
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: '10px',
-        padding: '0.75rem 1rem',
-        boxShadow: 'var(--shadow)',
-        zIndex: 10,
-        width: '200px',
-        fontSize: '0.82rem',
-      }}
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        style={{ position: 'absolute', top: 6, right: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
-      >
-        ✕
-      </button>
-      <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text)' }}>
-        {sentiment?.emoji} {sentiment?.label ?? pin.sentiment}
-      </p>
-      <p style={{ margin: '0 0 8px', color: 'var(--muted)' }}>
-        {pin.created_at.slice(0, 10)}
-      </p>
-      <textarea
-        placeholder="Add a comment…"
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        rows={2}
-        style={{
-          width: '100%',
-          borderRadius: '6px',
-          border: '1px solid var(--line)',
-          padding: '4px 6px',
-          fontSize: '0.78rem',
-          background: 'var(--surface-soft)',
-          color: 'var(--text)',
-          resize: 'none',
-        }}
-      />
-    </div>
-  )
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
+import { useMoodPins } from './use-mood-pins'
+import { MapContainer } from './components/MapContainer'
+import { MoodModal } from './components/MoodModal'
+import { MyPinsSidebar } from './components/MyPinsSidebar'
 
 export function GlobalMirrorPage() {
   const { user } = useAuth()
-  const qc = useQueryClient()
-  const channelRef = useRef<RealtimeChannel | null>(null)
+  const { pins, myPins, loading, error, geoStatus, insertPin, deletePin } = useMoodPins()
 
-  const [selectedPin, setSelectedPin] = useState<{ pin: MoodPin; svgX: number; svgY: number } | null>(null)
-  const [selectedSentiment, setSelectedSentiment] = useState<Sentiment>('happy')
-  const [geoStatus, setGeoStatus] = useState<'idle' | 'pending' | 'denied' | 'done'>('idle')
-  const [dropError, setDropError] = useState<string | null>(null)
-
-  const pinsQuery = useQuery({
-    queryKey: ['mood-pins'],
-    queryFn: fetchPins,
-    enabled: Boolean(user?.id),
-  })
-
-  // Supabase Realtime subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('mood_pins')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mood_pins' }, () => {
-        void qc.invalidateQueries({ queryKey: ['mood-pins'] })
-      })
-      .subscribe()
-    channelRef.current = channel
-    return () => { void supabase.removeChannel(channel) }
-  }, [qc])
-
-  const handleDropPin = useCallback(() => {
-    if (!user?.id) return
-    setGeoStatus('pending')
-    setDropError(null)
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          await insertPin(user.id, pos.coords.latitude, pos.coords.longitude, selectedSentiment)
-          setGeoStatus('done')
-          void qc.invalidateQueries({ queryKey: ['mood-pins'] })
-          setTimeout(() => setGeoStatus('idle'), 2000)
-        } catch (e) {
-          setDropError('Failed to drop pin. Please try again.')
-          setGeoStatus('idle')
-        }
-      },
-      () => {
-        setGeoStatus('denied')
-      },
-    )
-  }, [user?.id, selectedSentiment, qc])
-
-  const pins = pinsQuery.data ?? []
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   return (
-    <div className="page-wrap animate-stagger" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <h1>Global Mirror</h1>
-      <p className="muted">Live mood pins shared anonymously by users worldwide.</p>
-
-      {/* Map */}
-      <section className="card" style={{ overflow: 'hidden', position: 'relative' }}>
-        <svg
-          viewBox="0 0 800 400"
-          style={{ width: '100%', background: 'var(--surface-soft)', borderRadius: '12px', display: 'block' }}
-          aria-label="World mood map"
-        >
-          {/* Minimal world outline — simplified rectangle fill */}
-          <rect x={0} y={0} width={800} height={400} fill="var(--surface-soft)" />
-          <text x={400} y={200} textAnchor="middle" fill="var(--line)" fontSize={13}>
-            (World map outline — replace with react-simple-maps SVG paths)
-          </text>
-
-          {/* Mood pins */}
-          {pins.map((pin) => {
-            const { x, y } = toSvgCoord(pin.grid_lat, pin.grid_lon)
-            return (
-              <circle
-                key={pin.id}
-                cx={x}
-                cy={y}
-                r={5}
-                fill={SENTIMENT_COLOR[pin.sentiment] ?? 'var(--brand)'}
-                opacity={0.8}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setSelectedPin({ pin, svgX: x, svgY: y })}
-              />
-            )
-          })}
-        </svg>
-
-        {/* Popover */}
-        {selectedPin && (
-          <PinPopover
-            pin={selectedPin.pin}
-            x={(selectedPin.svgX / 800) * 100 + '%' as unknown as number}
-            y={(selectedPin.svgY / 400) * 100 + '%' as unknown as number}
-            onClose={() => setSelectedPin(null)}
-          />
-        )}
-      </section>
-
-      {/* Drop pin */}
-      <section className="card">
-        <h2 style={{ marginTop: 0 }}>Drop your mood pin</h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-          {SENTIMENTS.map((s) => (
-            <button
-              key={s.value}
-              type="button"
-              onClick={() => setSelectedSentiment(s.value)}
-              style={{
-                padding: '0.4rem 0.9rem',
-                borderRadius: '999px',
-                border: `2px solid ${selectedSentiment === s.value ? s.color : 'var(--line)'}`,
-                background: selectedSentiment === s.value ? s.color + '22' : 'transparent',
-                color: 'var(--text)',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                fontWeight: selectedSentiment === s.value ? 600 : 400,
-              }}
-            >
-              {s.emoji} {s.label}
-            </button>
-          ))}
+    <div className="flex flex-col h-full w-full relative animate-stagger" style={{ minHeight: 'calc(100vh - 80px)' }}>
+      {/* Header Area */}
+      <div className="flex justify-between items-end mb-4 z-10 px-4 mt-2">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold font-fraunces m-0 mb-1 flex items-center gap-2">
+            <MapIcon size={24} className="text-[var(--brand)]" />
+            Global Mirror
+          </h1>
+          <p className="text-[var(--muted)] m-0 text-sm md:text-base">
+            Live mood pins shared anonymously worldwide.
+          </p>
         </div>
 
-        {geoStatus === 'denied' && (
-          <p style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-            Geolocation permission denied. Please allow location access in your browser settings.
-          </p>
-        )}
-        {dropError && (
-          <p style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>{dropError}</p>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Active pins badge */}
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-[var(--surface)] border border-[var(--line)] rounded-full text-sm font-medium text-[var(--brand)] shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand)] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--brand)]"></span>
+            </span>
+            {pins.length} active
+          </div>
 
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={handleDropPin}
-          disabled={geoStatus === 'pending' || geoStatus === 'done'}
-          style={{ padding: '0.55rem 1.25rem', borderRadius: '10px', background: 'var(--brand)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}
-        >
-          {geoStatus === 'pending' ? 'Getting location…' : geoStatus === 'done' ? '📍 Pinned!' : '📍 Drop pin'}
-        </button>
-      </section>
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 bg-[var(--surface)] hover:bg-[var(--surface-soft)] border border-[var(--line)] rounded-lg text-[var(--text)] transition-colors shadow-sm"
+          >
+            <Layers size={18} />
+            <span className="hidden sm:inline font-medium">My Pins</span>
+            {myPins.length > 0 && (
+              <span className="bg-[var(--brand)] text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                {myPins.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Map Container */}
+      <div className="flex-1 w-full relative rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] overflow-hidden shadow-sm flex items-center justify-center min-h-[400px]">
+        {loading && pins.length === 0 ? (
+          <div className="flex flex-col items-center text-[var(--muted)] animate-pulse">
+            <MapIcon size={48} className="mb-4 opacity-50" />
+            <p>Loading map data...</p>
+          </div>
+        ) : (
+          <MapContainer pins={pins} />
+        )}
+      </div>
+
+      {/* Floating Action Button (FAB) */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="gm-fab group"
+        aria-label="Drop a pin"
+        disabled={!user}
+      >
+        <Plus size={28} className="transition-transform group-hover:rotate-90" />
+      </button>
+
+      {/* Sub-components */}
+      <MoodModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onPost={insertPin}
+        geoStatus={geoStatus}
+        error={error}
+      />
+
+      <MyPinsSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        myPins={myPins}
+        onDelete={deletePin}
+      />
     </div>
   )
 }
