@@ -34,6 +34,9 @@ class FakeFutureLettersBuilder extends Fake
   }) => this;
 
   @override
+  PostgrestTransformBuilder<PostgrestList> limit(int count) => this;
+
+  @override
   Future<U> then<U>(
     FutureOr<U> Function(PostgrestList) onValue, {
     Function? onError,
