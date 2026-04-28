@@ -15,16 +15,15 @@ LogEntryModel _makeEntry({
   String userId = 'u1',
   int? mood = 4,
   DateTime? date,
-}) =>
-    LogEntryModel(
-      id: id,
-      userId: userId,
-      date: date ?? _now,
-      mood: mood,
-      habits: const ['exercise'],
-      notes: 'test note',
-      createdAt: _now,
-    );
+}) => LogEntryModel(
+  id: id,
+  userId: userId,
+  date: date ?? _now,
+  mood: mood,
+  habits: const ['exercise'],
+  notes: 'test note',
+  createdAt: _now,
+);
 
 class _FakeLoggingNotifier extends LoggingNotifier {
   _FakeLoggingNotifier(this._initialState) : super(_FakeLoggingRepository()) {
@@ -42,7 +41,10 @@ class _FakeLoggingRepository {
   Future<LogEntryModel> createLogEntry(LogEntryModel entry) async => entry;
   Future<LogEntryModel> updateLogEntry(LogEntryModel entry) async => entry;
   Future<void> deleteLogEntry(String entryId, String userId) async {}
-  Future<LogEntryModel?> getLogEntryForDate(DateTime date, String userId) async => null;
+  Future<LogEntryModel?> getLogEntryForDate(
+    DateTime date,
+    String userId,
+  ) async => null;
 }
 
 class _FakeAuthNotifier extends AuthNotifier {
@@ -112,14 +114,19 @@ void main() {
   });
 
   group('LoggingScreen empty state', () {
-    testWidgets('empty-state widget is visible when AsyncData([])', (tester) async {
-      await tester.pumpWidget(_buildScreen(
-        loggingState: const AsyncValue.data([]),
-      ));
+    testWidgets('empty-state widget is visible when AsyncData([])', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildScreen(loggingState: const AsyncValue.data([])),
+      );
       await tester.pump(const Duration(seconds: 2));
 
       expect(find.text('No entries yet'), findsOneWidget);
-      expect(find.text('Start logging your daily mood and habits'), findsOneWidget);
+      expect(
+        find.text('Start logging your daily mood and habits'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -130,9 +137,9 @@ void main() {
         _makeEntry(id: 'e2', mood: 3, date: DateTime(2026, 4, 2)),
       ];
 
-      await tester.pumpWidget(_buildScreen(
-        loggingState: AsyncValue.data(entries),
-      ));
+      await tester.pumpWidget(
+        _buildScreen(loggingState: AsyncValue.data(entries)),
+      );
       await tester.pump(const Duration(seconds: 2));
 
       expect(find.text('No entries yet'), findsNothing);
@@ -142,9 +149,9 @@ void main() {
 
   group('LoggingScreen loading state', () {
     testWidgets('shows loading indicator and hides list', (tester) async {
-      await tester.pumpWidget(_buildScreen(
-        loggingState: const AsyncValue.loading(),
-      ));
+      await tester.pumpWidget(
+        _buildScreen(loggingState: const AsyncValue.loading()),
+      );
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -153,9 +160,14 @@ void main() {
 
   group('LoggingScreen error state', () {
     testWidgets('renders retry widget on AsyncError', (tester) async {
-      await tester.pumpWidget(_buildScreen(
-        loggingState: AsyncValue.error(Exception('network error'), StackTrace.current),
-      ));
+      await tester.pumpWidget(
+        _buildScreen(
+          loggingState: AsyncValue.error(
+            Exception('network error'),
+            StackTrace.current,
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Retry'), findsOneWidget);
@@ -164,10 +176,9 @@ void main() {
 
   group('LoggingScreen create entry navigation', () {
     testWidgets('tapping FAB navigates to create entry screen', (tester) async {
-      await tester.pumpWidget(_buildScreen(
-        loggingState: const AsyncValue.data([]),
-        withRouter: true,
-      ));
+      await tester.pumpWidget(
+        _buildScreen(loggingState: const AsyncValue.data([]), withRouter: true),
+      );
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
 

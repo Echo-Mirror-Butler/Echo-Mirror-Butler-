@@ -17,13 +17,14 @@ VideoPostModel _makeVideoPost({String id = 'video-1'}) => VideoPostModel(
   expiresAt: _now.add(const Duration(hours: 24)),
 );
 
-MoodPinCommentModel _makeComment({String id = 'comment-1'}) => MoodPinCommentModel(
-  id: id,
-  moodPinId: 'pin-1',
-  text: 'Test comment',
-  timestamp: _now,
-  userId: 'user-1',
-);
+MoodPinCommentModel _makeComment({String id = 'comment-1'}) =>
+    MoodPinCommentModel(
+      id: id,
+      moodPinId: 'pin-1',
+      text: 'Test comment',
+      timestamp: _now,
+      userId: 'user-1',
+    );
 
 class _FakeGlobalMirrorRepository extends GlobalMirrorRepository {
   _FakeGlobalMirrorRepository({
@@ -121,20 +122,23 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('GlobalMirrorNotifier.shareMood', () {
-    test('success — returns true and isSharing is false after success', () async {
-      final notifier = GlobalMirrorNotifier(
-        _FakeGlobalMirrorRepository(
-          locationPosition: _FakePosition(),
-          addMoodPinResult: 'pin-123',
-        ),
-      );
+    test(
+      'success — returns true and isSharing is false after success',
+      () async {
+        final notifier = GlobalMirrorNotifier(
+          _FakeGlobalMirrorRepository(
+            locationPosition: _FakePosition(),
+            addMoodPinResult: 'pin-123',
+          ),
+        );
 
-      final result = await notifier.shareMood('happy');
+        final result = await notifier.shareMood('happy');
 
-      expect(result, isTrue);
-      expect(notifier.state.isSharing, isFalse);
-      expect(notifier.state.error, isNull);
-    });
+        expect(result, isTrue);
+        expect(notifier.state.isSharing, isFalse);
+        expect(notifier.state.error, isNull);
+      },
+    );
 
     test('error — returns false and state has error message', () async {
       final notifier = GlobalMirrorNotifier(
@@ -148,17 +152,20 @@ void main() {
       expect(notifier.state.error, isNotNull);
     });
 
-    test('location denied — returns false with location error message', () async {
-      final notifier = GlobalMirrorNotifier(
-        _FakeGlobalMirrorRepository(locationPosition: null),
-      );
+    test(
+      'location denied — returns false with location error message',
+      () async {
+        final notifier = GlobalMirrorNotifier(
+          _FakeGlobalMirrorRepository(locationPosition: null),
+        );
 
-      final result = await notifier.shareMood('happy');
+        final result = await notifier.shareMood('happy');
 
-      expect(result, isFalse);
-      expect(notifier.state.hasLocationPermission, isFalse);
-      expect(notifier.state.error, contains('Location'));
-    });
+        expect(result, isFalse);
+        expect(notifier.state.hasLocationPermission, isFalse);
+        expect(notifier.state.error, contains('Location'));
+      },
+    );
   });
 
   group('GlobalMirrorNotifier.loadVideoFeed', () {
