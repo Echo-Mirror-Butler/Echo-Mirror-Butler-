@@ -72,15 +72,11 @@ class _FutureLetterCardState extends State<FutureLetterCard>
     if (userId == null || userId.isEmpty || content.isEmpty) return;
 
     try {
-      await client.functions.invoke(
-        'save-future-letter',
-        body: {
-          'userId': userId,
-          'content': content,
-          'generatedAt':
-              widget.insight.generatedAt.toUtc().toIso8601String(),
-        },
-      );
+      await client.functions.invoke('save-future-letter', body: {
+        'userId': userId,
+        'content': content,
+        'generatedAt': widget.insight.generatedAt.toUtc().toIso8601String(),
+      });
       _hasPersistedLetter = true;
     } catch (e) {
       debugPrint('[FutureLetterCard] Failed to persist future letter: $e');
