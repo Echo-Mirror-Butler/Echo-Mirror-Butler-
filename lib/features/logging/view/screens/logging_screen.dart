@@ -74,7 +74,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                           Icon(
                             FontAwesomeIcons.book,
                             size: 64,
-                            color: theme.colorScheme.primary.withOpacity(0.5),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -109,7 +111,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                        backgroundColor: AppTheme.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
                         child: Icon(
                           _getMoodIcon(entry.mood),
                           color: AppTheme.primaryColor,
@@ -128,7 +132,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                       trailing: Icon(
                         FontAwesomeIcons.chevronRight,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       onTap: () {
                         context.push(
@@ -172,7 +178,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
   IconData _getMoodIcon(int? mood) {
     if (mood == null) {
-      return FontAwesomeIcons.smile;
+      return FontAwesomeIcons.faceSmile;
     }
     switch (mood) {
       case 1:

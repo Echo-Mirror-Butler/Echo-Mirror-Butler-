@@ -229,6 +229,21 @@ class SocialsRepository {
     }
   }
 
+  /// End a session (sets is_active = false for the host).
+  Future<void> endSession(String sessionId) async {
+    _ensureSupabaseConfigured();
+    final response = await http.post(
+      _restUri('rpc/end_session'),
+      headers: _restHeaders,
+      body: jsonEncode({'session_id': sessionId}),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to end session (${response.statusCode}): ${response.body}',
+      );
+    }
+  }
+
   /// Get session details.
   Future<VideoSessionModel?> getSession(String sessionId) async {
     _ensureSupabaseConfigured();

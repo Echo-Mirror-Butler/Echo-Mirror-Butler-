@@ -190,7 +190,9 @@ void main() {
       await tester.pumpWidget(_buildScreenWithRouter());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Change Password'));
+      await tester.ensureVisible(find.text('Change Password'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Change Password'), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(find.text('Change Password Screen'), findsOneWidget);

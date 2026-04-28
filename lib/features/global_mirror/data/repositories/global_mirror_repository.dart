@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mood_pin_model.dart';
 import '../models/video_post_model.dart';
 import '../models/mood_pin_comment_model.dart';
-import '../core/services/user_mood_pins_service.dart';
+import '../../core/services/user_mood_pins_service.dart';
 
 /// Repository for Global Mirror feature
 /// Handles anonymous mood sharing and video posts

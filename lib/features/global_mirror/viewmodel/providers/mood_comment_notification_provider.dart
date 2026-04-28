@@ -19,6 +19,8 @@ class MoodCommentNotificationNotifier
     _loadNotifications();
   }
 
+  MoodCommentNotificationNotifier.forTesting() : super([]);
+
   SupabaseClient get _supabase => Supabase.instance.client;
 
   String? get _currentUserId => _supabase.auth.currentUser?.id;

@@ -31,22 +31,66 @@ class StoriesBar extends StatefulWidget {
 }
 
 class _StoriesBarState extends State<StoriesBar>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
+    );
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPulseAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant StoriesBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncPulseAnimation();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _syncPulseAnimation();
+  }
+
+  void _syncPulseAnimation() {
+    if (!mounted) return;
+
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    final isAppVisible =
+        lifecycleState == null ||
+        lifecycleState == AppLifecycleState.resumed ||
+        lifecycleState == AppLifecycleState.inactive;
+    final shouldAnimate =
+        widget.liveSessions.isNotEmpty &&
+        TickerMode.of(context) &&
+        isAppVisible;
+
+    if (shouldAnimate) {
+      if (!_pulseController.isAnimating) {
+        _pulseController.repeat(reverse: true);
+      }
+      return;
+    }
+
+    if (_pulseController.isAnimating) {
+      _pulseController.stop();
+    }
   }
 
   @override
