@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
+import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { GiftTransaction, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
 
@@ -418,10 +419,10 @@ export function WalletPage() {
         >
           <label>
             Recipient user ID or email
-            <input
-              type="text"
+            <RecipientAutocomplete
               value={recipientInput}
-              onChange={(event) => setRecipientInput(event.target.value)}
+              onChange={setRecipientInput}
+              onSelect={(userId) => setRecipientInput(userId)}
               placeholder="UUID or email"
             />
           </label>

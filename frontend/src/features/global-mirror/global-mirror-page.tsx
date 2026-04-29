@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
+import { MoodPinCommentsPanel } from '../../components/mood-pin-comments-panel'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ export function GlobalMirrorPage() {
   const channelRef = useRef<RealtimeChannel | null>(null)
 
   const [selectedPin, setSelectedPin] = useState<{ pin: MoodPin; svgX: number; svgY: number } | null>(null)
+  const [commentsPanelPinId, setCommentsPanelPinId] = useState<string | null>(null)
   const [selectedSentiment, setSelectedSentiment] = useState<Sentiment>('happy')
   const [geoStatus, setGeoStatus] = useState<'idle' | 'pending' | 'denied' | 'done'>('idle')
   const [dropError, setDropError] = useState<string | null>(null)
@@ -227,7 +229,10 @@ export function GlobalMirrorPage() {
                 fill={SENTIMENT_COLOR[pin.sentiment] ?? 'var(--brand)'}
                 opacity={0.8}
                 style={{ cursor: 'pointer' }}
-                onClick={() => setSelectedPin({ pin, svgX: x, svgY: y })}
+                onClick={() => {
+                  setSelectedPin({ pin, svgX: x, svgY: y })
+                  setCommentsPanelPinId(pin.id)
+                }}
               />
             )
           })}
@@ -288,6 +293,17 @@ export function GlobalMirrorPage() {
           {geoStatus === 'pending' ? 'Getting location…' : geoStatus === 'done' ? '📍 Pinned!' : '📍 Drop pin'}
         </button>
       </section>
+
+      {/* Comments Panel */}
+      {commentsPanelPinId && (
+        <MoodPinCommentsPanel
+          pinId={commentsPanelPinId}
+          onClose={() => {
+            setCommentsPanelPinId(null)
+            setSelectedPin(null)
+          }}
+        />
+      )}
     </div>
   )
 }
