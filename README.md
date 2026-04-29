@@ -139,7 +139,16 @@ We believe wellness is better together. EchoMirror Butler helps you:
 ```bash
 git clone https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-.git
 cd Echo-Mirror-Butler-
-flutter pub get
+
+# Install FVM
+dart pub global activate fvm
+
+# Use the pinned version
+fvm install
+fvm flutter --version # should show 3.41.7
+
+# Run all dart commands via fvm
+fvm flutter pub get
 ```
 
 ---
@@ -177,7 +186,7 @@ source ~/.zshrc
 
 **Terminal:**
 ```bash
-flutter run -d "iPhone 16 Pro" \
+fvm flutter run -d "iPhone 16 Pro" \
   --dart-define=SUPABASE_URL=$SUPABASE_URL \
   --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 ```
@@ -342,26 +351,26 @@ For AI setup instructions, refer to your Supabase dashboard or use `supabase sec
 ### Running Tests
 
 ```bash
-flutter test
+fvm flutter test
 ```
 
 ### Code Analysis
 
 ```bash
-flutter analyze
+fvm flutter analyze
 ```
 
 ### Format Code
 
 ```bash
-flutter format .
+fvm dart format lib test backend
 ```
 
 ### Generate Code
 
 ```bash
 # For Riverpod code generation
-flutter pub run build_runner build
+fvm flutter pub run build_runner build
 ```
 
 ---
