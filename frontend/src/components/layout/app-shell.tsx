@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
+import { useSearchLogs } from '../../lib/use-search-logs'
+import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
 
 const navItems = [
@@ -37,6 +39,13 @@ export function AppShell() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [selectedResultIdx, setSelectedResultIdx] = useState(-1)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const { results: searchResults } = useSearchLogs(user?.id, searchQuery)
+
   const unreadNotificationsQuery = useQuery({
     queryKey: ['unread-notifications', user?.id],
     queryFn: () => getUnreadNotificationsCount(user!.id),
@@ -63,6 +72,41 @@ export function AppShell() {
     window.addEventListener('keydown', onEscape)
     return () => window.removeEventListener('keydown', onEscape)
   }, [isMobileDrawerOpen])
+
+  // Handle keyboard navigation in search
+  useEffect(() => {
+    const handleSearchKeyDown = (event: KeyboardEvent) => {
+      if (!isSearchOpen || searchResults.length === 0) {
+        if (event.key === 'Escape') {
+          setIsSearchOpen(false)
+        }
+        return
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        setSelectedResultIdx((prev) => (prev + 1) % searchResults.length)
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        setSelectedResultIdx((prev) => (prev - 1 + searchResults.length) % searchResults.length)
+      } else if (event.key === 'Enter' && selectedResultIdx >= 0) {
+        event.preventDefault()
+        const result = searchResults[selectedResultIdx]
+        navigate(`/logs/${result.id}/edit`)
+        setSearchQuery('')
+        setIsSearchOpen(false)
+        setSelectedResultIdx(-1)
+      } else if (event.key === 'Escape') {
+        setIsSearchOpen(false)
+        setSelectedResultIdx(-1)
+      }
+    }
+
+    if (searchInputRef.current === document.activeElement) {
+      document.addEventListener('keydown', handleSearchKeyDown)
+      return () => document.removeEventListener('keydown', handleSearchKeyDown)
+    }
+  }, [isSearchOpen, selectedResultIdx, searchResults, navigate])
 
   const onSignOut = async () => {
     await signOut()
@@ -136,10 +180,78 @@ export function AppShell() {
             <span className="shell-logo-text">EchoMirror</span>
           </div>
 
-          <label className="shell-search">
-            <span className="sr-only">Search</span>
-            <input type="text" placeholder="Search (coming soon)" />
-          </label>
+          <div className="shell-search" style={{ position: 'relative' }}>
+            <label style={{ width: '100%' }}>
+              <span className="sr-only">Search logs</span>
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search logs..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setIsSearchOpen(true)
+                  setSelectedResultIdx(-1)
+                }}
+                onFocus={() => searchQuery && setIsSearchOpen(true)}
+              />
+            </label>
+            {isSearchOpen && (
+              <div
+                className="search-dropdown"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                }}
+              >
+                {searchResults.length === 0 && searchQuery ? (
+                  <div className="search-empty">No logs matched</div>
+                ) : (
+                  <div className="search-results">
+                    {searchResults.map((result, idx) => (
+                      <button
+                        key={result.id}
+                        type="button"
+                        className={`search-result ${selectedResultIdx === idx ? 'focused' : ''}`}
+                        onClick={() => {
+                          navigate(`/logs/${result.id}/edit`)
+                          setSearchQuery('')
+                          setIsSearchOpen(false)
+                          setSelectedResultIdx(-1)
+                        }}
+                      >
+                        <span className="result-date">{formatDate(new Date(result.date))}</span>
+                        <span className="result-mood">{moodToEmoji(result.mood)}</span>
+                        <span className="result-notes">{result.notes ? result.notes.substring(0, 80) : 'No notes'}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {isSearchOpen && (
+            <button
+              type="button"
+              className="search-overlay"
+              onClick={() => {
+                setIsSearchOpen(false)
+                setSelectedResultIdx(-1)
+              }}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 999,
+              }}
+              aria-hidden="true"
+            />
+          )}
 
           <div className="shell-topbar-actions">
             <div style={{ position: 'relative' }}>

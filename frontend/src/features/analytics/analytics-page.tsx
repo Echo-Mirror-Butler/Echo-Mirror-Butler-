@@ -20,7 +20,7 @@ import { useAuth } from '../../lib/auth-context'
 type LogEntry = {
   id: string
   date: string
-  mood_score: number
+  mood: number | null
   habits: string[] | null
 }
 
@@ -35,7 +35,7 @@ function thirtyDaysAgo(): string {
 async function fetchEntries(userId: string): Promise<LogEntry[]> {
   const { data, error } = await supabase
     .from('log_entries')
-    .select('id, date, mood_score, habits')
+    .select('id, date, mood, habits')
     .eq('user_id', userId)
     .gte('date', thirtyDaysAgo())
     .order('date', { ascending: true })
@@ -46,8 +46,8 @@ async function fetchEntries(userId: string): Promise<LogEntry[]> {
 
 function buildMoodTrend(entries: LogEntry[]): { date: string; mood: number }[] {
   return entries
-    .filter((e) => e.mood_score != null)
-    .map((e) => ({ date: e.date.slice(5), mood: e.mood_score }))
+    .filter((e) => e.mood != null)
+    .map((e) => ({ date: e.date.slice(5), mood: e.mood as number }))
 }
 
 function buildHabitFrequency(entries: LogEntry[]): { habit: string; count: number }[] {

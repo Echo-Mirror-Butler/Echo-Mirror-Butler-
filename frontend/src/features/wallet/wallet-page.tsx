@@ -1,7 +1,8 @@
 import { FormEvent, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
+import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { GiftTransaction, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
 
@@ -268,6 +269,7 @@ export function WalletPage() {
     queryKey: ['wallet-history', user?.id, page],
     queryFn: () => fetchGiftHistory(user!.id, page),
     enabled: Boolean(user?.id),
+    placeholderData: keepPreviousData,
   })
 
   const createWalletMutation = useMutation({
@@ -418,10 +420,10 @@ export function WalletPage() {
         >
           <label>
             Recipient user ID or email
-            <input
-              type="text"
+            <RecipientAutocomplete
               value={recipientInput}
-              onChange={(event) => setRecipientInput(event.target.value)}
+              onChange={setRecipientInput}
+              onSelect={(userId) => setRecipientInput(userId)}
               placeholder="UUID or email"
             />
           </label>
@@ -489,12 +491,14 @@ export function WalletPage() {
                 <th>Amount</th>
                 <th>Counterparty</th>
                 <th>Status</th>
+                <th>Tx Hash</th>
               </tr>
             </thead>
             <tbody>
               {(historyQuery.data?.rows ?? []).map((row) => {
                 const isSent = row.sender_user_id === user.id
                 const counterparty = isSent ? row.recipient_user_id : row.sender_user_id
+                const network = import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet'
                 return (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.created_at)}</td>
@@ -505,6 +509,19 @@ export function WalletPage() {
                     </td>
                     <td>{counterparty.slice(0, 10)}…</td>
                     <td>{row.status}</td>
+                    <td>
+                      {row.stellar_tx_hash ? (
+                        <a
+                          href={`https://stellar.expert/explorer/${network}/tx/${row.stellar_tx_hash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {row.stellar_tx_hash.slice(0, 8)}…
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                   </tr>
                 )
               })}
@@ -515,7 +532,11 @@ export function WalletPage() {
         </div>
 
         <div className="pagination-row">
-          <button type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))}>
+          <button
+            type="button"
+            disabled={page <= 1 || historyQuery.isFetching}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+          >
             Prev
           </button>
           <span>
@@ -523,6 +544,7 @@ export function WalletPage() {
           </span>
           <button
             type="button"
+            disabled={page >= totalHistoryPages || historyQuery.isFetching}
             onClick={() => setPage((prev) => Math.min(totalHistoryPages, prev + 1))}
           >
             Next

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
@@ -60,11 +60,59 @@ export function LogsListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [page, setPage] = useState(1)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  const handleExport = async () => {
+    if (!user) return
+    try {
+      setIsExporting(true)
+      setExportError(null)
+
+      const { data, error } = await supabase
+        .from('log_entries')
+        .select('date, mood, habits, notes, created_at')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+
+      if (error) throw error
+
+      const header = 'date,mood,habits,notes,created_at'
+
+      const rows = (data ?? []).map((e) =>
+        [
+          e.date,
+          e.mood ?? '',
+          JSON.stringify(e.habits),
+          (e.notes ?? '').replace(/,/g, ';'),
+          e.created_at,
+        ].join(','),
+      )
+
+      const csv = [header, ...rows].join('\n')
+
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `echomirror-logs-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+      setExportError('Failed to export logs')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const logsQuery = useQuery({
     queryKey: ['logs', user?.id, page],
     queryFn: () => fetchLogs(user!.id, page),
     enabled: Boolean(user?.id),
+    placeholderData: keepPreviousData,
   })
 
   if (!user) {
@@ -92,7 +140,11 @@ export function LogsListPage() {
           >
             Log Today
           </button>
+          <button type="button" className="secondary" onClick={handleExport} disabled={isExporting}>
+            {isExporting ? 'Exporting…' : 'Export CSV'}
+          </button>
         </div>
+        {exportError && <p className="error-text" style={{ padding: '0 1.5rem' }}>{exportError}</p>}
 
         <div className="list-stack">
           {logsQuery.data?.rows.map((entry) => (
@@ -121,13 +173,21 @@ export function LogsListPage() {
         </div>
 
         <div className="pagination-row">
-          <button type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))}>
+          <button
+            type="button"
+            disabled={page <= 1 || logsQuery.isFetching}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+          >
             Prev
           </button>
           <span>
             Page {page} / {totalPages}
           </span>
-          <button type="button" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}>
+          <button
+            type="button"
+            disabled={page >= totalPages || logsQuery.isFetching}
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+          >
             Next
           </button>
         </div>
