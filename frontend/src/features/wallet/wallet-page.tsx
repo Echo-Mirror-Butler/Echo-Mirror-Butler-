@@ -491,12 +491,14 @@ export function WalletPage() {
                 <th>Amount</th>
                 <th>Counterparty</th>
                 <th>Status</th>
+                <th>Tx Hash</th>
               </tr>
             </thead>
             <tbody>
               {(historyQuery.data?.rows ?? []).map((row) => {
                 const isSent = row.sender_user_id === user.id
                 const counterparty = isSent ? row.recipient_user_id : row.sender_user_id
+                const network = import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet'
                 return (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.created_at)}</td>
@@ -507,6 +509,19 @@ export function WalletPage() {
                     </td>
                     <td>{counterparty.slice(0, 10)}…</td>
                     <td>{row.status}</td>
+                    <td>
+                      {row.stellar_tx_hash ? (
+                        <a
+                          href={`https://stellar.expert/explorer/${network}/tx/${row.stellar_tx_hash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {row.stellar_tx_hash.slice(0, 8)}…
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                   </tr>
                 )
               })}
