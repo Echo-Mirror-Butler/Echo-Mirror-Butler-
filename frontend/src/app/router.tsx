@@ -10,6 +10,8 @@ import { AnalyticsPage } from '../features/analytics/analytics-page'
 import { GlobalMirrorPage } from '../features/global-mirror/global-mirror-page'
 import { DashboardPage } from '../features/dashboard/dashboard-page'
 import { SettingsPage } from '../features/settings/settings-page'
+import { ErrorBoundary } from '../components/error-boundary'
+import NotFoundPage from '../features/shared/not-found-page'
 
 function RequireAuth() {
   const { user, isLoading } = useAuth()
@@ -22,7 +24,11 @@ function RequireAuth() {
     return <Navigate to="/login" replace />
   }
 
-  return <AppShell />
+  return (
+    <ErrorBoundary>
+      <AppShell />
+    </ErrorBoundary>
+  )
 }
 
 export function AppRouter() {
@@ -45,7 +51,7 @@ export function AppRouter() {
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }

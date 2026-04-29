@@ -12,6 +12,8 @@ type InsightPayload = {
   suggestions: string[]
   futureLetter: string
   stressLevel: number
+  calmingMessage?: string
+  musicRecommendations?: string[]
 }
 
 function normalizeInsightPayload(input: unknown): InsightPayload {
@@ -30,6 +32,10 @@ function normalizeInsightPayload(input: unknown): InsightPayload {
     suggestions,
     futureLetter: String(candidate.futureLetter ?? '').trim(),
     stressLevel: Number(candidate.stressLevel ?? 0),
+    calmingMessage: String(candidate.calmingMessage ?? '').trim(),
+    musicRecommendations: Array.isArray(candidate.musicRecommendations)
+      ? candidate.musicRecommendations.map((m) => String(m))
+      : [],
   }
 }
 
@@ -94,6 +100,8 @@ async function persistInsight(insight: Insight) {
     suggestions: insight.suggestions,
     future_letter: insight.future_letter,
     stress_level: insight.stress_level,
+    calming_message: insight.calming_message,
+    music_recommendations: insight.music_recommendations,
     created_at: insight.created_at,
   })
 
@@ -132,6 +140,8 @@ async function generateInsight(userId: string, recentLogs: LogEntry[]): Promise<
     suggestions: normalized.suggestions,
     future_letter: normalized.futureLetter,
     stress_level: Math.min(5, Math.max(0, normalized.stressLevel)),
+    calming_message: normalized.calmingMessage,
+    music_recommendations: normalized.musicRecommendations,
     created_at: createdAt,
   }
 
@@ -263,6 +273,21 @@ export function InsightsPage() {
               </div>
             </div>
 
+            {currentInsight.calming_message && (
+              <blockquote className="insight-quote">{currentInsight.calming_message}</blockquote>
+            )}
+
+            {currentInsight.music_recommendations && currentInsight.music_recommendations.length > 0 && (
+              <div className="music-recommendations">
+                <p className="field-label">Music for you</p>
+                <ul>
+                  {currentInsight.music_recommendations.map((m, i) => (
+                    <li key={i}>{m}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className={envelopeOpened ? 'envelope open' : 'envelope'}>
               <p className="field-label">Future Letter</p>
               {isFutureLetterLocked ? (
@@ -300,6 +325,7 @@ export function InsightsPage() {
                 {expanded ? (
                   <div className="expanded-area">
                     <p>{insight.prediction}</p>
+                    {insight.calming_message && <blockquote className="insight-quote">{insight.calming_message}</blockquote>}
                     <p className="muted">Future letter preview: {insight.future_letter.slice(0, 120)}…</p>
                   </div>
                 ) : null}
