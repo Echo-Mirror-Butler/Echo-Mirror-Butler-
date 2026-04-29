@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
 export function SignInPanel() {
@@ -54,6 +55,14 @@ export function SignInPanel() {
         </button>
         {error ? <p className="error-text">{error}</p> : null}
       </form>
+      <div className="auth-links">
+        <p>
+          Don&apos;t have an account? <Link to="/signup">Sign up</Link>
+        </p>
+        <p>
+          Forgot your password? <Link to="/reset-password">Reset it</Link>
+        </p>
+      </div>
     </section>
   )
 }

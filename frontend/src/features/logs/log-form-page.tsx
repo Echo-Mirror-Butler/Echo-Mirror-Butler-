@@ -12,6 +12,12 @@ type LogFormPageProps = {
   mode: LogFormMode
 }
 
+const HABIT_PRESETS = [
+  'Exercise', 'Meditation', 'Reading', 'Hydration',
+  'Sleep 8h', 'Journaling', 'Healthy eating', 'No alcohol',
+  'Gratitude', 'Cold shower',
+]
+
 async function fetchLogById(id: string): Promise<LogEntry | null> {
   const { data, error } = await supabase.from('log_entries').select('*').eq('id', id).maybeSingle()
   if (error) {
@@ -251,6 +257,22 @@ export function LogFormPage({ mode }: LogFormPageProps) {
 
           <div>
             <p className="field-label">Habits</p>
+            <div className="chip-row">
+              {HABIT_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className={habits.includes(preset) ? 'chip active' : 'chip'}
+                  onClick={() =>
+                    setHabits((prev) =>
+                      prev.includes(preset) ? prev.filter((h) => h !== preset) : [...prev, preset],
+                    )
+                  }
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
             <input
               type="text"
               value={habitInput}
