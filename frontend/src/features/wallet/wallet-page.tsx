@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
@@ -269,6 +269,7 @@ export function WalletPage() {
     queryKey: ['wallet-history', user?.id, page],
     queryFn: () => fetchGiftHistory(user!.id, page),
     enabled: Boolean(user?.id),
+    placeholderData: keepPreviousData,
   })
 
   const createWalletMutation = useMutation({
@@ -516,7 +517,11 @@ export function WalletPage() {
         </div>
 
         <div className="pagination-row">
-          <button type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))}>
+          <button
+            type="button"
+            disabled={page <= 1 || historyQuery.isFetching}
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+          >
             Prev
           </button>
           <span>
@@ -524,6 +529,7 @@ export function WalletPage() {
           </span>
           <button
             type="button"
+            disabled={page >= totalHistoryPages || historyQuery.isFetching}
             onClick={() => setPage((prev) => Math.min(totalHistoryPages, prev + 1))}
           >
             Next

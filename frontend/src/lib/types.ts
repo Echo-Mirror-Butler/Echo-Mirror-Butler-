@@ -39,5 +39,7 @@ export type Insight = {
   suggestions: string[]
   future_letter: string
   stress_level: number
+  calming_message?: string
+  music_recommendations?: string[]
   created_at: string
 }
