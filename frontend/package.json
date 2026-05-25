@@ -4,7 +4,7 @@
   "description": "This directory will contain the React web application for EchoMirror — a companion web dashboard to the Flutter mobile app.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
