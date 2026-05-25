@@ -1312,6 +1312,106 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   gap: 0.5rem;
 }
 
+/* ── Stellar explainer section ───────────────────────────────── */
+.lp-stellar-section {
+  background: linear-gradient(160deg, #060d1a 0%, #071428 55%, #0a1c3a 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-stellar-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 55% 50% at 80% 20%, rgba(125,211,252,0.07), transparent 55%),
+    radial-gradient(ellipse 45% 55% at 15% 80%, rgba(20,99,255,0.1), transparent 55%);
+  pointer-events: none;
+}
+
+.lp-stellar-steps {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 3.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.lp-stellar-step {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(125,211,252,0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s, background 0.25s;
+}
+
+.lp-stellar-step:hover {
+  border-color: rgba(125,211,252,0.25);
+  background: rgba(255,255,255,0.05);
+}
+
+.lp-stellar-step-num {
+  font-family: 'Instrument Serif', serif;
+  font-size: 4rem;
+  font-weight: 400;
+  color: rgba(125,211,252,0.08);
+  line-height: 1;
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  letter-spacing: -0.04em;
+}
+
+.lp-stellar-step-icon {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.lp-stellar-step-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: white;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.lp-stellar-step-body {
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.45);
+  font-weight: 300;
+}
+
+.lp-stellar-quote {
+  margin-top: 3.5rem;
+  padding: 2rem 2.5rem;
+  border-left: 3px solid rgba(125,211,252,0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.lp-stellar-quote-mark {
+  font-family: 'Instrument Serif', serif;
+  font-size: 5rem;
+  color: rgba(125,211,252,0.15);
+  line-height: 0.5;
+  margin-bottom: 1rem;
+}
+
+.lp-stellar-quote p {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  font-style: italic;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.6;
+  max-width: 68ch;
+  font-weight: 400;
+}
+
 /* ── Wallet section ──────────────────────────────────────────── */
 .lp-wallet-section {
   background: linear-gradient(150deg, #060d1a 0%, #0a1f3d 50%, #0c2a4a 100%);
@@ -1590,6 +1690,8 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
 @media (max-width: 900px) {
   .lp-awareness-body { grid-template-columns: 1fr; }
   .lp-awareness-video-wrap { max-height: 320px; aspect-ratio: 16/9; }
+
+  .lp-stellar-steps { grid-template-columns: 1fr; }
 
   .lp-wallet-inner { grid-template-columns: 1fr; }
   .lp-wallet-card { max-width: 100%; }

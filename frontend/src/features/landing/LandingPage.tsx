@@ -378,6 +378,68 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ── Stellar explainer ── */}
+      <section className="lp-section lp-stellar-section">
+        <div className="lp-section-inner">
+          <Reveal>
+            <div className="lp-section-eyebrow" style={{ color: '#7dd3fc' }}>Powered by Stellar</div>
+            <h2 className="lp-section-title" style={{ color: 'white' }}>
+              Money that moves<br />
+              <em style={{ fontStyle: 'italic', color: '#7dd3fc' }}>with your mood.</em>
+            </h2>
+            <p className="lp-section-sub" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              EchoMirror uses the Stellar blockchain to make sending value as easy as sending a message.
+              No banks. No fees. Just people supporting people.
+            </p>
+          </Reveal>
+
+          <div className="lp-stellar-steps">
+            {[
+              {
+                step: '01',
+                icon: '📓',
+                title: 'Log your mood daily',
+                body: 'Every entry you submit earns ECHO tokens — the native currency of EchoMirror, settled on Stellar Testnet in seconds.',
+              },
+              {
+                step: '02',
+                icon: '🎁',
+                title: 'Gift ECHO to a friend',
+                body: 'See someone grinding through a tough week? Send them ECHO directly from your wallet. It lands in their account instantly, anywhere in the world.',
+              },
+              {
+                step: '03',
+                icon: '🔥',
+                title: 'Reward habit streaks',
+                body: 'Set a challenge with a friend — whoever keeps their streak alive gets the ECHO pot. Accountability just got a prize.',
+              },
+              {
+                step: '04',
+                icon: '🌍',
+                title: 'No borders, no banks',
+                body: 'Stellar settles transactions in 3–5 seconds with near-zero fees. Lagos to London, Mumbai to New York — ECHO travels instantly.',
+              },
+            ].map((s, i) => (
+              <Reveal key={s.step} delay={(i % 2 + 1) as 1 | 2}>
+                <div className="lp-stellar-step">
+                  <div className="lp-stellar-step-num">{s.step}</div>
+                  <div className="lp-stellar-step-icon">{s.icon}</div>
+                  <div className="lp-stellar-step-title">{s.title}</div>
+                  <div className="lp-stellar-step-body">{s.body}</div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal>
+            <div className="lp-stellar-quote">
+              <div className="lp-stellar-quote-mark">"</div>
+              <p>Stellar makes it possible to send ECHO to a friend across the world in the same time it takes to write them a message. That's the future of emotional support.</p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ── Wallet Connect ── */}
       <WalletConnectSection onSignup={() => navigate('/signup')} />
 
