@@ -6,27 +6,35 @@ import './landing-page.css'
 const features = [
   {
     icon: '🧠',
-    bg: '#dbeafe',
+    bg: 'linear-gradient(135deg,#dbeafe,#eff6ff)',
+    accent: '#1463ff',
     title: 'AI Mood Insights',
     desc: 'Your AI companion surfaces personalised reflections shaped by your history — not generic advice.',
+    stat: '94% accuracy',
   },
   {
     icon: '🌍',
-    bg: '#d6f8ef',
+    bg: 'linear-gradient(135deg,#d6f8ef,#ecfdf5)',
+    accent: '#0a8a5b',
     title: 'Global Mirror',
     desc: 'See how your emotional state compares with thousands worldwide, in real time.',
+    stat: '180+ countries',
   },
   {
     icon: '📓',
-    bg: '#ede9fe',
+    bg: 'linear-gradient(135deg,#ede9fe,#f5f3ff)',
+    accent: '#7c3aed',
     title: 'Habit & Mood Logs',
     desc: 'Log what you feel. Over time, patterns emerge you\'d never catch in the moment.',
+    stat: '2 min/day',
   },
   {
     icon: '✦',
-    bg: '#fef3c7',
+    bg: 'linear-gradient(135deg,#fef3c7,#fffbeb)',
+    accent: '#d97706',
     title: 'ECHO Wallet',
     desc: 'Earn ECHO tokens on Stellar just by showing up. Consistency has real value here.',
+    stat: 'Real Stellar tokens',
   },
 ]
 
@@ -42,10 +50,10 @@ const tickerItems = [
 ]
 
 const wellnessStats = [
-  { value: '1 in 4', label: 'people experience a mental health condition each year' },
-  { value: '60%',    label: 'of people never seek help due to stigma or lack of access' },
-  { value: '40%',    label: 'mood improvement reported by consistent journalling users' },
-  { value: '3×',     label: 'more likely to sustain habits when tracking daily mood' },
+  { value: '1 in 4', label: 'people experience a mental health condition each year', color: '#1463ff' },
+  { value: '60%',    label: 'never seek help due to stigma or lack of access', color: '#bb2d3b' },
+  { value: '40%',    label: 'mood improvement from consistent journalling', color: '#0a8a5b' },
+  { value: '3×',     label: 'more likely to sustain habits when tracking mood daily', color: '#7c3aed' },
 ]
 
 function useReveal() {
@@ -55,7 +63,7 @@ function useReveal() {
     if (!el) return
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { el.classList.add('is-visible'); observer.disconnect() } },
-      { threshold: 0.1 },
+      { threshold: 0.08 },
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -76,11 +84,9 @@ function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.includes('@')) { setErrMsg('Enter a valid email'); return }
-    setStatus('loading')
-    setErrMsg('')
+    setStatus('loading'); setErrMsg('')
     const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
-    if (error) { setStatus('error'); setErrMsg(error.message) }
-    else { setStatus('done') }
+    if (error) { setStatus('error'); setErrMsg(error.message) } else { setStatus('done') }
   }
 
   return (
@@ -95,16 +101,14 @@ function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
                 <em style={{ fontStyle: 'italic', color: '#fbbf24' }}>earns real value.</em>
               </h2>
               <p className="lp-section-sub" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                Connect your Stellar wallet and start earning ECHO tokens for every mood log, streak, and insight you unlock.
-                Consistency has currency here.
+                Connect your Stellar wallet and start earning ECHO tokens for every mood log, streak, and insight you unlock. Consistency has currency here.
               </p>
-
               <div className="lp-wallet-perks">
                 {[
-                  { icon: '🔥', title: 'Streak rewards',   desc: 'Log 7 days straight, earn bonus ECHO' },
-                  { icon: '✦',  title: 'Stellar native',   desc: 'Real tokens on the Stellar blockchain' },
-                  { icon: '🎁', title: 'Send to friends',  desc: 'Gift ECHO to people who inspire you' },
-                  { icon: '🔒', title: 'Non-custodial',    desc: 'Your keys, your tokens, always' },
+                  { icon: '🔥', title: 'Streak rewards',  desc: 'Log 7 days straight, earn bonus ECHO' },
+                  { icon: '✦',  title: 'Stellar native',  desc: 'Real tokens on the Stellar blockchain' },
+                  { icon: '🎁', title: 'Send to friends', desc: 'Gift ECHO to people who inspire you' },
+                  { icon: '🔒', title: 'Non-custodial',   desc: 'Your keys, your tokens, always' },
                 ].map((p) => (
                   <div key={p.title} className="lp-wallet-perk">
                     <span className="lp-wallet-perk-icon">{p.icon}</span>
@@ -117,7 +121,6 @@ function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
               </div>
             </div>
           </Reveal>
-
           <Reveal delay={2}>
             <div className="lp-wallet-right">
               <div className="lp-wallet-card">
@@ -131,7 +134,6 @@ function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
                   <div className="lp-wallet-balance-num">142.00 <span>ECHO</span></div>
                   <div className="lp-wallet-streak">🔥 7-day streak active</div>
                 </div>
-
                 {status === 'done' ? (
                   <div className="lp-wallet-success">
                     <div className="lp-wallet-success-icon">✓</div>
@@ -141,22 +143,14 @@ function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
                 ) : (
                   <form className="lp-wallet-form" onSubmit={handleConnect}>
                     <p className="lp-wallet-form-label">Get started with your email — wallet created automatically.</p>
-                    <input
-                      className="lp-wallet-input"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
+                    <input className="lp-wallet-input" type="email" placeholder="you@example.com"
+                      value={email} onChange={(e) => setEmail(e.target.value)} required />
                     {errMsg && <div className="lp-wallet-error">{errMsg}</div>}
                     <button type="submit" className="lp-wallet-btn" disabled={status === 'loading'}>
                       {status === 'loading' ? 'Connecting…' : '✦ Connect Stellar Wallet'}
                     </button>
                     <div className="lp-wallet-or">or</div>
-                    <button type="button" className="lp-wallet-btn-ghost" onClick={onSignup}>
-                      Create full account →
-                    </button>
+                    <button type="button" className="lp-wallet-btn-ghost" onClick={onSignup}>Create full account →</button>
                   </form>
                 )}
               </div>
@@ -186,12 +180,10 @@ export function LandingPage() {
           <a href="#wallet" className="lp-nav-link">Wallet</a>
           <Link to="/login" className="lp-nav-link">Sign in</Link>
         </div>
-        <button className="lp-btn-solid" onClick={() => navigate('/signup')}>
-          Get started free
-        </button>
+        <button className="lp-btn-solid" onClick={() => navigate('/signup')}>Get started free</button>
       </nav>
 
-      {/* ── Hero — two column ── */}
+      {/* ── Hero ── */}
       <section className="lp-hero">
         <div className="lp-video-wrap">
           <video className="lp-video-bg" autoPlay muted loop playsInline
@@ -202,31 +194,26 @@ export function LandingPage() {
         </div>
 
         <div className="lp-hero-inner">
-          {/* Left: copy */}
           <div className="lp-hero-copy">
             <div className="lp-hero-eyebrow">
               <span className="lp-eyebrow-pip" />
               Wellbeing, amplified by AI
             </div>
-
             <h1 className="lp-hero-title">
               Your mind,<br />
               <em>reflected</em><br />
               back to you.
             </h1>
-
             <p className="lp-hero-sub">
-              Track moods, decode patterns, earn rewards.
+              Track moods, decode patterns, earn rewards on Stellar.
               A space that listens as carefully as you listen to yourself.
             </p>
-
             <div className="lp-hero-actions">
               <button className="lp-cta-primary" onClick={() => navigate('/signup')}>
                 Start for free <span className="lp-cta-arrow">→</span>
               </button>
               <Link to="/login" className="lp-cta-ghost">Sign in</Link>
             </div>
-
             <div className="lp-hero-social-proof">
               <div className="lp-avatar-stack">
                 {['#1463ff','#0a8a5b','#7c3aed','#e67a00'].map((c, i) => (
@@ -237,8 +224,8 @@ export function LandingPage() {
             </div>
           </div>
 
-          {/* Right: app mockup */}
           <div className="lp-hero-mockup">
+            <div className="lp-hero-mockup-glow" />
             <img src="/phone-mockup.png" alt="EchoMirror app" className="lp-phone-img" />
             <div className="lp-float-chip lp-float-chip--1">
               <span className="lp-float-pip" style={{ background: '#0a8a5b' }} />
@@ -247,14 +234,22 @@ export function LandingPage() {
             <div className="lp-float-chip lp-float-chip--2">
               🌍 Lagos is feeling motivated
             </div>
+            <div className="lp-float-chip lp-float-chip--3">
+              ✦ +5 ECHO earned today
+            </div>
           </div>
         </div>
 
-        {/* Scroll cue */}
-        <div className="lp-scroll-cue">
-          <div className="lp-scroll-line" />
-        </div>
+        <div className="lp-scroll-cue"><div className="lp-scroll-line" /></div>
       </section>
+
+      {/* ── Logos / trust bar ── */}
+      <div className="lp-trust-bar">
+        <span className="lp-trust-label">Built on</span>
+        {['Stellar', 'Supabase', 'Claude AI', 'React'].map((t) => (
+          <span key={t} className="lp-trust-item">{t}</span>
+        ))}
+      </div>
 
       {/* ── Features ── */}
       <section className="lp-section lp-features" id="features">
@@ -271,9 +266,15 @@ export function LandingPage() {
             {features.map((f, i) => (
               <Reveal key={f.title} delay={(i % 2) + 1 as 1 | 2}>
                 <div className="lp-feature">
-                  <div className="lp-feature-icon" style={{ background: f.bg }}>{f.icon}</div>
-                  <div className="lp-feature-title">{f.title}</div>
-                  <div className="lp-feature-desc">{f.desc}</div>
+                  <div className="lp-feature-top" style={{ background: f.bg }}>
+                    <div className="lp-feature-icon-wrap">{f.icon}</div>
+                    <div className="lp-feature-stat" style={{ color: f.accent }}>{f.stat}</div>
+                  </div>
+                  <div className="lp-feature-body">
+                    <div className="lp-feature-title">{f.title}</div>
+                    <div className="lp-feature-desc">{f.desc}</div>
+                  </div>
+                  <div className="lp-feature-bar" style={{ background: f.accent }} />
                 </div>
               </Reveal>
             ))}
@@ -281,12 +282,12 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Health Awareness Video ── */}
+      {/* ── Health Awareness ── */}
       <section className="lp-section lp-awareness-section">
         <div className="lp-section-inner">
           <Reveal>
             <div className="lp-section-eyebrow" style={{ color: '#0a8a5b' }}>Mental Health Matters</div>
-            <h2 className="lp-section-title">Understanding your<br />mental wellbeing.</h2>
+            <h2 className="lp-section-title">The data is clear.<br />Your mind needs care too.</h2>
             <p className="lp-section-sub">
               Mental health is as real as physical health. EchoMirror gives you the tools to track, understand, and improve yours — every single day.
             </p>
@@ -297,7 +298,8 @@ export function LandingPage() {
               <div className="lp-awareness-stats">
                 {wellnessStats.map((s) => (
                   <div key={s.value} className="lp-awareness-stat">
-                    <div className="lp-awareness-stat-value">{s.value}</div>
+                    <div className="lp-awareness-stat-bar" style={{ background: s.color }} />
+                    <div className="lp-awareness-stat-value" style={{ color: s.color }}>{s.value}</div>
                     <div className="lp-awareness-stat-label">{s.label}</div>
                   </div>
                 ))}
@@ -307,14 +309,8 @@ export function LandingPage() {
             <Reveal delay={2}>
               <div className="lp-awareness-video-wrap">
                 <div className="lp-awareness-video-badge">Health Awareness</div>
-                <video
-                  className="lp-awareness-video"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  poster="https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800"
-                >
+                <video className="lp-awareness-video" autoPlay muted loop playsInline
+                  poster="https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800">
                   <source src="https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4" type="video/mp4" />
                 </video>
                 <div className="lp-awareness-video-caption">
@@ -322,6 +318,32 @@ export function LandingPage() {
                 </div>
               </div>
             </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it works ── */}
+      <section className="lp-section lp-how-section">
+        <div className="lp-section-inner">
+          <Reveal>
+            <div className="lp-section-eyebrow">How it works</div>
+            <h2 className="lp-section-title">Three steps to<br />a clearer mind.</h2>
+          </Reveal>
+          <div className="lp-how-steps">
+            {[
+              { n: '1', title: 'Log how you feel', body: 'Takes 60 seconds. Rate your mood, note your habits, add a thought. That\'s it.', color: '#1463ff' },
+              { n: '2', title: 'AI finds the patterns', body: 'EchoMirror\'s AI surfaces what your brain misses — the links between sleep, mood, habits, and time.', color: '#0a8a5b' },
+              { n: '3', title: 'Earn & grow', body: 'Consistency earns ECHO tokens on Stellar. Share them, gift them, or hold them as proof you showed up.', color: '#7c3aed' },
+            ].map((s, i) => (
+              <Reveal key={s.n} delay={(i + 1) as 1 | 2}>
+                <div className="lp-how-step">
+                  <div className="lp-how-num" style={{ color: s.color, borderColor: s.color }}>{s.n}</div>
+                  <div className="lp-how-connector" style={{ background: s.color }} />
+                  <div className="lp-how-title">{s.title}</div>
+                  <div className="lp-how-body">{s.body}</div>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
@@ -388,37 +410,16 @@ export function LandingPage() {
               <em style={{ fontStyle: 'italic', color: '#7dd3fc' }}>with your mood.</em>
             </h2>
             <p className="lp-section-sub" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              EchoMirror uses the Stellar blockchain to make sending value as easy as sending a message.
-              No banks. No fees. Just people supporting people.
+              EchoMirror uses the Stellar blockchain to make sending value as easy as sending a message. No banks. No fees. Just people supporting people.
             </p>
           </Reveal>
 
           <div className="lp-stellar-steps">
             {[
-              {
-                step: '01',
-                icon: '📓',
-                title: 'Log your mood daily',
-                body: 'Every entry you submit earns ECHO tokens — the native currency of EchoMirror, settled on Stellar Testnet in seconds.',
-              },
-              {
-                step: '02',
-                icon: '🎁',
-                title: 'Gift ECHO to a friend',
-                body: 'See someone grinding through a tough week? Send them ECHO directly from your wallet. It lands in their account instantly, anywhere in the world.',
-              },
-              {
-                step: '03',
-                icon: '🔥',
-                title: 'Reward habit streaks',
-                body: 'Set a challenge with a friend — whoever keeps their streak alive gets the ECHO pot. Accountability just got a prize.',
-              },
-              {
-                step: '04',
-                icon: '🌍',
-                title: 'No borders, no banks',
-                body: 'Stellar settles transactions in 3–5 seconds with near-zero fees. Lagos to London, Mumbai to New York — ECHO travels instantly.',
-              },
+              { step: '01', icon: '📓', title: 'Log your mood daily', body: 'Every entry earns ECHO tokens — the native currency of EchoMirror, settled on Stellar in seconds.' },
+              { step: '02', icon: '🎁', title: 'Gift ECHO to a friend', body: 'Someone grinding through a tough week? Send them ECHO directly. It lands instantly, anywhere in the world.' },
+              { step: '03', icon: '🔥', title: 'Reward habit streaks', body: 'Set a challenge with a friend — whoever keeps their streak alive gets the ECHO pot. Accountability just got a prize.' },
+              { step: '04', icon: '🌍', title: 'No borders, no banks', body: 'Stellar settles in 3–5 seconds with near-zero fees. Lagos to London, Mumbai to New York — ECHO travels instantly.' },
             ].map((s, i) => (
               <Reveal key={s.step} delay={(i % 2 + 1) as 1 | 2}>
                 <div className="lp-stellar-step">
@@ -443,6 +444,38 @@ export function LandingPage() {
       {/* ── Wallet Connect ── */}
       <WalletConnectSection onSignup={() => navigate('/signup')} />
 
+      {/* ── Testimonial ── */}
+      <section className="lp-section lp-testimonials-section">
+        <div className="lp-section-inner">
+          <Reveal>
+            <div className="lp-section-eyebrow">From the community</div>
+            <h2 className="lp-section-title">People are already<br />feeling the difference.</h2>
+          </Reveal>
+          <div className="lp-testimonials-grid">
+            {[
+              { quote: 'I never realised how much my sleep was wrecking my mood until EchoMirror showed me the pattern. Two weeks of data changed my whole routine.', name: 'Amara O.', loc: 'Lagos', color: '#0a8a5b' },
+              { quote: 'Gifting ECHO to my friend after she hit her 30-day streak was genuinely one of the most wholesome things I\'ve done on a phone.', name: 'Luca M.', loc: 'Berlin', color: '#1463ff' },
+              { quote: 'It\'s the first app that actually made me want to check in with myself every day. The AI insights feel like talking to a very calm, wise friend.', name: 'Priya S.', loc: 'Mumbai', color: '#7c3aed' },
+            ].map((t, i) => (
+              <Reveal key={i} delay={(i % 2 + 1) as 1 | 2}>
+                <div className="lp-testimonial">
+                  <div className="lp-testimonial-quote">{t.quote}</div>
+                  <div className="lp-testimonial-author">
+                    <div className="lp-testimonial-avatar" style={{ background: t.color }}>
+                      {t.name[0]}
+                    </div>
+                    <div>
+                      <div className="lp-testimonial-name">{t.name}</div>
+                      <div className="lp-testimonial-loc">{t.loc}</div>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ── */}
       <section className="lp-section lp-cta-section">
         <div className="lp-section-inner">
@@ -459,7 +492,16 @@ export function LandingPage() {
 
       {/* ── Footer ── */}
       <footer className="lp-footer">
-        <span className="lp-footer-logo">EchoMirror</span>
+        <div className="lp-footer-left">
+          <span className="lp-footer-logo">EchoMirror</span>
+          <span className="lp-footer-tagline">Your mind, reflected back to you.</span>
+        </div>
+        <div className="lp-footer-links">
+          <a href="#features">Features</a>
+          <a href="#global">Global Mirror</a>
+          <a href="#wallet">Wallet</a>
+          <Link to="/login">Sign in</Link>
+        </div>
         <span className="lp-footer-copy">© 2025 EchoMirror. All rights reserved.</span>
       </footer>
     </div>

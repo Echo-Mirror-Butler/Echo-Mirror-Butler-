@@ -1734,3 +1734,323 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   .lp-hero-title { font-size: clamp(2.5rem, 8vw, 3.5rem); }
   .lp-float-chip { display: none; }
 }
+
+/* ── Hero mockup glow ────────────────────────────────────────── */
+.lp-hero-mockup-glow {
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20,99,255,0.35) 0%, rgba(10,138,91,0.15) 50%, transparent 70%);
+  filter: blur(48px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lp-phone-img { position: relative; z-index: 1; }
+
+/* Third floating chip */
+.lp-float-chip--3 {
+  top: 50%;
+  right: -10px;
+  transform: translateY(-50%);
+  animation: chip-float-1 8s ease-in-out infinite;
+  animation-delay: 1s;
+  background: rgba(251,191,36,0.95);
+  color: #0c1a2e;
+  border-color: rgba(251,191,36,0.3);
+}
+
+/* ── Trust bar ───────────────────────────────────────────────── */
+.lp-trust-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 2rem;
+  flex-wrap: wrap;
+  padding: 1.1rem clamp(1.5rem, 6vw, 5rem);
+  background: var(--lp-white);
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.lp-trust-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-ink-30);
+}
+
+.lp-trust-item {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--lp-ink-60);
+  padding: 0.28rem 0.85rem;
+  border: 1px solid var(--lp-border);
+  border-radius: 999px;
+  background: var(--lp-canvas);
+  letter-spacing: 0.01em;
+}
+
+/* ── Feature cards (redesigned) ─────────────────────────────── */
+.lp-feature-top {
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.lp-feature-icon-wrap {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.lp-feature-stat {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  background: rgba(255,255,255,0.7);
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.lp-feature-body {
+  padding: 0 0.25rem;
+}
+
+.lp-feature-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 0 0 20px 20px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+
+.lp-feature:hover .lp-feature-bar { transform: scaleX(1); }
+
+/* Remove old ::before bar since .lp-feature-bar handles it */
+.lp-feature::before { display: none; }
+
+/* ── Awareness stat bar ──────────────────────────────────────── */
+.lp-awareness-stat {
+  padding-top: 1.2rem;
+}
+
+.lp-awareness-stat-bar {
+  height: 3px;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+  width: 40px;
+}
+
+/* ── How it works section ────────────────────────────────────── */
+.lp-how-section {
+  background: var(--lp-canvas);
+  border-top: 1px solid var(--lp-border);
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.lp-how-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-top: 3.5rem;
+  position: relative;
+}
+
+.lp-how-steps::before {
+  content: '';
+  position: absolute;
+  top: 28px;
+  left: calc(33.33% - 12px);
+  right: calc(33.33% - 12px);
+  height: 1px;
+  background: var(--lp-border);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lp-how-step {
+  position: relative;
+  z-index: 1;
+}
+
+.lp-how-num {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: grid;
+  place-items: center;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 1.5rem;
+  background: var(--lp-white);
+  position: relative;
+  z-index: 1;
+}
+
+.lp-how-connector {
+  display: none;
+}
+
+.lp-how-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--lp-ink);
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.01em;
+}
+
+.lp-how-body {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--lp-ink-60);
+  font-weight: 300;
+}
+
+/* ── Testimonials section ────────────────────────────────────── */
+.lp-testimonials-section {
+  background: var(--lp-white);
+  border-top: 1px solid var(--lp-border);
+}
+
+.lp-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3.5rem;
+}
+
+.lp-testimonial {
+  background: var(--lp-canvas);
+  border: 1px solid var(--lp-border);
+  border-radius: 20px;
+  padding: 1.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.4rem;
+  transition: transform 0.22s cubic-bezier(0.16,1,0.3,1), box-shadow 0.22s;
+}
+
+.lp-testimonial:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--lp-shadow-lg);
+}
+
+.lp-testimonial-quote {
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--lp-ink);
+  letter-spacing: -0.005em;
+}
+
+.lp-testimonial-quote::before {
+  content: '"';
+  color: var(--lp-blue);
+  font-size: 1.4rem;
+  line-height: 0;
+  vertical-align: -0.35em;
+  margin-right: 0.15em;
+  opacity: 0.6;
+}
+
+.lp-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lp-testimonial-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.lp-testimonial-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--lp-ink);
+}
+
+.lp-testimonial-loc {
+  font-size: 0.75rem;
+  color: var(--lp-ink-60);
+  font-weight: 300;
+}
+
+/* ── Enhanced footer ─────────────────────────────────────────── */
+.lp-footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lp-footer-tagline {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.25);
+  font-weight: 300;
+  font-style: italic;
+}
+
+.lp-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.lp-footer-links a {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  transition: color 0.15s;
+}
+
+.lp-footer-links a:hover { color: rgba(255,255,255,0.8); }
+
+/* ── Responsive: new sections ────────────────────────────────── */
+@media (max-width: 900px) {
+  .lp-how-steps {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .lp-how-steps::before { display: none; }
+
+  .lp-testimonials-grid { grid-template-columns: 1fr; }
+
+  .lp-trust-bar { gap: 0.5rem 1rem; }
+
+  .lp-float-chip--3 { display: none; }
+
+  .lp-footer { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+  .lp-footer-links { gap: 1rem; flex-wrap: wrap; }
+}
+
+@media (max-width: 640px) {
+  .lp-testimonials-grid { grid-template-columns: 1fr; }
+  .lp-how-steps { grid-template-columns: 1fr; }
+  .lp-trust-bar { gap: 0.4rem 0.75rem; }
+}
