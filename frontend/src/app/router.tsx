@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '../components/layout/app-shell'
 import { SignInPanel } from '../components/auth/sign-in-panel'
+import { LandingPage } from '../features/landing/LandingPage'
 import { useAuth } from '../lib/auth-context'
 import { WalletPage } from '../features/wallet/wallet-page'
 import { LogsListPage } from '../features/logs/logs-list-page'
@@ -39,13 +40,13 @@ export function AppRouter() {
 
   return (
     <Routes>
+      <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <SignInPanel />} />
       <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupPage />} />
       <Route path="/reset-password" element={user ? <Navigate to="/dashboard" replace /> : <ResetPasswordPage />} />
       <Route path="/update-password" element={user ? <Navigate to="/dashboard" replace /> : <UpdatePasswordPage />} />
 
       <Route element={<RequireAuth />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/wallet" element={<WalletPage />} />
         <Route path="/logs" element={<LogsListPage />} />

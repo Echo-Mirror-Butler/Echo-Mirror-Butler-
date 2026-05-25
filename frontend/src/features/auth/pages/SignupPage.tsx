@@ -1,138 +1,108 @@
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/features/auth/store/authStore'
-import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
-import type { SignUpCredentials } from '@/types/auth'
+import { supabase } from '../../../lib/supabase'
+import '../../landing/landing-page.css'
 
 export function SignupPage() {
   const navigate = useNavigate()
-  const setUser = useAuthStore((state) => state.setUser)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [credentials, setCredentials] = useState<SignUpCredentials>({
-    email: '',
-    password: '',
-    name: '',
-  })
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-
-  const validateForm = (): string | null => {
-    if (!credentials.email) return 'Email is required'
-    if (!credentials.email.includes('@')) return 'Invalid email address'
-    if (!credentials.password) return 'Password is required'
-    if (credentials.password.length < 6) return 'Password must be at least 6 characters'
-    return null
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError('')
-
-    const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: credentials.email,
-        password: credentials.password,
-        options: {
-          data: {
-            name: credentials.name,
-          },
-        },
-      })
-
-      if (signUpError) throw signUpError
-
-      if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || '' })
-        navigate('/dashboard')
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign up')
-    } finally {
-      setIsLoading(false)
-    }
+    setError(null)
+    if (!email.includes('@')) { setError('Enter a valid email address'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
+    setIsSubmitting(true)
+    const { error: err } = await supabase.auth.signUp({
+      email, password, options: { data: { name } },
+    })
+    setIsSubmitting(false)
+    if (err) { setError(err.message); return }
+    navigate('/dashboard')
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="text-3xl font-bold text-center text-primary">
-            Create Account
+    <div className="lp-auth-overlay">
+      <div className="lp-auth-left">
+        <div className="lp-auth-mesh" />
+        <div className="lp-auth-lines">
+          <div className="lp-auth-line" />
+          <div className="lp-auth-line" />
+          <div className="lp-auth-line" />
+        </div>
+
+        <div className="lp-auth-brand">
+          <div className="lp-auth-mark">
+            <img src="/app-icon.png" alt="EchoMirror" />
+          </div>
+          <span className="lp-auth-wordmark">EchoMirror</span>
+        </div>
+
+        <div className="lp-auth-hero-copy">
+          <div className="lp-auth-hero-eyebrow">Join EchoMirror</div>
+          <h2 className="lp-auth-hero-title">
+            Every insight<br />
+            starts with<br />
+            <em>one moment.</em>
           </h2>
-          <p className="mt-2 text-center text-gray-600">
-            Join EchoMirror today
+          <p className="lp-auth-hero-body">
+            Free to start. Track your moods, get AI insights, and earn ECHO
+            tokens on the Stellar network — no credit card required.
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <Input
-            label="Name (optional)"
-            type="text"
-            value={credentials.name || ''}
-            onChange={(e) =>
-              setCredentials({ ...credentials, name: e.target.value })
-            }
-            placeholder="Your name"
-          />
+        <div className="lp-auth-chips">
+          {['Free forever', 'AI-powered', 'Private by design', 'Earn ECHO tokens'].map((label, i) => (
+            <span key={label} className="lp-auth-chip">
+              <span className="lp-auth-chip-dot" style={{ background: i % 2 === 0 ? '#60a5fa' : '#34d399' }} />
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
 
-          <Input
-            label="Email"
-            type="email"
-            value={credentials.email}
-            onChange={(e) =>
-              setCredentials({ ...credentials, email: e.target.value })
-            }
-            error={error && !credentials.email ? error : ''}
-            placeholder="you@example.com"
-          />
+      <div className="lp-auth-right">
+        <div className="lp-auth-card">
+          <h2 className="lp-auth-card-title">Create account</h2>
+          <p className="lp-auth-card-sub">Free forever. No credit card needed.</p>
 
-          <Input
-            label="Password"
-            type="password"
-            value={credentials.password}
-            onChange={(e) =>
-              setCredentials({ ...credentials, password: e.target.value })
-            }
-            error={error && credentials.email ? error : ''}
-            placeholder="••••••••"
-          />
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+          <form onSubmit={onSubmit} className="lp-auth-form">
+            <div className="lp-auth-field">
+              <label className="lp-auth-label" htmlFor="su-name">
+                Name <span style={{ opacity: 0.45, fontWeight: 400, fontSize: '0.68rem' }}>(optional)</span>
+              </label>
+              <input id="su-name" className="lp-auth-input" type="text"
+                value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
             </div>
-          )}
+            <div className="lp-auth-field">
+              <label className="lp-auth-label" htmlFor="su-email">Email</label>
+              <input id="su-email" className="lp-auth-input" type="email" required
+                value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
+            </div>
+            <div className="lp-auth-field">
+              <label className="lp-auth-label" htmlFor="su-pass">Password</label>
+              <input id="su-pass" className="lp-auth-input" type="password" required
+                value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
+            </div>
 
-          <Button
-            type="submit"
-            isLoading={isLoading}
-            className="w-full"
-          >
-            Sign Up
-          </Button>
+            {error && <div className="lp-auth-error">{error}</div>}
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link
-                to="/login"
-                className="text-primary hover:text-primary-600 font-medium"
-              >
-                Sign in
-              </Link>
-            </p>
+            <button type="submit" className="lp-auth-submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account…' : 'Create account'}
+            </button>
+          </form>
+
+          <div className="lp-auth-links">
+            <div className="lp-auth-divider"><span /><em>already a member?</em><span /></div>
+            <div className="lp-auth-link-row">
+              <Link to="/login">Sign in to your account</Link>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
