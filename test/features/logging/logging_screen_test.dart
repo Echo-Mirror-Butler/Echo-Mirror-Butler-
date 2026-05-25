@@ -33,11 +33,6 @@ class _FakeAuthNotifier extends AuthNotifier {
   _FakeAuthNotifier(AuthState initialState) : super(MockAuthRepository()) {
     state = initialState;
   }
-
-  @override
-  Future<void> _checkAuthStatus() async {
-    // Do nothing in tests
-  }
 }
 
 class MockNavigatorObserver extends Mock implements NavigatorObserver {}

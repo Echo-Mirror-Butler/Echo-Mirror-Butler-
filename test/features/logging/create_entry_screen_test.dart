@@ -31,7 +31,7 @@ void main() {
 
   const userId = 'user_1';
 
-  Widget _buildScreen({required bool createResult}) {
+  Widget buildScreen({required bool createResult}) {
     final mockAuthRepository = MockAuthRepository();
     when(
       () => mockAuthRepository.isAuthenticated(),
@@ -65,7 +65,7 @@ void main() {
             return null;
           });
 
-      await tester.pumpWidget(_buildScreen(createResult: true));
+      await tester.pumpWidget(buildScreen(createResult: true));
       await tester.pump(const Duration(seconds: 2));
 
       // Check for mood selection section
@@ -108,7 +108,7 @@ void main() {
             return null;
           });
 
-      await tester.pumpWidget(_buildScreen(createResult: true));
+      await tester.pumpWidget(buildScreen(createResult: true));
       await tester.pump(const Duration(seconds: 2));
 
       // Find the submit button (it should be enabled initially, but form validation happens on submit)
@@ -140,7 +140,7 @@ void main() {
             return null;
           });
 
-      await tester.pumpWidget(_buildScreen(createResult: true));
+      await tester.pumpWidget(buildScreen(createResult: true));
       await tester.pump(const Duration(seconds: 2));
 
       // Select a mood (tap the 3rd mood icon - happy face)
@@ -178,7 +178,7 @@ void main() {
             return null;
           });
 
-      await tester.pumpWidget(_buildScreen(createResult: false));
+      await tester.pumpWidget(buildScreen(createResult: false));
       await tester.pump(const Duration(seconds: 2));
 
       // Select a mood
@@ -220,7 +220,7 @@ void main() {
             return null;
           });
 
-      await tester.pumpWidget(_buildScreen(createResult: true));
+      await tester.pumpWidget(buildScreen(createResult: true));
       await tester.pump(const Duration(seconds: 2));
 
       // Check for voice input button (floating action button with mic icon)
