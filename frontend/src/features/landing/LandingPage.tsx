@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { supabase } from '../../lib/supabase'
 import './landing-page.css'
 
 const features = [
@@ -40,6 +41,13 @@ const tickerItems = [
   { flag: '🇳🇬', city: 'Lagos',     mood: 'Motivated',  color: '#0a8a5b' },
 ]
 
+const wellnessStats = [
+  { value: '1 in 4', label: 'people experience a mental health condition each year' },
+  { value: '60%',    label: 'of people never seek help due to stigma or lack of access' },
+  { value: '40%',    label: 'mood improvement reported by consistent journalling users' },
+  { value: '3×',     label: 'more likely to sustain habits when tracking daily mood' },
+]
+
 function useReveal() {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -60,6 +68,106 @@ function Reveal({ children, delay = 0, className = '' }: { children: React.React
   return <div ref={ref} className={`lp-reveal${delay ? ` lp-reveal-delay-${delay}` : ''} ${className}`}>{children}</div>
 }
 
+function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [errMsg, setErrMsg] = useState('')
+
+  const handleConnect = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.includes('@')) { setErrMsg('Enter a valid email'); return }
+    setStatus('loading')
+    setErrMsg('')
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+    if (error) { setStatus('error'); setErrMsg(error.message) }
+    else { setStatus('done') }
+  }
+
+  return (
+    <section className="lp-section lp-wallet-section" id="wallet">
+      <div className="lp-section-inner">
+        <div className="lp-wallet-inner">
+          <Reveal>
+            <div className="lp-wallet-left">
+              <div className="lp-section-eyebrow" style={{ color: '#fbbf24' }}>ECHO Wallet</div>
+              <h2 className="lp-section-title" style={{ color: 'white' }}>
+                Your wellbeing<br />
+                <em style={{ fontStyle: 'italic', color: '#fbbf24' }}>earns real value.</em>
+              </h2>
+              <p className="lp-section-sub" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                Connect your Stellar wallet and start earning ECHO tokens for every mood log, streak, and insight you unlock.
+                Consistency has currency here.
+              </p>
+
+              <div className="lp-wallet-perks">
+                {[
+                  { icon: '🔥', title: 'Streak rewards',   desc: 'Log 7 days straight, earn bonus ECHO' },
+                  { icon: '✦',  title: 'Stellar native',   desc: 'Real tokens on the Stellar blockchain' },
+                  { icon: '🎁', title: 'Send to friends',  desc: 'Gift ECHO to people who inspire you' },
+                  { icon: '🔒', title: 'Non-custodial',    desc: 'Your keys, your tokens, always' },
+                ].map((p) => (
+                  <div key={p.title} className="lp-wallet-perk">
+                    <span className="lp-wallet-perk-icon">{p.icon}</span>
+                    <div>
+                      <div className="lp-wallet-perk-title">{p.title}</div>
+                      <div className="lp-wallet-perk-desc">{p.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+
+          <Reveal delay={2}>
+            <div className="lp-wallet-right">
+              <div className="lp-wallet-card">
+                <div className="lp-wallet-card-glow" />
+                <div className="lp-wallet-card-header">
+                  <span className="lp-wallet-logo">✦ ECHO</span>
+                  <span className="lp-wallet-network">Stellar Network</span>
+                </div>
+                <div className="lp-wallet-balance-preview">
+                  <div className="lp-wallet-balance-label">Your balance</div>
+                  <div className="lp-wallet-balance-num">142.00 <span>ECHO</span></div>
+                  <div className="lp-wallet-streak">🔥 7-day streak active</div>
+                </div>
+
+                {status === 'done' ? (
+                  <div className="lp-wallet-success">
+                    <div className="lp-wallet-success-icon">✓</div>
+                    <strong>Check your email</strong>
+                    <p>We sent a magic link to <em>{email}</em>. Click it to create your wallet and start earning.</p>
+                  </div>
+                ) : (
+                  <form className="lp-wallet-form" onSubmit={handleConnect}>
+                    <p className="lp-wallet-form-label">Get started with your email — wallet created automatically.</p>
+                    <input
+                      className="lp-wallet-input"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    {errMsg && <div className="lp-wallet-error">{errMsg}</div>}
+                    <button type="submit" className="lp-wallet-btn" disabled={status === 'loading'}>
+                      {status === 'loading' ? 'Connecting…' : '✦ Connect Stellar Wallet'}
+                    </button>
+                    <div className="lp-wallet-or">or</div>
+                    <button type="button" className="lp-wallet-btn-ghost" onClick={onSignup}>
+                      Create full account →
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export function LandingPage() {
   const navigate = useNavigate()
 
@@ -75,6 +183,7 @@ export function LandingPage() {
         <div className="lp-nav-links">
           <a href="#features" className="lp-nav-link">Features</a>
           <a href="#global" className="lp-nav-link">Global Mirror</a>
+          <a href="#wallet" className="lp-nav-link">Wallet</a>
           <Link to="/login" className="lp-nav-link">Sign in</Link>
         </div>
         <button className="lp-btn-solid" onClick={() => navigate('/signup')}>
@@ -131,8 +240,6 @@ export function LandingPage() {
           {/* Right: app mockup */}
           <div className="lp-hero-mockup">
             <img src="/phone-mockup.png" alt="EchoMirror app" className="lp-phone-img" />
-
-            {/* Floating mood chip outside phone */}
             <div className="lp-float-chip lp-float-chip--1">
               <span className="lp-float-pip" style={{ background: '#0a8a5b' }} />
               Feeling calm today
@@ -170,6 +277,51 @@ export function LandingPage() {
                 </div>
               </Reveal>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Health Awareness Video ── */}
+      <section className="lp-section lp-awareness-section">
+        <div className="lp-section-inner">
+          <Reveal>
+            <div className="lp-section-eyebrow" style={{ color: '#0a8a5b' }}>Mental Health Matters</div>
+            <h2 className="lp-section-title">Understanding your<br />mental wellbeing.</h2>
+            <p className="lp-section-sub">
+              Mental health is as real as physical health. EchoMirror gives you the tools to track, understand, and improve yours — every single day.
+            </p>
+          </Reveal>
+
+          <div className="lp-awareness-body">
+            <Reveal delay={1}>
+              <div className="lp-awareness-stats">
+                {wellnessStats.map((s) => (
+                  <div key={s.value} className="lp-awareness-stat">
+                    <div className="lp-awareness-stat-value">{s.value}</div>
+                    <div className="lp-awareness-stat-label">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+
+            <Reveal delay={2}>
+              <div className="lp-awareness-video-wrap">
+                <div className="lp-awareness-video-badge">Health Awareness</div>
+                <video
+                  className="lp-awareness-video"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  poster="https://images.pexels.com/photos/3822622/pexels-photo-3822622.jpeg?auto=compress&cs=tinysrgb&w=800"
+                >
+                  <source src="https://videos.pexels.com/video-files/3209828/3209828-uhd_2560_1440_25fps.mp4" type="video/mp4" />
+                </video>
+                <div className="lp-awareness-video-caption">
+                  <span>🌿</span> Your mental health journey starts with awareness
+                </div>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -225,6 +377,9 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Wallet Connect ── */}
+      <WalletConnectSection onSignup={() => navigate('/signup')} />
 
       {/* ── CTA ── */}
       <section className="lp-section lp-cta-section">
