@@ -9,17 +9,19 @@ export function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const logsQuery = useQuery({
+  const streakQuery = useQuery({
     queryKey: ['dashboard-streak', user?.id],
     queryFn: async () => {
-      if (!user) return []
-      const { data, error } = await supabase
-        .from('log_entries')
-        .select('id, date, mood, notes, habits')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false })
+      if (!user) return { current_streak: 0, longest_streak: 0, last_log_date: null }
+      const { data, error } = await supabase.rpc('calculate_streak', {
+        p_user_id: user.id
+      })
       if (error) throw error
-      return data as LogEntry[]
+      return (data ?? { current_streak: 0, longest_streak: 0, last_log_date: null }) as {
+        current_streak: number
+        longest_streak: number
+        last_log_date: string | null
+      }
     },
     enabled: !!user,
   })
@@ -57,44 +59,7 @@ export function DashboardPage() {
     enabled: !!user,
   })
 
-  // Calculate mood streak
-  const calculateStreak = (logs: LogEntry[]): { streak: number; calendar: boolean[] } => {
-    const streak = { streak: 0, calendar: Array(14).fill(false) }
-
-    if (!logs.length) return streak
-
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    const logsByDate = new Map<string, boolean>()
-    for (const log of logs) {
-      const logDate = new Date(log.date)
-      logDate.setHours(0, 0, 0, 0)
-      const dateStr = logDate.toISOString().split('T')[0]
-      logsByDate.set(dateStr, true)
-    }
-
-    // Build 14-day calendar
-    for (let i = 13; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0]
-      streak.calendar[13 - i] = logsByDate.has(dateStr)
-    }
-
-    // Count consecutive days from today going backwards
-    let current = new Date(today)
-    while (true) {
-      const dateStr = current.toISOString().split('T')[0]
-      if (!logsByDate.has(dateStr)) break
-      streak.streak++
-      current.setDate(current.getDate() - 1)
-    }
-
-    return streak
-  }
-
-  const streak = logsQuery.data ? calculateStreak(logsQuery.data) : { streak: 0, calendar: Array(14).fill(false) }
+  const streakData = streakQuery.data ?? { current_streak: 0, longest_streak: 0, last_log_date: null }
 
   if (!user) {
     return null
@@ -108,16 +73,15 @@ export function DashboardPage() {
           <h3>Mood Streak</h3>
         </div>
         <div className="card-content">
-          <div className="streak-count">
-            <p className="muted">Current streak</p>
-            <h2>{streak.streak} days</h2>
-          </div>
-          <div className="calendar-mini">
-            {streak.calendar.map((hasEntry, idx) => (
-              <div key={idx} className={`calendar-day ${hasEntry ? 'logged' : 'missed'}`} title={`Day ${idx + 1}`}>
-                {hasEntry ? '●' : '◯'}
-              </div>
-            ))}
+          <div className="streak-count" style={{ display: 'flex', gap: '2rem' }}>
+            <div>
+              <p className="muted">Current streak</p>
+              <h2>{streakData.current_streak} days</h2>
+            </div>
+            <div>
+              <p className="muted">Longest streak</p>
+              <h2>{streakData.longest_streak} days</h2>
+            </div>
           </div>
         </div>
       </article>
