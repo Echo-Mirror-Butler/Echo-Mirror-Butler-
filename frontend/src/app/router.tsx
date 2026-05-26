@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "../components/layout/app-shell";
 import { SignInPanel } from "../components/auth/sign-in-panel";
 import { LandingPage } from "../features/landing/LandingPage";
@@ -16,9 +17,39 @@ import NotFoundPage from "../features/shared/not-found-page";
 import { SignupPage } from "../features/auth/pages/SignupPage";
 import { ResetPasswordPage } from "../features/auth/pages/ResetPasswordPage";
 import { UpdatePasswordPage } from "../features/auth/pages/UpdatePasswordPage";
+import { OnboardingPage } from "../features/onboarding/onboarding-page";
+import { supabase } from "../lib/supabase";
+
+function OnboardingGuard() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div className="page-message">Loading session…</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <OnboardingPage />;
+}
 
 function RequireAuth() {
   const { user, isLoading } = useAuth();
+
+  const logCountQuery = useQuery({
+    queryKey: ["onboarding-check", user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("log_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+      if (error) return 1;
+      return count ?? 0;
+    },
+    enabled: !!user && !user.user_metadata?.onboarding_completed,
+    staleTime: 30_000,
+  });
 
   if (isLoading) {
     return <div className="page-message">Loading session…</div>;
@@ -32,6 +63,13 @@ function RequireAuth() {
         replace
       />
     );
+  }
+
+  if (
+    !user.user_metadata?.onboarding_completed &&
+    logCountQuery.data === 0
+  ) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return (
@@ -69,6 +107,11 @@ export function AppRouter() {
         element={
           user ? <Navigate to="/dashboard" replace /> : <UpdatePasswordPage />
         }
+      />
+
+      <Route
+        path="/onboarding"
+        element={user ? <OnboardingGuard /> : <Navigate to="/login" replace />}
       />
 
       <Route element={<RequireAuth />}>
