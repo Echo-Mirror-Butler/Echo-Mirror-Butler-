@@ -7,6 +7,22 @@ import { useSearchLogs } from '../../lib/use-search-logs'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
 
+type UserProfile = { display_name: string | null; avatar_url: string | null }
+
+async function fetchUserProfile(userId: string): Promise<UserProfile> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('display_name, avatar_url')
+    .eq('id', userId)
+    .single()
+  if (!data) return { display_name: null, avatar_url: null }
+  const row = data as Record<string, unknown>
+  return {
+    display_name: (row.display_name as string | null) ?? null,
+    avatar_url: (row.avatar_url as string | null) ?? null,
+  }
+}
+
 const navItems = [
   { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
   { icon: '📝', to: '/logs', label: 'Logs' },
@@ -53,10 +69,17 @@ export function AppShell() {
     refetchInterval: 30_000,
   })
 
+  const profileQuery = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: () => fetchUserProfile(user!.id),
+    enabled: Boolean(user?.id),
+    staleTime: 5 * 60 * 1000,
+  })
+
   const avatarText = useMemo(() => {
-    const email = user?.email ?? ''
-    return email.trim().charAt(0).toUpperCase() || 'U'
-  }, [user?.email])
+    const name = profileQuery.data?.display_name ?? user?.email ?? ''
+    return name.trim().charAt(0).toUpperCase() || 'U'
+  }, [profileQuery.data?.display_name, user?.email])
 
   useEffect(() => {
     if (!isMobileDrawerOpen) {
@@ -223,7 +246,7 @@ export function AppShell() {
                           setSelectedResultIdx(-1)
                         }}
                       >
-                        <span className="result-date">{formatDate(new Date(result.date))}</span>
+                        <span className="result-date">{formatDate(result.date)}</span>
                         <span className="result-mood">{moodToEmoji(result.mood)}</span>
                         <span className="result-notes">{result.notes ? result.notes.substring(0, 80) : 'No notes'}</span>
                       </button>
@@ -279,8 +302,17 @@ export function AppShell() {
                 className="avatar-btn"
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
                 aria-expanded={isUserMenuOpen}
+                aria-label="User menu"
               >
-                <span>{avatarText}</span>
+                {profileQuery.data?.avatar_url ? (
+                  <img
+                    src={profileQuery.data.avatar_url}
+                    alt={profileQuery.data.display_name ?? user?.email ?? 'Avatar'}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  />
+                ) : (
+                  <span>{avatarText}</span>
+                )}
               </button>
 
               {isUserMenuOpen ? (
