@@ -167,15 +167,21 @@ export function AnalyticsPage() {
       {/* Mood trend */}
       <section className="card">
         <h2 style={{ marginTop: 0 }}>Mood Trend — last 30 days</h2>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={moodTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
-            <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--muted)' }} />
-            <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: 'var(--muted)' }} />
-            <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '8px' }} />
-            <Line type="monotone" dataKey="mood" stroke="var(--brand)" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+        {moodTrend.length > 0 ? (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={moodTrend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--muted)' }} />
+              <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: 'var(--muted)' }} />
+              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '8px' }} />
+              <Line type="monotone" dataKey="mood" stroke="var(--brand)" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <p className="muted" style={{ padding: '2rem 0', textAlign: 'center' }}>
+            No mood values recorded in the past 30 days.
+          </p>
+        )}
       </section>
 
       {/* Habit frequency */}
