@@ -65,8 +65,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final authState = ref.watch(authProvider);
     final loggingState = ref.watch(loggingProvider);
     final logEntries = loggingState.value ?? const <LogEntryModel>[];
-    final currentStreak = MoodAnalyticsModel.computeStreak(logEntries);
     final theme = Theme.of(context);
+    // TODO: Fetch streak from calculate_streak RPC instead of client-side
 
     // Load logs and insights when we have a user ID
     if (authState.isAuthenticated && authState.user != null) {
@@ -193,7 +193,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
                       // Mood streak card
-                      MoodStreakCard(streak: currentStreak),
+                      MoodStreakCard(streak: 0),
                       const SizedBox(height: 8),
                       // Mood Trend Chart
                       MoodTrendChart(
