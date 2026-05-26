@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useSearchLogs } from '../../lib/use-search-logs'
+import { useTheme } from '../../lib/use-theme'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
 
@@ -38,6 +39,7 @@ export function AppShell() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
+  const { resolvedTheme, setTheme } = useTheme()
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
@@ -254,6 +256,15 @@ export function AppShell() {
           )}
 
           <div className="shell-topbar-actions">
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            >
+              {resolvedTheme === 'dark' ? '☀️' : '🌙'}
+            </button>
+
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
