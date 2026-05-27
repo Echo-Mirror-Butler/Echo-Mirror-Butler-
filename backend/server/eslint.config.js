@@ -1,5 +1,4 @@
 // @ts-check
-const eslint = require('@eslint/js');
 const typescriptEslint = require('@typescript-eslint/eslint-plugin');
 const typescriptParser = require('@typescript-eslint/parser');
 
@@ -24,8 +23,6 @@ module.exports = [
       '@typescript-eslint': typescriptEslint,
     },
     rules: {
-      ...eslint.configs.recommended.rules,
-      ...typescriptEslint.configs.recommended.rules,
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [
