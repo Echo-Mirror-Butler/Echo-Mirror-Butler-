@@ -1,3 +1,5 @@
+import '../../../logging/data/models/log_entry_model.dart';
+
 /// Model for mood analytics calculations
 class MoodAnalyticsModel {
   final double averageMood;
