@@ -4,9 +4,9 @@ import {
   Memo,
   Networks,
   Operation,
-  Server,
   TransactionBuilder,
 } from '@stellar/stellar-sdk';
+import Server from '@stellar/stellar-sdk';
 
 const horizonUrl =
   process.env.STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org';

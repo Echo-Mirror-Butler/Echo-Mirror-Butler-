@@ -168,7 +168,11 @@ class MoodAnalyticsModel {
     }
 
     // Check if today has an entry
-    final today = DateTime(referenceDate.year, referenceDate.month, referenceDate.day);
+    final today = DateTime(
+      referenceDate.year,
+      referenceDate.month,
+      referenceDate.day,
+    );
     if (!uniqueDates.contains(today)) return 0;
 
     // Count consecutive days backwards from today
