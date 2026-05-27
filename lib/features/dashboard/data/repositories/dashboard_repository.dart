@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
 

@@ -148,16 +148,23 @@ class MoodAnalyticsModel {
 
   /// Calculate the current mood streak (consecutive days with entries)
   static int computeStreak(
-    List<MoodEntry> entries, {
-    DateTime referenceDate = const DateTime.now(),
+    List<LogEntryModel> entries, {
+    DateTime? referenceDate,
   }) {
     if (entries.isEmpty) return 0;
 
+    final now = referenceDate ?? DateTime.now();
+
     // Normalize all dates to start of day
     final normalizedEntries = entries.map((e) {
-      return MoodEntry(
+      return LogEntryModel(
+        id: e.id,
+        userId: e.userId,
         date: DateTime(e.date.year, e.date.month, e.date.day),
         mood: e.mood,
+        habits: e.habits,
+        notes: e.notes,
+        createdAt: e.createdAt,
       );
     }).toList();
 
@@ -168,11 +175,7 @@ class MoodAnalyticsModel {
     }
 
     // Check if today has an entry
-    final today = DateTime(
-      referenceDate.year,
-      referenceDate.month,
-      referenceDate.day,
-    );
+    final today = DateTime(now.year, now.month, now.day);
     if (!uniqueDates.contains(today)) return 0;
 
     // Count consecutive days backwards from today
