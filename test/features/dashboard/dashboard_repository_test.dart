@@ -34,7 +34,10 @@ class FakeFutureLettersBuilder extends Fake
   }) => this;
 
   @override
-  PostgrestTransformBuilder<PostgrestList> limit(int count) => this;
+  PostgrestTransformBuilder<PostgrestList> limit(
+    int count, {
+    String? referencedTable,
+  }) => this;
 
   @override
   Future<U> then<U>(

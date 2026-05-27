@@ -8,14 +8,12 @@ import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
-import '../../../logging/data/models/log_entry_model.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../../help/view/screens/professional_help_screen.dart';
 import '../../data/models/insight_model.dart';
-import '../../data/models/mood_analytics_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
@@ -64,7 +62,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
     final loggingState = ref.watch(loggingProvider);
-    final logEntries = loggingState.value ?? const <LogEntryModel>[];
     final theme = Theme.of(context);
     // TODO: Fetch streak from calculate_streak RPC instead of client-side
 

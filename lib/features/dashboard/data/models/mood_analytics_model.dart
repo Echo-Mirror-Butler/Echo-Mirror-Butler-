@@ -1,5 +1,3 @@
-import '../../../logging/data/models/log_entry_model.dart';
-
 /// Model for mood analytics calculations
 class MoodAnalyticsModel {
   final double averageMood;
@@ -146,6 +144,48 @@ class MoodAnalyticsModel {
     }
 
     return trend;
+  }
+
+  /// Calculate the current mood streak (consecutive days with entries)
+  static int computeStreak(
+    List<MoodEntry> entries, {
+    DateTime referenceDate = const DateTime.now(),
+  }) {
+    if (entries.isEmpty) return 0;
+
+    // Normalize all dates to start of day
+    final normalizedEntries = entries.map((e) {
+      return MoodEntry(
+        date: DateTime(e.date.year, e.date.month, e.date.day),
+        mood: e.mood,
+      );
+    }).toList();
+
+    // Get unique dates
+    final uniqueDates = <DateTime>{};
+    for (final entry in normalizedEntries) {
+      uniqueDates.add(entry.date);
+    }
+
+    // Check if today has an entry
+    final today = DateTime(referenceDate.year, referenceDate.month, referenceDate.day);
+    if (!uniqueDates.contains(today)) return 0;
+
+    // Count consecutive days backwards from today
+    int streak = 1;
+    var currentDate = today;
+
+    while (true) {
+      final previousDate = currentDate.subtract(const Duration(days: 1));
+      if (uniqueDates.contains(previousDate)) {
+        streak++;
+        currentDate = previousDate;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 }
 

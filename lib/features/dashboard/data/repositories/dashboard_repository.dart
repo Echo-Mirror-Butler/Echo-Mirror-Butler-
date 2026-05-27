@@ -1,9 +1,5 @@
-import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
-import '../../../logging/data/models/log_entry_model.dart';
 
 /// Repository for dashboard operations.
 /// Handles Supabase Edge Function calls for insights and predictions.
@@ -363,18 +359,5 @@ class DashboardRepository {
       'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
-  String _getWeekdayName(int weekday) {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return weekdays[weekday - 1];
   }
 }
