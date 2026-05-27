@@ -2054,3 +2054,40 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   .lp-how-steps { grid-template-columns: 1fr; }
   .lp-trust-bar { gap: 0.4rem 0.75rem; }
 }
+
+/* ── Dark mode ─────────────────────────────────────────────── */
+[data-theme='dark'] .lp-root {
+  --lp-canvas: #0f0f13;
+  --lp-white: #1a1a24;
+  --lp-ink: #f3f4f6;
+  --lp-ink-60: rgba(243, 244, 246, 0.6);
+  --lp-ink-30: rgba(243, 244, 246, 0.3);
+  --lp-ink-10: rgba(243, 244, 246, 0.07);
+  --lp-blue-pale: rgba(59, 130, 246, 0.15);
+  --lp-teal-pale: rgba(16, 185, 129, 0.15);
+  --lp-border: rgba(129, 140, 248, 0.12);
+  --lp-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --lp-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.4);
+}
+[data-theme='dark'] .lp-hero-cta-secondary { background: var(--lp-white); color: var(--lp-ink); }
+[data-theme='dark'] .lp-auth-input:focus { background: var(--lp-white); }
+[data-theme='dark'] .lp-how-num { background: var(--lp-white); color: var(--lp-ink); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .lp-root {
+    --lp-canvas: #0f0f13;
+    --lp-white: #1a1a24;
+    --lp-ink: #f3f4f6;
+    --lp-ink-60: rgba(243, 244, 246, 0.6);
+    --lp-ink-30: rgba(243, 244, 246, 0.3);
+    --lp-ink-10: rgba(243, 244, 246, 0.07);
+    --lp-blue-pale: rgba(59, 130, 246, 0.15);
+    --lp-teal-pale: rgba(16, 185, 129, 0.15);
+    --lp-border: rgba(129, 140, 248, 0.12);
+    --lp-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --lp-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.4);
+  }
+  :root:not([data-theme='light']) .lp-hero-cta-secondary { background: var(--lp-white); color: var(--lp-ink); }
+  :root:not([data-theme='light']) .lp-auth-input:focus { background: var(--lp-white); }
+  :root:not([data-theme='light']) .lp-how-num { background: var(--lp-white); color: var(--lp-ink); }
+}
