@@ -27,7 +27,7 @@ async function fetchMoodTrend(userId: string) {
 
   const { data: thisWeekData, error: thisWeekError } = await supabase
     .from("log_entries")
-    .select("mood")
+    .select("date, mood")
     .eq("user_id", userId)
     .gte("date", lastWeek.toISOString())
     .order("date", { ascending: true });
@@ -35,7 +35,7 @@ async function fetchMoodTrend(userId: string) {
   if (thisWeekError) throw thisWeekError;
 
   if (!thisWeekData || thisWeekData.length === 0) {
-    return { currentAvg: null, previousAvg: null };
+    return { currentAvg: null, previousAvg: null, thisWeekData: [] };
   }
 
   const currentAvg =
@@ -45,7 +45,6 @@ async function fetchMoodTrend(userId: string) {
   // Get previous week data
   const twoWeeksAgo = new Date();
   twoWeeksAgo.setDate(today.getDate() - 14);
-  lastWeek.setDate(today.getDate() - 7);
 
   const { data: prevWeekData, error: prevWeekError } = await supabase
     .from("log_entries")
@@ -56,23 +55,15 @@ async function fetchMoodTrend(userId: string) {
     .order("date", { ascending: true });
 
   if (prevWeekError) {
-    // If no previous data, use the first half of current week as comparison
-    const midPoint = Math.floor(thisWeekData.length / 2);
-    if (midPoint > 0) {
-      const previousHalf = thisWeekData.slice(0, midPoint);
-      const previousAvg =
-        previousHalf.reduce((sum, log) => sum + (log.mood ?? 0), 0) /
-        previousHalf.length;
-      return { currentAvg, previousAvg };
-    }
-    return { currentAvg, previousAvg: null };
+    // Return null for previousAvg on error so UI shows no comparison
+    return { currentAvg, previousAvg: null, thisWeekData };
   }
 
   const previousAvg =
     prevWeekData.reduce((sum, log) => sum + (log.mood ?? 0), 0) /
     prevWeekData.length;
 
-  return { currentAvg, previousAvg };
+  return { currentAvg, previousAvg, thisWeekData };
 }
 
 export function DashboardPage() {
@@ -228,7 +219,7 @@ export function DashboardPage() {
                   minWidth: "120px",
                 }}
               >
-                <MoodSparkline userId={user.id} />
+                <MoodSparkline logs={moodTrendQuery.data?.thisWeekData ?? []} />
               </div>
             </div>
           )}
@@ -465,28 +456,8 @@ export function DashboardPage() {
 }
 
 // Simple sparkline component for mood trend
-function MoodSparkline({ userId }: { userId: string }) {
-  const { data, error } = useQuery({
-    queryKey: ["mood-sparkline", userId],
-    queryFn: async () => {
-      const today = new Date();
-      const weekAgo = new Date();
-      weekAgo.setDate(today.getDate() - 7);
-
-      const { data: logs, error: logsError } = await supabase
-        .from("log_entries")
-        .select("date, mood")
-        .eq("user_id", userId)
-        .gte("date", weekAgo.toISOString())
-        .order("date", { ascending: true });
-
-      if (logsError) throw logsError;
-      return logs ?? [];
-    },
-    enabled: !!userId,
-  });
-
-  if (error || !data || data.length === 0) {
+function MoodSparkline({ logs }: { logs: Array<{ date: string; mood: number | null }> }) {
+  if (!logs || logs.length === 0) {
     return (
       <div
         style={{
@@ -504,11 +475,35 @@ function MoodSparkline({ userId }: { userId: string }) {
   }
 
   // Create sparkline SVG
-  const moodValues = data.map((log) => log.mood ?? 0);
+  const moodValues = logs.map((log) => log.mood ?? 0);
   const minMood = 0;
   const maxMood = 5;
   const width = 120;
   const height = 80;
+
+  // Handle single data point case
+  if (moodValues.length < 2) {
+    const x = width / 2;
+    const y = height - ((moodValues[0] - minMood) / (maxMood - minMood)) * height;
+    return (
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        style={{ overflow: "visible" }}
+      >
+        <circle
+          cx={x}
+          cy={y}
+          r="3"
+          fill="var(--brand)"
+          stroke="white"
+          strokeWidth="1"
+        />
+      </svg>
+    );
+  }
 
   const points = moodValues.map((mood, index) => {
     const x = (index / (moodValues.length - 1)) * width;
