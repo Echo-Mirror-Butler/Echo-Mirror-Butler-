@@ -24,8 +24,6 @@ class MoodAnalyticsModel {
     this.monthlyAverage,
   });
 
-
-
   /// Create analytics from log entries
   factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries) {
     if (entries.isEmpty) {

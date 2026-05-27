@@ -61,5 +61,5 @@ class EchoBalanceNotifier extends StateNotifier<EchoBalanceState> {
 
 final echoBalanceProvider =
     StateNotifierProvider<EchoBalanceNotifier, EchoBalanceState>((ref) {
-  return EchoBalanceNotifier();
-});
+      return EchoBalanceNotifier();
+    });

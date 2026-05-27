@@ -44,9 +44,10 @@ class StreakNotifier extends StateNotifier<StreakState> {
 
     try {
       final supabase = Supabase.instance.client;
-      final res = await supabase.rpc('calculate_streak', params: {
-        'p_user_id': userId,
-      });
+      final res = await supabase.rpc(
+        'calculate_streak',
+        params: {'p_user_id': userId},
+      );
 
       if (res == null) {
         state = state.copyWith(
@@ -75,7 +76,8 @@ class StreakNotifier extends StateNotifier<StreakState> {
   }
 }
 
-final streakProvider =
-    StateNotifierProvider<StreakNotifier, StreakState>((ref) {
+final streakProvider = StateNotifierProvider<StreakNotifier, StreakState>((
+  ref,
+) {
   return StreakNotifier();
 });

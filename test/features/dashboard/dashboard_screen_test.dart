@@ -126,9 +126,7 @@ void main() {
     ).thenAnswer((_) async => isAuthenticated);
 
     if (isAuthenticated) {
-      when(
-        () => mockAuthRepository.getCurrentUser(),
-      ).thenAnswer(
+      when(() => mockAuthRepository.getCurrentUser()).thenAnswer(
         (_) async => {
           'id': 'test_user_id',
           'email': 'test@example.com',
