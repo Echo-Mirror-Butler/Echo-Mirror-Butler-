@@ -294,9 +294,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
               height: 40 + (_pulseController.value * 10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.errorColor.withValues(
-                  alpha: 0.3 - (_pulseController.value * 0.2),
-                ),
+                color: AppTheme.errorColor.withValues(alpha: 0.3 - (_pulseController.value * 0.2)),
               ),
             );
           },
