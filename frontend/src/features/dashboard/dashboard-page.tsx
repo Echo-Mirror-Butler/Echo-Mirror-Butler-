@@ -16,8 +16,8 @@ export function DashboardPage() {
     queryFn: async () => {
       if (!user)
         return { current_streak: 0, longest_streak: 0, last_log_date: null };
-      const { data, error } = await supabase.rpc("calculate_streak", {
-        p_user_id: user.id,
+      const { data, error } = await supabase.rpc("get_current_streak", {
+        user_id: user.id,
       });
       if (error) throw error;
       return (data ?? {

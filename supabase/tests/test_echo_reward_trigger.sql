@@ -1,6 +1,8 @@
 -- ============================================================
 -- SQL Test: grant_echo_reward() Trigger & Wallet Updates
 -- 
+-- Run: psql $DATABASE_URL -f supabase/tests/test_echo_reward_trigger.sql
+-- 
 -- Safe to run on staging: wrapped in a ROLLBACK transaction.
 -- ============================================================
 
@@ -14,10 +16,11 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Setup mock wallets (Ensure initial balance is 10.0)
+-- Using valid 56-character Stellar public keys to satisfy CHECK constraints
 INSERT INTO public.user_wallets (user_id, public_key, encrypted_secret, balance)
 VALUES 
-  ('55555555-5555-5555-5555-555555555555'::uuid, 'GD_MOCK5...', 'secret5...', 10.0),
-  ('66666666-6666-6666-6666-666666666666'::uuid, 'GD_MOCK6...', 'secret6...', 10.0)
+  ('55555555-5555-5555-5555-555555555555'::uuid, 'GG2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'secret5...', 10.0),
+  ('66666666-6666-6666-6666-666666666666'::uuid, 'GH2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'secret6...', 10.0)
 ON CONFLICT (user_id) DO NOTHING;
 
 
@@ -106,6 +109,11 @@ INSERT INTO public.mood_logs (user_id, mood, country, city)
 VALUES ('66666666-6666-6666-6666-666666666666'::uuid, '😎 awesome', 'US', 'Austin');
 
 -- Verify that a 5 token bonus with reason '7_day_streak_bonus' was rewarded
+-- 
+-- NOTE ON DESIGN INTENT: According to the grant_echo_reward() trigger implementation,
+-- when a 7-day streak is reached, the 5 ECHO streak bonus REPLACES the 1 ECHO daily reward.
+-- It does not stack (+5 instead of +6). Thus, the expected wallet balance increases by
+-- 5.0 (10.0 initial + 5.0 bonus = 15.0). This is the intended behavior of the migration script.
 DO $$
 DECLARE
   v_reward_amount int;

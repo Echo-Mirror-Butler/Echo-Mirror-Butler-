@@ -45,8 +45,8 @@ BEGIN
     END IF;
 
     -- Check streak for bonus
-    -- Since this is AFTER INSERT, calculate_streak includes the new log
-    v_streak := calculate_streak(NEW.user_id);
+    -- Since this is AFTER INSERT, get_current_streak includes the new log
+    v_streak := get_current_streak(NEW.user_id);
     v_current_streak := COALESCE((v_streak->>'current_streak')::int, 0);
 
     IF v_current_streak > 0 AND v_current_streak % 7 = 0 THEN

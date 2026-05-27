@@ -1,5 +1,7 @@
 -- ============================================================
--- SQL Test: calculate_streak(user_id) RPC calculations
+-- SQL Test: get_current_streak(user_id) RPC calculations
+-- 
+-- Run: psql $DATABASE_URL -f supabase/tests/test_streak_rpc.sql
 -- 
 -- Safe to run on staging: wrapped in a ROLLBACK transaction.
 -- ============================================================
@@ -16,18 +18,17 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Setup mock wallets (required because reward trigger fires on insert)
+-- Using valid 56-character Stellar public keys to satisfy CHECK constraints
 INSERT INTO public.user_wallets (user_id, public_key, encrypted_secret, balance)
 VALUES 
-  ('11111111-1111-1111-1111-111111111111'::uuid, 'GD_MOCK_1...', 'secret...', 10.0),
-  ('22222222-2222-2222-2222-222222222222'::uuid, 'GD_MOCK_2...', 'secret...', 10.0),
-  ('33333333-3333-3333-3333-333333333333'::uuid, 'GD_MOCK_3...', 'secret...', 10.0),
-  ('44444444-4444-4444-4444-444444444444'::uuid, 'GD_MOCK_4...', 'secret...', 10.0)
+  ('11111111-1111-1111-1111-111111111111'::uuid, 'GC2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'secret...', 10.0),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 'GD2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'secret...', 10.0),
+  ('33333333-3333-3333-3333-333333333333'::uuid, 'GE2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'secret...', 10.0),
+  ('44444444-4444-4444-4444-444444444444'::uuid, 'GF2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'secret...', 10.0)
 ON CONFLICT (user_id) DO NOTHING;
 
 -- Disable trigger on mood_logs during inserting historical logs to prevent daily reward limits
 -- (Because farming prevention limits rewards to 1 per day, which would interfere if we insert multiple logs for today, etc.)
--- Actually, the streak calculation is off-line, but the trigger runs AFTER INSERT on mood_logs.
--- So we temporarily disable the trigger to insert historical logs cleanly!
 ALTER TABLE public.mood_logs DISABLE TRIGGER on_mood_log_insert_reward;
 
 
@@ -37,7 +38,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := calculate_streak('11111111-1111-1111-1111-111111111111'::uuid);
+  v_res := get_current_streak('11111111-1111-1111-1111-111111111111'::uuid);
   
   IF (v_res->>'current_streak')::int = 0 AND (v_res->>'longest_streak')::int = 0 AND (v_res->>'last_log_date') IS NULL THEN
     RAISE NOTICE 'SUCCESS: Zero streak test passed. Result: %', v_res;
@@ -57,7 +58,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := calculate_streak('22222222-2222-2222-2222-222222222222'::uuid);
+  v_res := get_current_streak('22222222-2222-2222-2222-222222222222'::uuid);
   
   IF (v_res->>'current_streak')::int = 1 AND (v_res->>'longest_streak')::int = 1 AND (v_res->>'last_log_date')::date = CURRENT_DATE THEN
     RAISE NOTICE 'SUCCESS: Single-day streak test passed. Result: %', v_res;
@@ -80,7 +81,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := calculate_streak('33333333-3333-3333-3333-333333333333'::uuid);
+  v_res := get_current_streak('33333333-3333-3333-3333-333333333333'::uuid);
   
   IF (v_res->>'current_streak')::int = 3 AND (v_res->>'longest_streak')::int = 3 THEN
     RAISE NOTICE 'SUCCESS: Multi-day streak test passed. Result: %', v_res;
@@ -111,7 +112,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := calculate_streak('44444444-4444-4444-4444-444444444444'::uuid);
+  v_res := get_current_streak('44444444-4444-4444-4444-444444444444'::uuid);
   
   IF (v_res->>'current_streak')::int = 2 AND (v_res->>'longest_streak')::int = 4 THEN
     RAISE NOTICE 'SUCCESS: Broken/Longest streak test passed. Result: %', v_res;

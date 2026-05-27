@@ -24,7 +24,33 @@ class MoodAnalyticsModel {
     this.monthlyAverage,
   });
 
+  /// Compute streak from log entries
+  static int computeStreak(
+    List<LogEntryModel> entries, {
+    DateTime? referenceDate,
+  }) {
+    if (entries.isEmpty) return 0;
 
+    final refDate = referenceDate ?? DateTime.now();
+    final ref = DateTime(refDate.year, refDate.month, refDate.day);
+
+    // Get unique dates with non-null mood, normalized to midnight
+    final uniqueDates = entries
+        .where((e) => e.mood != null)
+        .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+        .toSet();
+
+    if (!uniqueDates.contains(ref)) return 0;
+
+    int streak = 1;
+    var currentDay = ref.subtract(const Duration(days: 1));
+    while (uniqueDates.contains(currentDay)) {
+      streak++;
+      currentDay = currentDay.subtract(const Duration(days: 1));
+    }
+
+    return streak;
+  }
 
   /// Create analytics from log entries
   factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries) {

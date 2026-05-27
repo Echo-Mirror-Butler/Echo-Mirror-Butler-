@@ -1,6 +1,8 @@
 -- ============================================================
 -- SQL Test: mood_logs Row Level Security (RLS) policies
 -- 
+-- Run: psql $DATABASE_URL -f supabase/tests/test_mood_logs_rls.sql
+-- 
 -- Safe to run on staging: wrapped in a ROLLBACK transaction.
 -- ============================================================
 
@@ -14,10 +16,11 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Setup mock wallets (required for reward trigger)
+-- Using valid 56-character Stellar public keys to satisfy CHECK constraints
 INSERT INTO public.user_wallets (user_id, public_key, encrypted_secret, balance)
 VALUES 
-  ('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'::uuid, 'GD_MOCK_USER_A_STAFDJG...', 'encrypted_secret_a...', 10.0),
-  ('bbbbbbbb-cccc-dddd-eeee-ffffffffffff'::uuid, 'GE_MOCK_USER_B_STAFDJG...', 'encrypted_secret_b...', 10.0)
+  ('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'::uuid, 'GA2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'encrypted_secret_a...', 10.0),
+  ('bbbbbbbb-cccc-dddd-eeee-ffffffffffff'::uuid, 'GB2C5LIUBGND3HYA56DM6V4IB67MCHM5UWO57E3BPO6ZMED3CQCCWHF2', 'encrypted_secret_b...', 10.0)
 ON CONFLICT (user_id) DO NOTHING;
 
 -- 3. Set role to authenticated and mock auth.uid() as User A
