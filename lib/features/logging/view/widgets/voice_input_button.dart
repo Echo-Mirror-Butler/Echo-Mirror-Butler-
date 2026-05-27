@@ -294,7 +294,9 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
               height: 40 + (_pulseController.value * 10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.errorColor.withValues(alpha: 0.3 - (_pulseController.value * 0.2)),
+                color: AppTheme.errorColor.withValues(
+                  alpha: 0.3 - (_pulseController.value * 0.2),
+                ),
               ),
             );
           },
@@ -328,7 +330,9 @@ class VoiceInputOverlay extends StatelessWidget {
     if (!isListening) return const SizedBox.shrink();
 
     return Container(
-      color: Colors.black.withValues(alpha: 0.7),
+      color: Colors.black.withValues(
+        alpha: 0.7,
+      ),
       child: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -338,7 +342,9 @@ class VoiceInputOverlay extends StatelessWidget {
               width: 200,
               height: 100,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                color: AppTheme.primaryColor.withValues(
+                  alpha: 0.2,
+                ),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Center(
