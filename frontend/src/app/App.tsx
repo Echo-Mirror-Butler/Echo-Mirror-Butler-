@@ -1,32 +1,26 @@
-import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RouterProvider } from 'react-router-dom'
-import { router } from './routes'
-import { useAuthStore } from '@/features/auth/store/authStore'
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from '../lib/auth-context'
+import { AppRouter } from './router'
 import './index.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
       retry: 1,
     },
   },
 })
 
 function App() {
-  const initialize = useAuthStore((state) => state.initialize)
-
-  useEffect(() => {
-    const unsubscribe = initialize()
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [initialize])
-
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRouter />
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }
