@@ -18,6 +18,7 @@ import '../../features/global_mirror/view/screens/mood_comment_notifications_scr
 import '../../features/ai/view/screens/breathing_exercise_screen.dart';
 import '../../features/ai/view/screens/music_recommendations_screen.dart';
 import '../../features/global_mirror/view/screens/gift_screen.dart';
+import '../../features/global_mirror/view/screens/wallet_screen.dart';
 
 /// Refresh notifier for GoRouter
 class GoRouterRefreshNotifier extends ChangeNotifier {
@@ -27,14 +28,11 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
       (_, _) => notifyListeners(),
     );
   }
-
   final Ref ref;
 }
-
 /// App router configuration with GoRouter
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = GoRouterRefreshNotifier(ref);
-
   return GoRouter(
     initialLocation: '/onboarding',
     refreshListenable: notifier,
@@ -45,14 +43,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Wait for auth check to complete
         await ref.read(authProvider.notifier).checkAuthStatus();
       }
-
       final updatedAuthState = ref.read(authProvider);
       final isAuthenticated = updatedAuthState.isAuthenticated;
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
       final isAuthRoute = isLoggingIn || isSigningUp;
-
       // Check if onboarding is completed
       // Use try-catch to handle any errors gracefully
       bool onboardingCompleted = false;
@@ -63,28 +59,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       } catch (e) {
         // If there's an error reading, assume not completed to be safe
         onboardingCompleted = false;
-      }
-
       // If onboarding not completed and not on onboarding screen, redirect to onboarding
       if (!onboardingCompleted && !isOnboarding) {
         return '/onboarding';
-      }
-
       // If onboarding completed and on onboarding screen, redirect to login
       if (onboardingCompleted && isOnboarding) {
         return '/login';
-      }
-
       // If authenticated and on auth pages, redirect to dashboard
       if (isAuthenticated && isAuthRoute) {
         return '/dashboard';
-      }
-
       // If not authenticated and trying to access protected route
       if (!isAuthenticated && !isAuthRoute && !isOnboarding) {
-        return '/login';
-      }
-
       // Allow navigation between auth screens when not authenticated
       return null;
     },
@@ -94,22 +79,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
-      GoRoute(
         path: '/login',
         name: 'login',
         builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
         path: '/signup',
         name: 'signup',
         builder: (context, state) => const SignupScreen(),
-      ),
-      GoRoute(
         path: '/forgot-password',
         name: 'forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
-      ),
-      GoRoute(
         path: '/reset-password',
         name: 'reset-password',
         builder: (context, state) {
@@ -119,31 +97,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             token: queryParams['token'] ?? '',
           );
         },
-      ),
-      GoRoute(
         path: '/dashboard',
         name: 'dashboard',
         builder: (context, state) => const MainNavigationScreen(),
-      ),
-      GoRoute(
         path: '/dashboard/mood-analytics',
         name: 'mood-analytics',
         builder: (context, state) => const MoodAnalyticsScreen(),
-      ),
-      GoRoute(
         path: '/logging',
         name: 'logging',
-        builder: (context, state) => const MainNavigationScreen(),
-      ),
-      GoRoute(
         path: '/logging/create',
         name: 'create-entry',
         builder: (context, state) => const CreateEntryScreen(),
-      ),
-      GoRoute(
         path: '/logging/detail/:id',
         name: 'entry-detail',
-        builder: (context, state) {
           // Get entry from extra parameter passed during navigation
           final entry = state.extra as LogEntryModel?;
           if (entry == null) {
@@ -154,42 +120,28 @@ final routerProvider = Provider<GoRouter>((ref) {
             );
           }
           return EntryDetailScreen(entry: entry);
-        },
-      ),
-      GoRoute(
         path: '/settings',
         name: 'settings',
-        builder: (context, state) => const MainNavigationScreen(),
-      ),
-      GoRoute(
         path: '/settings/change-password',
         name: 'change-password',
-        builder: (context, state) {
           // Import needed
           return const ChangePasswordScreen();
-        },
-      ),
-      GoRoute(
         path: '/notifications',
         name: 'notifications',
         builder: (context, state) => const MoodCommentNotificationsScreen(),
-      ),
-      GoRoute(
         path: '/breathing',
         name: 'breathing',
         builder: (context, state) => const BreathingExerciseScreen(),
-      ),
-      GoRoute(
         path: '/music-recommendations',
         name: 'music-recommendations',
         builder: (context, state) => const MusicRecommendationsScreen(),
-      ),
-      GoRoute(
+        path: '/wallet',
+        name: 'wallet',
+        builder: (context, state) => const WalletScreen(),
         path: '/gift/:userId',
         name: 'gift',
         builder: (context, state) =>
             GiftScreen(recipientUserId: state.pathParameters['userId']!),
-      ),
     ],
   );
 });
