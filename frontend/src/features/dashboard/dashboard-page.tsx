@@ -137,17 +137,37 @@ export function DashboardPage() {
     enabled: !!user,
   });
 
-  // ECHO balance query
-  const walletQuery = useQuery({
-    queryKey: ["dashboard-wallet", user?.id],
-    queryFn: () => fetchWalletBalance(user!.id),
-    enabled: !!user,
-  });
+  const echoQuery = useQuery({
+    queryKey: ["dashboard-echo", user?.id],
+    queryFn: async () => {
+      if (!user) return { balance: 0, earnedToday: 0 };
 
-  // Mood trend query for percentage change
-  const moodTrendQuery = useQuery({
-    queryKey: ["dashboard-mood-trend", user?.id],
-    queryFn: () => fetchMoodTrend(user!.id),
+      const walletRes = await supabase
+        .from("user_wallets")
+        .select("balance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const balance =
+        walletRes.data && typeof (walletRes.data as Record<string, unknown>).balance === "number"
+          ? Number((walletRes.data as Record<string, unknown>).balance)
+          : 0;
+
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: rewards } = await supabase
+        .from("echo_rewards")
+        .select("amount")
+        .eq("user_id", user.id)
+        .gte("created_at", today);
+
+      const earnedToday =
+        (rewards ?? []).reduce(
+          (sum: number, r: Record<string, unknown>) => sum + Number(r.amount ?? 0),
+          0,
+        );
+
+      return { balance, earnedToday };
+    },
     enabled: !!user,
   });
 
@@ -167,6 +187,8 @@ export function DashboardPage() {
   if (!user) {
     return null;
   }
+
+  const echoData = echoQuery.data ?? { balance: 0, earnedToday: 0 };
 
   return (
     <section className="feature-grid">
@@ -243,21 +265,40 @@ export function DashboardPage() {
         </div>
       </article>
 
-      {/* Quick Log Button */}
-      <article className="card">
-        <div className="card-content" style={{ textAlign: "center" }}>
-          <p className="muted" style={{ marginBottom: "0.5rem" }}>
-            How are you feeling today?
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/logs/new")}
-            style={{ padding: "0.75rem 1.5rem", fontSize: "1rem" }}
-          >
-            Log your mood
-          </button>
+      {/* ECHO Balance Card */}
+      <article
+        className="card"
+        style={{ cursor: "pointer" }}
+        onClick={() => navigate("/wallet")}
+      >
+        <div className="card-header">
+          <h3>ECHO Balance</h3>
+        </div>
+        <div className="card-content">
+          {echoQuery.isLoading ? (
+            <p className="muted">Loading…</p>
+          ) : echoQuery.isError ? (
+            <p className="muted">Failed to load balance.</p>
+          ) : (
+            <>
+              <h2>
+                ✦ {echoData.balance.toFixed(0)} ECHO
+              </h2>
+              {echoData.earnedToday > 0 && (
+                <p className="muted" style={{ marginTop: "0.25rem" }}>
+                  +{echoData.earnedToday} today
+                </p>
+              )}
+              <p className="muted" style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>
+                Tap to view wallet →
+              </p>
+            </>
+          )}
         </div>
       </article>
+
+      {/* Habit Tracker Widget */}
+      <HabitTrackerWidget />
 
       {/* Recent Logs List */}
       <article className="card">

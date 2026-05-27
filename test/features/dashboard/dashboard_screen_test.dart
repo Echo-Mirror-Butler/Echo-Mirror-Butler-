@@ -7,6 +7,8 @@ import 'package:echomirror/features/dashboard/data/models/insight_model.dart';
 import 'package:echomirror/features/dashboard/data/repositories/dashboard_repository.dart';
 import 'package:echomirror/features/dashboard/view/screens/dashboard_screen.dart';
 import 'package:echomirror/features/dashboard/viewmodel/providers/dashboard_provider.dart';
+import 'package:echomirror/features/dashboard/viewmodel/providers/streak_provider.dart';
+import 'package:echomirror/features/dashboard/viewmodel/providers/echo_balance_provider.dart';
 import 'package:echomirror/features/dashboard/viewmodel/providers/mood_chart_provider.dart';
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
 import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
@@ -37,6 +39,16 @@ class _FakeLoggingNotifier extends LoggingNotifier {
   ) {
     state = initialState;
   }
+}
+
+class _FakeStreakNotifier extends StreakNotifier {
+  _FakeStreakNotifier(int streak) : super() {
+    state = StreakState(currentStreak: streak);
+  }
+}
+
+class _FakeEchoBalanceNotifier extends EchoBalanceNotifier {
+  _FakeEchoBalanceNotifier() : super();
 }
 
 class _FakeAiInsightNotifier extends AiInsightNotifier {
@@ -105,11 +117,24 @@ void main() {
     required AsyncValue<List<InsightModel>> dashboardState,
     required AsyncValue<List<LogEntryModel>> loggingState,
     AsyncValue<AiInsightModel?>? aiInsightState,
+    bool isAuthenticated = false,
+    int streak = 0,
   }) {
     final mockAuthRepository = MockAuthRepository();
     when(
       () => mockAuthRepository.isAuthenticated(),
-    ).thenAnswer((_) async => false);
+    ).thenAnswer((_) async => isAuthenticated);
+
+    if (isAuthenticated) {
+      when(() => mockAuthRepository.getCurrentUser()).thenAnswer(
+        (_) async => {
+          'id': 'test_user_id',
+          'email': 'test@example.com',
+          'name': 'Test User',
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+    }
 
     final loggingRepo = LoggingRepository();
     final dashboardRepo = DashboardRepository(loggingRepo);
@@ -130,6 +155,10 @@ void main() {
           ),
         // Ensure the chart provider doesn't depend on auth state in tests.
         moodChartDataProvider.overrideWithValue(const <LogEntryModel>[]),
+        // Override streak provider to avoid RPC call
+        streakProvider.overrideWith((ref) => _FakeStreakNotifier(streak)),
+        // Override echo balance provider to avoid database call
+        echoBalanceProvider.overrideWith((ref) => _FakeEchoBalanceNotifier()),
       ],
       child: const MaterialApp(home: DashboardScreen()),
     );
@@ -170,6 +199,7 @@ void main() {
         ]),
         loggingState: AsyncValue.data(logs),
         aiInsightState: const AsyncValue.data(null),
+        streak: 2,
       ),
     );
     await tester.pumpAndSettle();
@@ -211,6 +241,24 @@ void main() {
 
     expect(find.byType(ShimmerLoading), findsOneWidget);
     expect(find.text('No insights yet'), findsNothing);
+  });
+
+  testWidgets('echo balance card renders with balance when authenticated', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildScreen(
+        dashboardState: AsyncValue.data([
+          _insight(id: '1', type: InsightType.general),
+        ]),
+        loggingState: const AsyncValue.data([]),
+        aiInsightState: const AsyncValue.data(null),
+        isAuthenticated: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('ECHO'), findsOneWidget);
   });
 
   testWidgets('future letter card renders when letter is available', (
