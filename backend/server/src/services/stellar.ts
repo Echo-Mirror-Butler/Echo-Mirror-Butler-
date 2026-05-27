@@ -1,12 +1,12 @@
 import {
   Asset,
+  Horizon,
   Keypair,
   Memo,
   Networks,
   Operation,
   TransactionBuilder,
 } from '@stellar/stellar-sdk';
-import Server from '@stellar/stellar-sdk';
 
 const horizonUrl =
   process.env.STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
@@ -16,7 +16,7 @@ const assetCode = process.env.STELLAR_ASSET_CODE ?? 'ECHO';
 const issuerPublic = process.env.STELLAR_ISSUER_PUBLIC ?? '';
 const friendbotUrl = 'https://friendbot.stellar.org';
 
-const server = new Server(horizonUrl);
+const server = new Horizon.Server(horizonUrl);
 
 export const echoAsset = new Asset(assetCode, issuerPublic);
 
