@@ -2,15 +2,75 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth-context";
-import type { LogEntry } from "../../lib/types";
+import type { LogEntry, Insight } from "../../lib/types";
 import { formatDate, moodToEmoji } from "../../lib/date";
 import { HabitTrackerWidget } from "./components/habit-tracker-widget";
 import { MoodChartWidget } from "./components/mood-chart-widget";
+
+// Fetch wallet balance
+async function fetchWalletBalance(userId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from("user_wallets")
+    .select("balance")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.balance ?? 0;
+}
+
+// Fetch mood trend for percentage calculation
+async function fetchMoodTrend(userId: string) {
+  const today = new Date();
+  const lastWeek = new Date();
+  lastWeek.setDate(today.getDate() - 7);
+
+  const { data: thisWeekData, error: thisWeekError } = await supabase
+    .from("log_entries")
+    .select("date, mood")
+    .eq("user_id", userId)
+    .gte("date", lastWeek.toISOString())
+    .order("date", { ascending: true });
+
+  if (thisWeekError) throw thisWeekError;
+
+  if (!thisWeekData || thisWeekData.length === 0) {
+    return { currentAvg: null, previousAvg: null, thisWeekData: [] };
+  }
+
+  const currentAvg =
+    thisWeekData.reduce((sum, log) => sum + (log.mood ?? 0), 0) /
+    thisWeekData.length;
+
+  // Get previous week data
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(today.getDate() - 14);
+
+  const { data: prevWeekData, error: prevWeekError } = await supabase
+    .from("log_entries")
+    .select("mood")
+    .eq("user_id", userId)
+    .gte("date", twoWeeksAgo.toISOString())
+    .lt("date", lastWeek.toISOString())
+    .order("date", { ascending: true });
+
+  if (prevWeekError) {
+    // Return null for previousAvg on error so UI shows no comparison
+    return { currentAvg, previousAvg: null, thisWeekData };
+  }
+
+  const previousAvg =
+    prevWeekData.reduce((sum, log) => sum + (log.mood ?? 0), 0) /
+    prevWeekData.length;
+
+  return { currentAvg, previousAvg, thisWeekData };
+}
 
 export function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Streak query
   const streakQuery = useQuery({
     queryKey: ["dashboard-streak", user?.id],
     queryFn: async () => {
@@ -33,6 +93,7 @@ export function DashboardPage() {
     enabled: !!user,
   });
 
+  // Recent logs query (last 5)
   const recentLogsQuery = useQuery({
     queryKey: ["logs", user?.id],
     queryFn: async () => {
@@ -42,13 +103,14 @@ export function DashboardPage() {
         .select("id, date, mood, notes")
         .eq("user_id", user.id)
         .order("date", { ascending: false })
-        .limit(3);
+        .limit(5);
       if (error) throw error;
       return data as LogEntry[];
     },
     enabled: !!user,
   });
 
+  // AI insight query
   const insightQuery = useQuery({
     queryKey: ["dashboard-insight", user?.id],
     queryFn: async () => {
@@ -61,7 +123,7 @@ export function DashboardPage() {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as Insight | null;
     },
     enabled: !!user,
   });
@@ -106,6 +168,13 @@ export function DashboardPage() {
     last_log_date: null,
   };
 
+  const currentAvg = moodTrendQuery.data?.currentAvg ?? 0;
+  const previousAvg = moodTrendQuery.data?.previousAvg ?? null;
+  const percentageChange =
+    previousAvg && previousAvg > 0
+      ? ((currentAvg - previousAvg) / previousAvg) * 100
+      : null;
+
   if (!user) {
     return null;
   }
@@ -114,26 +183,74 @@ export function DashboardPage() {
 
   return (
     <section className="feature-grid">
-      {/* Mood Chart - spans 2 columns */}
-      <MoodChartWidget />
-
-      {/* Mood Streak Card */}
+      {/* Mood Summary Card - spans 2 columns */}
       <article className="card">
         <div className="card-header">
-          <h3>Mood Streak</h3>
+          <h3>Mood Summary</h3>
+        </div>
+        <div className="card-content">
+          {moodTrendQuery.isLoading ? (
+            <div className="skeleton-line large" />
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+              <div>
+                <p className="muted">Today's Mood</p>
+                <h2 style={{ margin: "0.25rem 0" }}>
+                  {currentAvg.toFixed(1)} / 5
+                </h2>
+                {percentageChange !== null && (
+                  <p
+                    style={{
+                      margin: "0.25rem 0 0",
+                      color:
+                        percentageChange > 0 ? "var(--success)" : "var(--danger)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {percentageChange > 0 ? "↑" : "↓"}{" "}
+                    {Math.abs(percentageChange).toFixed(1)}% vs last week
+                  </p>
+                )}
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: "80px",
+                  minWidth: "120px",
+                }}
+              >
+                <MoodSparkline logs={moodTrendQuery.data?.thisWeekData ?? []} />
+              </div>
+            </div>
+          )}
+        </div>
+      </article>
+
+      {/* Streak Card */}
+      <article className="card">
+        <div className="card-header">
+          <h3>Streak</h3>
         </div>
         <div className="card-content">
           <div
             className="streak-count"
-            style={{ display: "flex", gap: "2rem" }}
+            style={{ display: "flex", gap: "1.5rem" }}
           >
             <div>
-              <p className="muted">Current streak</p>
+              <p className="muted">Current</p>
               <h2>{streakData.current_streak} days</h2>
             </div>
             <div>
-              <p className="muted">Longest streak</p>
+              <p className="muted">Best</p>
               <h2>{streakData.longest_streak} days</h2>
+            </div>
+            <div>
+              <p className="muted">Last logged</p>
+              <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem" }}>
+                {streakData.last_log_date
+                  ? formatDate(new Date(streakData.last_log_date))
+                  : "Never"}
+              </p>
             </div>
           </div>
         </div>
@@ -174,13 +291,28 @@ export function DashboardPage() {
       {/* Habit Tracker Widget */}
       <HabitTrackerWidget />
 
-      {/* Recent Logs Card */}
+      {/* Recent Logs List */}
       <article className="card">
         <div className="card-header">
           <h3>Recent Logs</h3>
+          <button
+            type="button"
+            onClick={() => navigate("/logs")}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--brand)",
+              cursor: "pointer",
+              fontSize: "0.85rem",
+            }}
+          >
+            View all
+          </button>
         </div>
         <div className="card-content">
-          {recentLogsQuery.isLoading && <p className="muted">Loading…</p>}
+          {(recentLogsQuery.isLoading || streakQuery.isLoading) && (
+            <p className="muted">Loading…</p>
+          )}
           {recentLogsQuery.data && recentLogsQuery.data.length === 0 && (
             <p className="muted">No logs yet</p>
           )}
@@ -191,15 +323,38 @@ export function DashboardPage() {
                   key={log.id}
                   className="list-item"
                   onClick={() => navigate(`/logs/${log.id}/edit`)}
-                  style={{ cursor: "pointer" }}
+                  style={{
+                    cursor: "pointer",
+                    padding: "0.5rem 0",
+                    borderBottom: "1px solid var(--line)",
+                  }}
                 >
-                  <span className="muted">
-                    {formatDate(new Date(log.date))}
-                  </span>
-                  <span>{moodToEmoji(log.mood)}</span>
-                  <span className="muted">
-                    {log.notes ? log.notes.substring(0, 80) : "No notes"}
-                  </span>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span className="muted" style={{ fontSize: "0.85rem" }}>
+                      {formatDate(new Date(log.date))}
+                    </span>
+                    <span style={{ fontSize: "1.25rem" }}>
+                      {moodToEmoji(log.mood)}
+                    </span>
+                  </div>
+                  {log.notes && (
+                    <p
+                      style={{
+                        margin: "0.25rem 0 0",
+                        fontSize: "0.85rem",
+                        color: "var(--muted)",
+                      }}
+                    >
+                      {log.notes.substring(0, 60)}
+                      {log.notes.length > 60 ? "…" : ""}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -207,7 +362,7 @@ export function DashboardPage() {
         </div>
       </article>
 
-      {/* AI Insight Card */}
+      {/* AI Insight Preview */}
       <article className="card">
         <div className="card-header">
           <h3>Latest Insight</h3>
@@ -216,21 +371,177 @@ export function DashboardPage() {
           {insightQuery.isLoading && <p className="muted">Loading…</p>}
           {insightQuery.data ? (
             <>
-              <p>{insightQuery.data.prediction.substring(0, 200)}</p>
-              <button type="button" onClick={() => navigate("/insights")}>
-                View full insight
+              <p style={{ marginBottom: "0.75rem" }}>
+                {insightQuery.data.prediction.substring(0, 150)}
+                {insightQuery.data.prediction.length > 150 ? "…" : ""}
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/insights")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--brand)",
+                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                }}
+              >
+                View full analysis →
               </button>
             </>
           ) : (
             <>
               <p className="muted">No insights yet</p>
-              <button type="button" onClick={() => navigate("/insights")}>
+              <button
+                type="button"
+                onClick={() => navigate("/insights")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--brand)",
+                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  marginTop: "0.5rem",
+                }}
+              >
                 Generate insights
               </button>
             </>
           )}
         </div>
       </article>
+
+      {/* ECHO Balance Chip */}
+      <article className="card">
+        <div className="card-header">
+          <h3>ECHO Balance</h3>
+        </div>
+        <div className="card-content">
+          {walletQuery.isLoading ? (
+            <div className="skeleton-line large" />
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <p className="muted" style={{ margin: 0 }}>
+                  Your balance
+                </p>
+                <h2 style={{ margin: "0.25rem 0 0", fontSize: "1.5rem" }}>
+                  {walletQuery.data?.toFixed(2) ?? 0} ECHO
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate("/wallet")}
+                style={{
+                  padding: "0.5rem 1rem",
+                  fontSize: "0.85rem",
+                }}
+              >
+                View wallet
+              </button>
+            </div>
+          )}
+        </div>
+      </article>
     </section>
+  );
+}
+
+// Simple sparkline component for mood trend
+function MoodSparkline({ logs }: { logs: Array<{ date: string; mood: number | null }> }) {
+  if (!logs || logs.length === 0) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "80px",
+          color: "var(--muted)",
+          fontSize: "0.85rem",
+        }}
+      >
+        No trend data
+      </div>
+    );
+  }
+
+  // Create sparkline SVG
+  const moodValues = logs.map((log) => log.mood ?? 0);
+  const minMood = 0;
+  const maxMood = 5;
+  const width = 120;
+  const height = 80;
+
+  // Handle single data point case
+  if (moodValues.length < 2) {
+    const x = width / 2;
+    const y = height - ((moodValues[0] - minMood) / (maxMood - minMood)) * height;
+    return (
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        style={{ overflow: "visible" }}
+      >
+        <circle
+          cx={x}
+          cy={y}
+          r="3"
+          fill="var(--brand)"
+          stroke="white"
+          strokeWidth="1"
+        />
+      </svg>
+    );
+  }
+
+  const points = moodValues.map((mood, index) => {
+    const x = (index / (moodValues.length - 1)) * width;
+    const y = height - ((mood - minMood) / (maxMood - minMood)) * height;
+    return `${x},${y}`;
+  });
+
+  return (
+    <svg
+      width="100%"
+      height="100%"
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      style={{ overflow: "visible" }}
+    >
+      <polyline
+        points={points.join(" ")}
+        fill="none"
+        stroke="var(--brand)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {moodValues.map((mood, index) => {
+        const x = (index / (moodValues.length - 1)) * width;
+        const y = height - ((mood - minMood) / (maxMood - minMood)) * height;
+        return (
+          <circle
+            key={index}
+            cx={x}
+            cy={y}
+            r="3"
+            fill="var(--brand)"
+            stroke="white"
+            strokeWidth="1"
+          />
+        );
+      })}
+    </svg>
   );
 }
