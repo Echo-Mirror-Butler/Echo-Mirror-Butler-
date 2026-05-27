@@ -41,5 +41,9 @@ export type Insight = {
   stress_level: number
   calming_message?: string
   music_recommendations?: string[]
+  mood_drivers?: { label: string; percentage: number }[]
+  best_time_of_day?: string | null
+  worst_time_of_day?: string | null
+  recommendations?: string[]
   created_at: string
 }
