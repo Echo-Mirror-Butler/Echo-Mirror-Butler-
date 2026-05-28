@@ -71,7 +71,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   // Logo/Icon
                   Icon(
-                    FontAwesomeIcons.userAstronaut,
+                    FontAwesomeIcons.userAstronaut.data,
                     size: 80,
                     color: AppTheme.primaryColor,
                   ),
@@ -117,8 +117,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () {
                         setState(() {

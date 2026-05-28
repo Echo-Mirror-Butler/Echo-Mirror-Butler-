@@ -111,7 +111,7 @@ void main() {
         find.text('Start logging your daily mood and habits'),
         findsOneWidget,
       );
-      expect(find.byIcon(FontAwesomeIcons.book), findsOneWidget);
+      expect(find.byIcon(FontAwesomeIcons.book.data), findsOneWidget);
     });
 
     testWidgets('Entry cards are rendered when entries exist', (tester) async {

@@ -38,8 +38,8 @@ class PrivacyInfoSheet extends StatelessWidget {
             // Title
             Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.shieldHalved,
+                Icon(
+                  FontAwesomeIcons.shieldHalved.data,
                   color: AppTheme.primaryColor,
                   size: 24,
                 ),
@@ -98,8 +98,8 @@ class PrivacyInfoSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  FaIcon(
-                    FontAwesomeIcons.circleInfo,
+                  Icon(
+                    FontAwesomeIcons.circleInfo.data,
                     color: AppTheme.primaryColor,
                     size: 20,
                   ),

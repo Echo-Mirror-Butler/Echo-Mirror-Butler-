@@ -67,8 +67,8 @@ class StressDetectionCard extends StatelessWidget {
                       color: Colors.orange.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      FontAwesomeIcons.circleExclamation,
+                    child: Icon(
+                      FontAwesomeIcons.circleExclamation.data,
                       color: Colors.orange,
                       size: 24,
                     ),
@@ -99,7 +99,7 @@ class StressDetectionCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const FaIcon(FontAwesomeIcons.wind),
+                  icon: Icon(FontAwesomeIcons.wind.data),
                   label: const Text('Start Breathing Exercise'),
                   onPressed: () {
                     Navigator.of(context).push(

@@ -48,7 +48,7 @@ class MoodStatsWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    FontAwesomeIcons.chartBar,
+                    FontAwesomeIcons.chartBar.data,
                     color: AppTheme.accentColor,
                     size: 20,
                   ),

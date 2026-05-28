@@ -250,8 +250,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        FontAwesomeIcons.pen,
+                      child: Icon(
+                        FontAwesomeIcons.pen.data,
                         size: 36,
                         color: Colors.white,
                       ),
@@ -279,8 +279,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
-                                  FontAwesomeIcons.calendar,
+                                child: Icon(
+                                  FontAwesomeIcons.calendar.data,
                                   color: AppTheme.primaryColor,
                                   size: 20,
                                 ),
@@ -312,7 +312,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                 ),
                               ),
                               Icon(
-                                FontAwesomeIcons.chevronRight,
+                                FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                                 color: theme.colorScheme.onSurface.withValues(
                                   alpha: 0.5,
@@ -414,8 +414,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                             decoration: InputDecoration(
                               labelText: 'Add a habit',
                               hintText: 'e.g., Exercise, Meditation',
-                              prefixIcon: const Icon(
-                                FontAwesomeIcons.plus,
+                              prefixIcon: Icon(
+                                FontAwesomeIcons.plus.data,
                                 size: 18,
                               ),
                             ),
@@ -434,7 +434,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const FaIcon(FontAwesomeIcons.plus, size: 18),
+                          child: Icon(FontAwesomeIcons.plus.data, size: 18),
                         ),
                       ],
                     ),
@@ -447,8 +447,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                           return Chip(
                             label: Text(habit),
                             onDeleted: () => _removeHabit(habit),
-                            deleteIcon: const Icon(
-                              FontAwesomeIcons.xmark,
+                            deleteIcon: Icon(
+                              FontAwesomeIcons.xmark.data,
                               size: 16,
                             ),
                             backgroundColor: AppTheme.primaryColor.withValues(
@@ -480,8 +480,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                             onPressed: () {
                               // Voice button will handle this
                             },
-                            icon: const Icon(
-                              FontAwesomeIcons.microphone,
+                            icon: Icon(
+                              FontAwesomeIcons.microphone.data,
                               size: 16,
                             ),
                             label: const Text('Voice'),
@@ -498,8 +498,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       decoration: InputDecoration(
                         hintText:
                             'Write about your day, thoughts, or anything else...',
-                        prefixIcon: const Icon(
-                          FontAwesomeIcons.noteSticky,
+                        prefixIcon: Icon(
+                          FontAwesomeIcons.noteSticky.data,
                           size: 18,
                         ),
                         suffixIcon: _isListening
@@ -554,7 +554,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                   Row(
                                     children: [
                                       Icon(
-                                        FontAwesomeIcons.globe,
+                                        FontAwesomeIcons.globe.data,
                                         size: 16,
                                         color: AppTheme.primaryColor,
                                       ),
@@ -583,8 +583,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(
-                                FontAwesomeIcons.circleInfo,
+                              icon: Icon(
+                                FontAwesomeIcons.circleInfo.data,
                                 size: 18,
                               ),
                               color: AppTheme.primaryColor,

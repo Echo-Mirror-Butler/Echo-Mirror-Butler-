@@ -233,8 +233,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               const SizedBox(width: 8),
                               Icon(
                                 isLastPage
-                                    ? FontAwesomeIcons.arrowRight
-                                    : FontAwesomeIcons.chevronRight,
+                                    ? FontAwesomeIcons.arrowRight.data
+                                    : FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                               ),
                             ],

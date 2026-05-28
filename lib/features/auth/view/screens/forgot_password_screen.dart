@@ -77,7 +77,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.go('/login'),
         ),
         title: const Text('Forgot Password'),
@@ -102,7 +102,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FaIcon(FontAwesomeIcons.lock, size: 64, color: AppTheme.primaryColor),
+          Icon(FontAwesomeIcons.lock.data, size: 64, color: AppTheme.primaryColor),
           const SizedBox(height: 24),
           Text(
             'Reset your password',
@@ -154,7 +154,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Icon(
-          FontAwesomeIcons.circleCheck,
+          FontAwesomeIcons.circleCheck.data,
           size: 64,
           color: AppTheme.successColor,
         ),

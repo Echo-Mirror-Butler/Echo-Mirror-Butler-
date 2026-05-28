@@ -132,8 +132,8 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
-                              FontAwesomeIcons.envelopeOpen,
+                            child: Icon(
+                              FontAwesomeIcons.envelopeOpen.data,
                               color: Colors.white,
                               size: 20,
                             ),

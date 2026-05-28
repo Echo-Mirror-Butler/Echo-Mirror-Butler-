@@ -135,7 +135,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         actions: [
           // Need Help? button
           IconButton(
-            icon: const FaIcon(FontAwesomeIcons.handHoldingHeart),
+            icon: Icon(FontAwesomeIcons.handHoldingHeart.data),
             tooltip: 'Need Help?',
             onPressed: () {
               Navigator.push(
@@ -311,8 +311,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    FontAwesomeIcons.chartLine,
+                  child: Icon(
+                    FontAwesomeIcons.chartLine.data,
                     color: Colors.white,
                     size: 24,
                   ),
@@ -341,7 +341,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
                 Icon(
-                  FontAwesomeIcons.chevronRight,
+                  FontAwesomeIcons.chevronRight.data,
                   size: 16,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
@@ -384,7 +384,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ],
                 ),
                 child: Icon(
-                  FontAwesomeIcons.chartLine,
+                  FontAwesomeIcons.chartLine.data,
                   size: 56,
                   color: Colors.white,
                 ),
@@ -442,8 +442,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            FontAwesomeIcons.pen,
+                          Icon(
+                            FontAwesomeIcons.pen.data,
                             size: 18,
                             color: Colors.white,
                           ),

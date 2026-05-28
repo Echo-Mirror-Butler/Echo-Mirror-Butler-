@@ -460,7 +460,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline,
                         size: 48,
                         color: Colors.orange,

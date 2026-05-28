@@ -75,8 +75,8 @@ class EntryDetailScreen extends ConsumerWidget {
                         color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        FontAwesomeIcons.calendar,
+                      child: Icon(
+                        FontAwesomeIcons.calendar.data,
                         color: AppTheme.primaryColor,
                         size: 24,
                       ),
@@ -187,8 +187,8 @@ class EntryDetailScreen extends ConsumerWidget {
                             ),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            FontAwesomeIcons.listCheck,
+                          child: Icon(
+                            FontAwesomeIcons.listCheck.data,
                             color: AppTheme.secondaryColor,
                             size: 24,
                           ),
@@ -255,8 +255,8 @@ class EntryDetailScreen extends ConsumerWidget {
                             color: AppTheme.accentColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            FontAwesomeIcons.noteSticky,
+                          child: Icon(
+                            FontAwesomeIcons.noteSticky.data,
                             color: AppTheme.accentColor,
                             size: 24,
                           ),
@@ -294,7 +294,7 @@ class EntryDetailScreen extends ConsumerWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _showDeleteConfirmation(context, ref),
-                icon: const FaIcon(FontAwesomeIcons.trash),
+                icon: Icon(FontAwesomeIcons.trash.data),
                 label: const Text('Delete Entry'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.errorColor,

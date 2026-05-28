@@ -118,7 +118,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Icon(
-                    FontAwesomeIcons.userPlus,
+                    FontAwesomeIcons.userPlus.data,
                     size: 72,
                     color: AppTheme.primaryColor,
                   ),
@@ -168,8 +168,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () {
                         setState(() {

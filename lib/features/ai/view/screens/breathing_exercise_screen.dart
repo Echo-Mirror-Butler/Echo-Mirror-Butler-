@@ -290,7 +290,7 @@ class _BreathingExerciseScreenState
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.arrow_back,
                             color: Colors.white,
                           ),
@@ -313,8 +313,8 @@ class _BreathingExerciseScreenState
                         IconButton(
                           icon: Icon(
                             _isMusicPlaying
-                                ? FontAwesomeIcons.volumeHigh
-                                : FontAwesomeIcons.volumeOff,
+                                ? FontAwesomeIcons.volumeHigh.data
+                                : FontAwesomeIcons.volumeOff.data,
                             size: 20,
                             color: Colors.white,
                           ),
@@ -567,8 +567,8 @@ class _BreathingExerciseScreenState
                                     padding: const EdgeInsets.all(16),
                                     child: Icon(
                                       _isPaused
-                                          ? FontAwesomeIcons.play
-                                          : FontAwesomeIcons.pause,
+                                          ? FontAwesomeIcons.play.data
+                                          : FontAwesomeIcons.pause.data,
                                       color: Colors.white,
                                       size: 24,
                                     ),
@@ -595,7 +595,7 @@ class _BreathingExerciseScreenState
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    FontAwesomeIcons.xmark,
+                                    FontAwesomeIcons.xmark.data,
                                     size: 18,
                                     color: Colors.white.withValues(alpha: 0.9),
                                   ),
@@ -675,7 +675,7 @@ class _BreathingExerciseScreenState
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  FontAwesomeIcons.circleCheck,
+                  FontAwesomeIcons.circleCheck.data,
                   size: 80,
                   color: AppTheme.primaryColor,
                 ),
@@ -721,7 +721,7 @@ class _BreathingExerciseScreenState
 
                 const SizedBox(height: 48),
                 ElevatedButton.icon(
-                  icon: const FaIcon(FontAwesomeIcons.music),
+                  icon: Icon(FontAwesomeIcons.music.data),
                   label: const Text('Listen to Relaxing Music'),
                   onPressed: () {
                     Navigator.of(context).pushReplacement(

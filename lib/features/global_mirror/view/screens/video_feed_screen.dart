@@ -116,7 +116,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
               child: FloatingActionButton.extended(
                 onPressed: _showRecorder,
                 backgroundColor: AppTheme.primaryColor,
-                icon: const FaIcon(FontAwesomeIcons.video, color: Colors.white),
+                icon: Icon(FontAwesomeIcons.video.data, color: Colors.white),
                 label: Text(
                   'Share',
                   style: GoogleFonts.poppins(
@@ -162,7 +162,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(FontAwesomeIcons.video, size: 64, color: Colors.grey[400]),
+            Icon(FontAwesomeIcons.video.data, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 24),
             Text(
               'No Videos Yet',
@@ -191,7 +191,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              icon: const FaIcon(FontAwesomeIcons.video),
+              icon: Icon(FontAwesomeIcons.video.data),
               label: Text(
                 'Record Video',
                 style: GoogleFonts.poppins(
@@ -215,8 +215,8 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FaIcon(
-                FontAwesomeIcons.triangleExclamation,
+              Icon(
+                FontAwesomeIcons.triangleExclamation.data,
                 size: 56,
                 color: Colors.grey[400],
               ),
@@ -255,7 +255,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
-                icon: const FaIcon(FontAwesomeIcons.rotateRight, size: 16),
+                icon: Icon(FontAwesomeIcons.rotateRight.data, size: 16),
                 label: Text(
                   'Try Again',
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -511,8 +511,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const FaIcon(
-                                FontAwesomeIcons.triangleExclamation,
+                              Icon(
+                                FontAwesomeIcons.triangleExclamation.data,
                                 color: Colors.white70,
                                 size: 48,
                               ),
@@ -632,8 +632,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
                     color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
-                  child: const FaIcon(
-                    FontAwesomeIcons.play,
+                  child: Icon(
+                    FontAwesomeIcons.play.data,
                     color: Colors.white,
                     size: 40,
                   ),
@@ -658,8 +658,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(
-                      FontAwesomeIcons.image,
+                    Icon(
+                      FontAwesomeIcons.image.data,
                       color: Colors.white,
                       size: 14,
                     ),
@@ -721,8 +721,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const FaIcon(
-            FontAwesomeIcons.circleExclamation,
+          Icon(
+            FontAwesomeIcons.circleExclamation.data,
             color: Colors.white70,
             size: 48,
           ),
@@ -739,7 +739,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 _initializeVideo();
               });
             },
-            icon: const FaIcon(FontAwesomeIcons.rotateRight, size: 14),
+            icon: Icon(FontAwesomeIcons.rotateRight.data, size: 14),
             label: const Text('Retry'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,

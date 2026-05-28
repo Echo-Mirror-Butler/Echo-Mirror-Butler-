@@ -84,7 +84,7 @@ class SettingsScreen extends ConsumerWidget {
             color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: FaIcon(icon, color: AppTheme.primaryColor, size: 20),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -229,8 +229,8 @@ class SettingsScreen extends ConsumerWidget {
                     title: 'Reminder Time',
                     subtitle:
                         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                    trailing: FaIcon(
-                      FontAwesomeIcons.chevronRight,
+                    trailing: Icon(
+                      FontAwesomeIcons.chevronRight.data,
                       size: 14,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
@@ -274,8 +274,8 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.triangleExclamation,
+                Icon(
+                  FontAwesomeIcons.triangleExclamation.data,
                   color: theme.colorScheme.error,
                   size: 20,
                 ),
@@ -300,8 +300,8 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              FaIcon(
-                FontAwesomeIcons.triangleExclamation,
+              Icon(
+                FontAwesomeIcons.triangleExclamation.data,
                 color: theme.colorScheme.error,
                 size: 20,
               ),
@@ -348,8 +348,8 @@ class SettingsScreen extends ConsumerWidget {
               iconColor: AppTheme.primaryColor,
               title: 'ECHO Balance',
               subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -381,8 +381,8 @@ class SettingsScreen extends ConsumerWidget {
               iconColor: Colors.purple,
               title: 'Change Password',
               subtitle: 'Update your account password',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -437,7 +437,7 @@ class SettingsScreen extends ConsumerWidget {
                   color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: FaIcon(icon, color: iconColor, size: 18),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
               const SizedBox(width: 16),
               Expanded(

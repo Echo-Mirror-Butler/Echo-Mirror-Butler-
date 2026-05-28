@@ -189,8 +189,8 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  FontAwesomeIcons.wandMagicSparkles,
+                child: Icon(
+                  FontAwesomeIcons.wandMagicSparkles.data,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -207,7 +207,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                 ),
               ),
               IconButton(
-                icon: const FaIcon(FontAwesomeIcons.arrowsRotate),
+                icon: Icon(FontAwesomeIcons.arrowsRotate.data),
                 onPressed: () => _refreshInsight(ref),
                 tooltip: 'Refresh Insight',
                 color: AppTheme.primaryColor,
@@ -273,7 +273,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
             child: Column(
               children: [
                 Icon(
-                  FontAwesomeIcons.wandMagicSparkles,
+                  FontAwesomeIcons.wandMagicSparkles.data,
                   size: 48,
                   color: AppTheme.primaryColor.withValues(alpha: 0.5),
                 ),
@@ -378,7 +378,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
           child: Column(
             children: [
               Icon(
-                FontAwesomeIcons.triangleExclamation,
+                FontAwesomeIcons.triangleExclamation.data,
                 size: 48,
                 color: AppTheme.errorColor.withValues(alpha: 0.5),
               ),
@@ -404,7 +404,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
               const SizedBox(height: 16),
               TextButton.icon(
                 onPressed: () => _refreshInsight(ref),
-                icon: const FaIcon(FontAwesomeIcons.arrowsRotate),
+                icon: Icon(FontAwesomeIcons.arrowsRotate.data),
                 label: const Text('Retry with Gemini'),
               ),
             ],

@@ -113,7 +113,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         title: const Text('Send ECHO Gift'),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
       ),
@@ -184,7 +184,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const FaIcon(FontAwesomeIcons.gift),
+                      : Icon(FontAwesomeIcons.gift.data),
                   label: Text(
                     isActionLoading
                         ? 'Sending...'
@@ -275,7 +275,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       ),
       child: Row(
         children: [
-          const FaIcon(FontAwesomeIcons.coins, color: Colors.white, size: 32),
+          Icon(FontAwesomeIcons.coins.data, color: Colors.white, size: 32),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -337,7 +337,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         // Custom amount
         ActionChip(
           label: const Text('Custom'),
-          avatar: const Icon(Icons.edit, size: 16),
+          avatar: Icon(Icons.edit, size: 16),
           onPressed: _showCustomAmountDialog,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -415,7 +415,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       child: Column(
         children: [
           Icon(
-            FontAwesomeIcons.gift,
+            FontAwesomeIcons.gift.data,
             size: 40,
             color: theme.colorScheme.outline.withValues(alpha: 0.5),
           ),
@@ -465,7 +465,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () => ref.read(giftProvider.notifier).loadHistory(),
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             label: const Text('Retry'),
           ),
         ],
@@ -516,8 +516,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                   : Colors.green.withValues(alpha: 0.1),
               child: Icon(
                 isSent
-                    ? FontAwesomeIcons.gift
-                    : FontAwesomeIcons.handHoldingHeart,
+                    ? FontAwesomeIcons.gift.data
+                    : FontAwesomeIcons.handHoldingHeart.data,
                 size: 16,
                 color: isSent ? AppTheme.primaryColor : Colors.green,
               ),
