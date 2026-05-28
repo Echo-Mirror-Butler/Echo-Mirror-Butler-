@@ -1,10 +1,11 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { GiftTransaction, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
+import { useWalletBalances } from '../../lib/use-wallet-balances'
 
 const WALLET_PAGE_SIZE = 20
 const PRESET_AMOUNTS = [5, 10, 25, 50]
@@ -211,6 +212,33 @@ async function sendGift(params: {
   return data.transaction as GiftTransaction
 }
 
+function isValidStellarKey(key: string): boolean {
+  return key.length === 56 && key.startsWith('G')
+}
+
+function isFreighterInstalled(): boolean {
+  return typeof window !== 'undefined' && Boolean((window as unknown as { freighter?: boolean }).freighter)
+}
+
+async function requestFreighterAccess(): Promise<string> {
+  if (!isFreighterInstalled()) {
+    throw new Error('FREIGHTER_NOT_INSTALLED')
+  }
+  const { requestAccess } = await import('@stellar/freighter-api')
+  const result = await requestAccess()
+  if (result.error) {
+    throw new Error(result.error.message ?? 'Freighter connection rejected')
+  }
+  return result.address
+}
+
+async function upsertPublicKey(userId: string, publicKey: string | null): Promise<void> {
+  const { error } = await supabase
+    .from('user_wallets')
+    .upsert({ user_id: userId, public_key: publicKey }, { onConflict: 'user_id' })
+  if (error) throw error
+}
+
 function ConfettiBlast({ active }: { active: boolean }) {
   if (!active) {
     return null
@@ -236,6 +264,22 @@ export function WalletPage() {
   const [inlineError, setInlineError] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
 
+  // External wallet state
+  const [manualKeyInput, setManualKeyInput] = useState('')
+  const [manualKeyError, setManualKeyError] = useState<string | null>(null)
+  const [freighterStatus, setFreighterStatus] = useState<
+    'idle' | 'connecting' | 'not_installed' | 'error'
+  >('idle')
+  const [freighterError, setFreighterError] = useState<string | null>(null)
+  const [freighterAddress, setFreighterAddress] = useState<string | null>(null)
+
+  // Ticker for "last updated X seconds ago"
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 5_000)
+    return () => clearInterval(id)
+  }, [])
+
   const walletQuery = useQuery({
     queryKey: ['wallet', user?.id],
     queryFn: () => fetchWallet(user!.id),
@@ -247,6 +291,26 @@ export function WalletPage() {
     queryFn: () => fetchGiftHistory(user!.id, page),
     enabled: Boolean(user?.id),
     placeholderData: keepPreviousData,
+  })
+
+  const publicKey = walletQuery.data?.record?.public_key ?? null
+  const balancesQuery = useWalletBalances(publicKey)
+
+  const savePublicKeyMutation = useMutation({
+    mutationFn: (key: string) => upsertPublicKey(user!.id, key),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
+      await queryClient.invalidateQueries({ queryKey: ['horizon-balances'] })
+    },
+  })
+
+  const removePublicKeyMutation = useMutation({
+    mutationFn: () => upsertPublicKey(user!.id, null),
+    onSuccess: async () => {
+      setManualKeyInput('')
+      await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
+      await queryClient.invalidateQueries({ queryKey: ['horizon-balances'] })
+    },
   })
 
   const createWalletMutation = useMutation({
@@ -325,6 +389,36 @@ export function WalletPage() {
     },
   })
 
+  const handleFreighterConnect = async () => {
+    setFreighterStatus('connecting')
+    setFreighterError(null)
+    try {
+      const address = await requestFreighterAccess()
+      setFreighterAddress(address)
+      setFreighterStatus('idle')
+      await savePublicKeyMutation.mutateAsync(address)
+    } catch (err) {
+      const msg = (err as Error).message ?? ''
+      if (msg === 'FREIGHTER_NOT_INSTALLED') {
+        setFreighterStatus('not_installed')
+      } else {
+        setFreighterStatus('error')
+        setFreighterError(msg || 'Connection failed')
+      }
+    }
+  }
+
+  const handleManualKeySave = async () => {
+    const key = manualKeyInput.trim()
+    if (!isValidStellarKey(key)) {
+      setManualKeyError('Invalid key — must start with G and be 56 characters.')
+      return
+    }
+    setManualKeyError(null)
+    await savePublicKeyMutation.mutateAsync(key)
+    setManualKeyInput('')
+  }
+
   if (!user) {
     return null
   }
@@ -382,6 +476,164 @@ export function WalletPage() {
             ) : null}
           </div>
         )}
+      </article>
+
+      {publicKey ? (
+        <article className="card">
+          <div className="card-header">
+            <h2>Live Stellar Balances</h2>
+            <button
+              type="button"
+              onClick={() => void balancesQuery.refetch()}
+              disabled={balancesQuery.isFetching}
+            >
+              Refresh
+            </button>
+          </div>
+
+          {balancesQuery.isLoading || balancesQuery.isFetching ? (
+            <>
+              <div className="skeleton-line" />
+              <div className="skeleton-line" />
+            </>
+          ) : balancesQuery.data?.notFunded ? (
+            <div className="empty-state">
+              <p>Wallet not funded yet.</p>
+              <a
+                href={`https://friendbot.stellar.org/?addr=${publicKey}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Fund with Friendbot (testnet)
+              </a>
+            </div>
+          ) : balancesQuery.isError ? (
+            <p className="error-text">Failed to load Stellar balances.</p>
+          ) : (
+            <>
+              <p>
+                <strong>XLM:</strong> {Number(balancesQuery.data?.xlm ?? '0').toFixed(7)}
+              </p>
+              <p>
+                <strong>ECHO:</strong> {Number(balancesQuery.data?.echo ?? '0').toFixed(2)}
+              </p>
+            </>
+          )}
+
+          {balancesQuery.dataUpdatedAt ? (
+            <p className="muted" style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
+              Last updated{' '}
+              {Math.floor((Date.now() - balancesQuery.dataUpdatedAt) / 1000)}s ago · auto-refreshes
+              every 30s
+            </p>
+          ) : null}
+        </article>
+      ) : null}
+
+      <article className="card">
+        <h2>Connect External Wallet</h2>
+
+        {walletQuery.data?.record?.public_key ? (
+          <p className="muted" style={{ marginBottom: '1rem', fontSize: '0.875rem' }}>
+            ⚠ You already have a wallet connected. Connecting a new one will replace the current
+            key.
+          </p>
+        ) : null}
+
+        <div className="form-stack">
+          <div>
+            <p className="field-label">Freighter (browser extension)</p>
+            {freighterAddress ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <span className="chip active">Connected via Freighter</span>
+                <span className="muted" style={{ fontSize: '0.875rem' }}>
+                  {freighterAddress.slice(0, 8)}…{freighterAddress.slice(-4)}
+                </span>
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => {
+                    setFreighterAddress(null)
+                    setFreighterStatus('idle')
+                  }}
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : freighterStatus === 'not_installed' ? (
+              <p>
+                Freighter not found.{' '}
+                <a href="https://www.freighter.app/" target="_blank" rel="noopener noreferrer">
+                  Install Freighter
+                </a>
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleFreighterConnect()}
+                disabled={freighterStatus === 'connecting' || savePublicKeyMutation.isPending}
+              >
+                {freighterStatus === 'connecting' ? 'Connecting…' : 'Connect Freighter'}
+              </button>
+            )}
+            {freighterStatus === 'error' && freighterError ? (
+              <p className="error-text">{freighterError}</p>
+            ) : null}
+          </div>
+
+          <div>
+            <p className="field-label">Connect with public key</p>
+            {walletQuery.data?.record?.public_key && !freighterAddress ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <span className="muted" style={{ fontSize: '0.875rem' }}>
+                  {walletQuery.data.record.public_key.slice(0, 8)}…
+                  {walletQuery.data.record.public_key.slice(-4)}
+                </span>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => {
+                    if (window.confirm('Remove the connected wallet key? This cannot be undone.')) {
+                      removePublicKeyMutation.mutate()
+                    }
+                  }}
+                  disabled={removePublicKeyMutation.isPending}
+                >
+                  {removePublicKeyMutation.isPending ? 'Removing…' : 'Remove wallet'}
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  placeholder="GABCD… (56 characters)"
+                  value={manualKeyInput}
+                  onChange={(e) => {
+                    setManualKeyInput(e.target.value)
+                    setManualKeyError(null)
+                  }}
+                  maxLength={56}
+                />
+                <p className="muted" style={{ fontSize: '0.8rem', margin: '0.25rem 0' }}>
+                  EchoMirror will send ECHO to this address. Make sure you control this wallet.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleManualKeySave()}
+                  disabled={savePublicKeyMutation.isPending || !manualKeyInput.trim()}
+                >
+                  {savePublicKeyMutation.isPending ? 'Saving…' : 'Save address'}
+                </button>
+                {manualKeyError ? <p className="error-text">{manualKeyError}</p> : null}
+                {savePublicKeyMutation.error ? (
+                  <p className="error-text">
+                    {(savePublicKeyMutation.error as Error).message}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
       </article>
 
       <article className="card">

@@ -73,6 +73,11 @@ class _FutureLetterCardState extends State<FutureLetterCard>
     if (userId == null || userId.isEmpty || content.isEmpty) return;
 
     try {
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser?.id;
+      final content = widget.insight.futureLetter.trim();
+      if (userId == null || userId.isEmpty || content.isEmpty) return;
+
       await client.functions.invoke(
         'save-future-letter',
         body: {
@@ -136,8 +141,8 @@ class _FutureLetterCardState extends State<FutureLetterCard>
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
-                              FontAwesomeIcons.envelopeOpen,
+                            child: Icon(
+                              FontAwesomeIcons.envelopeOpen.data,
                               color: Colors.white,
                               size: 20,
                             ),

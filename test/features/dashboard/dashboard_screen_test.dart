@@ -230,7 +230,7 @@ void main() {
         dashboardState: AsyncValue.data([
           createInsight(id: '1', type: InsightType.prediction),
         ]),
-        loggingState: const AsyncValue.data([]),
+        loggingState: AsyncValue.data(logs),
         aiInsightState: AsyncValue.data(insight),
       ),
     );
@@ -285,7 +285,7 @@ void main() {
         dashboardState: AsyncValue.data([
           createInsight(id: '1', type: InsightType.general),
         ]),
-        loggingState: const AsyncValue.data([]),
+        loggingState: AsyncValue.data(logs),
         aiInsightState: AsyncValue.data(insight),
       ),
     );

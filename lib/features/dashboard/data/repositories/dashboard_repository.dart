@@ -166,6 +166,45 @@ class DashboardRepository {
         );
       }
 
+      // Generate predictions based on patterns
+      if (moodEntries.length >= 5) {
+        final weekdayMoods = <int, List<int>>{};
+        for (final entry in moodEntries) {
+          // Normalize date to local time for weekday calculation
+          final localDate = entry.date.isUtc
+              ? entry.date.toLocal()
+              : entry.date;
+          final weekday = localDate.weekday;
+          if (entry.mood != null) {
+            weekdayMoods.putIfAbsent(weekday, () => []).add(entry.mood!);
+          }
+        }
+
+        if (weekdayMoods.isNotEmpty) {
+          final bestWeekday = weekdayMoods.entries
+              .map(
+                (e) => MapEntry(
+                  e.key,
+                  e.value.reduce((a, b) => a + b) / e.value.length,
+                ),
+              )
+              .reduce((a, b) => a.value > b.value ? a : b);
+
+          insights.add(
+            InsightModel(
+              id: 'prediction-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Pattern Detected',
+              description:
+                  'Based on your logs, you tend to have better moods on ${_getWeekdayName(bestWeekday.key)}. Plan something special!',
+              date: now,
+              type: InsightType.prediction,
+              createdAt: now,
+            ),
+          );
+        }
+      }
+
       insights.sort((a, b) => b.date.compareTo(a.date));
       return insights;
     } catch (e) {
@@ -362,5 +401,18 @@ class DashboardRepository {
       'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  String _getWeekdayName(int weekday) {
+    const weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    return weekdays[weekday - 1];
   }
 }

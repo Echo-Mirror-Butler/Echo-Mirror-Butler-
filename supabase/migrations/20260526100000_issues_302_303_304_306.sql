@@ -146,7 +146,7 @@ alter table public.mood_logs enable row level security;
 
 create policy "Anyone can read mood logs"
   on public.mood_logs for select
-  using (true);
+  using (auth.uid() = user_id);
 
 create policy "Authenticated users can insert mood logs"
   on public.mood_logs for insert

@@ -81,7 +81,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
 
       if (currentStressLevel != null) {
         debugPrint(
-          '[AiInsightSection] 📊 Insight updated - stressLevel: $currentStressLevel, previous: $previousStressLevel, lastTriggered: $_lastTriggeredStressLevel',
+          '[AiInsightSection] ðŸ“Š Insight updated - stressLevel: $currentStressLevel, previous: $previousStressLevel, lastTriggered: $_lastTriggeredStressLevel',
         );
 
         // Only trigger if:
@@ -99,7 +99,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
           Future.delayed(const Duration(milliseconds: 800), () {
             if (context.mounted) {
               debugPrint(
-                '[AiInsightSection] 🧘 Auto-navigating to breathing exercise (stress level: $currentStressLevel)',
+                '[AiInsightSection] ðŸ§˜ Auto-navigating to breathing exercise (stress level: $currentStressLevel)',
               );
               _saveLastTriggeredStressLevel(currentStressLevel);
               context.push('/breathing');
@@ -108,12 +108,12 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
         } else if (currentStressLevel >= 3 &&
             currentStressLevel == _lastTriggeredStressLevel) {
           debugPrint(
-            '[AiInsightSection] ⏭️ Skipping breathing exercise trigger - already triggered for stress level $currentStressLevel',
+            '[AiInsightSection] â­ï¸ Skipping breathing exercise trigger - already triggered for stress level $currentStressLevel',
           );
         }
       } else if (currentStressLevel == null && next.value != null) {
         debugPrint(
-          '[AiInsightSection] ⚠️ Warning: Gemini did not return stressLevel. Server-side code may need to calculate stress from logs.',
+          '[AiInsightSection] âš ï¸ Warning: Gemini did not return stressLevel. Server-side code may need to calculate stress from logs.',
         );
       }
     });
@@ -189,8 +189,8 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  FontAwesomeIcons.wandMagicSparkles,
+                child: Icon(
+                  FontAwesomeIcons.wandMagicSparkles.data,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -207,7 +207,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                 ),
               ),
               IconButton(
-                icon: const Icon(FontAwesomeIcons.arrowsRotate),
+                icon: Icon(FontAwesomeIcons.arrowsRotate.data),
                 onPressed: () => _refreshInsight(ref),
                 tooltip: 'Refresh Insight',
                 color: AppTheme.primaryColor,
@@ -273,7 +273,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
             child: Column(
               children: [
                 Icon(
-                  FontAwesomeIcons.wandMagicSparkles,
+                  FontAwesomeIcons.wandMagicSparkles.data,
                   size: 48,
                   color: AppTheme.primaryColor.withValues(alpha: 0.5),
                 ),
@@ -378,7 +378,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
           child: Column(
             children: [
               Icon(
-                FontAwesomeIcons.triangleExclamation,
+                FontAwesomeIcons.triangleExclamation.data,
                 size: 48,
                 color: AppTheme.errorColor.withValues(alpha: 0.5),
               ),
@@ -404,7 +404,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
               const SizedBox(height: 16),
               TextButton.icon(
                 onPressed: () => _refreshInsight(ref),
-                icon: const Icon(FontAwesomeIcons.arrowsRotate),
+                icon: Icon(FontAwesomeIcons.arrowsRotate.data),
                 label: const Text('Retry with Gemini'),
               ),
             ],

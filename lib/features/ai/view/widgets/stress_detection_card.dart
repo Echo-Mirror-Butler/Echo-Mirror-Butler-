@@ -23,9 +23,9 @@ class StressDetectionCard extends StatelessWidget {
 
     final level = insight.stressLevel ?? 0;
     if (level >= 4) {
-      return 'Hey, future you here—I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';
+      return 'Hey, future you hereâ€”I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';
     } else if (level >= 3) {
-      return 'Hey, future you here—I noticed you\'ve been working hard. A quick breathing break might help.';
+      return 'Hey, future you hereâ€”I noticed you\'ve been working hard. A quick breathing break might help.';
     }
     return '';
   }
@@ -67,8 +67,8 @@ class StressDetectionCard extends StatelessWidget {
                       color: Colors.orange.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      FontAwesomeIcons.circleExclamation,
+                    child: Icon(
+                      FontAwesomeIcons.circleExclamation.data,
                       color: Colors.orange,
                       size: 24,
                     ),
@@ -99,7 +99,7 @@ class StressDetectionCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(FontAwesomeIcons.wind),
+                  icon: Icon(FontAwesomeIcons.wind.data),
                   label: const Text('Start Breathing Exercise'),
                   onPressed: () {
                     Navigator.of(context).push(

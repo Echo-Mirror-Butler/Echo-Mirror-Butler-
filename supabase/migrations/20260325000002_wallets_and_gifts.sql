@@ -1,0 +1,4 @@
+-- Obsolete migration (neutralized).
+-- This migration previously created wallet/gift tables but has been
+-- removed to avoid duplicate table creation during CI local setup.
+-- Kept as a comment-only placeholder so migration ordering remains stable.

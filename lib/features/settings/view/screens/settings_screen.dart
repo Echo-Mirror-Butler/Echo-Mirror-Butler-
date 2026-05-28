@@ -34,7 +34,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.palette,
+            icon: FontAwesomeIcons.palette.data,
             title: 'Appearance',
             subtitle: 'Customize your app experience',
           ),
@@ -46,7 +46,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.bell,
+            icon: FontAwesomeIcons.bell.data,
             title: 'Reminders',
             subtitle: 'Stay on track with daily reflections',
           ),
@@ -58,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.user,
+            icon: FontAwesomeIcons.user.data,
             title: 'Account',
             subtitle: 'Manage your account settings',
           ),
@@ -84,7 +84,7 @@ class SettingsScreen extends ConsumerWidget {
             color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: FaIcon(icon, color: AppTheme.primaryColor, size: 20),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -129,7 +129,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.moon,
+              icon: FontAwesomeIcons.moon.data,
               iconColor: Colors.indigo,
               title: 'Dark Mode',
               subtitle: 'Switch to dark theme',
@@ -149,7 +149,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.circleHalfStroke,
+              icon: FontAwesomeIcons.circleHalfStroke.data,
               iconColor: Colors.blue,
               title: 'System Theme',
               subtitle: 'Follow system appearance',
@@ -195,7 +195,7 @@ class SettingsScreen extends ConsumerWidget {
                 _buildModernListTile(
                   context,
                   theme,
-                  icon: FontAwesomeIcons.bell,
+                  icon: FontAwesomeIcons.bell.data,
                   iconColor: Colors.orange,
                   title: 'Daily Reflection Reminder',
                   subtitle: enabled
@@ -224,13 +224,13 @@ class SettingsScreen extends ConsumerWidget {
                   _buildModernListTile(
                     context,
                     theme,
-                    icon: FontAwesomeIcons.clock,
+                    icon: FontAwesomeIcons.clock.data,
                     iconColor: Colors.teal,
                     title: 'Reminder Time',
                     subtitle:
                         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                    trailing: FaIcon(
-                      FontAwesomeIcons.chevronRight,
+                    trailing: Icon(
+                      FontAwesomeIcons.chevronRight.data,
                       size: 14,
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
@@ -274,8 +274,8 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.triangleExclamation,
+                Icon(
+                  FontAwesomeIcons.triangleExclamation.data,
                   color: theme.colorScheme.error,
                   size: 20,
                 ),
@@ -300,8 +300,8 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              FaIcon(
-                FontAwesomeIcons.triangleExclamation,
+              Icon(
+                FontAwesomeIcons.triangleExclamation.data,
                 color: theme.colorScheme.error,
                 size: 20,
               ),
@@ -344,12 +344,12 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.coins,
+              icon: FontAwesomeIcons.coins.data,
               iconColor: AppTheme.primaryColor,
               title: 'ECHO Balance',
               subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -363,7 +363,7 @@ class SettingsScreen extends ConsumerWidget {
               _buildModernListTile(
                 context,
                 theme,
-                icon: FontAwesomeIcons.envelope,
+                icon: FontAwesomeIcons.envelope.data,
                 iconColor: Colors.blue,
                 title: 'Email',
                 subtitle: authState.user!.email,
@@ -377,12 +377,12 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.key,
+              icon: FontAwesomeIcons.key.data,
               iconColor: Colors.purple,
               title: 'Change Password',
               subtitle: 'Update your account password',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -397,7 +397,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.rightFromBracket,
+              icon: FontAwesomeIcons.rightFromBracket.data,
               iconColor: Colors.red,
               title: AppStrings.logout,
               subtitle: 'Sign out of your account',
@@ -437,7 +437,7 @@ class SettingsScreen extends ConsumerWidget {
                   color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: FaIcon(icon, color: iconColor, size: 18),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
               const SizedBox(width: 16),
               Expanded(
