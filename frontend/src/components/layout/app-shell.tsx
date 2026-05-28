@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef, useId } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
@@ -62,7 +62,8 @@ export function AppShell() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [selectedResultIdx, setSelectedResultIdx] = useState(-1)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const { results: searchResults } = useSearchLogs(user?.id, searchQuery)
+  const { results: searchResults, isLoading: searchLoading } = useSearchLogs(user?.id, searchQuery)
+  const searchListboxId = useId()
 
   const unreadNotificationsQuery = useQuery({
     queryKey: ['unread-notifications', user?.id],
@@ -206,23 +207,48 @@ export function AppShell() {
           </div>
 
           <div className="shell-search" style={{ position: 'relative' }}>
-            <label style={{ width: '100%' }}>
-              <span className="sr-only">Search logs</span>
+            <div style={{ position: 'relative', width: '100%' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: '0.65rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '0.85rem',
+                  color: 'var(--muted)',
+                  pointerEvents: 'none',
+                }}
+                aria-hidden="true"
+              >
+                🔍
+              </span>
               <input
                 ref={searchInputRef}
+                id="search-logs-input"
                 type="text"
-                placeholder="Search logs..."
+                role="combobox"
+                aria-expanded={isSearchOpen && searchResults.length > 0}
+                aria-controls={searchListboxId}
+                aria-activedescendant={selectedResultIdx >= 0 ? `search-result-${selectedResultIdx}` : undefined}
+                aria-autocomplete="list"
+                aria-haspopup="listbox"
+                aria-label="Search logs by notes, date, or mood score"
+                placeholder="Search logs…"
                 value={searchQuery}
+                style={{ paddingLeft: '2rem' }}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
                   setIsSearchOpen(true)
                   setSelectedResultIdx(-1)
                 }}
                 onFocus={() => searchQuery && setIsSearchOpen(true)}
+                autoComplete="off"
               />
-            </label>
+            </div>
             {isSearchOpen && (
               <div
+                id={searchListboxId}
+                role="listbox"
                 className="search-dropdown"
                 style={{
                   position: 'absolute',
@@ -232,14 +258,19 @@ export function AppShell() {
                   zIndex: 1000,
                 }}
               >
-                {searchResults.length === 0 && searchQuery ? (
+                {searchLoading ? (
+                  <div className="search-empty">Searching…</div>
+                ) : searchResults.length === 0 && searchQuery ? (
                   <div className="search-empty">No logs matched</div>
                 ) : (
                   <div className="search-results">
                     {searchResults.map((result, idx) => (
                       <button
                         key={result.id}
+                        id={`search-result-${idx}`}
+                        role="option"
                         type="button"
+                        aria-selected={selectedResultIdx === idx}
                         className={`search-result ${selectedResultIdx === idx ? 'focused' : ''}`}
                         onClick={() => {
                           navigate(`/logs/${result.id}/edit`)
@@ -250,7 +281,7 @@ export function AppShell() {
                       >
                         <span className="result-date">{formatDate(result.date)}</span>
                         <span className="result-mood">{moodToEmoji(result.mood)}</span>
-                        <span className="result-notes">{result.notes ? result.notes.substring(0, 80) : 'No notes'}</span>
+                        <span className="result-notes">{result.notes ? result.notes.substring(0, 60) : 'No notes'}</span>
                       </button>
                     ))}
                   </div>
