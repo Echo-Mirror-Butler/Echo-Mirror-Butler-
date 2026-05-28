@@ -11,6 +11,29 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+async function ensureUserProfile(user: User) {
+  const displayName =
+    typeof user.user_metadata?.name === 'string'
+      ? user.user_metadata.name
+      : typeof user.user_metadata?.full_name === 'string'
+        ? user.user_metadata.full_name
+        : null
+
+  const { error } = await supabase.from('profiles').upsert(
+    {
+      id: user.id,
+      display_name: displayName,
+      echo_balance: 0,
+      streak: 0,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  )
+
+  if (error) {
+    console.warn('Unable to ensure profile exists for signed-in user', error)
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -20,6 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const bootstrap = async () => {
       const { data } = await supabase.auth.getSession()
+      if (data.session?.user) {
+        await ensureUserProfile(data.session.user)
+      }
       if (mounted) {
         setSession(data.session)
         setIsLoading(false)
@@ -29,6 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void bootstrap()
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (nextSession?.user) {
+        void ensureUserProfile(nextSession.user)
+      }
       setSession(nextSession)
       setIsLoading(false)
     })

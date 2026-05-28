@@ -16,6 +16,9 @@ vi.mock('./supabase', () => ({
       onAuthStateChange: mockOnAuthStateChange,
       signOut: mockSignOut,
     },
+    from: vi.fn(() => ({
+      upsert: vi.fn().mockResolvedValue({ error: null }),
+    })),
   },
 }))
 
