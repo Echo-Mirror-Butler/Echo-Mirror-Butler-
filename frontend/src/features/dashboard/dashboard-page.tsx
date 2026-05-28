@@ -14,21 +14,12 @@ export function DashboardPage() {
   const streakQuery = useQuery({
     queryKey: ["dashboard-streak", user?.id],
     queryFn: async () => {
-      if (!user)
-        return { current_streak: 0, longest_streak: 0, last_log_date: null };
-      const { data, error } = await supabase.rpc("calculate_streak", {
-        p_user_id: user.id,
+      if (!user) return 0;
+      const { data, error } = await supabase.rpc("get_current_streak", {
+        user_id: user.id,
       });
       if (error) throw error;
-      return (data ?? {
-        current_streak: 0,
-        longest_streak: 0,
-        last_log_date: null,
-      }) as {
-        current_streak: number;
-        longest_streak: number;
-        last_log_date: string | null;
-      };
+      return Number(data ?? 0);
     },
     enabled: !!user,
   });
@@ -66,11 +57,7 @@ export function DashboardPage() {
     enabled: !!user,
   });
 
-  const streakData = streakQuery.data ?? {
-    current_streak: 0,
-    longest_streak: 0,
-    last_log_date: null,
-  };
+  const currentStreak = streakQuery.data ?? 0;
 
   if (!user) {
     return null;
@@ -87,19 +74,26 @@ export function DashboardPage() {
           <h3>Mood Streak</h3>
         </div>
         <div className="card-content">
-          <div
-            className="streak-count"
-            style={{ display: "flex", gap: "2rem" }}
-          >
-            <div>
+          {streakQuery.isLoading ? (
+            <div style={{ display: "grid", gap: "0.65rem" }} aria-label="Loading streak">
+              <div className="skeleton-line large" style={{ maxWidth: "190px" }} />
+              <div className="skeleton-line" style={{ maxWidth: "260px" }} />
+            </div>
+          ) : streakQuery.isError ? (
+            <p className="muted">Streak unavailable right now.</p>
+          ) : currentStreak > 0 ? (
+            <div className="streak-count">
               <p className="muted">Current streak</p>
-              <h2>{streakData.current_streak} days</h2>
+              <h2 style={{ margin: "0.25rem 0 0" }}>🔥 {currentStreak}-day streak</h2>
             </div>
-            <div>
-              <p className="muted">Longest streak</p>
-              <h2>{streakData.longest_streak} days</h2>
+          ) : (
+            <div className="streak-count">
+              <h2 style={{ margin: "0 0 0.3rem" }}>Start your streak today</h2>
+              <p className="muted" style={{ margin: 0 }}>
+                Log your mood today to begin building momentum.
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </article>
 
@@ -126,7 +120,7 @@ export function DashboardPage() {
                   style={{ cursor: "pointer" }}
                 >
                   <span className="muted">
-                    {formatDate(new Date(log.date))}
+                    {formatDate(log.date)}
                   </span>
                   <span>{moodToEmoji(log.mood)}</span>
                   <span className="muted">
