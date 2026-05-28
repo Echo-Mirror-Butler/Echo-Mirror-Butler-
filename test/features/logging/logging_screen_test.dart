@@ -30,8 +30,15 @@ class _FakeLoggingNotifier extends LoggingNotifier {
 }
 
 class _FakeAuthNotifier extends AuthNotifier {
-  _FakeAuthNotifier(AuthState initialState) : super(MockAuthRepository()) {
+  _FakeAuthNotifier._(MockAuthRepository repo, AuthState initialState)
+      : super(repo) {
     state = initialState;
+  }
+
+  factory _FakeAuthNotifier(AuthState initialState) {
+    final repo = MockAuthRepository();
+    when(() => repo.isAuthenticated()).thenAnswer((_) async => false);
+    return _FakeAuthNotifier._(repo, initialState);
   }
 }
 

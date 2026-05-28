@@ -30,6 +30,9 @@ class _FakeDashboardNotifier extends DashboardNotifier {
   ) {
     state = initialState;
   }
+
+  @override
+  Future<void> loadInsights({String? userId, bool forceReload = false}) async {}
 }
 
 class _FakeLoggingNotifier extends LoggingNotifier {
@@ -39,23 +42,25 @@ class _FakeLoggingNotifier extends LoggingNotifier {
   ) {
     state = initialState;
   }
+
+  @override
+  Future<void> loadLogEntries({String? userId}) async {}
 }
 
 class _FakeStreakNotifier extends StreakNotifier {
   _FakeStreakNotifier(int streak) : super() {
     state = StreakState(currentStreak: streak);
   }
+
+  @override
+  Future<void> loadStreak(String userId) async {}
 }
 
 class _FakeEchoBalanceNotifier extends EchoBalanceNotifier {
-  _FakeEchoBalanceNotifier() : super() {
-    state = const EchoBalanceState(balance: 10.0, isLoading: false);
-  }
+  _FakeEchoBalanceNotifier() : super();
 
   @override
-  Future<void> loadBalance(String userId) async {
-    // No-op to avoid calling Supabase
-  }
+  Future<void> loadBalance(String userId) async {}
 }
 
 class _FakeAiInsightNotifier extends AiInsightNotifier {
@@ -73,19 +78,19 @@ void main() {
 
   const userId = 'user_1';
 
-  DateTime _today() {
+  DateTime today() {
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
   }
 
-  LogEntryModel _log({
+  LogEntryModel createLog({
     required String userId,
     required DateTime date,
     required int mood,
   }) {
     final normalized = DateTime(date.year, date.month, date.day);
     return LogEntryModel(
-      id: '${userId}_${normalized.toIso8601String()}_${mood}',
+      id: '${userId}_${normalized.toIso8601String()}_$mood',
       userId: userId,
       date: normalized,
       mood: mood,
@@ -95,8 +100,8 @@ void main() {
     );
   }
 
-  InsightModel _insight({required String id, required InsightType type}) {
-    final now = _today();
+  InsightModel createInsight({required String id, required InsightType type}) {
+    final now = today();
     return InsightModel(
       id: id,
       userId: userId,
@@ -108,7 +113,7 @@ void main() {
     );
   }
 
-  AiInsightModel _aiInsight({required String futureLetter, int? stressLevel}) {
+  AiInsightModel createAiInsight({required String futureLetter, int? stressLevel}) {
     return AiInsightModel(
       prediction: 'Test prediction',
       suggestions: const ['Suggestion 1', 'Suggestion 2'],
@@ -120,7 +125,7 @@ void main() {
     );
   }
 
-  Widget _buildScreen({
+  Widget buildTestScreen({
     required AsyncValue<List<InsightModel>> dashboardState,
     required AsyncValue<List<LogEntryModel>> loggingState,
     AsyncValue<AiInsightModel?>? aiInsightState,
@@ -175,7 +180,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _buildScreen(
+      buildTestScreen(
         dashboardState: const AsyncValue.data([]),
         loggingState: const AsyncValue.data([]),
       ),
@@ -188,21 +193,21 @@ void main() {
   });
 
   testWidgets('mood streak card renders correct streak count', (tester) async {
-    final today = _today();
-    final yesterday = today.subtract(const Duration(days: 1));
+    final todayDate = today();
+    final yesterday = todayDate.subtract(const Duration(days: 1));
 
     final logs = <LogEntryModel>[
-      _log(userId: userId, date: today, mood: 4),
-      _log(userId: userId, date: yesterday, mood: 4),
+      createLog(userId: userId, date: todayDate, mood: 4),
+      createLog(userId: userId, date: yesterday, mood: 4),
     ];
 
     final expectedStreak = MoodAnalyticsModel.computeStreak(logs);
     expect(expectedStreak, 2);
 
     await tester.pumpWidget(
-      _buildScreen(
+      buildTestScreen(
         dashboardState: AsyncValue.data([
-          _insight(id: '1', type: InsightType.general),
+          createInsight(id: '1', type: InsightType.general),
         ]),
         loggingState: AsyncValue.data(logs),
         aiInsightState: const AsyncValue.data(null),
@@ -218,18 +223,12 @@ void main() {
   testWidgets('AI insight section renders when insight is available', (
     tester,
   ) async {
-    final insight = _aiInsight(futureLetter: 'Letter body', stressLevel: 1);
-    final today = _today();
-    final logs = [
-      _log(userId: userId, date: today, mood: 4),
-      _log(userId: userId, date: today.subtract(const Duration(days: 1)), mood: 3),
-      _log(userId: userId, date: today.subtract(const Duration(days: 2)), mood: 5),
-    ];
+    final insight = createAiInsight(futureLetter: 'Letter body', stressLevel: 1);
 
     await tester.pumpWidget(
-      _buildScreen(
+      buildTestScreen(
         dashboardState: AsyncValue.data([
-          _insight(id: '1', type: InsightType.prediction),
+          createInsight(id: '1', type: InsightType.prediction),
         ]),
         loggingState: AsyncValue.data(logs),
         aiInsightState: AsyncValue.data(insight),
@@ -245,7 +244,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _buildScreen(
+      buildTestScreen(
         dashboardState: const AsyncValue.loading(),
         loggingState: const AsyncValue.data([]),
       ),
@@ -260,9 +259,9 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      _buildScreen(
+      buildTestScreen(
         dashboardState: AsyncValue.data([
-          _insight(id: '1', type: InsightType.general),
+          createInsight(id: '1', type: InsightType.general),
         ]),
         loggingState: const AsyncValue.data([]),
         aiInsightState: const AsyncValue.data(null),
@@ -270,6 +269,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.textContaining('ECHO'), findsOneWidget);
   });
@@ -278,18 +278,12 @@ void main() {
     tester,
   ) async {
     const letterText = 'Test future letter body';
-    final insight = _aiInsight(futureLetter: letterText, stressLevel: 1);
-    final today = _today();
-    final logs = [
-      _log(userId: userId, date: today, mood: 4),
-      _log(userId: userId, date: today.subtract(const Duration(days: 1)), mood: 3),
-      _log(userId: userId, date: today.subtract(const Duration(days: 2)), mood: 5),
-    ];
+    final insight = createAiInsight(futureLetter: letterText, stressLevel: 1);
 
     await tester.pumpWidget(
-      _buildScreen(
+      buildTestScreen(
         dashboardState: AsyncValue.data([
-          _insight(id: '1', type: InsightType.general),
+          createInsight(id: '1', type: InsightType.general),
         ]),
         loggingState: AsyncValue.data(logs),
         aiInsightState: AsyncValue.data(insight),

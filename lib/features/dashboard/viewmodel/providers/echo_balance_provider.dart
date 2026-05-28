@@ -47,8 +47,7 @@ class EchoBalanceNotifier extends StateNotifier<EchoBalanceState> {
         return;
       }
 
-      final data = res;
-      final balance = (data['balance'] as num?)?.toDouble() ?? 0.0;
+      final balance = (res['balance'] as num?)?.toDouble() ?? 0.0;
       state = EchoBalanceState(balance: balance, isLoading: false);
     } catch (e) {
       state = state.copyWith(
