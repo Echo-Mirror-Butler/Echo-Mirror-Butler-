@@ -111,7 +111,7 @@ void main() {
         find.text('Start logging your daily mood and habits'),
         findsOneWidget,
       );
-      expect(find.byIcon(FontAwesomeIcons.book), findsOneWidget);
+      expect(find.byIcon(FontAwesomeIcons.book.data), findsOneWidget);
     });
 
     testWidgets('Entry cards are rendered when entries exist', (tester) async {
@@ -131,8 +131,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListTile), findsNWidgets(2));
-      expect(find.text('April 24, 2026'), findsOneWidget);
-      expect(find.text('April 23, 2026'), findsOneWidget);
+      expect(find.text('Apr 24, 2026'), findsOneWidget);
+      expect(find.text('Apr 23, 2026'), findsOneWidget);
       expect(find.text('Mood: 4/5'), findsOneWidget);
       expect(find.text('Mood: 3/5'), findsOneWidget);
     });

@@ -93,7 +93,7 @@ class MoodAnalyticsScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                FontAwesomeIcons.triangleExclamation,
+                FontAwesomeIcons.triangleExclamation.data,
                 size: 64,
                 color: AppTheme.errorColor,
               ),
@@ -141,8 +141,8 @@ class MoodAnalyticsScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  FontAwesomeIcons.chartLine,
+                child: Icon(
+                  FontAwesomeIcons.chartLine.data,
                   size: 56,
                   color: Colors.white,
                 ),

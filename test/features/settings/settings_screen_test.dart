@@ -175,7 +175,7 @@ void main() {
 
     expect(find.text('System Theme'), findsOneWidget);
 
-    // There are two switches in the Appearance card — System Theme is second
+    // There are two switches in the Appearance card â€” System Theme is second
     final switches = tester.widgetList<Switch>(find.byType(Switch)).toList();
     expect(switches.length, greaterThanOrEqualTo(2));
 

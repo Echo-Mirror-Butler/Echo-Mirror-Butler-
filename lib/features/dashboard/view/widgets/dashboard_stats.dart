@@ -23,7 +23,7 @@ class DashboardStats extends StatelessWidget {
         children: [
           Expanded(
             child: _StatCard(
-              icon: FontAwesomeIcons.wandMagicSparkles,
+              icon: FontAwesomeIcons.wandMagicSparkles.data,
               label: 'Predictions',
               value: predictions.toString(),
               gradient: const LinearGradient(
@@ -36,7 +36,7 @@ class DashboardStats extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              icon: FontAwesomeIcons.repeat,
+              icon: FontAwesomeIcons.repeat.data,
               label: 'Habits',
               value: habits.toString(),
               gradient: const LinearGradient(
@@ -49,7 +49,7 @@ class DashboardStats extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _StatCard(
-              icon: FontAwesomeIcons.faceSmile,
+              icon: FontAwesomeIcons.faceSmile.data,
               label: 'Moods',
               value: moods.toString(),
               gradient: const LinearGradient(

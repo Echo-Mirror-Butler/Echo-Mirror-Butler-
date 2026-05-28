@@ -11,10 +11,10 @@ class StellarConfig {
   /// ECHO token asset code
   static const String assetCode = 'ECHO';
 
-  /// Friendbot URL — funds new testnet accounts with XLM
+  /// Friendbot URL â€” funds new testnet accounts with XLM
   static const String friendbotUrl = 'https://friendbot.stellar.org';
 
-  /// Issuer public key — set via environment variable at runtime
+  /// Issuer public key â€” set via environment variable at runtime
   /// In production, load from a secrets manager, never hardcode
   static const String issuerPublicKey = String.fromEnvironment(
     'STELLAR_ISSUER_PUBLIC',
