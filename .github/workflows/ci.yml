@@ -7,6 +7,27 @@ on:
     branches: [main, development]
 
 jobs:
+  supabase-db-tests:
+    name: Supabase DB Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local stack
+        run: supabase start
+
+      - name: Run pgTAP database tests
+        run: supabase test db
+
+      - name: Stop Supabase local stack
+        if: always()
+        run: supabase stop --no-backup
+
   flutter-ci:
     name: Format · Analyze · Test
     runs-on: ubuntu-latest
