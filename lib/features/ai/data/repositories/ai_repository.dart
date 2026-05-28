@@ -54,14 +54,14 @@ class AiRepository {
   Future<AiInsightModel> generateInsight(List<LogEntryModel> recentLogs) async {
     // Use mock data if flag is set (for testing only)
     if (_useMockData) {
-      debugPrint('[AiRepository] ⚠️ Using mock data (debug flag enabled)');
+      debugPrint('[AiRepository] âš ï¸ Using mock data (debug flag enabled)');
       return _getMockInsight();
     }
 
     debugPrint('[AiRepository] generateInsight -> ${recentLogs.length} logs');
 
     // Log detailed information about each log entry for debugging
-    debugPrint('[AiRepository] 📊 Log Summary for Gemini:');
+    debugPrint('[AiRepository] ðŸ“Š Log Summary for Gemini:');
     for (var i = 0; i < recentLogs.length; i++) {
       final log = recentLogs[i];
       final moodStr = log.mood != null ? '${log.mood}/5' : 'not set';
@@ -104,7 +104,7 @@ class AiRepository {
           hasHabits != convertedHasHabits ||
           hasNotes != convertedHasNotes) {
         debugPrint(
-          '[AiRepository] ⚠️ Data mismatch in conversion for log ${log.id}',
+          '[AiRepository] âš ï¸ Data mismatch in conversion for log ${log.id}',
         );
       }
 
@@ -126,7 +126,7 @@ class AiRepository {
         .length;
 
     debugPrint(
-      '[AiRepository] 📈 Data Summary: $totalMoods moods, $totalHabits habit entries, $totalNotes notes',
+      '[AiRepository] ðŸ“ˆ Data Summary: $totalMoods moods, $totalHabits habit entries, $totalNotes notes',
     );
     debugPrint(
       '[AiRepository] Sending ${serverpodLogs.length} complete log entries to Gemini...',
@@ -151,7 +151,7 @@ class AiRepository {
     }
 
     debugPrint(
-      '[AiRepository] ✅ Validated: $logsWithData out of ${serverpodLogs.length} logs contain data',
+      '[AiRepository] âœ… Validated: $logsWithData out of ${serverpodLogs.length} logs contain data',
     );
 
     // Call Serverpod endpoint with Gemini
@@ -163,17 +163,17 @@ class AiRepository {
 
       // Create detailed context summary for Gemini to reference specific logs
       final contextSummary = _createDetailedContextSummary(recentLogs);
-      debugPrint('[AiRepository] 📝 Context Summary for detailed responses:');
+      debugPrint('[AiRepository] ðŸ“ Context Summary for detailed responses:');
       debugPrint(contextSummary);
 
       debugPrint(
-        '[AiRepository] 🤖 Calling Gemini API with complete log data...',
+        '[AiRepository] ðŸ¤– Calling Gemini API with complete log data...',
       );
       debugPrint(
         '[AiRepository] Each log includes: date, mood (1-5), habits (list), notes (text), timestamps',
       );
       debugPrint(
-        '[AiRepository] 💡 Requesting DETAILED, PERSONALIZED responses that reference specific log entries',
+        '[AiRepository] ðŸ’¡ Requesting DETAILED, PERSONALIZED responses that reference specific log entries',
       );
       final result = await client.ai.generateInsight(serverpodLogs) as dynamic;
 
@@ -210,7 +210,7 @@ class AiRepository {
       } else if (prediction.trim().length < 180) {
         // Warn but don't fail for responses between 150-180 chars
         debugPrint(
-          '[AiRepository] ⚠️ Prediction is shorter than ideal (${prediction.length} chars). Prefer 180+ chars for better detail.',
+          '[AiRepository] âš ï¸ Prediction is shorter than ideal (${prediction.length} chars). Prefer 180+ chars for better detail.',
         );
       }
 
@@ -223,7 +223,7 @@ class AiRepository {
       } else if (futureLetter.trim().length < 280) {
         // Warn but don't fail for responses between 250-280 chars
         debugPrint(
-          '[AiRepository] ⚠️ Future letter is shorter than ideal (${futureLetter.length} chars). Prefer 280+ chars for better detail.',
+          '[AiRepository] âš ï¸ Future letter is shorter than ideal (${futureLetter.length} chars). Prefer 280+ chars for better detail.',
         );
       }
 
@@ -245,18 +245,18 @@ class AiRepository {
 
       if (!hasSpecificReferences) {
         debugPrint(
-          '[AiRepository] ⚠️ Warning: Response may be too generic. Expected references to specific log entries.',
+          '[AiRepository] âš ï¸ Warning: Response may be too generic. Expected references to specific log entries.',
         );
       } else {
         debugPrint(
-          '[AiRepository] ✅ Response includes specific log references - detailed and personalized!',
+          '[AiRepository] âœ… Response includes specific log references - detailed and personalized!',
         );
       }
 
       debugPrint(
-        '[AiRepository] ✅ generateInsight success - using Gemini-generated content',
+        '[AiRepository] âœ… generateInsight success - using Gemini-generated content',
       );
-      debugPrint('[AiRepository] 📊 Response Details:');
+      debugPrint('[AiRepository] ðŸ“Š Response Details:');
       debugPrint(
         '[AiRepository]   Prediction: ${prediction.length} chars (min: 200)',
       );
@@ -273,7 +273,7 @@ class AiRepository {
         );
       } else {
         debugPrint(
-          '[AiRepository]   ⚠️ Stress Level: NOT PROVIDED by server. Server-side code needs to calculate stressLevel from logs.',
+          '[AiRepository]   âš ï¸ Stress Level: NOT PROVIDED by server. Server-side code needs to calculate stressLevel from logs.',
         );
       }
 
@@ -281,7 +281,7 @@ class AiRepository {
       for (var i = 0; i < suggestions.length; i++) {
         if (suggestions[i].length < 30) {
           debugPrint(
-            '[AiRepository] ⚠️ Suggestion ${i + 1} is too short: ${suggestions[i].length} chars',
+            '[AiRepository] âš ï¸ Suggestion ${i + 1} is too short: ${suggestions[i].length} chars',
           );
         }
       }
@@ -306,14 +306,14 @@ class AiRepository {
     } on NoSuchMethodError catch (e) {
       // Endpoint doesn't exist yet (serverpod generate not run)
       debugPrint(
-        '[AiRepository] ❌ AI endpoint not available (NoSuchMethodError): $e',
+        '[AiRepository] âŒ AI endpoint not available (NoSuchMethodError): $e',
       );
       throw Exception(
         'AI endpoint not available. Please run "serverpod generate" to create the endpoint.',
       );
     } catch (e) {
       // Re-throw the error instead of silently falling back to mock data
-      debugPrint('[AiRepository] ❌ generateInsight error -> $e');
+      debugPrint('[AiRepository] âŒ generateInsight error -> $e');
       debugPrint('[AiRepository] Throwing error instead of using mock data');
       rethrow;
     }
@@ -333,7 +333,7 @@ class AiRepository {
         throw Exception('Client is null - cannot connect to server');
       }
 
-      debugPrint('[AiRepository] 🤖 Calling Gemini chat API...');
+      debugPrint('[AiRepository] ðŸ¤– Calling Gemini chat API...');
       final response =
           await client.ai.generateChatResponse(userMessage, context) as String;
 
@@ -341,10 +341,10 @@ class AiRepository {
         throw Exception('Gemini returned empty response');
       }
 
-      debugPrint('[AiRepository] ✅ Received chat response from Gemini');
+      debugPrint('[AiRepository] âœ… Received chat response from Gemini');
       return response;
     } catch (e) {
-      debugPrint('[AiRepository] ❌ generateChatResponse error -> $e');
+      debugPrint('[AiRepository] âŒ generateChatResponse error -> $e');
       rethrow;
     }
   }

@@ -32,7 +32,7 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
         final jsonMap = jsonDecode(cachedJson) as Map<String, dynamic>;
         _cachedInsight = AiInsightModel.fromJson(jsonMap);
         state = AsyncValue.data(_cachedInsight);
-        debugPrint('[AiInsightNotifier] ✅ Loaded cached insight from storage');
+        debugPrint('[AiInsightNotifier] âœ… Loaded cached insight from storage');
       }
     } catch (e) {
       debugPrint('[AiInsightNotifier] Error loading cached insight: $e');
@@ -45,7 +45,7 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = jsonEncode(insight.toJson());
       await prefs.setString(_cachedInsightKey, jsonString);
-      debugPrint('[AiInsightNotifier] ✅ Saved insight to cache');
+      debugPrint('[AiInsightNotifier] âœ… Saved insight to cache');
     } catch (e) {
       debugPrint('[AiInsightNotifier] Error saving cached insight: $e');
     }
@@ -69,20 +69,20 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
       _cachedInsight = insight;
       await _saveCachedInsight(insight);
       debugPrint(
-        '[AiInsightNotifier] ✅ Successfully generated insight from Gemini',
+        '[AiInsightNotifier] âœ… Successfully generated insight from Gemini',
       );
       state = AsyncValue.data(insight);
     } catch (e, stackTrace) {
       // If error, try to restore cached insight
       if (_cachedInsight != null) {
         debugPrint(
-          '[AiInsightNotifier] ⚠️ Error generating new insight, using cached',
+          '[AiInsightNotifier] âš ï¸ Error generating new insight, using cached',
         );
         state = AsyncValue.data(_cachedInsight);
       } else {
         // Show error state if no cache available
         debugPrint(
-          '[AiInsightNotifier] ❌ Error generating insight from Gemini: $e',
+          '[AiInsightNotifier] âŒ Error generating insight from Gemini: $e',
         );
         debugPrint('[AiInsightNotifier] Stack trace: $stackTrace');
         state = AsyncValue.error(e, stackTrace);

@@ -47,7 +47,7 @@ class ServerpodClientService {
       final savedKey = await keyManager.get();
       if (savedKey != null) {
         debugPrint(
-          '[ServerpodClientService] ✅ Found existing authentication key (${savedKey.length} chars) - user should be logged in',
+          '[ServerpodClientService] âœ… Found existing authentication key (${savedKey.length} chars) - user should be logged in',
         );
       } else {
         debugPrint(
@@ -67,21 +67,21 @@ class ServerpodClientService {
         final clientKey = await _client!.authenticationKeyManager?.get();
         if (clientKey != null) {
           debugPrint(
-            '[ServerpodClientService] ✅ Client can access saved authentication key',
+            '[ServerpodClientService] âœ… Client can access saved authentication key',
           );
         } else if (savedKey != null) {
           debugPrint(
-            '[ServerpodClientService] ⚠️ WARNING: Key exists but client cannot access it!',
+            '[ServerpodClientService] âš ï¸ WARNING: Key exists but client cannot access it!',
           );
         }
       }
 
       _isInitialized = true;
       debugPrint(
-        '[ServerpodClientService] ✅ Client initialized with persistent authentication',
+        '[ServerpodClientService] âœ… Client initialized with persistent authentication',
       );
     } catch (e, stackTrace) {
-      debugPrint('[ServerpodClientService] ❌ Error initializing client: $e');
+      debugPrint('[ServerpodClientService] âŒ Error initializing client: $e');
       debugPrint('[ServerpodClientService] Stack trace: $stackTrace');
       // Fallback to default client if initialization fails
       _client = Client(ApiConstants.serverUrl);
@@ -102,7 +102,7 @@ class SharedPreferencesAuthKeyManager implements AuthenticationKeyManager {
     final key = _prefs.getString(_key);
     if (key != null) {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] ✅ Retrieved authentication key from SharedPreferences (${key.length} chars)',
+        '[SharedPreferencesAuthKeyManager] âœ… Retrieved authentication key from SharedPreferences (${key.length} chars)',
       );
     } else {
       debugPrint(
@@ -119,18 +119,18 @@ class SharedPreferencesAuthKeyManager implements AuthenticationKeyManager {
     );
     await _prefs.setString(_key, key);
     debugPrint(
-      '[SharedPreferencesAuthKeyManager] ✅ Authentication key saved to SharedPreferences',
+      '[SharedPreferencesAuthKeyManager] âœ… Authentication key saved to SharedPreferences',
     );
 
     // Verify it was saved
     final saved = await _prefs.getString(_key);
     if (saved != null) {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] ✅ Verified: Key is persisted',
+        '[SharedPreferencesAuthKeyManager] âœ… Verified: Key is persisted',
       );
     } else {
       debugPrint(
-        '[SharedPreferencesAuthKeyManager] ❌ ERROR: Key was not saved!',
+        '[SharedPreferencesAuthKeyManager] âŒ ERROR: Key was not saved!',
       );
     }
   }

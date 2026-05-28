@@ -81,7 +81,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
 
       if (currentStressLevel != null) {
         debugPrint(
-          '[AiInsightSection] 📊 Insight updated - stressLevel: $currentStressLevel, previous: $previousStressLevel, lastTriggered: $_lastTriggeredStressLevel',
+          '[AiInsightSection] ðŸ“Š Insight updated - stressLevel: $currentStressLevel, previous: $previousStressLevel, lastTriggered: $_lastTriggeredStressLevel',
         );
 
         // Only trigger if:
@@ -99,7 +99,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
           Future.delayed(const Duration(milliseconds: 800), () {
             if (context.mounted) {
               debugPrint(
-                '[AiInsightSection] 🧘 Auto-navigating to breathing exercise (stress level: $currentStressLevel)',
+                '[AiInsightSection] ðŸ§˜ Auto-navigating to breathing exercise (stress level: $currentStressLevel)',
               );
               _saveLastTriggeredStressLevel(currentStressLevel);
               context.push('/breathing');
@@ -108,12 +108,12 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
         } else if (currentStressLevel >= 3 &&
             currentStressLevel == _lastTriggeredStressLevel) {
           debugPrint(
-            '[AiInsightSection] ⏭️ Skipping breathing exercise trigger - already triggered for stress level $currentStressLevel',
+            '[AiInsightSection] â­ï¸ Skipping breathing exercise trigger - already triggered for stress level $currentStressLevel',
           );
         }
       } else if (currentStressLevel == null && next.value != null) {
         debugPrint(
-          '[AiInsightSection] ⚠️ Warning: Gemini did not return stressLevel. Server-side code may need to calculate stress from logs.',
+          '[AiInsightSection] âš ï¸ Warning: Gemini did not return stressLevel. Server-side code may need to calculate stress from logs.',
         );
       }
     });

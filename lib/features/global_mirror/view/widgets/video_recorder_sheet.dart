@@ -422,7 +422,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${_isImage ? "Image" : "Video"} shared successfully! 🎉',
+                '${_isImage ? "Image" : "Video"} shared successfully! ðŸŽ‰',
               ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),

@@ -194,11 +194,11 @@ class LoggingRepository {
       final authKey = await _client.authenticationKeyManager?.get();
       if (authKey == null) {
         debugPrint(
-          '[LoggingRepository] ⚠️ WARNING: No authentication key found!',
+          '[LoggingRepository] âš ï¸ WARNING: No authentication key found!',
         );
       } else {
         debugPrint(
-          '[LoggingRepository] ✅ Authentication key found (${authKey.length} chars)',
+          '[LoggingRepository] âœ… Authentication key found (${authKey.length} chars)',
         );
       }
 
@@ -249,7 +249,7 @@ class LoggingRepository {
 
             if (fallbackResults.isNotEmpty) {
               debugPrint(
-                '[LoggingRepository] ✅ Found ${fallbackResults.length} entries with fallback userId format',
+                '[LoggingRepository] âœ… Found ${fallbackResults.length} entries with fallback userId format',
               );
 
               // Merge results from both queries, avoiding duplicates by entry ID

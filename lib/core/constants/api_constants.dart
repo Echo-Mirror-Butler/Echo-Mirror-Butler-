@@ -2,6 +2,6 @@
 class ApiConstants {
   ApiConstants._();
 
-  /// Base server URL — update this to your production URL before deploying
+  /// Base server URL â€” update this to your production URL before deploying
   static const String serverUrl = 'http://localhost:8080/';
 }

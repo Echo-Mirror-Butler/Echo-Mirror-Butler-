@@ -492,7 +492,7 @@ class GlobalMirrorRepository {
       {'lat': 48.9, 'lon': 2.3}, // Paris
       {'lat': 37.8, 'lon': -122.4}, // San Francisco
       {'lat': 19.4, 'lon': -99.1}, // Mexico City
-      {'lat': -23.6, 'lon': -46.7}, // São Paulo
+      {'lat': -23.6, 'lon': -46.7}, // SÃ£o Paulo
       {'lat': 55.8, 'lon': 37.6}, // Moscow
       {'lat': 28.6, 'lon': 77.2}, // Delhi
     ];
@@ -649,7 +649,7 @@ class GlobalMirrorRepository {
     int nearbyCount,
   ) async {
     if (_useMockData) {
-      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+      return 'Others nearby are feeling similarâ€”many found short walks or deep breathing helped today.';
     }
 
     try {
@@ -662,7 +662,7 @@ class GlobalMirrorRepository {
       debugPrint(
         '[GlobalMirrorRepository] Error generating cluster encouragement: $e',
       );
-      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+      return 'Others nearby are feeling similarâ€”many found short walks or deep breathing helped today.';
     }
   }
 

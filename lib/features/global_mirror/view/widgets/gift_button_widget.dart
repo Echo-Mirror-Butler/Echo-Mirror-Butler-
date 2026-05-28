@@ -32,7 +32,7 @@ class GiftButtonWidget extends ConsumerWidget {
     return OutlinedButton.icon(
       onPressed: () => _openGiftScreen(context),
       icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-      label: Text('Gift ECHO  •  ${balance.toStringAsFixed(0)} available'),
+      label: Text('Gift ECHO  â€¢  ${balance.toStringAsFixed(0)} available'),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppTheme.primaryColor,
         side: const BorderSide(color: AppTheme.primaryColor),

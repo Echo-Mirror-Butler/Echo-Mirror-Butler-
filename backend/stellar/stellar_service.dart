@@ -40,7 +40,7 @@ class StellarService {
   /// allowing the wallet to hold ECHO tokens.
   static Future<bool> establishTrustline(String userSecret) async {
     if (StellarConfig.issuerPublicKey.isEmpty) {
-      debugPrint('[StellarService] No issuer configured — skipping trustline');
+      debugPrint('[StellarService] No issuer configured â€” skipping trustline');
       return false;
     }
     try {
@@ -77,7 +77,7 @@ class StellarService {
     String? memo,
   }) async {
     if (StellarConfig.issuerPublicKey.isEmpty) {
-      debugPrint('[StellarService] No issuer configured — cannot send ECHO');
+      debugPrint('[StellarService] No issuer configured â€” cannot send ECHO');
       return null;
     }
     try {
@@ -109,7 +109,7 @@ class StellarService {
       final response = await _sdk.submitTransaction(transaction);
       if (response.success) {
         final hash = response.hash;
-        debugPrint('[StellarService] Sent $amount ECHO — tx: $hash');
+        debugPrint('[StellarService] Sent $amount ECHO â€” tx: $hash');
         return hash;
       }
       debugPrint(

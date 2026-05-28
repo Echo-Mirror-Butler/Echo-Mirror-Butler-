@@ -318,7 +318,7 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       debugPrint(
         '[GlobalMirrorNotifier] Error generating cluster encouragement: $e',
       );
-      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+      return 'Others nearby are feeling similarâ€”many found short walks or deep breathing helped today.';
     }
   }
 }

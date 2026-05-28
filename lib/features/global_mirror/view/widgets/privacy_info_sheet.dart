@@ -67,7 +67,7 @@ class PrivacyInfoSheet extends StatelessWidget {
               icon: FontAwesomeIcons.locationDot,
               title: 'Location Anonymized',
               description:
-                  'Your location is rounded to ~11km precision (0.1°) before sharing.',
+                  'Your location is rounded to ~11km precision (0.1Â°) before sharing.',
             ),
             const SizedBox(height: 16),
             _buildPrivacyPoint(

@@ -44,11 +44,11 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
         '[LoggingNotifier] Loading log entries for userId: $_currentUserId',
       );
       final entries = await _repository.getLogEntries(_currentUserId!);
-      debugPrint('[LoggingNotifier] ✅ Loaded ${entries.length} log entries');
+      debugPrint('[LoggingNotifier] âœ… Loaded ${entries.length} log entries');
       _hasLoaded = true;
       state = AsyncValue.data(entries);
     } catch (e, stackTrace) {
-      debugPrint('[LoggingNotifier] ❌ Error loading log entries: $e');
+      debugPrint('[LoggingNotifier] âŒ Error loading log entries: $e');
       debugPrint('[LoggingNotifier] Stack trace: $stackTrace');
       _hasLoaded = false;
       state = AsyncValue.error(e, stackTrace);
