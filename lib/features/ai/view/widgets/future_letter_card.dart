@@ -66,8 +66,9 @@ class _FutureLetterCardState extends State<FutureLetterCard>
   Future<void> _persistFutureLetter() async {
     if (_hasPersistedLetter) return;
 
-    final client = Supabase.instance.client;
-    final userId = client.auth.currentUser?.id;
+    try {
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser?.id;
     final content = widget.insight.futureLetter.trim();
     if (userId == null || userId.isEmpty || content.isEmpty) return;
 
@@ -83,6 +84,9 @@ class _FutureLetterCardState extends State<FutureLetterCard>
       _hasPersistedLetter = true;
     } catch (e) {
       debugPrint('[FutureLetterCard] Failed to persist future letter: $e');
+    }
+    } catch (e) {
+      debugPrint('[FutureLetterCard] Supabase access error: $e');
     }
   }
 

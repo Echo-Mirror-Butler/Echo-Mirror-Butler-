@@ -30,8 +30,15 @@ class _FakeLoggingNotifier extends LoggingNotifier {
 }
 
 class _FakeAuthNotifier extends AuthNotifier {
-  _FakeAuthNotifier(AuthState initialState) : super(MockAuthRepository()) {
+  _FakeAuthNotifier._(MockAuthRepository repo, AuthState initialState)
+      : super(repo) {
     state = initialState;
+  }
+
+  factory _FakeAuthNotifier(AuthState initialState) {
+    final repo = MockAuthRepository();
+    when(() => repo.isAuthenticated()).thenAnswer((_) async => false);
+    return _FakeAuthNotifier._(repo, initialState);
   }
 }
 
@@ -131,8 +138,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListTile), findsNWidgets(2));
-      expect(find.text('April 24, 2026'), findsOneWidget);
-      expect(find.text('April 23, 2026'), findsOneWidget);
+      expect(find.text('Apr 24, 2026'), findsOneWidget);
+      expect(find.text('Apr 23, 2026'), findsOneWidget);
       expect(find.text('Mood: 4/5'), findsOneWidget);
       expect(find.text('Mood: 3/5'), findsOneWidget);
     });

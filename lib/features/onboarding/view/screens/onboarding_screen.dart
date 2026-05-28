@@ -89,15 +89,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       debugPrint('[OnboardingScreen] Error completing onboarding: $e');
       debugPrint('[OnboardingScreen] Stack trace: $stackTrace');
       // Fallback: try to navigate anyway after marking as completed
-      if (mounted) {
-        try {
-          await markOnboardingCompleted();
-          await Future.delayed(const Duration(milliseconds: 100));
-          context.go('/login');
-        } catch (e2) {
+      if (!mounted) return;
+      try {
+        await markOnboardingCompleted();
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
+        context.go('/login');
+      } catch (e2) {
           debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
         }
-      }
     }
   }
 

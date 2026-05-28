@@ -540,10 +540,14 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        await _handleBackButton();
-        return false; // Prevent default back behavior, we handle it manually
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (!didPop) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _handleBackButton();
+          });
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
