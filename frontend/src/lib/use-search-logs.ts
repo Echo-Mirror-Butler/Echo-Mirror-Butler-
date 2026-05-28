@@ -9,7 +9,7 @@ const DEBOUNCE_MS = 300
 export function useSearchLogs(userId: string | undefined, query: string) {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const debounceTimer = useRef<NodeJS.Timeout>()
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   useEffect(() => {
     if (debounceTimer.current) {

@@ -1,0 +1,20 @@
+#!/bin/sh
+# Pre-push hook — blocks push if Dart code is not properly formatted.
+# Run `git config core.hooksPath .githooks` to activate.
+
+REMOTE="$1"
+URL="$2"
+
+echo "Checking Dart formatting..."
+dart format lib test backend > /dev/null 2>&1
+
+if ! git diff --exit-code --quiet; then
+  echo ""
+  echo "❌ Unformatted Dart code detected."
+  echo "   Run 'dart format lib test backend' locally before pushing."
+  echo ""
+  exit 1
+fi
+
+echo "✅ Dart formatting check passed."
+exit 0

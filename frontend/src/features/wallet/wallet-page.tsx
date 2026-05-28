@@ -192,46 +192,23 @@ async function sendGift(params: {
     throw new Error('You cannot send ECHO to yourself.')
   }
 
-  const { data: recipientWallet, error: recipientWalletError } = await supabase
-    .from('user_wallets')
-    .select('id')
-    .eq('user_id', recipientUserId)
-    .maybeSingle()
-
-  if (recipientWalletError) {
-    throw recipientWalletError
-  }
-
-  if (!recipientWallet) {
-    throw new Error('Recipient has no wallet yet.')
-  }
-
-  const { data, error } = await supabase
-    .from('gift_transactions')
-    .insert({
-      sender_user_id: params.senderUserId,
+  const { data, error } = await supabase.functions.invoke('send-echo', {
+    body: {
       recipient_user_id: recipientUserId,
-      echo_amount: params.amount,
-      message: params.message || null,
-      status: 'completed',
-    })
-    .select('*')
-    .single()
+      amount: params.amount,
+      message: params.message || undefined,
+    },
+  })
 
   if (error) {
-    throw error
+    throw new Error(error.message || 'Failed to send ECHO')
   }
 
-  const { error: balancePatchError } = await supabase
-    .from('user_wallets')
-    .update({ balance: null })
-    .eq('user_id', params.senderUserId)
-
-  if (balancePatchError && !isMissingColumnError(balancePatchError)) {
-    throw balancePatchError
+  if (data.error) {
+    throw new Error(data.error)
   }
 
-  return data as GiftTransaction
+  return data.transaction as GiftTransaction
 }
 
 function ConfettiBlast({ active }: { active: boolean }) {
