@@ -3,18 +3,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AuthProvider, useAuth } from './auth-context'
 import type { Session, User } from '@supabase/supabase-js'
 
-// Mock supabase
+const { mockGetSession, mockOnAuthStateChange, mockSignOut } = vi.hoisted(() => ({
+  mockGetSession: vi.fn(),
+  mockOnAuthStateChange: vi.fn(),
+  mockSignOut: vi.fn(),
+}))
+
 vi.mock('./supabase', () => ({
   supabase: {
     auth: {
-      getSession: vi.fn(),
-      onAuthStateChange: vi.fn(),
-      signOut: vi.fn(),
+      getSession: mockGetSession,
+      onAuthStateChange: mockOnAuthStateChange,
+      signOut: mockSignOut,
     },
   },
 }))
-
-const mockSupabase = vi.mocked(await import('./supabase')).supabase
 
 // Test component that uses the auth context
 function TestComponent() {
@@ -59,14 +62,14 @@ describe('AuthContext', () => {
     }
 
     // Mock getSession to return a session
-    mockSupabase.auth.getSession.mockResolvedValue({
+    mockGetSession.mockResolvedValue({
       data: { session: mockSession },
       error: null,
     })
 
     // Mock onAuthStateChange
     const mockUnsubscribe = vi.fn()
-    mockSupabase.auth.onAuthStateChange.mockReturnValue({
+    mockOnAuthStateChange.mockReturnValue({
       data: {
         subscription: { unsubscribe: mockUnsubscribe },
       },
@@ -91,14 +94,14 @@ describe('AuthContext', () => {
 
   it('handles no session gracefully', async () => {
     // Mock getSession to return no session
-    mockSupabase.auth.getSession.mockResolvedValue({
+    mockGetSession.mockResolvedValue({
       data: { session: null },
       error: null,
     })
 
     // Mock onAuthStateChange
     const mockUnsubscribe = vi.fn()
-    mockSupabase.auth.onAuthStateChange.mockReturnValue({
+    mockOnAuthStateChange.mockReturnValue({
       data: {
         subscription: { unsubscribe: mockUnsubscribe },
       },
@@ -119,21 +122,21 @@ describe('AuthContext', () => {
 
   it('signOut() calls supabase.auth.signOut()', async () => {
     // Mock getSession
-    mockSupabase.auth.getSession.mockResolvedValue({
+    mockGetSession.mockResolvedValue({
       data: { session: null },
       error: null,
     })
 
     // Mock onAuthStateChange
     const mockUnsubscribe = vi.fn()
-    mockSupabase.auth.onAuthStateChange.mockReturnValue({
+    mockOnAuthStateChange.mockReturnValue({
       data: {
         subscription: { unsubscribe: mockUnsubscribe },
       },
     })
 
     // Mock signOut
-    mockSupabase.auth.signOut.mockResolvedValue({ error: null })
+    mockSignOut.mockResolvedValue({ error: null })
 
     render(
       <AuthProvider>
@@ -149,19 +152,19 @@ describe('AuthContext', () => {
     const signOutButton = screen.getByText('Sign Out')
     await signOutButton.click()
 
-    expect(mockSupabase.auth.signOut).toHaveBeenCalledTimes(1)
+    expect(mockSignOut).toHaveBeenCalledTimes(1)
   })
 
   it('cleans up auth state listener on unmount', async () => {
     // Mock getSession
-    mockSupabase.auth.getSession.mockResolvedValue({
+    mockGetSession.mockResolvedValue({
       data: { session: null },
       error: null,
     })
 
     // Mock onAuthStateChange
     const mockUnsubscribe = vi.fn()
-    mockSupabase.auth.onAuthStateChange.mockReturnValue({
+    mockOnAuthStateChange.mockReturnValue({
       data: {
         subscription: { unsubscribe: mockUnsubscribe },
       },
@@ -203,7 +206,7 @@ describe('AuthContext', () => {
     }
 
     // Mock initial getSession to return no session
-    mockSupabase.auth.getSession.mockResolvedValue({
+    mockGetSession.mockResolvedValue({
       data: { session: null },
       error: null,
     })
@@ -211,7 +214,7 @@ describe('AuthContext', () => {
     // Mock onAuthStateChange and capture the callback
     let authStateCallback: ((event: string, session: Session | null) => void) | null = null
     const mockUnsubscribe = vi.fn()
-    mockSupabase.auth.onAuthStateChange.mockImplementation((callback) => {
+    mockOnAuthStateChange.mockImplementation((callback) => {
       authStateCallback = callback as any
       return {
         data: {
