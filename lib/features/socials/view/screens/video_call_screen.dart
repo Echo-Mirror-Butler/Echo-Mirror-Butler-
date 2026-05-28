@@ -317,6 +317,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       final hostName = widget.hostName;
       final isHost = widget.isHost;
 
+      // Bail out safely if engine initialization failed.
+      if (_engine == null) {
+        _isNavigatingAway = false;
+        return;
+      }
+
       pipOverlay.showPipOverlay(
         context: context,
         engine: _engine!,
@@ -348,9 +354,13 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           WakelockPlus.disable();
           await pipOverlay.engine?.leaveChannel();
           await pipOverlay.engine?.release();
-          // Try to leave session (might fail if widget is disposed, that's OK)
+          // Try to leave/end session (might fail if widget is disposed, that's OK)
           try {
-            await socialsNotifier.leaveSession(sessionId);
+            if (isHost) {
+              await socialsNotifier.endSession(sessionId);
+            } else {
+              await socialsNotifier.leaveSession(sessionId);
+            }
           } catch (e) {
             debugPrint(
               '[VideoCallScreen] Error leaving session from overlay: $e',
@@ -366,10 +376,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       // Small delay to ensure overlay is shown
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Navigate back - call continues in floating overlay
-      if (mounted) {
-        Navigator.pop(context);
+      if (!mounted) {
+        return;
       }
+
+      // Navigate back - call continues in floating overlay
+      Navigator.pop(context);
     } catch (e) {
       debugPrint('[VideoCallScreen] Error handling back button: $e');
       _isNavigatingAway = false;
@@ -488,7 +500,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       await _engine?.leaveChannel();
       await _engine?.release();
 
-      await ref.read(socialsProvider.notifier).leaveSession(widget.sessionId);
+      // If host, end the session (mark as inactive). Otherwise, just leave.
+      if (widget.isHost) {
+        await ref.read(socialsProvider.notifier).endSession(widget.sessionId);
+      } else {
+        await ref.read(socialsProvider.notifier).leaveSession(widget.sessionId);
+      }
 
       // Check if we can pop before actually popping
       if (mounted && Navigator.canPop(context)) {
@@ -620,7 +637,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -695,10 +712,10 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                         width: 50,
                         height: 50,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -725,7 +742,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -771,7 +788,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        Colors.black.withOpacity(0.8),
+                        Colors.black.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -812,7 +829,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                           ),
                         _buildControlButton(
                           icon: FontAwesomeIcons.phone,
-                          label: 'Leave',
+                          label: widget.isHost ? 'End Call' : 'Leave',
                           isActive: false,
                           isDanger: true,
                           onTap: _leaveCall,
@@ -866,7 +883,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: avatarColor.withOpacity(0.3),
+                    color: avatarColor.withValues(alpha: 0.3),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -896,7 +913,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -943,11 +960,11 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               color: isDanger
                   ? Colors.red
                   : (isActive
-                        ? Colors.white.withOpacity(0.2)
-                        : Colors.red.withOpacity(0.8)),
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.red.withValues(alpha: 0.8)),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),

@@ -48,7 +48,7 @@ app.*.map.json
 **/local.properties
 **/.env
 **/.env.*
-!supabase/.env.example
+!**/.env.example
 **/*secret*
 **/config/passwords.yaml
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/mood_comment_notification_model.dart';
 
+/// Provider for mood comment notifications
 final moodCommentNotificationProvider =
     StateNotifierProvider<
       MoodCommentNotificationNotifier,
@@ -11,42 +12,37 @@ final moodCommentNotificationProvider =
       return MoodCommentNotificationNotifier();
     });
 
+/// State notifier for managing mood comment notifications
 class MoodCommentNotificationNotifier
     extends StateNotifier<List<MoodCommentNotificationModel>> {
   MoodCommentNotificationNotifier() : super([]) {
     _loadNotifications();
   }
 
-  SupabaseClient get _client => Supabase.instance.client;
+  MoodCommentNotificationNotifier.forTesting() : super([]);
 
+  SupabaseClient get _supabase => Supabase.instance.client;
+
+  String? get _currentUserId => _supabase.auth.currentUser?.id;
+
+  /// Load notifications
   Future<void> _loadNotifications() async {
-    try {
-      final user = _client.auth.currentUser;
-      if (user == null) {
-        state = [];
-        return;
-      }
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) {
+      state = [];
+      return;
+    }
 
-      final response = await _client
+    try {
+      final response = await _supabase
           .from('mood_comment_notifications')
           .select()
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      state = response
-          .map(
-            (json) => MoodCommentNotificationModel(
-              id: json['id']?.toString() ?? '',
-              moodPinId: json['mood_pin_id']?.toString() ?? '',
-              commentId: json['comment_id']?.toString() ?? '',
-              commentText: json['comment_text'] ?? '',
-              sentiment: json['sentiment'] ?? 'neutral',
-              timestamp: json['created_at'] != null
-                  ? DateTime.parse(json['created_at'])
-                  : DateTime.now(),
-              isRead: json['is_read'] ?? false,
-            ),
-          )
+      state = (response as List<dynamic>)
+          .whereType<Map<String, dynamic>>()
+          .map(MoodCommentNotificationModel.fromJson)
           .toList();
     } catch (e) {
       debugPrint(
@@ -56,17 +52,30 @@ class MoodCommentNotificationNotifier
     }
   }
 
+  /// Refresh notifications from server
   Future<void> refreshNotifications() async {
     await _loadNotifications();
   }
 
+  /// Mark notification as read
   Future<void> markAsRead(String notificationId) async {
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) return;
+
     try {
-      await _client
+      await _supabase
           .from('mood_comment_notifications')
           .update({'is_read': true})
-          .eq('id', notificationId);
-      await _loadNotifications();
+          .eq('id', notificationId)
+          .eq('user_id', userId);
+
+      state = [
+        for (final notification in state)
+          if (notification.id == notificationId)
+            notification.copyWith(isRead: true)
+          else
+            notification,
+      ];
     } catch (e) {
       debugPrint(
         '[MoodCommentNotificationNotifier] Error marking notification as read: $e',
@@ -74,16 +83,21 @@ class MoodCommentNotificationNotifier
     }
   }
 
+  /// Mark all notifications as read
   Future<void> markAllAsRead() async {
-    try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) return;
 
-      await _client
+    try {
+      await _supabase
           .from('mood_comment_notifications')
           .update({'is_read': true})
-          .eq('user_id', user.id);
-      await _loadNotifications();
+          .eq('user_id', userId)
+          .eq('is_read', false);
+
+      state = [
+        for (final notification in state) notification.copyWith(isRead: true),
+      ];
     } catch (e) {
       debugPrint(
         '[MoodCommentNotificationNotifier] Error marking all notifications as read: $e',
@@ -91,13 +105,21 @@ class MoodCommentNotificationNotifier
     }
   }
 
+  /// Delete a notification
   Future<void> deleteNotification(String notificationId) async {
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) return;
+
     try {
-      await _client
+      await _supabase
           .from('mood_comment_notifications')
           .delete()
-          .eq('id', notificationId);
-      await _loadNotifications();
+          .eq('id', notificationId)
+          .eq('user_id', userId);
+
+      state = state
+          .where((notification) => notification.id != notificationId)
+          .toList();
     } catch (e) {
       debugPrint(
         '[MoodCommentNotificationNotifier] Error deleting notification: $e',
@@ -105,16 +127,18 @@ class MoodCommentNotificationNotifier
     }
   }
 
+  /// Clear all notifications (delete all)
   Future<void> clearAll() async {
-    try {
-      final user = _client.auth.currentUser;
-      if (user == null) return;
+    final userId = _currentUserId;
+    if (userId == null || userId.isEmpty) return;
 
-      await _client
+    try {
+      await _supabase
           .from('mood_comment_notifications')
           .delete()
-          .eq('user_id', user.id);
-      await _loadNotifications();
+          .eq('user_id', userId);
+
+      state = [];
     } catch (e) {
       debugPrint(
         '[MoodCommentNotificationNotifier] Error clearing all notifications: $e',
@@ -122,5 +146,6 @@ class MoodCommentNotificationNotifier
     }
   }
 
+  /// Get unread count
   int get unreadCount => state.where((n) => !n.isRead).length;
 }

@@ -1,81 +1,54 @@
-import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/services/serverpod_client_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/supabase_client_service.dart';
 import '../models/log_entry_model.dart';
 
 /// Repository for logging operations
-/// Handles all Serverpod backend calls for daily logging
+/// Handles all Supabase table queries for daily logging
 class LoggingRepository {
-  LoggingRepository() {
+  LoggingRepository({SupabaseClient? supabaseClient})
+    : _injectedClient = supabaseClient {
     debugPrint(
-      '[LoggingRepository] Using shared client with persistent authentication',
+      supabaseClient == null
+          ? '[LoggingRepository] Using shared Supabase client'
+          : '[LoggingRepository] Using injected Supabase client',
     );
   }
 
-  Client get _client => ServerpodClientService.instance.client;
+  final SupabaseClient? _injectedClient;
 
-  /// Check if error is a 404 (endpoint not found)
-  bool _isNotFoundError(dynamic error) {
-    if (error is ServerpodClientException) {
-      return error.statusCode == 404;
-    }
-    final errorString = error.toString();
-    return errorString.contains('404') ||
-        errorString.contains('Not found') ||
-        errorString.contains('statusCode = 404');
-  }
+  SupabaseClient get _supabase =>
+      _injectedClient ?? SupabaseClientService.instance.client;
 
-  /// Check if a string is a UUID format
-  bool _isUuid(String? str) {
-    if (str == null || str.isEmpty) return false;
-    // UUID format: 8-4-4-4-12 hex digits
-    final uuidRegex = RegExp(
-      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-      caseSensitive: false,
-    );
-    return uuidRegex.hasMatch(str);
+  String _toDateString(DateTime date) {
+    final utcDate = date.isUtc
+        ? date
+        : DateTime.utc(date.year, date.month, date.day);
+    final year = utcDate.year.toString().padLeft(4, '0');
+    final month = utcDate.month.toString().padLeft(2, '0');
+    final day = utcDate.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 
   /// Create a new log entry
   Future<LogEntryModel> createLogEntry(LogEntryModel entry) async {
     try {
       debugPrint('[LoggingRepository] createLogEntry -> ${entry.toJson()}');
+      final result = await _supabase
+          .from('log_entries')
+          .insert({
+            'user_id': entry.userId,
+            'date': _toDateString(entry.date),
+            'mood': entry.mood,
+            'habits': entry.habits,
+            'notes': entry.notes,
+          })
+          .select()
+          .single();
 
-      // Call Serverpod endpoint
-      final result = await _client.logging.createEntry(
-        entry.userId,
-        entry.date,
-        entry.mood,
-        entry.habits,
-        entry.notes,
-      );
-
-      debugPrint('[LoggingRepository] createLogEntry success -> $result');
-
-      // Convert Serverpod LogEntry to LogEntryModel
-      return LogEntryModel(
-        id:
-            result.id?.toString() ??
-            DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: result.userId,
-        date: result.date,
-        mood: result.mood,
-        habits: result.habits,
-        notes: result.notes,
-        createdAt: result.createdAt,
-        updatedAt: result.updatedAt,
-      );
+      debugPrint('[LoggingRepository] createLogEntry success');
+      return LogEntryModel.fromJson(result);
     } catch (e, stackTrace) {
-      if (_isNotFoundError(e)) {
-        debugPrint(
-          '[LoggingRepository] createLogEntry -> Logging endpoints not available on server (404). '
-          'Please ensure logging endpoints are deployed on the server.',
-        );
-        throw Exception(
-          'Logging feature is not available. The server endpoints have not been deployed yet.',
-        );
-      }
       debugPrint('[LoggingRepository] createLogEntry error -> $e');
       debugPrint(
         '[LoggingRepository] createLogEntry stackTrace -> $stackTrace',
@@ -88,43 +61,22 @@ class LoggingRepository {
   Future<LogEntryModel> updateLogEntry(LogEntryModel entry) async {
     try {
       debugPrint('[LoggingRepository] updateLogEntry -> ${entry.id}');
+      final result = await _supabase
+          .from('log_entries')
+          .update({
+            'date': _toDateString(entry.date),
+            'mood': entry.mood,
+            'habits': entry.habits,
+            'notes': entry.notes,
+          })
+          .eq('id', entry.id)
+          .eq('user_id', entry.userId)
+          .select()
+          .single();
 
-      // Ensure date is in UTC format
-      final utcDate = entry.date.isUtc
-          ? entry.date
-          : DateTime.utc(entry.date.year, entry.date.month, entry.date.day);
-
-      final result = await _client.logging.updateEntry(
-        entry.userId,
-        int.parse(entry.id),
-        utcDate,
-        entry.mood,
-        entry.habits,
-        entry.notes,
-      );
-
-      debugPrint('[LoggingRepository] updateLogEntry success -> $result');
-
-      return LogEntryModel(
-        id: result.id?.toString() ?? entry.id,
-        userId: result.userId,
-        date: result.date,
-        mood: result.mood,
-        habits: result.habits,
-        notes: result.notes,
-        createdAt: result.createdAt,
-        updatedAt: result.updatedAt,
-      );
+      debugPrint('[LoggingRepository] updateLogEntry success');
+      return LogEntryModel.fromJson(result);
     } catch (e, stackTrace) {
-      if (_isNotFoundError(e)) {
-        debugPrint(
-          '[LoggingRepository] updateLogEntry -> Logging endpoints not available on server (404). '
-          'Please ensure logging endpoints are deployed on the server.',
-        );
-        throw Exception(
-          'Logging feature is not available. The server endpoints have not been deployed yet.',
-        );
-      }
       debugPrint('[LoggingRepository] updateLogEntry error -> $e');
       debugPrint(
         '[LoggingRepository] updateLogEntry stackTrace -> $stackTrace',
@@ -139,44 +91,26 @@ class LoggingRepository {
     String userId,
   ) async {
     try {
-      // Normalize date to UTC to match how dates are stored
-      final utcDate = date.isUtc
-          ? date
-          : DateTime.utc(date.year, date.month, date.day);
+      final normalizedDate = _toDateString(date);
       debugPrint(
-        '[LoggingRepository] getLogEntryForDate -> date: $utcDate, userId: $userId',
+        '[LoggingRepository] getLogEntryForDate -> date: $normalizedDate, userId: $userId',
       );
-
-      final result = await _client.logging.getEntryForDate(userId, utcDate);
+      final result = await _supabase
+          .from('log_entries')
+          .select()
+          .eq('user_id', userId)
+          .eq('date', normalizedDate)
+          .maybeSingle();
 
       if (result == null) {
         debugPrint('[LoggingRepository] getLogEntryForDate -> no entry found');
         return null;
       }
 
-      debugPrint('[LoggingRepository] getLogEntryForDate success -> $result');
-
-      return LogEntryModel(
-        id: result.id?.toString() ?? '',
-        userId: result.userId,
-        date: result.date,
-        mood: result.mood,
-        habits: result.habits,
-        notes: result.notes,
-        createdAt: result.createdAt,
-        updatedAt: result.updatedAt,
-      );
-    } catch (e, stackTrace) {
-      if (_isNotFoundError(e)) {
-        debugPrint(
-          '[LoggingRepository] getLogEntryForDate -> Logging endpoints not available on server (404).',
-        );
-        return null;
-      }
+      debugPrint('[LoggingRepository] getLogEntryForDate success');
+      return LogEntryModel.fromJson(result);
+    } catch (e) {
       debugPrint('[LoggingRepository] getLogEntryForDate error -> $e');
-      debugPrint(
-        '[LoggingRepository] getLogEntryForDate stackTrace -> $stackTrace',
-      );
       return null;
     }
   }
@@ -189,126 +123,22 @@ class LoggingRepository {
   }) async {
     try {
       debugPrint('[LoggingRepository] getLogEntries -> userId: $userId');
-
-      // Check authentication before making the call
-      final authKey = await _client.authenticationKeyManager?.get();
-      if (authKey == null) {
-        debugPrint(
-          '[LoggingRepository] âš ï¸ WARNING: No authentication key found!',
-        );
-      } else {
-        debugPrint(
-          '[LoggingRepository] âœ… Authentication key found (${authKey.length} chars)',
-        );
+      var query = _supabase.from('log_entries').select().eq('user_id', userId);
+      if (startDate != null) {
+        query = query.gte('date', _toDateString(startDate));
+      }
+      if (endDate != null) {
+        query = query.lte('date', _toDateString(endDate));
       }
 
-      final headerValue = await _client.authenticationKeyManager
-          ?.getHeaderValue();
-      debugPrint(
-        '[LoggingRepository] Header value: ${headerValue != null ? "${headerValue.length} chars" : "null"}',
-      );
-
-      // Try with the provided userId first (usually UUID from server)
-      var results = await _client.logging.getEntries(
-        userId,
-        startDate: startDate,
-        endDate: endDate,
-      );
-
-      debugPrint(
-        '[LoggingRepository] getLogEntries with UUID -> ${results.length} entries',
-      );
-
-      // Always try fallback to old format if userId is a UUID (for backward compatibility)
-      // This ensures we get all entries regardless of which format they were created with
-      if (_isUuid(userId)) {
-        debugPrint(
-          '[LoggingRepository] UUID detected, checking for entries with old format...',
-        );
-
-        // Get email from SharedPreferences to generate old format userId
-        final prefs = await SharedPreferences.getInstance();
-        final email = prefs.getString('user_email');
-
-        if (email != null && email.isNotEmpty) {
-          final fallbackUserId = 'user_${email.hashCode}';
-          debugPrint(
-            '[LoggingRepository] Trying fallback userId: $fallbackUserId',
-          );
-
-          try {
-            final fallbackResults = await _client.logging.getEntries(
-              fallbackUserId,
-              startDate: startDate,
-              endDate: endDate,
-            );
-
-            debugPrint(
-              '[LoggingRepository] getLogEntries with fallback userId -> ${fallbackResults.length} entries',
-            );
-
-            if (fallbackResults.isNotEmpty) {
-              debugPrint(
-                '[LoggingRepository] âœ… Found ${fallbackResults.length} entries with fallback userId format',
-              );
-
-              // Merge results from both queries, avoiding duplicates by entry ID
-              final existingIds = results
-                  .map((e) => e.id?.toString() ?? '')
-                  .toSet();
-              final newEntries = fallbackResults.where((e) {
-                final entryId = e.id?.toString() ?? '';
-                return entryId.isNotEmpty && !existingIds.contains(entryId);
-              }).toList();
-
-              if (newEntries.isNotEmpty) {
-                debugPrint(
-                  '[LoggingRepository] Merging ${newEntries.length} additional entries from fallback format',
-                );
-                results = [...results, ...newEntries];
-              } else {
-                debugPrint(
-                  '[LoggingRepository] All fallback entries are duplicates, not merging',
-                );
-              }
-            }
-          } catch (e) {
-            debugPrint('[LoggingRepository] Fallback query failed: $e');
-          }
-        }
-      }
-
+      final results = await query.order('date');
       debugPrint(
         '[LoggingRepository] getLogEntries success -> ${results.length} entries',
       );
-
-      return results.map((result) {
-        return LogEntryModel(
-          id: result.id?.toString() ?? '',
-          userId: result.userId,
-          date: result.date,
-          mood: result.mood,
-          habits: result.habits,
-          notes: result.notes,
-          createdAt: result.createdAt,
-          updatedAt: result.updatedAt,
-        );
-      }).toList();
+      return results.map((result) => LogEntryModel.fromJson(result)).toList();
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntries error -> $e');
       debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
-      if (_isNotFoundError(e)) {
-        // Log once, not repeatedly
-        debugPrint(
-          '[LoggingRepository] getLogEntries -> Logging endpoints not available on server (404). '
-          'Returning empty list. Please ensure logging endpoints are deployed on the server.',
-        );
-        // Return empty list for 404 errors (endpoints not deployed)
-        return [];
-      }
-      debugPrint('[LoggingRepository] getLogEntries error -> $e');
-      debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
-      // Return empty list on error instead of throwing
       return [];
     }
   }
@@ -317,20 +147,14 @@ class LoggingRepository {
   Future<void> deleteLogEntry(String entryId, String userId) async {
     try {
       debugPrint('[LoggingRepository] deleteLogEntry -> $entryId');
-
-      await _client.logging.deleteEntry(userId, int.parse(entryId));
+      await _supabase
+          .from('log_entries')
+          .delete()
+          .eq('id', entryId)
+          .eq('user_id', userId);
 
       debugPrint('[LoggingRepository] deleteLogEntry success');
     } catch (e, stackTrace) {
-      if (_isNotFoundError(e)) {
-        debugPrint(
-          '[LoggingRepository] deleteLogEntry -> Logging endpoints not available on server (404). '
-          'Please ensure logging endpoints are deployed on the server.',
-        );
-        throw Exception(
-          'Logging feature is not available. The server endpoints have not been deployed yet.',
-        );
-      }
       debugPrint('[LoggingRepository] deleteLogEntry error -> $e');
       debugPrint(
         '[LoggingRepository] deleteLogEntry stackTrace -> $stackTrace',

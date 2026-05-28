@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
@@ -14,9 +15,13 @@ import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../../help/view/screens/professional_help_screen.dart';
 import '../../data/models/insight_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
+import '../../viewmodel/providers/streak_provider.dart';
+import '../../viewmodel/providers/echo_balance_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
+import '../widgets/mood_streak_card.dart';
 import '../widgets/mood_trend_chart.dart';
+import '../widgets/echo_balance_card.dart';
 import '../../viewmodel/providers/mood_chart_provider.dart';
 
 /// Dashboard screen showing insights and predictions
@@ -59,6 +64,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
+    final streakState = ref.watch(streakProvider);
     final theme = Theme.of(context);
 
     // Load logs and insights when we have a user ID
@@ -79,6 +85,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ref
               .read(dashboardProvider.notifier)
               .loadInsights(userId: userId, forceReload: false);
+
+          // Load streak via RPC
+          ref.read(streakProvider.notifier).loadStreak(userId);
+
+          // Load ECHO balance
+          ref.read(echoBalanceProvider.notifier).loadBalance(userId);
 
           // Auto-generate AI insights if we have enough logs (after logs are loaded)
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -185,6 +197,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       // Stats section
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
+                      // Mood streak card
+                      MoodStreakCard(streak: streakState.currentStreak),
+                      const SizedBox(height: 8),
+                      // ECHO Balance card
+                      if (authState.isAuthenticated && authState.user != null)
+                        EchoBalanceCard(userId: authState.user!.id),
+                      const SizedBox(height: 8),
                       // Mood Trend Chart
                       MoodTrendChart(
                         recentLogs: ref.watch(moodChartDataProvider),
@@ -240,8 +259,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             },
             loading: () =>
                 const Center(child: ShimmerLoading(width: 40, height: 40)),
-            error: (error, stack) =>
-                _buildErrorState(context, theme, error, ref),
+            error: (error, stack) => NoConnectionWidget(
+              onRetry: () => ref.refresh(dashboardProvider),
+            ),
           ),
           // Confetti overlay
           Align(
@@ -312,7 +332,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       Text(
                         'View trends, statistics, and insights',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
@@ -321,7 +343,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Icon(
                   FontAwesomeIcons.chevronRight,
                   size: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ],
             ),
@@ -355,7 +377,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -381,7 +403,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Text(
                 'Start logging your daily activities, moods, and habits to see personalized insights and AI-powered predictions generated by Gemini.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.6,
                   fontSize: 15,
                 ),
@@ -398,7 +420,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -443,80 +465,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState(
-    BuildContext context,
-    ThemeData theme,
-    Object error,
-    WidgetRef ref,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: AppTheme.errorColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                FontAwesomeIcons.triangleExclamation,
-                size: 48,
-                color: AppTheme.errorColor,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Error loading insights',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              error.toString(),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                final authState = ref.read(authProvider);
-                if (authState.isAuthenticated && authState.user != null) {
-                  ref
-                      .read(dashboardProvider.notifier)
-                      .loadInsights(userId: authState.user!.id);
-                }
-              },
-              icon: const Icon(Icons.refresh, size: 20),
-              label: const Text(
-                'Retry',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

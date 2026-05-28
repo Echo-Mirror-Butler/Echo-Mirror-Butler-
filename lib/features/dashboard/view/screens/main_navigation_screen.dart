@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import '../../../global_mirror/view/screens/globe_screen.dart';
 import '../../../socials/view/screens/socials_screen.dart';
 import '../../../logging/view/screens/logging_screen.dart';
@@ -31,6 +32,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Ensure the main tab index provider starts in sync with the initial tab.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(mainTabIndexProvider.notifier).state = _selectedIndex;
+    });
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -40,6 +51,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     setState(() {
       _selectedIndex = index;
     });
+    ref.read(mainTabIndexProvider.notifier).state = index;
     _pageController.jumpToPage(index);
   }
 
@@ -56,6 +68,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           setState(() {
             _selectedIndex = index;
           });
+          ref.read(mainTabIndexProvider.notifier).state = index;
         },
         children: _screens,
       ),
@@ -65,7 +78,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           boxShadow: [
             BoxShadow(
               blurRadius: 20,
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               offset: const Offset(0, -2),
             ),
           ],
@@ -137,7 +150,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppTheme.primaryColor.withOpacity(0.1)
+                ? AppTheme.primaryColor.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -150,7 +163,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 size: 20,
                 color: isSelected
                     ? AppTheme.primaryColor
-                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 4),
               Text(
@@ -160,7 +173,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected
                       ? AppTheme.primaryColor
-                      : theme.colorScheme.onSurface.withOpacity(0.6),
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
