@@ -1,26 +1,37 @@
 import { FormEvent, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
+import { useAuth } from '../../../lib/auth-context'
 import '../../landing/landing-page.css'
 
 export function UpdatePasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const accessToken = searchParams.get('access_token')
+  const { user } = useAuth()
 
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
+    setSuccess(null)
     if (password.length < 6) { setError('Password must be at least 6 characters'); return }
-    if (!accessToken) { setError('Invalid or expired reset link'); return }
+    if (user && password !== confirmPassword) { setError('Passwords do not match'); return }
+    if (!user && !accessToken) { setError('Invalid or expired reset link'); return }
     setIsSubmitting(true)
     const { error: err } = await supabase.auth.updateUser({ password })
     setIsSubmitting(false)
-    if (err) { setError(err.message) } else { navigate('/login') }
+    if (err) { setError(err.message) } else {
+      setSuccess('Password updated successfully.')
+      setPassword('')
+      setConfirmPassword('')
+      if (!user) navigate('/login')
+    }
   }
 
   return (
@@ -65,10 +76,24 @@ export function UpdatePasswordPage() {
                 value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••" autoComplete="new-password" />
             </div>
+            {user && (
+              <div className="lp-auth-field">
+                <label className="lp-auth-label" htmlFor="up-confirm">Confirm password</label>
+                <input id="up-confirm" className="lp-auth-input" type="password" required
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••" autoComplete="new-password" />
+              </div>
+            )}
             {error && <div className="lp-auth-error">{error}</div>}
+            {success && <div style={{ color: 'var(--success, #22c55e)', fontSize: '0.88rem', margin: '0.5rem 0' }}>{success}</div>}
             <button type="submit" className="lp-auth-submit" disabled={isSubmitting}>
               {isSubmitting ? 'Updating…' : 'Update password'}
             </button>
+            {user && (
+              <button type="button" className="lp-auth-link" onClick={() => navigate('/settings')}>
+                Back to settings
+              </button>
+            )}
           </form>
         </div>
       </div>
