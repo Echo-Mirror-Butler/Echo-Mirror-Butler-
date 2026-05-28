@@ -3,7 +3,7 @@ CREATE INDEX IF NOT EXISTS idx_mood_logs_user_created
 ON mood_logs(user_id, created_at DESC);
 
 -- Create RPC for calculating streak
-CREATE OR REPLACE FUNCTION get_current_streak(user_id uuid)
+CREATE OR REPLACE FUNCTION calculate_streak(p_user_id uuid)
 RETURNS json
 LANGUAGE plpgsql
 SECURITY INVOKER
@@ -21,7 +21,7 @@ BEGIN
     FROM (
         SELECT DISTINCT created_at::date AS log_date
         FROM mood_logs
-        WHERE mood_logs.user_id = get_current_streak.user_id
+        WHERE mood_logs.user_id = p_user_id
         ORDER BY created_at::date DESC
     ) d;
 

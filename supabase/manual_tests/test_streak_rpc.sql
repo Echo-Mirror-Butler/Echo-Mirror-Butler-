@@ -1,5 +1,5 @@
 -- ============================================================
--- SQL Test: get_current_streak(user_id) RPC calculations
+-- SQL Test: calculate_streak(user_id) RPC calculations
 -- 
 -- Run: psql $DATABASE_URL -f supabase/tests/test_streak_rpc.sql
 -- 
@@ -38,7 +38,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := get_current_streak('11111111-1111-1111-1111-111111111111'::uuid);
+  v_res := calculate_streak('11111111-1111-1111-1111-111111111111'::uuid);
   
   IF (v_res->>'current_streak')::int = 0 AND (v_res->>'longest_streak')::int = 0 AND (v_res->>'last_log_date') IS NULL THEN
     RAISE NOTICE 'SUCCESS: Zero streak test passed. Result: %', v_res;
@@ -58,7 +58,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := get_current_streak('22222222-2222-2222-2222-222222222222'::uuid);
+  v_res := calculate_streak('22222222-2222-2222-2222-222222222222'::uuid);
   
   IF (v_res->>'current_streak')::int = 1 AND (v_res->>'longest_streak')::int = 1 AND (v_res->>'last_log_date')::date = CURRENT_DATE THEN
     RAISE NOTICE 'SUCCESS: Single-day streak test passed. Result: %', v_res;
@@ -81,7 +81,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := get_current_streak('33333333-3333-3333-3333-333333333333'::uuid);
+  v_res := calculate_streak('33333333-3333-3333-3333-333333333333'::uuid);
   
   IF (v_res->>'current_streak')::int = 3 AND (v_res->>'longest_streak')::int = 3 THEN
     RAISE NOTICE 'SUCCESS: Multi-day streak test passed. Result: %', v_res;
@@ -112,7 +112,7 @@ DO $$
 DECLARE
   v_res json;
 BEGIN
-  v_res := get_current_streak('44444444-4444-4444-4444-444444444444'::uuid);
+  v_res := calculate_streak('44444444-4444-4444-4444-444444444444'::uuid);
   
   IF (v_res->>'current_streak')::int = 2 AND (v_res->>'longest_streak')::int = 4 THEN
     RAISE NOTICE 'SUCCESS: Broken/Longest streak test passed. Result: %', v_res;

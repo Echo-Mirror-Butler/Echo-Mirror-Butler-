@@ -1,3 +1,5 @@
+drop function if exists public.get_current_streak(uuid);
+
 create or replace function public.get_current_streak(user_id uuid)
 returns integer
 language sql

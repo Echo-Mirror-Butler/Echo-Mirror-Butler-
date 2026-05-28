@@ -261,8 +261,8 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       SnackBar(
         content: Row(
           children: [
-            const FaIcon(
-              FontAwesomeIcons.triangleExclamation,
+            Icon(
+              FontAwesomeIcons.triangleExclamation.data,
               color: Colors.white,
               size: 20,
             ),
@@ -422,7 +422,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${_isImage ? "Image" : "Video"} shared successfully! 🎉',
+                '${_isImage ? "Image" : "Video"} shared successfully! ðŸŽ‰',
               ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 2),
@@ -461,10 +461,10 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             SnackBar(
               content: Row(
                 children: [
-                  FaIcon(
+                  Icon(
                     isFileSizeError
-                        ? FontAwesomeIcons.fileCircleExclamation
-                        : FontAwesomeIcons.triangleExclamation,
+                        ? FontAwesomeIcons.fileCircleExclamation.data
+                        : FontAwesomeIcons.triangleExclamation.data,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -536,8 +536,8 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             padding: const EdgeInsets.all(24),
             child: Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.video,
+                Icon(
+                  FontAwesomeIcons.video.data,
                   color: AppTheme.primaryColor,
                   size: 24,
                 ),
@@ -596,8 +596,8 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
             ),
             child: Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.shieldHalved,
+                Icon(
+                  FontAwesomeIcons.shieldHalved.data,
                   color: AppTheme.primaryColor,
                   size: 20,
                 ),
@@ -618,7 +618,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Record video button
           _buildActionCard(
-            icon: FontAwesomeIcons.video,
+            icon: FontAwesomeIcons.video.data,
             title: 'Record New Video',
             description: 'Record up to 10 seconds (400KB max)',
             color: AppTheme.primaryColor,
@@ -628,7 +628,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Pick video from gallery
           _buildActionCard(
-            icon: FontAwesomeIcons.film,
+            icon: FontAwesomeIcons.film.data,
             title: 'Choose Video from Gallery',
             description: 'Select video up to 400KB (8-10 seconds)',
             color: AppTheme.secondaryColor,
@@ -638,7 +638,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Take photo button
           _buildActionCard(
-            icon: FontAwesomeIcons.camera,
+            icon: FontAwesomeIcons.camera.data,
             title: 'Take Photo',
             description: 'Capture a photo (400KB max)',
             color: AppTheme.accentColor,
@@ -648,7 +648,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Pick image from gallery
           _buildActionCard(
-            icon: FontAwesomeIcons.image,
+            icon: FontAwesomeIcons.image.data,
             title: 'Choose Image from Gallery',
             description: 'Select image up to 400KB',
             color: Colors.purple,
@@ -684,7 +684,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                 color: color,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: FaIcon(icon, color: Colors.white, size: 32),
+              child: Icon(icon, color: Colors.white, size: 32),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -709,7 +709,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                 ],
               ),
             ),
-            FaIcon(FontAwesomeIcons.chevronRight, color: color, size: 20),
+            Icon(FontAwesomeIcons.chevronRight.data, color: color, size: 20),
           ],
         ),
       ),
@@ -766,8 +766,8 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const FaIcon(
-                              FontAwesomeIcons.triangleExclamation,
+                            Icon(
+                              FontAwesomeIcons.triangleExclamation.data,
                               color: Colors.white70,
                               size: 48,
                             ),
@@ -844,10 +844,10 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                               color: Colors.black.withValues(alpha: 0.5),
                               shape: BoxShape.circle,
                             ),
-                            child: FaIcon(
+                            child: Icon(
                               _previewController!.value.isPlaying
-                                  ? FontAwesomeIcons.pause
-                                  : FontAwesomeIcons.play,
+                                  ? FontAwesomeIcons.pause.data
+                                  : FontAwesomeIcons.play.data,
                               color: Colors.white,
                               size: 32,
                             ),
@@ -903,14 +903,14 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
               ),
               prefixIcon: Padding(
                 padding: const EdgeInsets.all(12.0),
-                child: FaIcon(
-                  FontAwesomeIcons.hashtag,
+                child: Icon(
+                  FontAwesomeIcons.hashtag.data,
                   color: AppTheme.primaryColor,
                   size: 18,
                 ),
               ),
               suffixIcon: IconButton(
-                icon: const FaIcon(FontAwesomeIcons.xmark, size: 16),
+                icon: Icon(FontAwesomeIcons.xmark.data, size: 16),
                 color: Colors.grey[600],
                 onPressed: () {
                   setState(() {
@@ -972,8 +972,8 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                   ),
                   child: Row(
                     children: [
-                      FaIcon(
-                        FontAwesomeIcons.hashtag,
+                      Icon(
+                        FontAwesomeIcons.hashtag.data,
                         color: Colors.grey[600],
                         size: 18,
                       ),
@@ -987,8 +987,8 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                         ),
                       ),
                       const Spacer(),
-                      FaIcon(
-                        FontAwesomeIcons.pencil,
+                      Icon(
+                        FontAwesomeIcons.pencil.data,
                         color: Colors.grey[600],
                         size: 16,
                       ),
