@@ -47,7 +47,7 @@ class EchoBalanceNotifier extends StateNotifier<EchoBalanceState> {
         return;
       }
 
-      final data = res as Map<String, dynamic>;
+      final data = res;
       final balance = (data['balance'] as num?)?.toDouble() ?? 0.0;
       state = EchoBalanceState(balance: balance, isLoading: false);
     } catch (e) {
