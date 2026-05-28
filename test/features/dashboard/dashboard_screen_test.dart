@@ -48,7 +48,14 @@ class _FakeStreakNotifier extends StreakNotifier {
 }
 
 class _FakeEchoBalanceNotifier extends EchoBalanceNotifier {
-  _FakeEchoBalanceNotifier() : super();
+  _FakeEchoBalanceNotifier() : super() {
+    state = const EchoBalanceState(balance: 10.0, isLoading: false);
+  }
+
+  @override
+  Future<void> loadBalance(String userId) async {
+    // No-op to avoid calling Supabase
+  }
 }
 
 class _FakeAiInsightNotifier extends AiInsightNotifier {
@@ -212,13 +219,19 @@ void main() {
     tester,
   ) async {
     final insight = _aiInsight(futureLetter: 'Letter body', stressLevel: 1);
+    final today = _today();
+    final logs = [
+      _log(userId: userId, date: today, mood: 4),
+      _log(userId: userId, date: today.subtract(const Duration(days: 1)), mood: 3),
+      _log(userId: userId, date: today.subtract(const Duration(days: 2)), mood: 5),
+    ];
 
     await tester.pumpWidget(
       _buildScreen(
         dashboardState: AsyncValue.data([
           _insight(id: '1', type: InsightType.prediction),
         ]),
-        loggingState: const AsyncValue.data([]),
+        loggingState: AsyncValue.data(logs),
         aiInsightState: AsyncValue.data(insight),
       ),
     );
@@ -266,13 +279,19 @@ void main() {
   ) async {
     const letterText = 'Test future letter body';
     final insight = _aiInsight(futureLetter: letterText, stressLevel: 1);
+    final today = _today();
+    final logs = [
+      _log(userId: userId, date: today, mood: 4),
+      _log(userId: userId, date: today.subtract(const Duration(days: 1)), mood: 3),
+      _log(userId: userId, date: today.subtract(const Duration(days: 2)), mood: 5),
+    ];
 
     await tester.pumpWidget(
       _buildScreen(
         dashboardState: AsyncValue.data([
           _insight(id: '1', type: InsightType.general),
         ]),
-        loggingState: const AsyncValue.data([]),
+        loggingState: AsyncValue.data(logs),
         aiInsightState: AsyncValue.data(insight),
       ),
     );

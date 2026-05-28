@@ -188,7 +188,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
           }
 
           if (!mounted) return;
-          context.pop();
+          Navigator.of(context).pop();
         } else {
           // Get error message from provider state
           final loggingState = ref.read(loggingProvider);

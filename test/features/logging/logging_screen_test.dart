@@ -131,8 +131,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListTile), findsNWidgets(2));
-      expect(find.text('April 24, 2026'), findsOneWidget);
-      expect(find.text('April 23, 2026'), findsOneWidget);
+      expect(find.text('Apr 24, 2026'), findsOneWidget);
+      expect(find.text('Apr 23, 2026'), findsOneWidget);
       expect(find.text('Mood: 4/5'), findsOneWidget);
       expect(find.text('Mood: 3/5'), findsOneWidget);
     });
