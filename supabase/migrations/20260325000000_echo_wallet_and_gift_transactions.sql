@@ -1,5 +1,4 @@
--- Obsolete compatibility migration.
--- The canonical wallet and gift schema is created later by
--- 20260325000000_wallets_and_gifts.sql and
--- 20260325162322_user_wallets_and_gift_transactions.sql.
-select 1;
+-- Obsolete migration (neutralized).
+-- This migration previously created wallet/gift tables but has been
+-- removed to avoid duplicate table creation during CI local setup.
+-- Kept as a comment-only placeholder so migration ordering remains stable.

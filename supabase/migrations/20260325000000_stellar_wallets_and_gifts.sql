@@ -1,5 +1,4 @@
--- Obsolete compatibility migration.
--- The active Supabase schema for wallets and gifts lives in later migrations
--- that create public.user_wallets with encrypted_secret and
--- public.gift_transactions with sender_user_id / recipient_user_id.
-select 1;
+-- Obsolete migration (neutralized).
+-- This migration previously created wallet/gift tables but has been
+-- removed to avoid duplicate table creation during CI local setup.
+-- Kept as a comment-only placeholder so migration ordering remains stable.
