@@ -324,7 +324,7 @@ class GlobalMirrorRepository {
       debugPrint(
         '[GlobalMirrorRepository] Error generating cluster encouragement: $e',
       );
-      return 'Others nearby are feeling similar—many found short '
+      return 'Others nearby are feeling similarâ€”many found short '
           'walks or deep breathing helped today.';
     }
   }

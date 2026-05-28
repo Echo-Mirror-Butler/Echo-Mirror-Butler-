@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart'
     as stt
-    show SpeechListenOptions;
+    show SpeechListenOptions, SpeechToText;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
@@ -242,7 +242,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           : AppTheme.primaryColor,
       child: _isListening
           ? _buildListeningState()
-          : const Icon(FontAwesomeIcons.microphone, color: Colors.white),
+          : Icon(FontAwesomeIcons.microphone.data, color: Colors.white),
     );
   }
 
@@ -304,8 +304,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           },
         ),
         // Microphone icon
-        const Icon(
-          FontAwesomeIcons.microphoneLines,
+        Icon(
+          FontAwesomeIcons.microphoneLines.data,
           color: Colors.white,
           size: 24,
         ),
@@ -347,7 +347,7 @@ class VoiceInputOverlay extends StatelessWidget {
               ),
               child: Center(
                 child: Icon(
-                  FontAwesomeIcons.waveSquare,
+                  FontAwesomeIcons.waveSquare.data,
                   size: 48,
                   color: AppTheme.primaryColor,
                 ),
@@ -371,7 +371,7 @@ class VoiceInputOverlay extends StatelessWidget {
             // Stop button
             ElevatedButton.icon(
               onPressed: onStop,
-              icon: const Icon(FontAwesomeIcons.stop),
+              icon: Icon(FontAwesomeIcons.stop.data),
               label: const Text('Stop'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.errorColor,

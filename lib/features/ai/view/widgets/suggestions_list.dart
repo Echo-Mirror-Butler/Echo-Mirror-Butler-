@@ -38,8 +38,8 @@ class SuggestionsList extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    FontAwesomeIcons.lightbulb,
+                  child: Icon(
+                    FontAwesomeIcons.lightbulb.data,
                     color: Colors.white,
                     size: 20,
                   ),

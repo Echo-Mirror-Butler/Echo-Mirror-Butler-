@@ -48,7 +48,7 @@ class MoodStatsWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    FontAwesomeIcons.chartBar,
+                    FontAwesomeIcons.chartBar.data,
                     color: AppTheme.accentColor,
                     size: 20,
                   ),
@@ -69,7 +69,7 @@ class MoodStatsWidget extends StatelessWidget {
                   child: _StatCard(
                     label: 'Average Mood',
                     value: analytics.averageMood.toStringAsFixed(1),
-                    icon: FontAwesomeIcons.chartLine,
+                    icon: FontAwesomeIcons.chartLine.data,
                     color: AppTheme.primaryColor,
                   ),
                 ),
@@ -79,7 +79,7 @@ class MoodStatsWidget extends StatelessWidget {
                     child: _StatCard(
                       label: 'Weekly Avg',
                       value: analytics.weeklyAverage!.toStringAsFixed(1),
-                      icon: FontAwesomeIcons.calendarWeek,
+                      icon: FontAwesomeIcons.calendarWeek.data,
                       color: AppTheme.secondaryColor,
                     ),
                   ),
@@ -94,7 +94,7 @@ class MoodStatsWidget extends StatelessWidget {
                       child: _StatCard(
                         label: 'Best Mood',
                         value: analytics.bestMoodDay.toString(),
-                        icon: FontAwesomeIcons.faceGrinStars,
+                        icon: FontAwesomeIcons.faceGrinStars.data,
                         color: Colors.green,
                       ),
                     ),
@@ -106,7 +106,7 @@ class MoodStatsWidget extends StatelessWidget {
                       child: _StatCard(
                         label: 'Lowest Mood',
                         value: analytics.worstMoodDay.toString(),
-                        icon: FontAwesomeIcons.faceFrown,
+                        icon: FontAwesomeIcons.faceFrown.data,
                         color: Colors.red,
                       ),
                     ),
