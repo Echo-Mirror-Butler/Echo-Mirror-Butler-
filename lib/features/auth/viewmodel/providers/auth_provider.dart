@@ -48,9 +48,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (isAuth) {
         final userData = await _repository.getCurrentUser();
         if (userData != null) {
-          debugPrint(
-            '[AuthNotifier] ✅ User authenticated, loading user data',
-          );
+          debugPrint('[AuthNotifier] ✅ User authenticated, loading user data');
           state = state.copyWith(
             user: UserModel.fromJson(userData),
             isLoading: false,
