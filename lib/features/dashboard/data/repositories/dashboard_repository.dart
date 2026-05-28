@@ -171,7 +171,9 @@ class DashboardRepository {
         final weekdayMoods = <int, List<int>>{};
         for (final entry in moodEntries) {
           // Normalize date to local time for weekday calculation
-          final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
+          final localDate = entry.date.isUtc
+              ? entry.date.toLocal()
+              : entry.date;
           final weekday = localDate.weekday;
           if (entry.mood != null) {
             weekdayMoods.putIfAbsent(weekday, () => []).add(entry.mood!);
@@ -179,19 +181,27 @@ class DashboardRepository {
         }
 
         if (weekdayMoods.isNotEmpty) {
-          final bestWeekday = weekdayMoods.entries.map((e) =>
-            MapEntry(e.key, e.value.reduce((a, b) => a + b) / e.value.length)
-          ).reduce((a, b) => a.value > b.value ? a : b);
+          final bestWeekday = weekdayMoods.entries
+              .map(
+                (e) => MapEntry(
+                  e.key,
+                  e.value.reduce((a, b) => a + b) / e.value.length,
+                ),
+              )
+              .reduce((a, b) => a.value > b.value ? a : b);
 
-          insights.add(InsightModel(
-            id: 'prediction-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'Pattern Detected',
-            description: 'Based on your logs, you tend to have better moods on ${_getWeekdayName(bestWeekday.key)}. Plan something special!',
-            date: now,
-            type: InsightType.prediction,
-            createdAt: now,
-          ));
+          insights.add(
+            InsightModel(
+              id: 'prediction-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Pattern Detected',
+              description:
+                  'Based on your logs, you tend to have better moods on ${_getWeekdayName(bestWeekday.key)}. Plan something special!',
+              date: now,
+              type: InsightType.prediction,
+              createdAt: now,
+            ),
+          );
         }
       }
 
