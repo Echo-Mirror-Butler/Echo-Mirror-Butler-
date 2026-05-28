@@ -54,7 +54,7 @@ void main() {
   }
 
   testWidgets(
-    'renders correctly — mood slider/picker, text field, and submit button are all visible',
+    'renders correctly â€” mood slider/picker, text field, and submit button are all visible',
     (tester) async {
       // Mock the speech_to_text method channel
       const methodChannel = MethodChannel(
@@ -97,7 +97,7 @@ void main() {
   );
 
   testWidgets(
-    'submit disabled when form is empty — submit button is disabled before the user enters anything',
+    'submit disabled when form is empty â€” submit button is disabled before the user enters anything',
     (tester) async {
       // Mock the speech_to_text method channel
       const methodChannel = MethodChannel(
@@ -129,7 +129,7 @@ void main() {
   );
 
   testWidgets(
-    'successful create — tapping submit with valid input calls createLogEntry and navigates back',
+    'successful create â€” tapping submit with valid input calls createLogEntry and navigates back',
     (tester) async {
       // Mock the speech_to_text method channel
       const methodChannel = MethodChannel(
@@ -167,7 +167,7 @@ void main() {
   );
 
   testWidgets(
-    'failed create — when createLogEntry returns false, an error message is shown (no navigation)',
+    'failed create â€” when createLogEntry returns false, an error message is shown (no navigation)',
     (tester) async {
       // Mock the speech_to_text method channel
       const methodChannel = MethodChannel(
@@ -209,7 +209,7 @@ void main() {
   );
 
   testWidgets(
-    'voice input button visible — VoiceInputButton is in the widget tree',
+    'voice input button visible â€” VoiceInputButton is in the widget tree',
     (tester) async {
       // Mock the speech_to_text method channel
       const methodChannel = MethodChannel(

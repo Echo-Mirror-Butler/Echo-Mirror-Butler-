@@ -205,7 +205,7 @@ class _StoryViewerScreenState extends ConsumerState<StoryViewerScreen> {
                               ),
                             ),
                             Text(
-                              '${_formatTime(story.createdAt)} • ${story.viewCount} views',
+                              '${_formatTime(story.createdAt)} â€¢ ${story.viewCount} views',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 color: Colors.white.withValues(alpha: 0.7),

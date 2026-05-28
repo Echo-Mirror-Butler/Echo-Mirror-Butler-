@@ -104,7 +104,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
           _loadComments(); // Reload comments
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Comment sent! 💙'),
+              content: Text('Comment sent! ðŸ’™'),
               duration: Duration(seconds: 2),
               backgroundColor: Colors.green,
             ),

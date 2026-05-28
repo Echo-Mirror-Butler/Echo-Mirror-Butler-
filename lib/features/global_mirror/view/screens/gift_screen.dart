@@ -365,7 +365,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
             ],
             decoration: InputDecoration(
-              labelText: 'ECHO amount (0.1–1000)',
+              labelText: 'ECHO amount (0.1â€“1000)',
               suffixText: 'ECHO',
               errorText: errorText,
             ),

@@ -705,11 +705,11 @@ class _BreathingExerciseScreenState
                   runSpacing: 12,
                   alignment: WrapAlignment.center,
                   children: [
-                    _buildFeelingChip('😌', 'Calm', Colors.blue),
-                    _buildFeelingChip('😊', 'Happy', Colors.green),
-                    _buildFeelingChip('😐', 'Neutral', Colors.grey),
-                    _buildFeelingChip('😟', 'Anxious', Colors.orange),
-                    _buildFeelingChip('😔', 'Stressed', Colors.red),
+                    _buildFeelingChip('ðŸ˜Œ', 'Calm', Colors.blue),
+                    _buildFeelingChip('ðŸ˜Š', 'Happy', Colors.green),
+                    _buildFeelingChip('ðŸ˜', 'Neutral', Colors.grey),
+                    _buildFeelingChip('ðŸ˜Ÿ', 'Anxious', Colors.orange),
+                    _buildFeelingChip('ðŸ˜”', 'Stressed', Colors.red),
                   ],
                 ),
 
@@ -798,7 +798,7 @@ class _BreathingExerciseScreenState
   Widget _buildRecommendation() {
     final recommendations = {
       'Calm': {
-        'title': '🌟 Wonderful!',
+        'title': 'ðŸŒŸ Wonderful!',
         'message': 'Your breathing is working! To maintain this calm state:',
         'tips': [
           'Continue practicing deep breathing throughout the day',
@@ -807,7 +807,7 @@ class _BreathingExerciseScreenState
         ],
       },
       'Happy': {
-        'title': '🎉 Excellent!',
+        'title': 'ðŸŽ‰ Excellent!',
         'message': 'You\'re feeling great! Keep up the positive momentum:',
         'tips': [
           'Share your happiness - connect with loved ones',
@@ -816,7 +816,7 @@ class _BreathingExerciseScreenState
         ],
       },
       'Neutral': {
-        'title': '💙 That\'s okay!',
+        'title': 'ðŸ’™ That\'s okay!',
         'message':
             'Feeling neutral is normal. Try these to feel more energized:',
         'tips': [
@@ -826,7 +826,7 @@ class _BreathingExerciseScreenState
         ],
       },
       'Anxious': {
-        'title': '🫂 We\'re here for you',
+        'title': 'ðŸ«‚ We\'re here for you',
         'message': 'Anxiety can be tough. Let\'s work through it together:',
         'tips': [
           'Repeat the breathing exercise - it helps!',
@@ -836,7 +836,7 @@ class _BreathingExerciseScreenState
         ],
       },
       'Stressed': {
-        'title': '💚 Take it easy',
+        'title': 'ðŸ’š Take it easy',
         'message': 'Stress is challenging. Here\'s what can help:',
         'tips': [
           'Take breaks throughout your day',
@@ -883,7 +883,7 @@ class _BreathingExerciseScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '• ',
+                    'â€¢ ',
                     style: TextStyle(
                       color: AppTheme.primaryColor,
                       fontSize: 16,

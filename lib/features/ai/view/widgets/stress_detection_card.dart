@@ -23,9 +23,9 @@ class StressDetectionCard extends StatelessWidget {
 
     final level = insight.stressLevel ?? 0;
     if (level >= 4) {
-      return 'Hey, future you here—I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';
+      return 'Hey, future you hereâ€”I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';
     } else if (level >= 3) {
-      return 'Hey, future you here—I noticed you\'ve been working hard. A quick breathing break might help.';
+      return 'Hey, future you hereâ€”I noticed you\'ve been working hard. A quick breathing break might help.';
     }
     return '';
   }
