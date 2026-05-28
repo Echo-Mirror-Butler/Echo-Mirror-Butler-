@@ -48,8 +48,8 @@ class EchoBalanceCard extends ConsumerWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    FontAwesomeIcons.coins,
+                  child: Icon(
+                    FontAwesomeIcons.coins.data,
                     color: Colors.white,
                     size: 24,
                   ),

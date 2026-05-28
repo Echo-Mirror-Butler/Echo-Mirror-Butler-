@@ -39,7 +39,7 @@ class MoodStreakCard extends StatelessWidget {
                   color: Colors.orange.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.local_fire_department,
                   color: Colors.deepOrange,
                   size: 24,

@@ -58,6 +58,37 @@ class FakeTransformBuilder extends Fake
   }) => this;
 }
 
+class FakeFutureLettersBuilder extends Fake
+    implements PostgrestFilterBuilder<PostgrestList> {
+  FakeFutureLettersBuilder(this._result);
+  final Future<PostgrestList> _result;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> eq(String column, Object value) => this;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> order(
+    String column, {
+    bool ascending = true,
+    bool nullsFirst = false,
+    String? referencedTable,
+  }) => this;
+
+  @override
+  PostgrestFilterBuilder<PostgrestList> limit(
+    int count, {
+    String? referencedTable,
+  }) => this;
+
+  @override
+  Future<U> then<U>(
+    FutureOr<U> Function(PostgrestList) onValue, {
+    Function? onError,
+  }) {
+    return _result.then(onValue, onError: onError);
+  }
+}
+
 List<LogEntryModel> _fakeLogEntries() => [
   LogEntryModel(
     id: '1',
@@ -216,13 +247,9 @@ void main() {
     late MockPostgrestFilterBuilder filterBuilder;
 
     void stubChain(Future<PostgrestList> result) {
-      final transform = FakeTransformBuilder(result);
+      final fakeBuilder = FakeFutureLettersBuilder(result);
       when(() => supabase.from('future_letters')).thenReturn(queryBuilder);
-      when(() => queryBuilder.select()).thenReturn(filterBuilder);
-      when(() => filterBuilder.eq('user_id', any())).thenReturn(filterBuilder);
-      when(
-        () => filterBuilder.order('created_at', ascending: false),
-      ).thenReturn(transform);
+      when(() => queryBuilder.select()).thenReturn(fakeBuilder);
     }
 
     setUp(() {
