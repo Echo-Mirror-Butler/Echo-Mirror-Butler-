@@ -57,7 +57,9 @@ class StellarService {
   }) async {
     final issuer = issuerPublicKey ?? StellarConfig.issuerPublicKey;
     if (issuer.isEmpty) {
-      debugPrint('[StellarService] No issuer configured â€” skipping trustline');
+      debugPrint(
+        '[StellarService] No issuer configured — skipping trustline',
+      );
       return false;
     }
     try {

@@ -32,7 +32,9 @@ class AiInsightNotifier extends StateNotifier<AsyncValue<AiInsightModel?>> {
         final jsonMap = jsonDecode(cachedJson) as Map<String, dynamic>;
         _cachedInsight = AiInsightModel.fromJson(jsonMap);
         state = AsyncValue.data(_cachedInsight);
-        debugPrint('[AiInsightNotifier] âœ… Loaded cached insight from storage');
+        debugPrint(
+          '[AiInsightNotifier] ✅ Loaded cached insight from storage',
+        );
       }
     } catch (e) {
       debugPrint('[AiInsightNotifier] Error loading cached insight: $e');

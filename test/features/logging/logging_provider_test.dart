@@ -218,10 +218,13 @@ void main() {
       expect(notifier.state, isA<AsyncError>());
     });
 
-    test('getLogEntryForDate â€” returns null when userId is not set', () async {
-      final result = await notifier.getLogEntryForDate(DateTime(2025, 6, 1));
-      expect(result, isNull);
-    });
+    test(
+      'getLogEntryForDate — returns null when userId is not set',
+      () async {
+        final result = await notifier.getLogEntryForDate(DateTime(2025, 6, 1));
+        expect(result, isNull);
+      },
+    );
 
     test(
       'getLogEntryForDate â€” returns entry from repository when userId is set',
