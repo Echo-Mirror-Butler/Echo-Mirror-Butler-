@@ -5,21 +5,7 @@ import { useAuth } from "../../lib/auth-context";
 import type { LogEntry, Insight } from "../../lib/types";
 import { formatDate, moodToEmoji } from "../../lib/date";
 import { HabitTrackerWidget } from "./components/habit-tracker-widget";
-import { MoodChartWidget } from "./components/mood-chart-widget";
 
-// Fetch wallet balance
-async function fetchWalletBalance(userId: string): Promise<number> {
-  const { data, error } = await supabase
-    .from("user_wallets")
-    .select("balance")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data?.balance ?? 0;
-}
-
-// Fetch mood trend for percentage calculation
 async function fetchMoodTrend(userId: string) {
   const today = new Date();
   const lastWeek = new Date();
@@ -125,6 +111,12 @@ export function DashboardPage() {
       if (error) throw error;
       return data as Insight | null;
     },
+    enabled: !!user,
+  });
+
+  const moodTrendQuery = useQuery({
+    queryKey: ["dashboard-mood-trend", user?.id],
+    queryFn: () => fetchMoodTrend(user!.id),
     enabled: !!user,
   });
 
@@ -248,7 +240,7 @@ export function DashboardPage() {
               <p className="muted">Last logged</p>
               <p style={{ margin: "0.25rem 0 0", fontSize: "0.9rem" }}>
                 {streakData.last_log_date
-                  ? formatDate(new Date(streakData.last_log_date))
+                  ? formatDate(streakData.last_log_date)
                   : "Never"}
               </p>
             </div>
@@ -337,7 +329,7 @@ export function DashboardPage() {
                     }}
                   >
                     <span className="muted" style={{ fontSize: "0.85rem" }}>
-                      {formatDate(new Date(log.date))}
+                      {formatDate(log.date)}
                     </span>
                     <span style={{ fontSize: "1.25rem" }}>
                       {moodToEmoji(log.mood)}
@@ -413,44 +405,6 @@ export function DashboardPage() {
         </div>
       </article>
 
-      {/* ECHO Balance Chip */}
-      <article className="card">
-        <div className="card-header">
-          <h3>ECHO Balance</h3>
-        </div>
-        <div className="card-content">
-          {walletQuery.isLoading ? (
-            <div className="skeleton-line large" />
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <p className="muted" style={{ margin: 0 }}>
-                  Your balance
-                </p>
-                <h2 style={{ margin: "0.25rem 0 0", fontSize: "1.5rem" }}>
-                  {walletQuery.data?.toFixed(2) ?? 0} ECHO
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => navigate("/wallet")}
-                style={{
-                  padding: "0.5rem 1rem",
-                  fontSize: "0.85rem",
-                }}
-              >
-                View wallet
-              </button>
-            </div>
-          )}
-        </div>
-      </article>
     </section>
   );
 }

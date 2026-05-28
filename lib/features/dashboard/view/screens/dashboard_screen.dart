@@ -65,8 +65,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
     final streakState = ref.watch(streakProvider);
-    final echoState = ref.watch(echoBalanceProvider);
-    final loggingState = ref.watch(loggingProvider);
     final theme = Theme.of(context);
 
     // Load logs and insights when we have a user ID
