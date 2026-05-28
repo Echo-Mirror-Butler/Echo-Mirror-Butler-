@@ -8,19 +8,20 @@ import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
-import '../../../logging/data/models/log_entry_model.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../../help/view/screens/professional_help_screen.dart';
 import '../../data/models/insight_model.dart';
-import '../../data/models/mood_analytics_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
+import '../../viewmodel/providers/streak_provider.dart';
+import '../../viewmodel/providers/echo_balance_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
 import '../widgets/mood_streak_card.dart';
 import '../widgets/mood_trend_chart.dart';
+import '../widgets/echo_balance_card.dart';
 import '../../viewmodel/providers/mood_chart_provider.dart';
 
 /// Dashboard screen showing insights and predictions
@@ -63,10 +64,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
-    final loggingState = ref.watch(loggingProvider);
-    final logEntries = loggingState.value ?? const <LogEntryModel>[];
+    final streakState = ref.watch(streakProvider);
     final theme = Theme.of(context);
-    // TODO: Fetch streak from calculate_streak RPC instead of client-side
 
     // Load logs and insights when we have a user ID
     if (authState.isAuthenticated && authState.user != null) {
@@ -86,6 +85,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ref
               .read(dashboardProvider.notifier)
               .loadInsights(userId: userId, forceReload: false);
+
+          // Load streak via RPC
+          ref.read(streakProvider.notifier).loadStreak(userId);
+
+          // Load ECHO balance
+          ref.read(echoBalanceProvider.notifier).loadBalance(userId);
 
           // Auto-generate AI insights if we have enough logs (after logs are loaded)
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -193,7 +198,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
                       // Mood streak card
-                      MoodStreakCard(streak: 0),
+                      MoodStreakCard(streak: streakState.currentStreak),
+                      const SizedBox(height: 8),
+                      // ECHO Balance card
+                      if (authState.isAuthenticated && authState.user != null)
+                        EchoBalanceCard(userId: authState.user!.id),
                       const SizedBox(height: 8),
                       // Mood Trend Chart
                       MoodTrendChart(

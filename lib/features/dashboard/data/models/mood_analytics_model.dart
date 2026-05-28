@@ -24,7 +24,33 @@ class MoodAnalyticsModel {
     this.monthlyAverage,
   });
 
+  /// Compute streak from log entries
+  static int computeStreak(
+    List<LogEntryModel> entries, {
+    DateTime? referenceDate,
+  }) {
+    if (entries.isEmpty) return 0;
 
+    final refDate = referenceDate ?? DateTime.now();
+    final ref = DateTime(refDate.year, refDate.month, refDate.day);
+
+    // Get unique dates with non-null mood, normalized to midnight
+    final uniqueDates = entries
+        .where((e) => e.mood != null)
+        .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+        .toSet();
+
+    if (!uniqueDates.contains(ref)) return 0;
+
+    int streak = 1;
+    var currentDay = ref.subtract(const Duration(days: 1));
+    while (uniqueDates.contains(currentDay)) {
+      streak++;
+      currentDay = currentDay.subtract(const Duration(days: 1));
+    }
+
+    return streak;
+  }
 
   /// Create analytics from log entries
   factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries) {
@@ -148,6 +174,55 @@ class MoodAnalyticsModel {
     }
 
     return trend;
+  }
+
+  /// Calculate the current mood streak (consecutive days with entries)
+  static int computeStreak(
+    List<LogEntryModel> entries, {
+    DateTime? referenceDate,
+  }) {
+    if (entries.isEmpty) return 0;
+
+    final now = referenceDate ?? DateTime.now();
+
+    // Normalize all dates to start of day
+    final normalizedEntries = entries.map((e) {
+      return LogEntryModel(
+        id: e.id,
+        userId: e.userId,
+        date: DateTime(e.date.year, e.date.month, e.date.day),
+        mood: e.mood,
+        habits: e.habits,
+        notes: e.notes,
+        createdAt: e.createdAt,
+      );
+    }).toList();
+
+    // Get unique dates
+    final uniqueDates = <DateTime>{};
+    for (final entry in normalizedEntries) {
+      uniqueDates.add(entry.date);
+    }
+
+    // Check if today has an entry
+    final today = DateTime(now.year, now.month, now.day);
+    if (!uniqueDates.contains(today)) return 0;
+
+    // Count consecutive days backwards from today
+    int streak = 1;
+    var currentDate = today;
+
+    while (true) {
+      final previousDate = currentDate.subtract(const Duration(days: 1));
+      if (uniqueDates.contains(previousDate)) {
+        streak++;
+        currentDate = previousDate;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 }
 
