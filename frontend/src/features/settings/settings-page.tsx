@@ -1,15 +1,14 @@
 /**
  * Settings Page (#304)
  *
- * Additions:
  * - Avatar upload using Supabase Storage (avatars bucket)
- *   - Validates file type (PNG/JPG only) and size (max 2 MB)
  * - Display name field — saved to profiles.display_name
- * - Timezone selector using Intl.supportedValuesOf('timeZone') — stored in profiles.timezone
+ * - Timezone selector using Intl.supportedValuesOf('timeZone') — saved to user_metadata.timezone
  * - Avatar shown in topbar via profile context (AppShell reads from profiles table)
  * - Danger zone: Delete account (requires re-auth confirmation)
+ * - Toast notifications for success/error feedback
  */
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth-context'
 import { useTheme } from '../../lib/use-theme'
@@ -56,6 +55,45 @@ function getSupportedTimezones(): string[] {
 }
 
 const TIMEZONES = getSupportedTimezones()
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+
+type ToastType = 'success' | 'error'
+
+function useToast() {
+  const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
+
+  const showToast = useCallback((type: ToastType, message: string) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 4000)
+  }, [])
+
+  const ToastOverlay = toast ? (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        bottom: '1.5rem',
+        right: '1.5rem',
+        zIndex: 9999,
+        padding: '0.75rem 1.25rem',
+        borderRadius: '10px',
+        fontSize: '0.88rem',
+        fontWeight: 500,
+        color: '#fff',
+        background: toast.type === 'success' ? 'var(--success)' : 'var(--danger)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+        animation: 'toast-in 0.25s ease-out',
+        maxWidth: '380px',
+      }}
+    >
+      {toast.message}
+    </div>
+  ) : null
+
+  return { showToast, ToastOverlay }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -224,17 +262,10 @@ export function SettingsPage() {
   const [displayName, setDisplayName] = useState('')
   const [timezone, setTimezone] = useState('UTC')
   const [profileSaving, setProfileSaving] = useState(false)
-  const [profileError, setProfileError] = useState<string | null>(null)
-  const [profileSuccess, setProfileSuccess] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
-  const [avatarError, setAvatarError] = useState<string | null>(null)
 
-  // Password state
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
-  const [passwordLoading, setPasswordLoading] = useState(false)
+  // Toast
+  const { showToast, ToastOverlay } = useToast()
 
   // Delete state
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -310,63 +341,37 @@ export function SettingsPage() {
   }
 
   const handleSaveProfile = async () => {
-    setProfileError(null)
-    setProfileSuccess(null)
     setProfileSaving(true)
     try {
       await upsertProfile(user.id, {
         display_name: displayName.trim() || null,
         timezone,
       })
+      await supabase.auth.updateUser({ data: { timezone } })
       setProfile((prev) => ({ ...prev, display_name: displayName.trim() || null, timezone }))
-      setProfileSuccess('Profile updated successfully.')
+      showToast('success', 'Profile updated successfully.')
     } catch (err) {
-      setProfileError(err instanceof Error ? err.message : 'Failed to save profile.')
+      showToast('error', err instanceof Error ? err.message : 'Failed to save profile.')
     } finally {
       setProfileSaving(false)
     }
   }
 
   const handleAvatarUpload = async (file: File) => {
-    setAvatarError(null)
     setAvatarUploading(true)
     try {
       const url = await uploadAvatar(user.id, file)
       await upsertProfile(user.id, { avatar_url: url })
       setProfile((prev) => ({ ...prev, avatar_url: url }))
+      showToast('success', 'Avatar updated.')
     } catch (err) {
-      setAvatarError(err instanceof Error ? err.message : 'Avatar upload failed.')
+      showToast('error', err instanceof Error ? err.message : 'Avatar upload failed.')
     } finally {
       setAvatarUploading(false)
     }
   }
 
-  const handlePasswordChange = async () => {
-    setPasswordError(null)
-    setPasswordSuccess(null)
-    if (!newPassword.trim()) { setPasswordError('Password is required'); return }
-    if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match'); return }
-    if (newPassword.length < 6) { setPasswordError('Password must be at least 6 characters'); return }
-
-    setPasswordLoading(true)
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword })
-      if (error) {
-        setPasswordError(error.message)
-      } else {
-        setPasswordSuccess('Password updated successfully.')
-        setNewPassword('')
-        setConfirmPassword('')
-      }
-    } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : 'Password update failed.')
-    } finally {
-      setPasswordLoading(false)
-    }
-  }
-
   const handleDeleteAccount = async () => {
-    // Re-auth: confirm by typing email
     if (deleteConfirmEmail.trim().toLowerCase() !== (user.email ?? '').toLowerCase()) {
       setDeleteError('Email does not match. Please type your account email to confirm.')
       return
@@ -375,11 +380,12 @@ export function SettingsPage() {
     setDeleteError(null)
     try {
       const { error } = await supabase.rpc('delete_user')
-      if (error) console.error('Delete error:', error)
+      if (error) throw error
+      showToast('success', 'Account deleted. Goodbye!')
       await signOut()
       navigate('/login')
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Account deletion failed.')
+      showToast('error', err instanceof Error ? err.message : 'Account deletion failed.')
     } finally {
       setDeleteLoading(false)
     }
@@ -389,6 +395,7 @@ export function SettingsPage() {
 
   return (
     <section className="feature-grid">
+      {ToastOverlay}
 
       {/* ── Profile Section ── */}
       <article className="card">
@@ -422,9 +429,6 @@ export function SettingsPage() {
               />
               {avatarUploading && (
                 <p className="muted" style={{ fontSize: '0.82rem' }}>Uploading avatar…</p>
-              )}
-              {avatarError && (
-                <p role="alert" className="error-text">{avatarError}</p>
               )}
 
               {/* Email (read-only) */}
@@ -474,9 +478,6 @@ export function SettingsPage() {
               >
                 {profileSaving ? 'Saving…' : 'Save profile'}
               </button>
-
-              {profileError && <p role="alert" className="error-text">{profileError}</p>}
-              {profileSuccess && <p className="success-text">{profileSuccess}</p>}
             </>
           )}
         </div>
@@ -536,36 +537,12 @@ export function SettingsPage() {
         <div className="card-header">
           <h3>Change password</h3>
         </div>
-        <form
-          className="card-content form-stack"
-          onSubmit={(e) => { e.preventDefault(); void handlePasswordChange() }}
-        >
-          <label>
-            New password
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
-              autoComplete="new-password"
-            />
-          </label>
-          <label>
-            Confirm password
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
-              autoComplete="new-password"
-            />
-          </label>
-          <button type="submit" disabled={passwordLoading}>
-            {passwordLoading ? 'Updating…' : 'Update password'}
+        <div className="card-content">
+          <p className="muted">Update your account password on the dedicated page.</p>
+          <button type="button" onClick={() => navigate('/update-password')}>
+            Go to password page
           </button>
-          {passwordError && <p role="alert" className="error-text">{passwordError}</p>}
-          {passwordSuccess && <p className="success-text">{passwordSuccess}</p>}
-        </form>
+        </div>
       </article>
 
       {/* ── Notifications (push) — Issue #303 ── */}
@@ -626,6 +603,10 @@ export function SettingsPage() {
         @keyframes skeleton-shimmer {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }
+        }
+        @keyframes toast-in {
+          from { opacity: 0; transform: translateY(0.75rem); }
+          to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </section>
