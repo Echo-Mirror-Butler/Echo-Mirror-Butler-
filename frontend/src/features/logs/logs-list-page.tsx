@@ -182,7 +182,7 @@ export function LogsListPage() {
         <div className="list-stack">
           {logsQuery.data?.rows.map((entry) => (
             <Link
-              to={`/logs/${entry.id}/edit`}
+              to={`/logs/${entry.id}`}
               className="list-card"
               key={entry.id}
               onClick={rememberScrollPosition}
