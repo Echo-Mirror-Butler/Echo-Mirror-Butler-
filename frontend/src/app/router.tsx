@@ -105,9 +105,7 @@ export function AppRouter() {
       />
       <Route
         path="/update-password"
-        element={
-          user ? <Navigate to="/dashboard" replace /> : <UpdatePasswordPage />
-        }
+        element={<UpdatePasswordPage />}
       />
 
       <Route
