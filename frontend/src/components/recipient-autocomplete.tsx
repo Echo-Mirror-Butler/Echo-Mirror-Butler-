@@ -27,7 +27,7 @@ export function RecipientAutocomplete({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [isLoading, setIsLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const debounceRef = useRef<NodeJS.Timeout>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Reset suggestions when input changes
   useEffect(() => {
@@ -175,7 +175,7 @@ export function RecipientAutocomplete({
         </ul>
       )}
       
-      <style jsx>{`
+      <style>{`
         .recipient-autocomplete {
           position: relative;
         }
