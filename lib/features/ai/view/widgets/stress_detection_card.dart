@@ -99,7 +99,7 @@ class StressDetectionCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(FontAwesomeIcons.wind),
+                  icon: const FaIcon(FontAwesomeIcons.wind),
                   label: const Text('Start Breathing Exercise'),
                   onPressed: () {
                     Navigator.of(context).push(

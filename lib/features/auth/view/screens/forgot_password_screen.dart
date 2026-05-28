@@ -102,7 +102,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(FontAwesomeIcons.lock, size: 64, color: AppTheme.primaryColor),
+          FaIcon(FontAwesomeIcons.lock, size: 64, color: AppTheme.primaryColor),
           const SizedBox(height: 24),
           Text(
             'Reset your password',
@@ -121,7 +121,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             label: 'Email',
             hint: 'Enter your email',
             keyboardType: TextInputType.emailAddress,
-            prefixIcon: FontAwesomeIcons.envelope,
+            prefixIcon: FontAwesomeIcons.envelope.data,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your email';
@@ -137,7 +137,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             onPressed: _isLoading ? null : _handleSubmit,
             text: 'Send Reset Link',
             isLoading: _isLoading,
-            icon: FontAwesomeIcons.paperPlane,
+            icon: FontAwesomeIcons.paperPlane.data,
           ),
           const SizedBox(height: 16),
           TextButton(
@@ -174,7 +174,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         CustomButton(
           onPressed: () => context.go('/login'),
           text: 'Back to Login',
-          icon: FontAwesomeIcons.rightToBracket,
+          icon: FontAwesomeIcons.rightToBracket.data,
         ),
       ],
     );

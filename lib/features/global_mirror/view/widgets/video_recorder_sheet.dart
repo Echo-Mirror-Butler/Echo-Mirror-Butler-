@@ -618,7 +618,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Record video button
           _buildActionCard(
-            icon: FontAwesomeIcons.video,
+            icon: FontAwesomeIcons.video.data,
             title: 'Record New Video',
             description: 'Record up to 10 seconds (400KB max)',
             color: AppTheme.primaryColor,
@@ -628,7 +628,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Pick video from gallery
           _buildActionCard(
-            icon: FontAwesomeIcons.film,
+            icon: FontAwesomeIcons.film.data,
             title: 'Choose Video from Gallery',
             description: 'Select video up to 400KB (8-10 seconds)',
             color: AppTheme.secondaryColor,
@@ -638,7 +638,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Take photo button
           _buildActionCard(
-            icon: FontAwesomeIcons.camera,
+            icon: FontAwesomeIcons.camera.data,
             title: 'Take Photo',
             description: 'Capture a photo (400KB max)',
             color: AppTheme.accentColor,
@@ -648,7 +648,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
 
           // Pick image from gallery
           _buildActionCard(
-            icon: FontAwesomeIcons.image,
+            icon: FontAwesomeIcons.image.data,
             title: 'Choose Image from Gallery',
             description: 'Select image up to 400KB',
             color: Colors.purple,
@@ -684,7 +684,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
                 color: color,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: FaIcon(icon, color: Colors.white, size: 32),
+              child: Icon(icon, color: Colors.white, size: 32),
             ),
             const SizedBox(width: 16),
             Expanded(

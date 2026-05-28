@@ -107,7 +107,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     label: 'Current Password',
                     hint: 'Enter current password',
                     obscureText: _obscureCurrent,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureCurrent
@@ -130,7 +130,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     label: 'New Password',
                     hint: 'Enter new password',
                     obscureText: _obscureNew,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureNew
@@ -156,7 +156,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     label: 'Confirm New Password',
                     hint: 'Confirm new password',
                     obscureText: _obscureConfirm,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
@@ -181,7 +181,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     onPressed: _isLoading ? null : _handleChangePassword,
                     text: 'Update Password',
                     isLoading: _isLoading,
-                    icon: FontAwesomeIcons.check,
+                    icon: FontAwesomeIcons.check.data,
                   ),
                 ],
               ),

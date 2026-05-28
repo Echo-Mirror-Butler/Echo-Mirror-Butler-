@@ -85,7 +85,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                     .read(moodCommentNotificationProvider.notifier)
                     .markAllAsRead();
               },
-              icon: const Icon(FontAwesomeIcons.checkDouble, size: 16),
+              icon: const FaIcon(FontAwesomeIcons.checkDouble, size: 16),
               label: const Text('Mark all read'),
               style: TextButton.styleFrom(
                 foregroundColor: AppTheme.primaryColor,
@@ -93,7 +93,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
             ),
           if (notifications.isNotEmpty)
             IconButton(
-              icon: const Icon(FontAwesomeIcons.trash),
+              icon: const FaIcon(FontAwesomeIcons.trash),
               onPressed: () {
                 showDialog(
                   context: context,
@@ -374,7 +374,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                     .read(moodCommentNotificationProvider.notifier)
                     .markAllAsRead();
               },
-              icon: const Icon(FontAwesomeIcons.checkDouble),
+              icon: const FaIcon(FontAwesomeIcons.checkDouble),
               label: Text('Mark all read ($unreadCount)'),
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,

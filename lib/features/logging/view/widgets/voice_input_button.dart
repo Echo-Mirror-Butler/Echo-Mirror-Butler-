@@ -240,7 +240,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           : AppTheme.primaryColor,
       child: _isListening
           ? _buildListeningState()
-          : const Icon(FontAwesomeIcons.microphone, color: Colors.white),
+          : const FaIcon(FontAwesomeIcons.microphone, color: Colors.white),
     );
   }
 
@@ -369,7 +369,7 @@ class VoiceInputOverlay extends StatelessWidget {
             // Stop button
             ElevatedButton.icon(
               onPressed: onStop,
-              icon: const Icon(FontAwesomeIcons.stop),
+              icon: const FaIcon(FontAwesomeIcons.stop),
               label: const Text('Stop'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.errorColor,

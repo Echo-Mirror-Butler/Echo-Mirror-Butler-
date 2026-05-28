@@ -207,7 +207,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
                 ),
               ),
               IconButton(
-                icon: const Icon(FontAwesomeIcons.arrowsRotate),
+                icon: const FaIcon(FontAwesomeIcons.arrowsRotate),
                 onPressed: () => _refreshInsight(ref),
                 tooltip: 'Refresh Insight',
                 color: AppTheme.primaryColor,
@@ -404,7 +404,7 @@ class _AiInsightSectionState extends ConsumerState<AiInsightSection> {
               const SizedBox(height: 16),
               TextButton.icon(
                 onPressed: () => _refreshInsight(ref),
-                icon: const Icon(FontAwesomeIcons.arrowsRotate),
+                icon: const FaIcon(FontAwesomeIcons.arrowsRotate),
                 label: const Text('Retry with Gemini'),
               ),
             ],

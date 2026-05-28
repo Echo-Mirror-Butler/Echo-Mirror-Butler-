@@ -45,7 +45,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         title: const Text('Daily Logging'),
         actions: [
           IconButton(
-            icon: const Icon(FontAwesomeIcons.calendar),
+            icon: const FaIcon(FontAwesomeIcons.calendar),
             onPressed: () {
               final entries = loggingState.value ?? <LogEntryModel>[];
               _showCalendar(context, entries);
@@ -163,7 +163,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         onPressed: () {
           context.push('/logging/create');
         },
-        icon: const Icon(FontAwesomeIcons.plus),
+        icon: const FaIcon(FontAwesomeIcons.plus),
         label: const Text('New Entry'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
@@ -178,21 +178,21 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
   IconData _getMoodIcon(int? mood) {
     if (mood == null) {
-      return FontAwesomeIcons.faceSmile;
+      return FontAwesomeIcons.faceSmile.data;
     }
     switch (mood) {
       case 1:
-        return FontAwesomeIcons.faceFrown;
+        return FontAwesomeIcons.faceFrown.data;
       case 2:
-        return FontAwesomeIcons.faceMeh;
+        return FontAwesomeIcons.faceMeh.data;
       case 3:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
       case 4:
-        return FontAwesomeIcons.faceSmileBeam;
+        return FontAwesomeIcons.faceSmileBeam.data;
       case 5:
-        return FontAwesomeIcons.faceGrinStars;
+        return FontAwesomeIcons.faceGrinStars.data;
       default:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
     }
   }
 

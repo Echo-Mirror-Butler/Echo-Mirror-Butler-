@@ -813,7 +813,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                           onTap: _toggleAudio,
                         ),
                         _buildControlButton(
-                          icon: FontAwesomeIcons.rotate,
+                          icon: FontAwesomeIcons.rotate.data,
                           label: 'Switch',
                           isActive: true,
                           onTap: _switchCamera,
@@ -828,7 +828,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                             onTap: _togglePipMode,
                           ),
                         _buildControlButton(
-                          icon: FontAwesomeIcons.phone,
+                          icon: FontAwesomeIcons.phone.data,
                           label: widget.isHost ? 'End Call' : 'Leave',
                           isActive: false,
                           isDanger: true,

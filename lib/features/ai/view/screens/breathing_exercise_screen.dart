@@ -721,7 +721,7 @@ class _BreathingExerciseScreenState
 
                 const SizedBox(height: 48),
                 ElevatedButton.icon(
-                  icon: const Icon(FontAwesomeIcons.music),
+                  icon: const FaIcon(FontAwesomeIcons.music),
                   label: const Text('Listen to Relaxing Music'),
                   onPressed: () {
                     Navigator.of(context).pushReplacement(

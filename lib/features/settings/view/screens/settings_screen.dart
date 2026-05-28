@@ -34,7 +34,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.palette,
+            icon: FontAwesomeIcons.palette.data,
             title: 'Appearance',
             subtitle: 'Customize your app experience',
           ),
@@ -46,7 +46,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.bell,
+            icon: FontAwesomeIcons.bell.data,
             title: 'Reminders',
             subtitle: 'Stay on track with daily reflections',
           ),
@@ -58,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.user,
+            icon: FontAwesomeIcons.user.data,
             title: 'Account',
             subtitle: 'Manage your account settings',
           ),
@@ -129,7 +129,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.moon,
+              icon: FontAwesomeIcons.moon.data,
               iconColor: Colors.indigo,
               title: 'Dark Mode',
               subtitle: 'Switch to dark theme',
@@ -149,7 +149,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.circleHalfStroke,
+              icon: FontAwesomeIcons.circleHalfStroke.data,
               iconColor: Colors.blue,
               title: 'System Theme',
               subtitle: 'Follow system appearance',
@@ -195,7 +195,7 @@ class SettingsScreen extends ConsumerWidget {
                 _buildModernListTile(
                   context,
                   theme,
-                  icon: FontAwesomeIcons.bell,
+                  icon: FontAwesomeIcons.bell.data,
                   iconColor: Colors.orange,
                   title: 'Daily Reflection Reminder',
                   subtitle: enabled
@@ -224,7 +224,7 @@ class SettingsScreen extends ConsumerWidget {
                   _buildModernListTile(
                     context,
                     theme,
-                    icon: FontAwesomeIcons.clock,
+                    icon: FontAwesomeIcons.clock.data,
                     iconColor: Colors.teal,
                     title: 'Reminder Time',
                     subtitle:
@@ -344,7 +344,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.coins,
+              icon: FontAwesomeIcons.coins.data,
               iconColor: AppTheme.primaryColor,
               title: 'ECHO Balance',
               subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
@@ -363,7 +363,7 @@ class SettingsScreen extends ConsumerWidget {
               _buildModernListTile(
                 context,
                 theme,
-                icon: FontAwesomeIcons.envelope,
+                icon: FontAwesomeIcons.envelope.data,
                 iconColor: Colors.blue,
                 title: 'Email',
                 subtitle: authState.user!.email,
@@ -377,7 +377,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.key,
+              icon: FontAwesomeIcons.key.data,
               iconColor: Colors.purple,
               title: 'Change Password',
               subtitle: 'Update your account password',
@@ -397,7 +397,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.rightFromBracket,
+              icon: FontAwesomeIcons.rightFromBracket.data,
               iconColor: Colors.red,
               title: AppStrings.logout,
               subtitle: 'Sign out of your account',

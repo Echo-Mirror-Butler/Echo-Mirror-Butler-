@@ -184,7 +184,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(FontAwesomeIcons.gift),
+                      : const FaIcon(FontAwesomeIcons.gift),
                   label: Text(
                     isActionLoading
                         ? 'Sending...'
@@ -275,7 +275,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       ),
       child: Row(
         children: [
-          const Icon(FontAwesomeIcons.coins, color: Colors.white, size: 32),
+          const FaIcon(FontAwesomeIcons.coins, color: Colors.white, size: 32),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

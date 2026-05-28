@@ -208,12 +208,12 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildActionButton(
-                  icon: FontAwesomeIcons.images,
+                  icon: FontAwesomeIcons.images.data,
                   label: 'Gallery',
                   onTap: _pickImages,
                 ),
                 _buildActionButton(
-                  icon: FontAwesomeIcons.camera,
+                  icon: FontAwesomeIcons.camera.data,
                   label: 'Camera',
                   onTap: _pickImageFromCamera,
                 ),

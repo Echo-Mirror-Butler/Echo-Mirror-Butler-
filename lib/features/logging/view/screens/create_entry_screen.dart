@@ -434,7 +434,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Icon(FontAwesomeIcons.plus, size: 18),
+                          child: const FaIcon(FontAwesomeIcons.plus, size: 18),
                         ),
                       ],
                     ),
@@ -618,7 +618,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       onPressed: _isSubmitting ? null : _handleSubmit,
                       text: 'Create Entry',
                       isLoading: _isSubmitting,
-                      icon: FontAwesomeIcons.check,
+                      icon: FontAwesomeIcons.check.data,
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -672,17 +672,17 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
   IconData _getMoodIcon(int mood) {
     switch (mood) {
       case 1:
-        return FontAwesomeIcons.faceFrown;
+        return FontAwesomeIcons.faceFrown.data;
       case 2:
-        return FontAwesomeIcons.faceMeh;
+        return FontAwesomeIcons.faceMeh.data;
       case 3:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
       case 4:
-        return FontAwesomeIcons.faceSmileBeam;
+        return FontAwesomeIcons.faceSmileBeam.data;
       case 5:
-        return FontAwesomeIcons.faceGrinStars;
+        return FontAwesomeIcons.faceGrinStars.data;
       default:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
     }
   }
 

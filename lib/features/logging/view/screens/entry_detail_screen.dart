@@ -17,17 +17,17 @@ class EntryDetailScreen extends ConsumerWidget {
   IconData _getMoodIcon(int mood) {
     switch (mood) {
       case 1:
-        return FontAwesomeIcons.faceFrown;
+        return FontAwesomeIcons.faceFrown.data;
       case 2:
-        return FontAwesomeIcons.faceMeh;
+        return FontAwesomeIcons.faceMeh.data;
       case 3:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
       case 4:
-        return FontAwesomeIcons.faceSmileBeam;
+        return FontAwesomeIcons.faceSmileBeam.data;
       case 5:
-        return FontAwesomeIcons.faceGrinStars;
+        return FontAwesomeIcons.faceGrinStars.data;
       default:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
     }
   }
 
@@ -294,7 +294,7 @@ class EntryDetailScreen extends ConsumerWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _showDeleteConfirmation(context, ref),
-                icon: const Icon(FontAwesomeIcons.trash),
+                icon: const FaIcon(FontAwesomeIcons.trash),
                 label: const Text('Delete Entry'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.errorColor,

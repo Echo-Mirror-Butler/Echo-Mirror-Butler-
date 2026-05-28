@@ -135,7 +135,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         actions: [
           // Need Help? button
           IconButton(
-            icon: const Icon(FontAwesomeIcons.handHoldingHeart),
+            icon: const FaIcon(FontAwesomeIcons.handHoldingHeart),
             tooltip: 'Need Help?',
             onPressed: () {
               Navigator.push(
@@ -220,7 +220,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       InsightSection(
                         title: 'Predictions',
                         insights: predictions,
-                        icon: FontAwesomeIcons.wandMagicSparkles,
+                        icon: FontAwesomeIcons.wandMagicSparkles.data,
                         color: AppTheme.secondaryColor,
                       ),
 
@@ -228,7 +228,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       InsightSection(
                         title: 'Habits',
                         insights: habits,
-                        icon: FontAwesomeIcons.repeat,
+                        icon: FontAwesomeIcons.repeat.data,
                         color: AppTheme.primaryColor,
                       ),
 
@@ -236,7 +236,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       InsightSection(
                         title: 'Mood Insights',
                         insights: moods,
-                        icon: FontAwesomeIcons.faceSmile,
+                        icon: FontAwesomeIcons.faceSmile.data,
                         color: AppTheme.accentColor,
                         onInsightTap: (insight) =>
                             _handleInsightTap(context, ref, insight),
@@ -247,7 +247,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         InsightSection(
                           title: 'General Insights',
                           insights: general,
-                          icon: FontAwesomeIcons.lightbulb,
+                          icon: FontAwesomeIcons.lightbulb.data,
                           color: AppTheme.primaryColor,
                         ),
 

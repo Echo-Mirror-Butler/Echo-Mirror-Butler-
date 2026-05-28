@@ -133,7 +133,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     label: 'New Password',
                     hint: 'Enter new password',
                     obscureText: _obscurePassword,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -159,7 +159,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     label: 'Confirm Password',
                     hint: 'Confirm new password',
                     obscureText: _obscureConfirm,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
@@ -184,7 +184,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     onPressed: _isLoading ? null : _handleReset,
                     text: 'Reset Password',
                     isLoading: _isLoading,
-                    icon: FontAwesomeIcons.check,
+                    icon: FontAwesomeIcons.check.data,
                   ),
                 ],
               ),

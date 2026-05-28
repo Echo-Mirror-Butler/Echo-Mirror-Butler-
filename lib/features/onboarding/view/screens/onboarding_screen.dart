@@ -29,7 +29,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       subtitle: 'Your Future Self as a Butler',
       description:
           'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
-      icon: FontAwesomeIcons.userTie,
+      icon: FontAwesomeIcons.userTie.data,
       imageUrl:
           'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
       lottieAsset: LottieAnimations.mirrorReflection,
@@ -39,7 +39,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Log Daily Moods & Habits',
       description:
           'Capture your daily reflections, track your mood, and build meaningful habits. Your journey starts with a single entry.',
-      icon: FontAwesomeIcons.book,
+      icon: FontAwesomeIcons.book.data,
       imageUrl:
           'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
       lottieAsset: LottieAnimations.habitCheck,
@@ -49,7 +49,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Receive Predictions & Letters',
       description:
           'Get AI-powered insights about your patterns, predictions for your future, and motivational letters from your future self.',
-      icon: FontAwesomeIcons.envelopeOpen,
+      icon: FontAwesomeIcons.envelopeOpen.data,
       imageUrl:
           'https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=800&q=80',
       lottieAsset: LottieAnimations.envelopeOpen,
