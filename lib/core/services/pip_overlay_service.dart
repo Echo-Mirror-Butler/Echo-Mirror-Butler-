@@ -285,11 +285,7 @@ class _PipOverlayWidgetState extends State<_PipOverlayWidget> {
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      child: Icon(Icons.close, color: Colors.white, size: 16),
                     ),
                   ),
                 ),

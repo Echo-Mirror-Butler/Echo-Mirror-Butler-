@@ -162,7 +162,11 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(FontAwesomeIcons.video.data, size: 64, color: Colors.grey[400]),
+            Icon(
+              FontAwesomeIcons.video.data,
+              size: 64,
+              color: Colors.grey[400],
+            ),
             const SizedBox(height: 24),
             Text(
               'No Videos Yet',

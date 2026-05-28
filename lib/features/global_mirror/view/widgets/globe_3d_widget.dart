@@ -460,11 +460,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: Colors.orange,
-                      ),
+                      Icon(Icons.error_outline, size: 48, color: Colors.orange),
                       const SizedBox(height: 16),
                       Text(
                         '3D Globe unavailable',

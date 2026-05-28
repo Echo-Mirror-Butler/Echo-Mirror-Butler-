@@ -822,7 +822,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                           _buildControlButton(
                             icon: _isInPipMode
                                 ? FontAwesomeIcons.windowMaximize.data
-                                : FontAwesomeIcons.upRightAndDownLeftFromCenter.data,
+                                : FontAwesomeIcons
+                                      .upRightAndDownLeftFromCenter
+                                      .data,
                             label: _isInPipMode ? 'Minimized' : 'Minimize',
                             isActive: !_isInPipMode,
                             onTap: _togglePipMode,
