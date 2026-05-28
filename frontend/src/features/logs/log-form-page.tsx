@@ -4,7 +4,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { LogEntry } from '../../lib/types'
-import { toDateInputValue } from '../../lib/date'
+import { toDateInputValue, formatDate } from '../../lib/date'
 
 type LogFormMode = 'create' | 'edit'
 
@@ -76,6 +76,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
   const [habitInput, setHabitInput] = useState('')
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' } | null>(null)
 
   const hydrated = useMemo(
     () =>
@@ -105,10 +106,6 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     mutationFn: async () => {
       if (!user) {
         throw new Error('No signed in user found.')
-      }
-
-      if (!mood && habits.length === 0 && !notes.trim()) {
-        throw new Error('Fill at least one field: mood, habit, or note.')
       }
 
       if (mode === 'create') {
@@ -158,14 +155,19 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     },
     onMutate: () => {
       setFormError(null)
+      setToast(null)
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['logs', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['log-entry', id] })
-      navigate('/logs')
+      setToast({ show: true, message: 'Log saved successfully!', type: 'success' })
+      // Redirect after 1.5 seconds to allow toast to be seen
+      setTimeout(() => {
+        navigate('/logs')
+      }, 1500)
     },
     onError: (error: Error) => {
-      setFormError(error.message)
+      setToast({ show: true, message: error.message, type: 'error' })
     },
   })
 
@@ -190,7 +192,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
       navigate('/logs')
     },
     onError: (error: Error) => {
-      setFormError(error.message)
+      setToast({ show: true, message: error.message, type: 'error' })
     },
   })
 
@@ -213,12 +215,38 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     }
   }
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    // Validate mood is required and between 1-5
+    if (mood === null || mood < 1 || mood > 5) {
+      setFormError('Mood score is required and must be between 1 and 5.')
+      return
+    }
+    // Validate date is not in the future
+    const selectedDate = new Date(date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (selectedDate > today) {
+      setFormError('Date cannot be in the future.')
+      return
+    }
+    saveMutation.mutate()
+  }
+
   if (!user) {
     return null
   }
 
   return (
     <section className="feature-grid">
+      {toast && (
+        <div className={`toast toast-${toast.type} fixed top-4 right-4 px-6 py-3 rounded shadow-lg z-50`}
+          role="alert"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      )}
       <article className="card full-width">
         <div className="card-header">
           <h2>{mode === 'create' ? 'New Log Entry' : 'Edit Log Entry'}</h2>
@@ -229,10 +257,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
 
         <form
           className="form-stack"
-          onSubmit={(event: FormEvent<HTMLFormElement>) => {
-            event.preventDefault()
-            saveMutation.mutate()
-          }}
+          onSubmit={handleSubmit}
         >
           <label>
             Date
@@ -288,7 +313,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                   className="chip active"
                   onClick={() => setHabits((prev) => prev.filter((item) => item !== habit))}
                 >
-                  {habit} ×
+                  {habit} A-
                 </button>
               ))}
             </div>
@@ -305,7 +330,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
           </label>
 
           <button type="submit" disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? 'Saving…' : 'Save log entry'}
+            {saveMutation.isPending ? 'Saving�?�' : 'Save log entry'}
           </button>
 
           {mode === 'edit' ? (
@@ -320,11 +345,11 @@ export function LogFormPage({ mode }: LogFormPageProps) {
               }}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? 'Deleting…' : 'Delete entry'}
+              {deleteMutation.isPending ? 'Deleting�?�' : 'Delete entry'}
             </button>
           ) : null}
 
-          {formError ? <p className="error-text">{formError}</p> : null}
+          {formError && <p className="error-text">{formError}</p>}
         </form>
       </article>
     </section>
