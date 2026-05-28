@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:speech_to_text/speech_to_text.dart' as stt show SpeechListenOptions;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
@@ -188,7 +188,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
         listenFor: const Duration(seconds: 30),
         pauseFor: const Duration(seconds: 3),
         localeId: 'en_US',
-        listenOptions: SpeechListenOptions(
+        listenOptions: stt.SpeechListenOptions(
           cancelOnError: true,
           partialResults: true,
         ),
@@ -330,7 +330,9 @@ class VoiceInputOverlay extends StatelessWidget {
     if (!isListening) return const SizedBox.shrink();
 
     return Container(
-      color: Colors.black.withValues(alpha: 0.7),
+      color: Colors.black.withValues(
+        alpha: 0.7,
+      ),
       child: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -340,7 +342,9 @@ class VoiceInputOverlay extends StatelessWidget {
               width: 200,
               height: 100,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                color: AppTheme.primaryColor.withValues(
+                  alpha: 0.2,
+                ),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Center(
