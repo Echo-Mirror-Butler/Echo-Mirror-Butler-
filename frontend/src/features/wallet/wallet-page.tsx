@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tansta
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
-import type { GiftTransaction, WalletRecord } from '../../lib/types'
+import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
 
@@ -16,126 +16,45 @@ type WalletSnapshot = {
   balance: number
 }
 
-type GiftHistoryResult = {
-  rows: GiftTransaction[]
+type RewardHistoryResult = {
+  rows: EchoReward[]
   count: number
 }
 
-function isMissingColumnError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof (error as { message: string }).message === 'string' &&
-    (error as { message: string }).message.toLowerCase().includes('column')
-  )
-}
-
-async function computeBalanceFromTransactions(userId: string): Promise<number> {
-  const [{ data: sentRows, error: sentError }, { data: receivedRows, error: receivedError }] =
-    await Promise.all([
-      supabase
-        .from('gift_transactions')
-        .select('echo_amount,status')
-        .eq('sender_user_id', userId)
-        .eq('status', 'completed'),
-      supabase
-        .from('gift_transactions')
-        .select('echo_amount,status')
-        .eq('recipient_user_id', userId)
-        .eq('status', 'completed'),
-    ])
-
-  if (sentError) {
-    throw sentError
-  }
-
-  if (receivedError) {
-    throw receivedError
-  }
-
-  const sentTotal = (sentRows ?? []).reduce((sum, row) => sum + Number(row.echo_amount ?? 0), 0)
-  const receivedTotal = (receivedRows ?? []).reduce(
-    (sum, row) => sum + Number(row.echo_amount ?? 0),
-    0,
-  )
-
-  return Math.max(0, receivedTotal - sentTotal)
-}
-
 async function fetchWallet(userId: string): Promise<WalletSnapshot> {
-  const walletBaseQuery = supabase
+  const { data, error } = await supabase
     .from('user_wallets')
     .select('id,user_id,public_key,balance')
     .eq('user_id', userId)
     .maybeSingle()
 
-  const { data, error } = await walletBaseQuery
-
-  if (error && !isMissingColumnError(error)) {
+  if (error) {
     throw error
   }
 
-  if (!data && !isMissingColumnError(error)) {
+  if (!data) {
     return {
       exists: false,
       record: null,
       balance: 0,
     }
   }
-
-  if (data) {
-    if (typeof data.balance === 'number') {
-      return {
-        exists: true,
-        record: data as WalletRecord,
-        balance: data.balance,
-      }
-    }
-
-    const fallbackBalance = await computeBalanceFromTransactions(userId)
-    return {
-      exists: true,
-      record: data as WalletRecord,
-      balance: fallbackBalance,
-    }
-  }
-
-  const { data: walletWithoutBalance, error: walletError } = await supabase
-    .from('user_wallets')
-    .select('id,user_id,public_key')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (walletError) {
-    throw walletError
-  }
-
-  if (!walletWithoutBalance) {
-    return {
-      exists: false,
-      record: null,
-      balance: 0,
-    }
-  }
-
-  const fallbackBalance = await computeBalanceFromTransactions(userId)
 
   return {
     exists: true,
-    record: walletWithoutBalance as WalletRecord,
-    balance: fallbackBalance,
+    record: data as WalletRecord,
+    balance: Number(data.balance ?? 0),
   }
 }
 
-async function fetchGiftHistory(userId: string, page: number): Promise<GiftHistoryResult> {
+async function fetchRewardHistory(userId: string, page: number): Promise<RewardHistoryResult> {
   const start = (page - 1) * WALLET_PAGE_SIZE
   const end = start + WALLET_PAGE_SIZE - 1
 
   const { data, count, error } = await supabase
-    .from('gift_transactions')
+    .from('echo_rewards')
     .select('*', { count: 'exact' })
-    .or(`sender_user_id.eq.${userId},recipient_user_id.eq.${userId}`)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .range(start, end)
 
@@ -144,9 +63,39 @@ async function fetchGiftHistory(userId: string, page: number): Promise<GiftHisto
   }
 
   return {
-    rows: (data ?? []) as GiftTransaction[],
+    rows: (data ?? []) as EchoReward[],
     count: count ?? 0,
   }
+}
+
+function formatEchoAmount(amount: number): string {
+  const absoluteAmount = Math.abs(amount)
+  const formattedAmount = Number.isInteger(absoluteAmount)
+    ? absoluteAmount.toString()
+    : absoluteAmount.toFixed(2)
+
+  return `${amount >= 0 ? '+' : '-'}${formattedAmount} ECHO`
+}
+
+function formatRewardReason(reason: string): string {
+  const labels: Record<string, string> = {
+    daily_mood_log: 'Daily log',
+    daily_log: 'Daily log',
+    '7_day_streak_bonus': '7-day streak bonus',
+    seven_day_streak: '7-day streak bonus',
+    streak_bonus: 'Streak bonus',
+    gift_received: 'Gift received',
+    welcome_bonus: 'Welcome bonus',
+  }
+
+  return (
+    labels[reason] ??
+    reason
+      .split(/[_-]/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  )
 }
 
 async function resolveRecipientId(recipientInput: string): Promise<string> {
@@ -158,8 +107,22 @@ async function resolveRecipientId(recipientInput: string): Promise<string> {
     return trimmed
   }
 
+  if (isValidStellarKey(trimmed)) {
+    const { data, error } = await supabase
+      .from('user_wallets')
+      .select('user_id')
+      .eq('public_key', trimmed)
+      .maybeSingle()
+
+    if (!error && data?.user_id) {
+      return data.user_id as string
+    }
+
+    throw new Error('Could not resolve recipient from Stellar address. Use recipient user ID.')
+  }
+
   if (!trimmed.includes('@')) {
-    throw new Error('Use a valid recipient UUID or email address.')
+    throw new Error('Use a valid recipient UUID, email address, or Stellar address.')
   }
 
   const profileTables = ['profiles', 'user_profiles']
@@ -195,7 +158,7 @@ async function sendGift(params: {
 
   const { data, error } = await supabase.functions.invoke('send-echo', {
     body: {
-      recipient_user_id: recipientUserId,
+      recipient_id: recipientUserId,
       amount: params.amount,
       message: params.message || undefined,
     },
@@ -209,7 +172,7 @@ async function sendGift(params: {
     throw new Error(data.error)
   }
 
-  return data.transaction as GiftTransaction
+  return data
 }
 
 function isValidStellarKey(key: string): boolean {
@@ -259,10 +222,11 @@ export function WalletPage() {
   const [page, setPage] = useState(1)
   const [recipientInput, setRecipientInput] = useState('')
   const [selectedAmount, setSelectedAmount] = useState<number | null>(PRESET_AMOUNTS[1])
-  const [customAmount, setCustomAmount] = useState('')
+  const [customAmount, setCustomAmount] = useState(String(PRESET_AMOUNTS[1]))
   const [message, setMessage] = useState('')
   const [inlineError, setInlineError] = useState<string | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
 
   // External wallet state
   const [manualKeyInput, setManualKeyInput] = useState('')
@@ -288,7 +252,7 @@ export function WalletPage() {
 
   const historyQuery = useQuery({
     queryKey: ['wallet-history', user?.id, page],
-    queryFn: () => fetchGiftHistory(user!.id, page),
+    queryFn: () => fetchRewardHistory(user!.id, page),
     enabled: Boolean(user?.id),
     placeholderData: keepPreviousData,
   })
@@ -315,9 +279,19 @@ export function WalletPage() {
 
   const createWalletMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.functions.invoke('create-stellar-wallet')
+      const { data, error } = await supabase.functions.invoke('create-stellar-wallet', {
+        body: {
+          type: 'INSERT',
+          schema: 'auth',
+          table: 'users',
+          record: { id: user!.id },
+        },
+      })
       if (error) {
         throw error
+      }
+      if (data?.error) {
+        throw new Error(data.error)
       }
     },
     onSuccess: async () => {
@@ -336,58 +310,34 @@ export function WalletPage() {
     },
     onMutate: async () => {
       setInlineError(null)
-      await queryClient.cancelQueries({ queryKey: ['wallet', user?.id] })
-      await queryClient.cancelQueries({ queryKey: ['wallet-history', user?.id] })
-
-      const previousWallet = queryClient.getQueryData<WalletSnapshot>(['wallet', user?.id])
-      const previousHistory = queryClient.getQueryData<GiftHistoryResult>(['wallet-history', user?.id, page])
-
-      if (previousWallet) {
-        queryClient.setQueryData<WalletSnapshot>(['wallet', user?.id], {
-          ...previousWallet,
-          balance: Math.max(0, previousWallet.balance - resolvedAmount),
-        })
-      }
-
-      if (previousHistory) {
-        const optimisticTx: GiftTransaction = {
-          id: `optimistic-${Date.now()}`,
-          sender_user_id: user!.id,
-          recipient_user_id: 'pending',
-          echo_amount: resolvedAmount,
-          stellar_tx_hash: null,
-          message: message || null,
-          status: 'completed',
-          created_at: new Date().toISOString(),
-        }
-
-        queryClient.setQueryData<GiftHistoryResult>(['wallet-history', user?.id, page], {
-          count: previousHistory.count + 1,
-          rows: [optimisticTx, ...previousHistory.rows].slice(0, WALLET_PAGE_SIZE),
-        })
-      }
-
-      return { previousWallet, previousHistory }
     },
     onSuccess: async () => {
       setShowConfetti(true)
       setTimeout(() => setShowConfetti(false), 2200)
       setMessage('')
-      setCustomAmount('')
+      setCustomAmount(String(PRESET_AMOUNTS[1]))
       setSelectedAmount(PRESET_AMOUNTS[1])
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
     },
-    onError: (error: Error, _vars, context) => {
+    onError: (error: Error) => {
       setInlineError(error.message)
-      if (context?.previousWallet) {
-        queryClient.setQueryData(['wallet', user?.id], context.previousWallet)
-      }
-      if (context?.previousHistory) {
-        queryClient.setQueryData(['wallet-history', user?.id, page], context.previousHistory)
-      }
     },
   })
+
+  const handleCopyWalletAddress = async () => {
+    if (!publicKey) {
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(publicKey)
+      setCopiedWalletAddress(true)
+      window.setTimeout(() => setCopiedWalletAddress(false), 1800)
+    } catch {
+      setInlineError('Could not copy wallet address.')
+    }
+  }
 
   const handleFreighterConnect = async () => {
     setFreighterStatus('connecting')
@@ -423,7 +373,7 @@ export function WalletPage() {
     return null
   }
 
-  const resolvedAmount = selectedAmount ?? Number(customAmount)
+  const resolvedAmount = Number(customAmount)
   const exceedsBalance = resolvedAmount > (walletQuery.data?.balance ?? 0)
   const isSendDisabled =
     !walletQuery.data?.exists ||
@@ -456,10 +406,23 @@ export function WalletPage() {
 
         {walletQuery.isLoading ? (
           <div className="skeleton-line large" />
+        ) : walletQuery.isError ? (
+          <p className="error-text">Failed to load wallet.</p>
         ) : walletQuery.data?.exists ? (
           <>
             <p className="balance-number">{walletQuery.data.balance.toFixed(2)} ECHO</p>
-            <p className="muted">Public key: {walletQuery.data.record?.public_key.slice(0, 14)}…</p>
+            {publicKey ? (
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <p className="muted" style={{ margin: 0 }}>
+                  Public key: {publicKey.slice(0, 14)}…{publicKey.slice(-4)}
+                </p>
+                <button type="button" className="secondary" onClick={() => void handleCopyWalletAddress()}>
+                  {copiedWalletAddress ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            ) : (
+              <p className="muted">Wallet row exists, but no Stellar public key is connected yet.</p>
+            )}
           </>
         ) : (
           <div className="empty-state">
@@ -648,12 +611,12 @@ export function WalletPage() {
           }}
         >
           <label>
-            Recipient user ID or email
+            Recipient user ID, email, or Stellar address
             <RecipientAutocomplete
               value={recipientInput}
               onChange={setRecipientInput}
               onSelect={(userId) => setRecipientInput(userId)}
-              placeholder="UUID or email"
+              placeholder="UUID, email, or G... address"
             />
           </label>
 
@@ -667,7 +630,7 @@ export function WalletPage() {
                   className={selectedAmount === chipAmount ? 'chip active' : 'chip'}
                   onClick={() => {
                     setSelectedAmount(chipAmount)
-                    setCustomAmount('')
+                    setCustomAmount(String(chipAmount))
                   }}
                 >
                   {chipAmount} ECHO
@@ -681,8 +644,13 @@ export function WalletPage() {
               placeholder="Custom amount"
               value={customAmount}
               onChange={(event) => {
-                setCustomAmount(event.target.value)
-                setSelectedAmount(null)
+                const nextAmount = event.target.value
+                const matchingPreset = PRESET_AMOUNTS.find(
+                  (presetAmount) => presetAmount === Number(nextAmount),
+                )
+
+                setCustomAmount(nextAmount)
+                setSelectedAmount(matchingPreset ?? null)
               }}
             />
           </div>
@@ -716,48 +684,37 @@ export function WalletPage() {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Type</th>
+                <th>Reason</th>
                 <th>Amount</th>
-                <th>Counterparty</th>
-                <th>Status</th>
-                <th>Tx Hash</th>
               </tr>
             </thead>
             <tbody>
-              {(historyQuery.data?.rows ?? []).map((row) => {
-                const isSent = row.sender_user_id === user.id
-                const counterparty = isSent ? row.recipient_user_id : row.sender_user_id
-                const network = import.meta.env.VITE_STELLAR_NETWORK === 'mainnet' ? 'public' : 'testnet'
-                return (
+              {historyQuery.isLoading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <tr key={`reward-skeleton-${index}`}>
+                    <td><div className="skeleton-line" /></td>
+                    <td><div className="skeleton-line" /></td>
+                    <td><div className="skeleton-line" /></td>
+                  </tr>
+                ))
+              ) : (
+                (historyQuery.data?.rows ?? []).map((row) => (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.created_at)}</td>
-                    <td>{isSent ? 'sent' : 'received'}</td>
-                    <td className={isSent ? 'amount-minus' : 'amount-plus'}>
-                      {isSent ? '-' : '+'}
-                      {row.echo_amount.toFixed(2)}
-                    </td>
-                    <td>{counterparty.slice(0, 10)}…</td>
-                    <td>{row.status}</td>
-                    <td>
-                      {row.stellar_tx_hash ? (
-                        <a
-                          href={`https://stellar.expert/explorer/${network}/tx/${row.stellar_tx_hash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {row.stellar_tx_hash.slice(0, 8)}…
-                        </a>
-                      ) : (
-                        '—'
-                      )}
+                    <td>{formatRewardReason(row.reason)}</td>
+                    <td className={row.amount >= 0 ? 'amount-plus' : 'amount-minus'}>
+                      {formatEchoAmount(row.amount)}
                     </td>
                   </tr>
-                )
-              })}
+                ))
+              )}
             </tbody>
           </table>
 
-          {!historyQuery.data?.rows.length ? <p className="muted">No transactions yet.</p> : null}
+          {historyQuery.isError ? <p className="error-text">Failed to load transactions.</p> : null}
+          {!historyQuery.isLoading && !historyQuery.data?.rows.length ? (
+            <p className="muted">No transactions yet.</p>
+          ) : null}
         </div>
 
         <div className="pagination-row">
