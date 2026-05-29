@@ -30,7 +30,8 @@ class _FakeLoggingNotifier extends LoggingNotifier {
 }
 
 class _FakeAuthNotifier extends AuthNotifier {
-  _FakeAuthNotifier._(super.repo, AuthState initialState) {
+  _FakeAuthNotifier._(MockAuthRepository repo, AuthState initialState)
+      : super(repo) {
     state = initialState;
   }
 
