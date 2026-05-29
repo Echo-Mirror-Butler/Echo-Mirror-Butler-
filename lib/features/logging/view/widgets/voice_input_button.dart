@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart'
-    as stt
+import 'package:speech_to_text/speech_to_text.dart' as stt
     show SpeechListenOptions, SpeechToText;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,8 +28,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
   bool _isListening = false;
   bool _isAvailable = false;
   bool _hasInitialized = false; // Track if we've tried to initialize
-  bool _hasPermanentError =
-      false; // Track if we've encountered a permanent error
+  bool _hasPermanentError = false; // Track if we've encountered a permanent error
   String _transcription = '';
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -237,12 +235,11 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     // Always show button - will initialize speech on first press
     return FloatingActionButton(
       onPressed: _isListening ? _stopListening : _startListening,
-      backgroundColor: _isListening
-          ? AppTheme.errorColor
-          : AppTheme.primaryColor,
+      backgroundColor:
+          _isListening ? AppTheme.errorColor : AppTheme.primaryColor,
       child: _isListening
           ? _buildListeningState()
-          : Icon(FontAwesomeIcons.microphone.data, color: Colors.white),
+          : Icon(FontAwesomeIcons.microphone, color: Colors.white),
     );
   }
 
@@ -261,7 +258,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     // Generate mock transcription
     final mockText =
         'This is a mock transcription. On a real device with microphone access, '
-        'this would be your spoken words. Try saying: "I had a great day today, feeling positive and energized!"';
+        'this would be your spoken words. Try saying: "I had a great day today, '
+        'feeling positive and energized!"';
 
     setState(() {
       _isListening = false;
@@ -275,7 +273,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Mock transcription (speech_to_text not available on this platform)',
+            'Mock transcription (speech_to_text not available on this '
+            'platform)',
           ),
           duration: Duration(seconds: 2),
         ),
@@ -296,8 +295,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
               height: 40 + (_pulseController.value * 10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.errorColor.withValues(
-                  alpha: 0.3 - (_pulseController.value * 0.2),
+                color: AppTheme.errorColor.withOpacity(
+                  0.3 - (_pulseController.value * 0.2),
                 ),
               ),
             );
@@ -305,7 +304,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
         ),
         // Microphone icon
         Icon(
-          FontAwesomeIcons.microphoneLines.data,
+          FontAwesomeIcons.microphoneLines,
           color: Colors.white,
           size: 24,
         ),
@@ -332,7 +331,7 @@ class VoiceInputOverlay extends StatelessWidget {
     if (!isListening) return const SizedBox.shrink();
 
     return Container(
-      color: Colors.black.withValues(alpha: 0.7),
+      color: Colors.black.withOpacity(0.7),
       child: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -342,12 +341,12 @@ class VoiceInputOverlay extends StatelessWidget {
               width: 200,
               height: 100,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                color: AppTheme.primaryColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Center(
                 child: Icon(
-                  FontAwesomeIcons.waveSquare.data,
+                  FontAwesomeIcons.waveSquare,
                   size: 48,
                   color: AppTheme.primaryColor,
                 ),
@@ -371,7 +370,7 @@ class VoiceInputOverlay extends StatelessWidget {
             // Stop button
             ElevatedButton.icon(
               onPressed: onStop,
-              icon: Icon(FontAwesomeIcons.stop.data),
+              icon: Icon(FontAwesomeIcons.stop),
               label: const Text('Stop'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.errorColor,
