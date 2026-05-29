@@ -187,10 +187,10 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
             }
           }
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
-        localeId: 'en_US',
         listenOptions: stt.SpeechListenOptions(
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+          localeId: 'en_US',
           cancelOnError: true,
           partialResults: true,
         ),
@@ -242,7 +242,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           : AppTheme.primaryColor,
       child: _isListening
           ? _buildListeningState()
-          : Icon(FontAwesomeIcons.microphone, color: Colors.white),
+          : FaIcon(FontAwesomeIcons.microphone, color: Colors.white),
     );
   }
 
@@ -298,15 +298,15 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
               height: 40 + (_pulseController.value * 10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.errorColor.withOpacity(
-                  0.3 - (_pulseController.value * 0.2),
+                color: AppTheme.errorColor.withValues(
+                  alpha: 0.3 - (_pulseController.value * 0.2),
                 ),
               ),
             );
           },
         ),
         // Microphone icon
-        Icon(FontAwesomeIcons.microphoneLines, color: Colors.white, size: 24),
+        FaIcon(FontAwesomeIcons.microphoneLines, color: Colors.white, size: 24),
       ],
     );
   }
@@ -330,7 +330,7 @@ class VoiceInputOverlay extends StatelessWidget {
     if (!isListening) return const SizedBox.shrink();
 
     return Container(
-      color: Colors.black.withOpacity(0.7),
+      color: Colors.black.withValues(alpha: 0.7),
       child: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -340,11 +340,11 @@ class VoiceInputOverlay extends StatelessWidget {
               width: 200,
               height: 100,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.2),
+                color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Center(
-                child: Icon(
+                child: FaIcon(
                   FontAwesomeIcons.waveSquare,
                   size: 48,
                   color: AppTheme.primaryColor,
@@ -369,7 +369,7 @@ class VoiceInputOverlay extends StatelessWidget {
             // Stop button
             ElevatedButton.icon(
               onPressed: onStop,
-              icon: Icon(FontAwesomeIcons.stop),
+              icon: FaIcon(FontAwesomeIcons.stop),
               label: const Text('Stop'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.errorColor,
