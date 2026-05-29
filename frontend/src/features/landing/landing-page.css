@@ -188,6 +188,13 @@ a.lp-nav-link {
   background: var(--lp-ink);
 }
 
+/* On tall monitors, reduce hero height to keep scroll cue visible */
+@media (min-height: 800px) {
+  .lp-hero {
+    min-height: 90dvh;
+  }
+}
+
 /* Two-column inner layout */
 .lp-hero-inner {
   position: relative;
@@ -370,6 +377,7 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   align-items: center;
   animation: lp-fade-up 0.7s 0.3s ease both;
   padding: 2rem 3rem;
+  min-height: 500px;
 }
 
 .lp-phone-img {
@@ -1716,7 +1724,7 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
 .lp-wallet-success em { color: #fbbf24; font-style: normal; }
 
 /* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .lp-awareness-body { grid-template-columns: 1fr; }
   .lp-awareness-video-wrap { max-height: 320px; aspect-ratio: 16/9; }
 
@@ -1735,7 +1743,7 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   .lp-hero-sub { max-width: 54ch; }
   .lp-hero-social-proof { justify-content: center; }
 
-  .lp-hero-mockup { justify-content: center; }
+  .lp-hero-mockup { justify-content: center; min-height: 420px; }
   .lp-phone-frame { width: 240px; }
   .lp-phone-img { width: 240px; }
 
