@@ -10,10 +10,21 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+};
 
 export const authMiddleware = async (
   req: AuthenticatedRequest,
@@ -41,9 +52,18 @@ export const authMiddleware = async (
 
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      console.error('JWT_SECRET not configured');
       res.status(500).json({
-        error: 'Server configuration error'
+        error: 'Server configuration error',
+        message: 'JWT_SECRET must be configured'
+      });
+      return;
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      res.status(500).json({
+        error: 'Server configuration error',
+        message: 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured'
       });
       return;
     }
