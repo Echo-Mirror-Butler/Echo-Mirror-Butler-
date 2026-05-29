@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
+import { useToast } from '../../lib/use-toast'
 import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
@@ -225,6 +226,7 @@ export function WalletPage() {
   const [customAmount, setCustomAmount] = useState(String(PRESET_AMOUNTS[1]))
   const [message, setMessage] = useState('')
   const [inlineError, setInlineError] = useState<string | null>(null)
+  const { showToast } = useToast()
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
 
@@ -317,10 +319,12 @@ export function WalletPage() {
       setMessage('')
       setCustomAmount(String(PRESET_AMOUNTS[1]))
       setSelectedAmount(PRESET_AMOUNTS[1])
+      showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
     },
     onError: (error: Error) => {
+      showToast(error.message, 'error')
       setInlineError(error.message)
     },
   })

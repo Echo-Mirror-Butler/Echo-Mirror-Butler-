@@ -8,10 +8,11 @@
  * - Danger zone: Delete account (requires re-auth confirmation)
  * - Toast notifications for success/error feedback
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth-context'
 import { useTheme } from '../../lib/use-theme'
+import { useToast } from '../../lib/use-toast'
 import { supabase } from '../../lib/supabase'
 import { NotificationPrefs } from '../notifications/notification-prefs'
 
@@ -55,45 +56,6 @@ function getSupportedTimezones(): string[] {
 }
 
 const TIMEZONES = getSupportedTimezones()
-
-// ── Toast ─────────────────────────────────────────────────────────────────────
-
-type ToastType = 'success' | 'error'
-
-function useToast() {
-  const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
-
-  const showToast = useCallback((type: ToastType, message: string) => {
-    setToast({ type, message })
-    setTimeout(() => setToast(null), 4000)
-  }, [])
-
-  const ToastOverlay = toast ? (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        position: 'fixed',
-        bottom: '1.5rem',
-        right: '1.5rem',
-        zIndex: 9999,
-        padding: '0.75rem 1.25rem',
-        borderRadius: '10px',
-        fontSize: '0.88rem',
-        fontWeight: 500,
-        color: '#fff',
-        background: toast.type === 'success' ? 'var(--success)' : 'var(--danger)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
-        animation: 'toast-in 0.25s ease-out',
-        maxWidth: '380px',
-      }}
-    >
-      {toast.message}
-    </div>
-  ) : null
-
-  return { showToast, ToastOverlay }
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -264,8 +226,7 @@ export function SettingsPage() {
   const [profileSaving, setProfileSaving] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
 
-  // Toast
-  const { showToast, ToastOverlay } = useToast()
+  const { showToast } = useToast()
 
   // Delete state
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -332,9 +293,9 @@ export function SettingsPage() {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-      setExportSuccess('Export downloaded successfully')
+      showToast('Export downloaded', 'success')
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : 'Export failed')
+      showToast(err instanceof Error ? err.message : 'Export failed', 'error')
     } finally {
       setExportLoading(false)
     }
@@ -395,8 +356,6 @@ export function SettingsPage() {
 
   return (
     <section className="feature-grid">
-      {ToastOverlay}
-
       {/* ── Profile Section ── */}
       <article className="card">
         <div className="card-header">
@@ -603,10 +562,6 @@ export function SettingsPage() {
         @keyframes skeleton-shimmer {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }
-        }
-        @keyframes toast-in {
-          from { opacity: 0; transform: translateY(0.75rem); }
-          to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </section>
