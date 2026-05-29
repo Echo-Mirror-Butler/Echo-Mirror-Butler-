@@ -10,6 +10,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { useTheme } from '../../lib/use-theme'
 import { useToast } from '../../lib/use-toast'
@@ -215,6 +216,7 @@ type ExportFormat = 'json' | 'csv'
 
 export function SettingsPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user, session, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
 
@@ -310,6 +312,7 @@ export function SettingsPage() {
       })
       await supabase.auth.updateUser({ data: { timezone } })
       setProfile((prev) => ({ ...prev, display_name: displayName.trim() || null, timezone }))
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', user.id] })
       showToast('success', 'Profile updated successfully.')
     } catch (err) {
       showToast('error', err instanceof Error ? err.message : 'Failed to save profile.')
@@ -324,6 +327,7 @@ export function SettingsPage() {
       const url = await uploadAvatar(user.id, file)
       await upsertProfile(user.id, { avatar_url: url })
       setProfile((prev) => ({ ...prev, avatar_url: url }))
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', user.id] })
       showToast('success', 'Avatar updated.')
     } catch (err) {
       showToast('error', err instanceof Error ? err.message : 'Avatar upload failed.')
