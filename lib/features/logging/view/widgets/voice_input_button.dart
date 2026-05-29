@@ -306,11 +306,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           },
         ),
         // Microphone icon
-        Icon(
-          FontAwesomeIcons.microphoneLines,
-          color: Colors.white,
-          size: 24,
-        ),
+        Icon(FontAwesomeIcons.microphoneLines, color: Colors.white, size: 24),
       ],
     );
   }
