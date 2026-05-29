@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { LogEntry, Insight } from '../../lib/types'
@@ -96,6 +97,135 @@ async function fetchLatestInsight(userId: string): Promise<Insight | null> {
   }
 
   return (data as Insight) ?? null
+}
+
+async function logMoodEntry(
+  userId: string,
+  mood: number,
+  notes: string,
+): Promise<void> {
+  const today = new Date().toISOString().split('T')[0]
+  const { error } = await supabase.from('log_entries').insert({
+    user_id: userId,
+    date: today,
+    mood,
+    notes: notes.trim() || null,
+    habits: [],
+  })
+  if (error) throw error
+}
+
+async function fetchTodayLog(userId: string): Promise<number | null> {
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('log_entries')
+    .select('mood')
+    .eq('user_id', userId)
+    .eq('date', today)
+    .maybeSingle()
+  return (data as { mood: number } | null)?.mood ?? null
+}
+
+const MOOD_EMOJIS: Record<number, string> = { 1: '😔', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' }
+
+function QuickLogWidget({ userId }: { userId: string }) {
+  const queryClient = useQueryClient()
+  const [selectedMood, setSelectedMood] = useState<number | null>(null)
+  const [notes, setNotes] = useState('')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
+
+  const todayQuery = useQuery({
+    queryKey: ['today-log', userId],
+    queryFn: () => fetchTodayLog(userId),
+    enabled: Boolean(userId),
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedMood) return
+    setStatus('saving')
+    try {
+      await logMoodEntry(userId, selectedMood, notes)
+      setStatus('done')
+      void queryClient.invalidateQueries({ queryKey: ['dashboard-streak', userId] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard-recent-logs', userId] })
+      void queryClient.invalidateQueries({ queryKey: ['today-log', userId] })
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  if (todayQuery.isLoading) {
+    return (
+      <article className="card">
+        <h2>Log Today's Mood</h2>
+        <div className="skeleton-line" />
+      </article>
+    )
+  }
+
+  if (todayQuery.data !== null && todayQuery.data !== undefined) {
+    return (
+      <article className="card">
+        <h2>Log Today's Mood</h2>
+        <p className="muted">
+          Logged today {MOOD_EMOJIS[todayQuery.data] ?? ''}
+        </p>
+        <Link to="/logs" className="chip" style={{ marginTop: '0.5rem', display: 'inline-block' }}>
+          View logs
+        </Link>
+      </article>
+    )
+  }
+
+  return (
+    <article className="card">
+      <h2>Log Today's Mood</h2>
+      {status === 'done' ? (
+        <p className="muted">Mood logged! {selectedMood ? MOOD_EMOJIS[selectedMood] : ''}</p>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            {([1, 2, 3, 4, 5] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setSelectedMood(m)}
+                style={{
+                  fontSize: '1.5rem',
+                  background: 'none',
+                  border: selectedMood === m ? '2px solid var(--color-accent, #6366f1)' : '2px solid transparent',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  lineHeight: 1,
+                }}
+                aria-label={`Mood ${m}`}
+              >
+                {MOOD_EMOJIS[m]}
+              </button>
+            ))}
+          </div>
+          <textarea
+            className="field"
+            placeholder="Optional note…"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            style={{ width: '100%', marginBottom: '0.5rem', resize: 'vertical' }}
+          />
+          {status === 'error' && <p className="muted" style={{ color: 'red', marginBottom: '0.5rem' }}>Failed to save. Try again.</p>}
+          <button
+            type="submit"
+            className="chip"
+            disabled={!selectedMood || status === 'saving'}
+          >
+            {status === 'saving' ? 'Saving…' : 'Save mood'}
+          </button>
+        </form>
+      )}
+    </article>
+  )
 }
 
 export function DashboardPage() {
@@ -221,6 +351,9 @@ export function DashboardPage() {
           </div>
         )}
       </article>
+
+      {/* Quick Mood Log Widget */}
+      <QuickLogWidget userId={user.id} />
     </section>
   )
 }
