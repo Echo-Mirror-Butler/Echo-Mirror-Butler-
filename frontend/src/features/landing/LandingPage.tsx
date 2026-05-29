@@ -62,10 +62,20 @@ function useReveal() {
     const el = ref.current
     if (!el) return
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { el.classList.add('is-visible'); observer.disconnect() } },
-      { threshold: 0.08 },
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('is-visible')
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.08, rootMargin: '0px 0px -20px 0px' },
     )
     observer.observe(el)
+    // Fallback: if element is already fully in view on mount, reveal it immediately.
+    if (el.getBoundingClientRect().top < window.innerHeight) {
+      el.classList.add('is-visible')
+      observer.disconnect()
+    }
     return () => observer.disconnect()
   }, [])
   return ref
