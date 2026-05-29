@@ -701,9 +701,7 @@ export function WalletPage() {
                 (historyQuery.data?.rows ?? []).map((row) => (
                   <tr key={row.id}>
                     <td>{formatDateTime(row.created_at)}</td>
-                    <td>
-                      {formatRewardReason(row.reason)} {formatEchoAmount(row.amount)}
-                    </td>
+                    <td>{formatRewardReason(row.reason)}</td>
                     <td className={row.amount >= 0 ? 'amount-plus' : 'amount-minus'}>
                       {formatEchoAmount(row.amount)}
                     </td>
