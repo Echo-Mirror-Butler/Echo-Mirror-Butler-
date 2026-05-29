@@ -417,7 +417,7 @@ export function WalletPage() {
                   Public key: {publicKey.slice(0, 14)}…{publicKey.slice(-4)}
                 </p>
                 <button type="button" className="secondary" onClick={() => void handleCopyWalletAddress()}>
-                  {copiedWalletAddress ? 'Copied' : 'Copy wallet address'}
+                  {copiedWalletAddress ? 'Copied' : 'Copy'}
                 </button>
               </div>
             ) : (
