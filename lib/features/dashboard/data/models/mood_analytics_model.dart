@@ -175,8 +175,6 @@ class MoodAnalyticsModel {
 
     return trend;
   }
-
-
 }
 
 /// Data point for mood charts

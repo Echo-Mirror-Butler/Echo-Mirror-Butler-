@@ -244,7 +244,6 @@ void main() {
 
   group('getFutureLetters', () {
     late MockSupabaseQueryBuilder queryBuilder;
-    late MockPostgrestFilterBuilder filterBuilder;
 
     void stubChain(Future<PostgrestList> result) {
       final fakeBuilder = FakeFutureLettersBuilder(result);
@@ -254,7 +253,6 @@ void main() {
 
     setUp(() {
       queryBuilder = MockSupabaseQueryBuilder();
-      filterBuilder = MockPostgrestFilterBuilder();
     });
 
     test('returns empty list when table is empty', () async {

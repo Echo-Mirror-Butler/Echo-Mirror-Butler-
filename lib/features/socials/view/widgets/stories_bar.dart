@@ -78,7 +78,7 @@ class _StoriesBarState extends State<StoriesBar>
         lifecycleState == AppLifecycleState.inactive;
     final shouldAnimate =
         widget.liveSessions.isNotEmpty &&
-        TickerMode.of(context) &&
+        TickerMode.valuesOf(context).enabled &&
         isAppVisible;
 
     if (shouldAnimate) {

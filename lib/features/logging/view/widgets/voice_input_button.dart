@@ -187,10 +187,10 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
             }
           }
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
-        localeId: 'en_US',
         listenOptions: stt.SpeechListenOptions(
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+          localeId: 'en_US',
           cancelOnError: true,
           partialResults: true,
         ),
@@ -242,7 +242,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           : AppTheme.primaryColor,
       child: _isListening
           ? _buildListeningState()
-          : Icon(FontAwesomeIcons.microphone.data, color: Colors.white),
+          : FaIcon(FontAwesomeIcons.microphone, color: Colors.white),
     );
   }
 
@@ -261,7 +261,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     // Generate mock transcription
     final mockText =
         'This is a mock transcription. On a real device with microphone access, '
-        'this would be your spoken words. Try saying: "I had a great day today, feeling positive and energized!"';
+        'this would be your spoken words. Try saying: "I had a great day today, '
+        'feeling positive and energized!"';
 
     setState(() {
       _isListening = false;
@@ -275,7 +276,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Mock transcription (speech_to_text not available on this platform)',
+            'Mock transcription (speech_to_text not available on this '
+            'platform)',
           ),
           duration: Duration(seconds: 2),
         ),
@@ -304,11 +306,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           },
         ),
         // Microphone icon
-        Icon(
-          FontAwesomeIcons.microphoneLines.data,
-          color: Colors.white,
-          size: 24,
-        ),
+        FaIcon(FontAwesomeIcons.microphoneLines, color: Colors.white, size: 24),
       ],
     );
   }
@@ -346,8 +344,8 @@ class VoiceInputOverlay extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Center(
-                child: Icon(
-                  FontAwesomeIcons.waveSquare.data,
+                child: FaIcon(
+                  FontAwesomeIcons.waveSquare,
                   size: 48,
                   color: AppTheme.primaryColor,
                 ),
@@ -371,7 +369,7 @@ class VoiceInputOverlay extends StatelessWidget {
             // Stop button
             ElevatedButton.icon(
               onPressed: onStop,
-              icon: Icon(FontAwesomeIcons.stop.data),
+              icon: FaIcon(FontAwesomeIcons.stop),
               label: const Text('Stop'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.errorColor,

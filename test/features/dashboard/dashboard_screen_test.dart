@@ -113,7 +113,10 @@ void main() {
     );
   }
 
-  AiInsightModel createAiInsight({required String futureLetter, int? stressLevel}) {
+  AiInsightModel createAiInsight({
+    required String futureLetter,
+    int? stressLevel,
+  }) {
     return AiInsightModel(
       prediction: 'Test prediction',
       suggestions: const ['Suggestion 1', 'Suggestion 2'],
@@ -223,7 +226,14 @@ void main() {
   testWidgets('AI insight section renders when insight is available', (
     tester,
   ) async {
-    final insight = createAiInsight(futureLetter: 'Letter body', stressLevel: 1);
+    final logs = <LogEntryModel>[
+      createLog(userId: userId, date: today(), mood: 4),
+    ];
+
+    final insight = createAiInsight(
+      futureLetter: 'Letter body',
+      stressLevel: 1,
+    );
 
     await tester.pumpWidget(
       buildTestScreen(
@@ -277,6 +287,10 @@ void main() {
   testWidgets('future letter card renders when letter is available', (
     tester,
   ) async {
+    final logs = <LogEntryModel>[
+      createLog(userId: userId, date: today(), mood: 4),
+    ];
+
     const letterText = 'Test future letter body';
     final insight = createAiInsight(futureLetter: letterText, stressLevel: 1);
 

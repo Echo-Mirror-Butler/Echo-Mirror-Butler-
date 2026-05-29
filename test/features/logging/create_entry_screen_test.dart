@@ -90,7 +90,10 @@ void main() {
       expect(find.text('Create Entry'), findsOneWidget);
 
       // Check for voice input button
-      expect(find.byIcon(FontAwesomeIcons.microphone.data), findsAtLeastNWidgets(1));
+      expect(
+        find.byIcon(FontAwesomeIcons.microphone.data),
+        findsAtLeastNWidgets(1),
+      );
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(methodChannel, null);
@@ -225,7 +228,10 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
 
       // Check for voice input button (floating action button with mic icon)
-      expect(find.byIcon(FontAwesomeIcons.microphone.data), findsAtLeastNWidgets(1));
+      expect(
+        find.byIcon(FontAwesomeIcons.microphone.data),
+        findsAtLeastNWidgets(1),
+      );
 
       // Check for the Voice button text in the notes section
       expect(find.text('Voice'), findsOneWidget);
