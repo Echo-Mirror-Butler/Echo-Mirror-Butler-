@@ -229,7 +229,7 @@ void main() {
     final logs = <LogEntryModel>[
       createLog(userId: userId, date: today(), mood: 4),
     ];
-    
+
     final insight = createAiInsight(
       futureLetter: 'Letter body',
       stressLevel: 1,
@@ -290,7 +290,7 @@ void main() {
     final logs = <LogEntryModel>[
       createLog(userId: userId, date: today(), mood: 4),
     ];
-    
+
     const letterText = 'Test future letter body';
     final insight = createAiInsight(futureLetter: letterText, stressLevel: 1);
 
