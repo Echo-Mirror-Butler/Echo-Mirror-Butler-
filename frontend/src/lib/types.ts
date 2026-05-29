@@ -6,8 +6,16 @@ export type AppUser = {
 export type WalletRecord = {
   id: string
   user_id: string
-  public_key: string
+  public_key: string | null
   balance?: number | null
+}
+
+export type EchoReward = {
+  id: string
+  user_id: string
+  amount: number
+  reason: string
+  created_at: string
 }
 
 export type GiftTransaction = {

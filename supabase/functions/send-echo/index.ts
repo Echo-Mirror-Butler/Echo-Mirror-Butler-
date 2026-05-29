@@ -2,7 +2,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as StellarSdk from 'npm:@stellar/stellar-sdk';
 
 type SendEchoPayload = {
-  recipient_user_id: string;
+  recipient_id?: string;
+  recipient_user_id?: string;
   amount: number;
   message?: string;
 };
@@ -135,13 +136,14 @@ Deno.serve(async (req) => {
     }
 
     const payload = (await req.json()) as SendEchoPayload;
-    const { recipient_user_id, amount, message } = payload;
+    const { recipient_id, recipient_user_id, amount, message } = payload;
+    const recipientUserId = recipient_id ?? recipient_user_id;
 
-    if (!recipient_user_id || typeof recipient_user_id !== 'string') {
-      return jsonResponse({ error: 'recipient_user_id is required' }, 400);
+    if (!recipientUserId || typeof recipientUserId !== 'string') {
+      return jsonResponse({ error: 'recipient_id is required' }, 400);
     }
 
-    if (recipient_user_id === user.id) {
+    if (recipientUserId === user.id) {
       return jsonResponse({ error: 'Cannot send ECHO to yourself' }, 400);
     }
 
@@ -166,7 +168,7 @@ Deno.serve(async (req) => {
       supabaseAdmin
         .from('user_wallets')
         .select('public_key')
-        .eq('user_id', recipient_user_id)
+        .eq('user_id', recipientUserId)
         .maybeSingle(),
     ]);
 
@@ -236,7 +238,7 @@ Deno.serve(async (req) => {
       .from('gift_transactions')
       .insert({
         sender_user_id: user.id,
-        recipient_user_id,
+        recipient_user_id: recipientUserId,
         echo_amount: amount,
         stellar_tx_hash: txHash,
         message: message || null,
