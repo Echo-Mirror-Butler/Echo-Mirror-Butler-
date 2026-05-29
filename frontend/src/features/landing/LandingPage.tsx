@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useTheme } from '../../lib/use-theme'
 import './landing-page.css'
 
 const features = [
@@ -164,12 +165,53 @@ function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
 
 export function LandingPage() {
   const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
+  const [isOverDarkSection, setIsOverDarkSection] = useState(true)
+
+  useEffect(() => {
+    if (resolvedTheme !== 'light') {
+      setIsOverDarkSection(true)
+      return
+    }
+
+    const darkSections = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.lp-hero, .lp-stellar-section, .lp-wallet-section, .lp-cta-section, .lp-footer',
+      ),
+    )
+    const navHeight = 64
+    let frameId: number | null = null
+
+    const checkNavBackground = () => {
+      frameId = null
+      const isOverDark = darkSections.some((section) => {
+        const rect = section.getBoundingClientRect()
+        return rect.top < navHeight && rect.bottom > 0
+      })
+      setIsOverDarkSection(isOverDark)
+    }
+
+    const scheduleCheck = () => {
+      if (frameId !== null) return
+      frameId = window.requestAnimationFrame(checkNavBackground)
+    }
+
+    checkNavBackground()
+    window.addEventListener('scroll', scheduleCheck, { passive: true })
+    window.addEventListener('resize', scheduleCheck)
+
+    return () => {
+      window.removeEventListener('scroll', scheduleCheck)
+      window.removeEventListener('resize', scheduleCheck)
+      if (frameId !== null) window.cancelAnimationFrame(frameId)
+    }
+  }, [resolvedTheme])
 
   return (
     <div className="lp-root">
 
       {/* ── Nav ── */}
-      <nav className="lp-nav">
+      <nav className={`lp-nav ${isOverDarkSection ? 'lp-nav--dark' : 'lp-nav--light'}`}>
         <div className="lp-nav-logo">
           <img src="/app-icon.png" alt="EchoMirror" className="lp-nav-icon" />
           <span className="lp-nav-wordmark">EchoMirror</span>

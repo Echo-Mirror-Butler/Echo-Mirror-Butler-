@@ -162,6 +162,39 @@ export function DashboardPage() {
 
   return (
     <section className="feature-grid">
+      {/* Log Today's Mood button */}
+      <article className="card full-width" style={{ gridColumn: '1 / -1', padding: '0.75rem 1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem' }}>
+          <div>
+            <strong style={{ fontSize: '1rem' }}>How are you feeling today?</strong>
+            <p className="muted" style={{ margin: '0.15rem 0 0', fontSize: '0.85rem' }}>
+              Log your mood to track your emotional journey
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const today = new Date().toISOString().slice(0, 10)
+              const { data } = await supabase
+                .from('log_entries')
+                .select('id')
+                .eq('user_id', user.id)
+                .gte('date', `${today}T00:00:00.000Z`)
+                .lte('date', `${today}T23:59:59.999Z`)
+                .maybeSingle()
+              if (data) {
+                navigate(`/logs/${data.id}/edit`)
+              } else {
+                navigate(`/logs/new?date=${today}`)
+              }
+            }}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            Log Today's Mood
+          </button>
+        </div>
+      </article>
+
       {/* Mood Summary Card - spans 2 columns */}
       <article className="card">
         <div className="card-header">
