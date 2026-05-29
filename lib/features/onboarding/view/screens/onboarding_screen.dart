@@ -96,8 +96,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         if (!mounted) return;
         context.go('/login');
       } catch (e2) {
-          debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
-        }
+        debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
+      }
     }
   }
 

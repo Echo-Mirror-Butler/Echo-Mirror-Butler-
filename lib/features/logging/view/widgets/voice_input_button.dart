@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt
+import 'package:speech_to_text/speech_to_text.dart'
+    as stt
     show SpeechListenOptions, SpeechToText;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,7 +29,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
   bool _isListening = false;
   bool _isAvailable = false;
   bool _hasInitialized = false; // Track if we've tried to initialize
-  bool _hasPermanentError = false; // Track if we've encountered a permanent error
+  bool _hasPermanentError =
+      false; // Track if we've encountered a permanent error
   String _transcription = '';
   late AnimationController _pulseController;
   late AnimationController _waveController;
@@ -235,8 +237,9 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     // Always show button - will initialize speech on first press
     return FloatingActionButton(
       onPressed: _isListening ? _stopListening : _startListening,
-      backgroundColor:
-          _isListening ? AppTheme.errorColor : AppTheme.primaryColor,
+      backgroundColor: _isListening
+          ? AppTheme.errorColor
+          : AppTheme.primaryColor,
       child: _isListening
           ? _buildListeningState()
           : Icon(FontAwesomeIcons.microphone, color: Colors.white),
