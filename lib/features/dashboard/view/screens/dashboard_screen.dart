@@ -198,7 +198,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
                       // Mood streak card
-                      MoodStreakCard(streak: streakState.currentStreak),
+                      const MoodStreakCard(),
                       const SizedBox(height: 8),
                       // ECHO Balance card
                       if (authState.isAuthenticated && authState.user != null)
