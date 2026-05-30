@@ -1,6 +1,6 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { LogEntry } from '../../lib/types'
@@ -8,22 +8,93 @@ import { formatDate, moodToEmoji, toDateInputValue } from '../../lib/date'
 
 const LOGS_PAGE_SIZE = 10
 const LOGS_SCROLL_STORAGE_KEY = 'echomirror:logs-scroll-y'
+const MOOD_EMOJIS = ['😞', '😕', '😐', '🙂', '😄'] as const
 
 type LogListResult = {
   rows: LogEntry[]
   count: number
+  totalCount: number
 }
 
-async function fetchLogs(userId: string, page: number): Promise<LogListResult> {
+type LogFilters = {
+  mood: number | null
+  habit: string
+  dateFrom: string
+  dateTo: string
+}
+
+function filtersToParams(f: LogFilters): Record<string, string> {
+  const p: Record<string, string> = {}
+  if (f.mood !== null) p.mood = String(f.mood)
+  if (f.habit) p.habit = f.habit
+  if (f.dateFrom) p.date_from = f.dateFrom
+  if (f.dateTo) p.date_to = f.dateTo
+  return p
+}
+
+function filtersFromSearchParams(sp: URLSearchParams): LogFilters {
+  return {
+    mood: (() => {
+      const v = Number(sp.get('mood'))
+      return Number.isInteger(v) && v >= 1 && v <= 5 ? v : null
+    })(),
+    habit: sp.get('habit') ?? '',
+    dateFrom: sp.get('date_from') ?? '',
+    dateTo: sp.get('date_to') ?? '',
+  }
+}
+
+function hasActiveFilters(f: LogFilters): boolean {
+  return f.mood !== null || f.habit !== '' || f.dateFrom !== '' || f.dateTo !== ''
+}
+
+async function fetchLogs(
+  userId: string,
+  page: number,
+  filters: LogFilters,
+): Promise<LogListResult> {
   const start = (page - 1) * LOGS_PAGE_SIZE
   const end = start + LOGS_PAGE_SIZE - 1
+  const hasFilters = hasActiveFilters(filters)
 
-  const { data, count, error } = await supabase
+  // Build the filtered query
+  let filteredQuery = supabase
     .from('log_entries')
     .select('*', { count: 'exact' })
     .eq('user_id', userId)
     .order('date', { ascending: false })
-    .range(start, end)
+
+  if (filters.mood !== null) {
+    filteredQuery = filteredQuery.eq('mood', filters.mood)
+  }
+
+  if (filters.habit) {
+    filteredQuery = filteredQuery.contains('habits', [filters.habit])
+  }
+
+  if (filters.dateFrom) {
+    const fromIso = new Date(`${filters.dateFrom}T00:00:00.000Z`).toISOString()
+    filteredQuery = filteredQuery.gte('date', fromIso)
+  }
+  if (filters.dateTo) {
+    const toIso = new Date(`${filters.dateTo}T23:59:59.999Z`).toISOString()
+    filteredQuery = filteredQuery.lte('date', toIso)
+  }
+
+  // Fetch total (unfiltered) count in parallel when filters are active
+  let totalCount = 0
+  if (hasFilters) {
+    const { count: unfilteredCount, error: countError } = await supabase
+      .from('log_entries')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+
+    if (!countError) {
+      totalCount = unfilteredCount ?? 0
+    }
+  }
+
+  const { data, count, error } = await filteredQuery.range(start, end)
 
   if (error) {
     throw error
@@ -35,7 +106,36 @@ async function fetchLogs(userId: string, page: number): Promise<LogListResult> {
       habits: Array.isArray(entry.habits) ? entry.habits : [],
     })),
     count: count ?? 0,
+    totalCount: hasFilters ? totalCount : (count ?? 0),
   }
+}
+
+async function fetchUserHabits(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .rpc('get_distinct_habits', { p_user_id: userId })
+
+  if (error) {
+    // Fallback: query all habits and flatten
+    const { data: fallback, error: fallbackError } = await supabase
+      .from('log_entries')
+      .select('habits')
+      .eq('user_id', userId)
+      .not('habits', 'is', null)
+
+    if (fallbackError) throw fallbackError
+
+    const all = new Set<string>()
+    for (const row of (fallback ?? []) as { habits: string[] }[]) {
+      if (Array.isArray(row.habits)) {
+        for (const h of row.habits) {
+          if (h) all.add(h)
+        }
+      }
+    }
+    return [...all].sort()
+  }
+
+  return (data ?? []) as string[]
 }
 
 async function findExistingLogIdForDate(userId: string, dateValue: string): Promise<string | null> {
@@ -63,12 +163,43 @@ export function LogsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
+  const [habitAutocompleteOpen, setHabitAutocompleteOpen] = useState(false)
+  const habitInputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<HTMLDivElement>(null)
+
+  // Parse filters from URL
+  const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams])
 
   const pageParam = Number(searchParams.get('page') ?? '1')
   const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1
 
+  const setFilters = (next: Partial<LogFilters>) => {
+    const merged = { ...filters, ...next }
+    const nextParams = new URLSearchParams()
+
+    // Set filter params
+    const fp = filtersToParams(merged)
+    for (const [k, v] of Object.entries(fp)) {
+      nextParams.set(k, v)
+    }
+
+    // Reset to page 1 when filters change
+    setSearchParams(nextParams, { replace: true })
+  }
+
+  const clearFilters = () => {
+    setSearchParams(new URLSearchParams(), { replace: true })
+  }
+
   const setPage = (nextPage: number) => {
     const nextParams = new URLSearchParams(searchParams)
+
+    // Preserve filter params but update page
+    const fp = filtersToParams(filters)
+    for (const [k, v] of Object.entries(fp)) {
+      nextParams.set(k, v)
+    }
+
     if (nextPage <= 1) {
       nextParams.delete('page')
     } else {
@@ -126,13 +257,51 @@ export function LogsListPage() {
     }
   }
 
+  // Fetch user's distinct habits for autocomplete
+  const habitsQuery = useQuery({
+    queryKey: ['user-habits', user?.id],
+    queryFn: () => fetchUserHabits(user!.id),
+    enabled: Boolean(user?.id),
+    staleTime: 60_000,
+  })
+
+  const allUserHabits = habitsQuery.data ?? []
+
+  // Filter habits based on input
+  const filteredHabitSuggestions = useMemo(() => {
+    if (!filters.habit) return allUserHabits.slice(0, 20)
+    const q = filters.habit.toLowerCase()
+    return allUserHabits
+      .filter((h) => h.toLowerCase().includes(q))
+      .slice(0, 20)
+  }, [allUserHabits, filters.habit])
+
+  // Close autocomplete on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (
+        autocompleteRef.current &&
+        !autocompleteRef.current.contains(e.target as Node) &&
+        habitInputRef.current &&
+        !habitInputRef.current.contains(e.target as Node)
+      ) {
+        setHabitAutocompleteOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
   const logsQuery = useQuery({
-    queryKey: ['logs', user?.id, page],
-    queryFn: () => fetchLogs(user!.id, page),
+    queryKey: ['logs', user?.id, page, filters],
+    queryFn: () => fetchLogs(user!.id, page, filters),
     enabled: Boolean(user?.id),
     placeholderData: keepPreviousData,
   })
   const totalPages = Math.max(1, Math.ceil((logsQuery.data?.count ?? 0) / LOGS_PAGE_SIZE))
+  const hasFilters = hasActiveFilters(filters)
+  const displayedCount = logsQuery.data?.rows.length ?? 0
+  const totalCount = logsQuery.data?.totalCount ?? 0
 
   useEffect(() => {
     const savedScrollY = sessionStorage.getItem(LOGS_SCROLL_STORAGE_KEY)
@@ -149,6 +318,16 @@ export function LogsListPage() {
       setPage(totalPages)
     }
   }, [logsQuery.data, page, totalPages])
+
+  // Close autocomplete on Escape
+  useEffect(() => {
+    if (!habitAutocompleteOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHabitAutocompleteOpen(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [habitAutocompleteOpen])
 
   if (!user) {
     return null
@@ -179,6 +358,183 @@ export function LogsListPage() {
         </div>
         {exportError && <p className="error-text" style={{ padding: '0 1.5rem' }}>{exportError}</p>}
 
+        {/* ── Filter bar ── */}
+        <div style={{
+          padding: '0.75rem 1.5rem',
+          borderBottom: '1px solid var(--line)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          alignItems: 'flex-end',
+        }}>
+          {/* Mood filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <span className="field-label" style={{ fontSize: '0.75rem' }}>Mood</span>
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              {MOOD_EMOJIS.map((emoji, idx) => {
+                const value = idx + 1
+                const isActive = filters.mood === value
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFilters({ mood: isActive ? null : value })}
+                    aria-label={`Filter mood ${value}`}
+                    title={`Mood ${value}`}
+                    style={{
+                      fontSize: '1.15rem',
+                      padding: '0.35rem 0.5rem',
+                      minWidth: '36px',
+                      opacity: isActive ? 1 : 0.5,
+                      transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                      transition: 'opacity 0.15s, transform 0.15s',
+                      background: isActive ? 'var(--brand)' : 'var(--surface-soft)',
+                      border: isActive ? '2px solid var(--brand-strong)' : '1px solid var(--line)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Habit filter with autocomplete */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', position: 'relative' }}>
+            <span className="field-label" style={{ fontSize: '0.75rem' }}>Habit</span>
+            <input
+              ref={habitInputRef}
+              type="text"
+              value={filters.habit}
+              onChange={(e) => {
+                setFilters({ habit: e.target.value })
+                setHabitAutocompleteOpen(true)
+              }}
+              onFocus={() => setHabitAutocompleteOpen(true)}
+              placeholder="Filter by habit..."
+              style={{
+                width: '160px',
+                padding: '0.4rem 0.55rem',
+                fontSize: '0.85rem',
+                margin: 0,
+              }}
+            />
+            {habitAutocompleteOpen && filteredHabitSuggestions.length > 0 && (
+              <div
+                ref={autocompleteRef}
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 10,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--line)',
+                  borderRadius: '8px',
+                  boxShadow: 'var(--shadow)',
+                  maxHeight: '180px',
+                  overflowY: 'auto',
+                  marginTop: '2px',
+                }}
+              >
+                {filteredHabitSuggestions.map((habit) => (
+                  <button
+                    key={habit}
+                    type="button"
+                    onClick={() => {
+                      setFilters({ habit })
+                      setHabitAutocompleteOpen(false)
+                      habitInputRef.current?.blur()
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '0.45rem 0.65rem',
+                      fontSize: '0.85rem',
+                      background: 'transparent',
+                      border: 'none',
+                      borderRadius: 0,
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-soft)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {habit}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Date from */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <span className="field-label" style={{ fontSize: '0.75rem' }}>From</span>
+            <input
+              type="date"
+              value={filters.dateFrom}
+              onChange={(e) => setFilters({ dateFrom: e.target.value })}
+              style={{
+                padding: '0.4rem 0.55rem',
+                fontSize: '0.85rem',
+                width: '140px',
+                margin: 0,
+              }}
+            />
+          </div>
+
+          {/* Date to */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+            <span className="field-label" style={{ fontSize: '0.75rem' }}>To</span>
+            <input
+              type="date"
+              value={filters.dateTo}
+              onChange={(e) => setFilters({ dateTo: e.target.value })}
+              style={{
+                padding: '0.4rem 0.55rem',
+                fontSize: '0.85rem',
+                width: '140px',
+                margin: 0,
+              }}
+            />
+          </div>
+
+          {/* Clear filters */}
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              style={{
+                padding: '0.4rem 0.75rem',
+                fontSize: '0.82rem',
+                background: 'transparent',
+                border: '1px solid var(--line)',
+                borderRadius: '8px',
+                color: 'var(--muted)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* ── Filtered count ── */}
+        {hasFilters && logsQuery.data && (
+          <div style={{
+            padding: '0.5rem 1.5rem',
+            fontSize: '0.82rem',
+            color: 'var(--muted)',
+            borderBottom: '1px solid var(--line)',
+          }}>
+            Showing {displayedCount} of {totalCount} entries
+          </div>
+        )}
+
         <div className="list-stack">
           {logsQuery.data?.rows.map((entry) => (
             <Link
@@ -206,10 +562,12 @@ export function LogsListPage() {
 
           {logsQuery.isLoading || logsQuery.isFetching ? <div className="skeleton-line" /> : null}
           {!logsQuery.data?.rows.length && !logsQuery.isLoading ? (
-            <p className="muted">No log entries yet.</p>
+            <p className="muted" style={{ padding: '1rem 1.5rem' }}>
+              {hasFilters ? 'No entries match the current filters.' : 'No log entries yet.'}
+            </p>
           ) : null}
           {logsQuery.data?.rows.length && page >= totalPages && !logsQuery.isFetching ? (
-            <p className="muted">No more entries.</p>
+            <p className="muted" style={{ padding: '0.5rem 0' }}>No more entries.</p>
           ) : null}
         </div>
 
