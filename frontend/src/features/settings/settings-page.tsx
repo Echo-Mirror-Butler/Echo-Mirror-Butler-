@@ -313,9 +313,9 @@ export function SettingsPage() {
       await supabase.auth.updateUser({ data: { timezone } })
       setProfile((prev) => ({ ...prev, display_name: displayName.trim() || null, timezone }))
       await queryClient.invalidateQueries({ queryKey: ['user-profile', user.id] })
-      showToast('success', 'Profile updated successfully.')
+      showToast('Profile updated successfully.', 'success')
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'Failed to save profile.')
+      showToast(err instanceof Error ? err.message : 'Failed to save profile.', 'error')
     } finally {
       setProfileSaving(false)
     }
@@ -328,9 +328,9 @@ export function SettingsPage() {
       await upsertProfile(user.id, { avatar_url: url })
       setProfile((prev) => ({ ...prev, avatar_url: url }))
       await queryClient.invalidateQueries({ queryKey: ['user-profile', user.id] })
-      showToast('success', 'Avatar updated.')
+      showToast('Avatar updated.', 'success')
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'Avatar upload failed.')
+      showToast(err instanceof Error ? err.message : 'Avatar upload failed.', 'error')
     } finally {
       setAvatarUploading(false)
     }
@@ -346,11 +346,11 @@ export function SettingsPage() {
     try {
       const { error } = await supabase.rpc('delete_user')
       if (error) throw error
-      showToast('success', 'Account deleted. Goodbye!')
+      showToast('Account deleted. Goodbye!', 'success')
       await signOut()
       navigate('/login')
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'Account deletion failed.')
+      showToast(err instanceof Error ? err.message : 'Account deletion failed.', 'error')
     } finally {
       setDeleteLoading(false)
     }
