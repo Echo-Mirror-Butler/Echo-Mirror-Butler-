@@ -157,10 +157,10 @@ class ActiveSessionsStories extends StatelessWidget {
                       ),
                       child: session.hostAvatarUrl == null
                           ? Center(
-                              child: FaIcon(
+                              child: Icon(
                                 session.isVoiceOnly
-                                    ? FontAwesomeIcons.phone
-                                    : FontAwesomeIcons.video,
+                                    ? FontAwesomeIcons.phone.data
+                                    : FontAwesomeIcons.video.data,
                                 color: AppTheme.primaryColor,
                                 size: 24,
                               ),

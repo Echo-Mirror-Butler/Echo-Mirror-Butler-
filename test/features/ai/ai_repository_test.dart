@@ -2,7 +2,6 @@ import 'package:echomirror/features/ai/data/models/ai_insight_model.dart';
 import 'package:echomirror/features/ai/data/repositories/ai_repository.dart';
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:functions_client/functions_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

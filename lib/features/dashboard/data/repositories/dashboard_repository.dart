@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
-import '../../../logging/data/models/log_entry_model.dart';
 
 /// Repository for dashboard operations.
 /// Handles Supabase Edge Function calls for insights and predictions.
@@ -71,6 +70,52 @@ class DashboardRepository {
 
         final bestMoodEntry =
             moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
+          } else if (recentAvg < averageMood - 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-declining-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Trend Notice',
+              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          }
+        }
+
+        final bestMoodEntry =
+            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
+            insights.add(
+              InsightModel(
+                id: 'mood-improving-${now.millisecondsSinceEpoch}',
+                userId: userId,
+                title: 'Mood Improvement Detected',
+                description:
+                    'Your mood has been improving over the past week! Keep up the great work.',
+                date: now,
+                type: InsightType.mood,
+                createdAt: now,
+              ),
+            );
+          } else if (recentAvg < averageMood - 0.5) {
+            insights.add(
+              InsightModel(
+                id: 'mood-declining-${now.millisecondsSinceEpoch}',
+                userId: userId,
+                title: 'Mood Trend Notice',
+                description:
+                    'Your mood has been lower recently. Consider taking some time for self-care.',
+                date: now,
+                type: InsightType.mood,
+                createdAt: now,
+              ),
+            );
+          }
+        }
+
+        final bestMoodEntry = moodEntries.reduce(
+          (a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b,
+        );
         if (bestMoodEntry.mood != null && bestMoodEntry.mood! >= 4) {
           final localDate = bestMoodEntry.date.isUtc
               ? bestMoodEntry.date.toLocal()
@@ -84,6 +129,18 @@ class DashboardRepository {
             type: InsightType.mood,
             createdAt: now,
           ));
+          insights.add(
+            InsightModel(
+              id: 'best-mood-${bestMoodEntry.id}',
+              userId: userId,
+              title: 'Great Mood Day',
+              description:
+                  'You had an excellent mood on ${_formatDate(localDate)}. What made that day special?',
+              date: localDate,
+              type: InsightType.mood,
+              createdAt: now,
+            ),
+          );
         }
       }
 
@@ -109,6 +166,18 @@ class DashboardRepository {
             type: InsightType.habit,
             createdAt: now,
           ));
+          insights.add(
+            InsightModel(
+              id: 'top-habit-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Consistent Habit',
+              description:
+                  'You have logged "${topHabit.key}" ${topHabit.value} times. Consistency is key!',
+              date: now,
+              type: InsightType.habit,
+              createdAt: now,
+            ),
+          );
         }
 
         final localNow = now.isUtc ? now.toLocal() : now;
@@ -128,6 +197,33 @@ class DashboardRepository {
             userId: userId,
             title: 'Habit Variety',
             description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+            userId: userId,
+            title: 'Habit Variety',
+            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+          insights.add(
+            InsightModel(
+              id: 'habit-variety-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Habit Variety',
+              description:
+                  'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+              date: now,
+              type: InsightType.habit,
+              createdAt: now,
+            ),
+          );
+        }
+      }
+
+      final totalEntries = logEntries.length;
+      if (totalEntries >= 7) {
+        insights.add(
+          InsightModel(
+            id: 'milestone-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Logging Milestone',
+            description:
+                'You have logged $totalEntries entries! Your consistency is building valuable insights.',
             date: now,
             type: InsightType.habit,
             createdAt: now,
@@ -146,6 +242,29 @@ class DashboardRepository {
           type: InsightType.general,
           createdAt: now,
         ));
+        if (weekdayMoods.isNotEmpty) {
+          final bestWeekday = weekdayMoods.entries
+              .map(
+                (e) => MapEntry(
+                  e.key,
+                  e.value.reduce((a, b) => a + b) / e.value.length,
+                ),
+              )
+              .reduce((a, b) => a.value > b.value ? a : b);
+
+          insights.add(
+            InsightModel(
+              id: 'prediction-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Pattern Detected',
+              description:
+                  'Based on your logs, you tend to have better moods on ${_getWeekdayName(bestWeekday.key)}. Plan something special!',
+              date: now,
+              type: InsightType.prediction,
+              createdAt: now,
+            ),
+          );
+        }
       }
 
       insights.sort((a, b) => b.date.compareTo(a.date));
@@ -167,6 +286,7 @@ class DashboardRepository {
         body: {
           'recentLogs': logEntries.map((e) => e.toJson()).toList(),
         },
+        body: {'recentLogs': logEntries.map((e) => e.toJson()).toList()},
       );
 
       final result = response.data;
@@ -191,6 +311,30 @@ class DashboardRepository {
         ));
       }
 
+        debugPrint(
+          '[DashboardRepository] getPredictions: unexpected response type',
+        );
+        return [];
+      }
+
+      final now = _now();
+      final insights = <InsightModel>[];
+
+      final prediction = (result['prediction'] as String? ?? '').trim();
+      if (prediction.isNotEmpty) {
+        insights.add(
+          InsightModel(
+            id: 'prediction-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'AI Prediction',
+            description: prediction,
+            date: now,
+            type: InsightType.prediction,
+            createdAt: now,
+          ),
+        );
+      }
+
       final suggestions = result['suggestions'];
       if (suggestions is List) {
         for (var i = 0; i < suggestions.length; i++) {
@@ -205,6 +349,17 @@ class DashboardRepository {
             type: InsightType.general,
             createdAt: now,
           ));
+          insights.add(
+            InsightModel(
+              id: 'suggestion-$i-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Suggestion',
+              description: text,
+              date: now,
+              type: InsightType.general,
+              createdAt: now,
+            ),
+          );
         }
       }
 
@@ -219,6 +374,17 @@ class DashboardRepository {
           type: InsightType.general,
           createdAt: now,
         ));
+        insights.add(
+          InsightModel(
+            id: 'future-letter-ai-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'A Letter to Your Future Self',
+            description: futureLetter,
+            date: now,
+            type: InsightType.general,
+            createdAt: now,
+          ),
+        );
       }
 
       final calmingMessage = (result['calmingMessage'] as String? ?? '').trim();
@@ -232,6 +398,17 @@ class DashboardRepository {
           type: InsightType.mood,
           createdAt: now,
         ));
+        insights.add(
+          InsightModel(
+            id: 'calming-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Calming Thought',
+            description: calmingMessage,
+            date: now,
+            type: InsightType.mood,
+            createdAt: now,
+          ),
+        );
       }
 
       final music = result['musicRecommendations'];
@@ -250,6 +427,17 @@ class DashboardRepository {
             type: InsightType.general,
             createdAt: now,
           ));
+          insights.add(
+            InsightModel(
+              id: 'music-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Music for Your Mood',
+              description: tracks.join('\n'),
+              date: now,
+              type: InsightType.general,
+              createdAt: now,
+            ),
+          );
         }
       }
 
@@ -315,6 +503,18 @@ class DashboardRepository {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -323,6 +523,13 @@ class DashboardRepository {
     const weekdays = [
       'Monday', 'Tuesday', 'Wednesday', 'Thursday',
       'Friday', 'Saturday', 'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     return weekdays[weekday - 1];
   }

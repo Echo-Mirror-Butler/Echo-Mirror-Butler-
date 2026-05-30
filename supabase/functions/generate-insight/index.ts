@@ -16,7 +16,19 @@ serve(async (req) => {
 
     if (!apiKey) throw new Error('GEMINI_API_KEY is not set')
 
-    const prompt = `Analyze these recent logs and generate a structured JSON response with prediction, suggestions, futureLetter, stressLevel, calmingMessage, musicRecommendations. Logs: ${JSON.stringify(recentLogs)}`
+    const prompt = `Analyze these recent logs and generate a structured JSON response with:
+- prediction: concise paragraph
+- suggestions: string[]
+- futureLetter: string
+- stressLevel: number from 0 to 5
+- calmingMessage: string
+- musicRecommendations: string[]
+- moodDrivers: array of { label: string, percentage: number } where percentages total around 100
+- bestTimeOfDay: one of Morning, Afternoon, Evening, Night
+- worstTimeOfDay: one of Morning, Afternoon, Evening, Night
+- recommendations: actionable recommendation strings
+
+Logs: ${JSON.stringify(recentLogs)}`
 
     // Call Gemini
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {

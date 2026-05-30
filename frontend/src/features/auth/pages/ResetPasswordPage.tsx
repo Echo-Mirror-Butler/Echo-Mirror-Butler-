@@ -1,120 +1,92 @@
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
-import type { ResetPasswordCredentials } from '@/types/auth'
+import { supabase } from '../../../lib/supabase'
+import '../../landing/landing-page.css'
 
 export function ResetPasswordPage() {
-  const [credentials, setCredentials] = useState<ResetPasswordCredentials>({
-    email: '',
-  })
-  const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const validateForm = (): string | null => {
-    if (!credentials.email) return 'Email is required'
-    if (!credentials.email.includes('@')) return 'Invalid email address'
-    return null
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError('')
-    setSuccess(false)
-
-    const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        credentials.email,
-        {
-          redirectTo: `${window.location.origin}/update-password`,
-        }
-      )
-
-      if (resetError) throw resetError
-
-      setSuccess(true)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset email')
-    } finally {
-      setIsLoading(false)
-    }
+    setError(null)
+    if (!email.includes('@')) { setError('Enter a valid email address'); return }
+    setIsSubmitting(true)
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/update-password`,
+    })
+    setIsSubmitting(false)
+    if (err) { setError(err.message) } else { setSuccess(true) }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="text-3xl font-bold text-center text-primary">
-            Reset Password
-          </h2>
-          <p className="mt-2 text-center text-gray-600">
-            Enter your email to receive a password reset link
-          </p>
+    <div className="lp-auth-overlay">
+      <div className="lp-auth-left">
+        <div className="lp-auth-mesh" />
+        <div className="lp-auth-lines">
+          <div className="lp-auth-line" />
+          <div className="lp-auth-line" />
+          <div className="lp-auth-line" />
         </div>
 
-        {success ? (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-6 rounded">
-            <p className="font-medium mb-2">Check your email</p>
-            <p className="text-sm">
-              We've sent a password reset link to {credentials.email}. Click the
-              link in the email to set your new password.
-            </p>
-            <div className="mt-4">
-              <Link
-                to="/login"
-                className="text-primary hover:text-primary-600 font-medium"
-              >
-                Back to login
-              </Link>
+        <div className="lp-auth-brand">
+          <div className="lp-auth-mark">
+            <img src="/app-icon.png" alt="EchoMirror" />
+          </div>
+          <span className="lp-auth-wordmark">EchoMirror</span>
+        </div>
+
+        <div className="lp-auth-hero-copy">
+          <div className="lp-auth-hero-eyebrow">Account recovery</div>
+          <h2 className="lp-auth-hero-title">
+            Locked out?<br />
+            <em>No worries.</em>
+          </h2>
+          <p className="lp-auth-hero-body">
+            We'll send a secure link to your email. Your data, logs, and
+            ECHO balance are all safe and waiting for you.
+          </p>
+        </div>
+      </div>
+
+      <div className="lp-auth-right">
+        <div className="lp-auth-card">
+          <h2 className="lp-auth-card-title">Reset password</h2>
+          <p className="lp-auth-card-sub">We'll email you a secure reset link.</p>
+
+          {success ? (
+            <div className="lp-auth-success">
+              <strong>Check your inbox</strong>
+              A reset link was sent to <strong>{email}</strong>. Click it to set a new password — it expires in 1 hour.
+              <div style={{ marginTop: '1rem' }}>
+                <Link to="/login" style={{ color: '#1463ff', fontWeight: 500, fontSize: '0.82rem' }}>
+                  ← Back to sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={onSubmit} className="lp-auth-form">
+              <div className="lp-auth-field">
+                <label className="lp-auth-label" htmlFor="rp-email">Email</label>
+                <input id="rp-email" className="lp-auth-input" type="email" required
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com" autoComplete="email" />
+              </div>
+              {error && <div className="lp-auth-error">{error}</div>}
+              <button type="submit" className="lp-auth-submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending…' : 'Send reset link'}
+              </button>
+            </form>
+          )}
+
+          <div className="lp-auth-links">
+            <div className="lp-auth-link-row">
+              <Link to="/login">← Back to sign in</Link>
             </div>
           </div>
-        ) : (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <Input
-              label="Email"
-              type="email"
-              value={credentials.email}
-              onChange={(e) =>
-                setCredentials({ ...credentials, email: e.target.value })
-              }
-              error={error}
-              placeholder="you@example.com"
-            />
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              isLoading={isLoading}
-              className="w-full"
-            >
-              Send Reset Link
-            </Button>
-
-            <div className="text-center">
-              <Link
-                to="/login"
-                className="text-sm text-primary hover:text-primary-600"
-              >
-                Back to login
-              </Link>
-            </div>
-          </form>
-        )}
+        </div>
       </div>
     </div>
   )

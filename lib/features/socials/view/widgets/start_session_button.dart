@@ -38,7 +38,11 @@ class StartSessionButton extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: FaIcon(FontAwesomeIcons.plus, color: Colors.white, size: 32),
+            child: Icon(
+              FontAwesomeIcons.plus.data,
+              color: Colors.white,
+              size: 32,
+            ),
           ),
         ),
       ),

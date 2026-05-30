@@ -97,15 +97,15 @@ Widget _buildScreenWithRouter({MockAuthRepository? authRepo}) {
   final router = GoRouter(
     initialLocation: '/settings',
     routes: [
-      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/settings', builder: (_, gs) => const SettingsScreen()),
       GoRoute(
         path: '/settings/change-password',
-        builder: (_, __) =>
+        builder: (_, gs) =>
             const Scaffold(body: Text('Change Password Screen')),
       ),
       GoRoute(
         path: '/gift/:userId',
-        builder: (_, __) => const Scaffold(body: Text('Gift Screen')),
+        builder: (_, gs) => const Scaffold(body: Text('Gift Screen')),
       ),
     ],
   );
@@ -175,7 +175,7 @@ void main() {
 
     expect(find.text('System Theme'), findsOneWidget);
 
-    // There are two switches in the Appearance card — System Theme is second
+    // There are two switches in the Appearance card â€” System Theme is second
     final switches = tester.widgetList<Switch>(find.byType(Switch)).toList();
     expect(switches.length, greaterThanOrEqualTo(2));
 
