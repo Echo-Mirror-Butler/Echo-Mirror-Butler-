@@ -21,7 +21,7 @@ BEGIN
     FROM (
         SELECT DISTINCT created_at::date AS log_date
         FROM mood_logs
-        WHERE user_id = p_user_id
+        WHERE mood_logs.user_id = p_user_id
         ORDER BY created_at::date DESC
     ) d;
 

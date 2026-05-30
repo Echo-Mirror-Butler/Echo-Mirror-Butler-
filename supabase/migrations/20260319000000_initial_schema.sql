@@ -254,6 +254,29 @@ create policy "Authenticated users can create mood pin links"
   with check (auth.uid() = user_id);
 
 -- ============================================================
+-- 10. AI INSIGHTS
+-- ============================================================
+create table public.ai_insights (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  prediction text not null,
+  suggestions jsonb not null default '[]',
+  future_letter text not null,
+  stress_level int check (stress_level between 0 and 5),
+  created_at timestamptz not null default now()
+);
+
+alter table public.ai_insights enable row level security;
+
+create policy "Users can read own ai insights"
+  on public.ai_insights for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own ai insights"
+  on public.ai_insights for insert
+  with check (auth.uid() = user_id);
+
+-- ============================================================
 -- HELPER RPC FUNCTIONS
 -- ============================================================
 

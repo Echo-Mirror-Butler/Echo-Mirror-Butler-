@@ -95,7 +95,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.go('/login'),
         ),
         title: const Text('Reset Password'),
@@ -111,7 +111,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Icon(
-                    FontAwesomeIcons.key,
+                    FontAwesomeIcons.key.data,
                     size: 64,
                     color: AppTheme.primaryColor,
                   ),
@@ -133,12 +133,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     label: 'New Password',
                     hint: 'Enter new password',
                     obscureText: _obscurePassword,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
@@ -159,12 +159,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     label: 'Confirm Password',
                     hint: 'Confirm new password',
                     obscureText: _obscureConfirm,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
@@ -184,7 +184,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     onPressed: _isLoading ? null : _handleReset,
                     text: 'Reset Password',
                     isLoading: _isLoading,
-                    icon: FontAwesomeIcons.check,
+                    icon: FontAwesomeIcons.check.data,
                   ),
                 ],
               ),
