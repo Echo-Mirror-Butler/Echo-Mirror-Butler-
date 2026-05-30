@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
@@ -11,8 +11,8 @@ class DashboardRepository {
     this._loggingRepository, {
     SupabaseClient? supabaseClient,
     DateTime Function()? now,
-  }) : _supabase = supabaseClient,
-       _now = now ?? DateTime.now;
+  })  : _supabase = supabaseClient,
+        _now = now ?? DateTime.now;
 
   final LoggingRepository _loggingRepository;
   final SupabaseClient? _supabase;
@@ -32,7 +32,7 @@ class DashboardRepository {
       if (moodEntries.isNotEmpty) {
         final averageMood =
             moodEntries.map((e) => e.mood!).reduce((a, b) => a + b) /
-            moodEntries.length;
+                moodEntries.length;
 
         final localNow = now.isUtc ? now.toLocal() : now;
         final weekAgo = localNow.subtract(const Duration(days: 7));
@@ -44,8 +44,32 @@ class DashboardRepository {
         if (recentMoods.length >= 3) {
           final recentAvg =
               recentMoods.map((e) => e.mood!).reduce((a, b) => a + b) /
-              recentMoods.length;
+                  recentMoods.length;
           if (recentAvg > averageMood + 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-improving-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Improvement Detected',
+              description: 'Your mood has been improving over the past week! Keep up the great work.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          } else if (recentAvg < averageMood - 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-declining-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Trend Notice',
+              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          }
+        }
+
+        final bestMoodEntry =
+            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
             insights.add(
               InsightModel(
                 id: 'mood-improving-${now.millisecondsSinceEpoch}',
@@ -81,6 +105,15 @@ class DashboardRepository {
           final localDate = bestMoodEntry.date.isUtc
               ? bestMoodEntry.date.toLocal()
               : bestMoodEntry.date;
+          insights.add(InsightModel(
+            id: 'best-mood-${bestMoodEntry.id}',
+            userId: userId,
+            title: 'Great Mood Day',
+            description: 'You had an excellent mood on ${_formatDate(localDate)}. What made that day special?',
+            date: localDate,
+            type: InsightType.mood,
+            createdAt: now,
+          ));
           insights.add(
             InsightModel(
               id: 'best-mood-${bestMoodEntry.id}',
@@ -109,6 +142,15 @@ class DashboardRepository {
 
         final topHabit = sortedHabits.first;
         if (topHabit.value >= 5) {
+          insights.add(InsightModel(
+            id: 'top-habit-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Consistent Habit',
+            description: 'You have logged "${topHabit.key}" ${topHabit.value} times. Consistency is key!',
+            date: now,
+            type: InsightType.habit,
+            createdAt: now,
+          ));
           insights.add(
             InsightModel(
               id: 'top-habit-${now.millisecondsSinceEpoch}',
@@ -135,6 +177,11 @@ class DashboardRepository {
         }
 
         if (recentHabits.length >= 3) {
+          insights.add(InsightModel(
+            id: 'habit-variety-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Habit Variety',
+            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
           insights.add(
             InsightModel(
               id: 'habit-variety-${now.millisecondsSinceEpoch}',
@@ -160,26 +207,23 @@ class DashboardRepository {
             description:
                 'You have logged $totalEntries entries! Your consistency is building valuable insights.',
             date: now,
-            type: InsightType.general,
+            type: InsightType.habit,
             createdAt: now,
-          ),
-        );
+          ));
+        }
       }
 
-      // Generate predictions based on patterns
-      if (moodEntries.length >= 5) {
-        final weekdayMoods = <int, List<int>>{};
-        for (final entry in moodEntries) {
-          // Normalize date to local time for weekday calculation
-          final localDate = entry.date.isUtc
-              ? entry.date.toLocal()
-              : entry.date;
-          final weekday = localDate.weekday;
-          if (entry.mood != null) {
-            weekdayMoods.putIfAbsent(weekday, () => []).add(entry.mood!);
-          }
-        }
-
+      final totalEntries = logEntries.length;
+      if (totalEntries >= 7) {
+        insights.add(InsightModel(
+          id: 'milestone-${now.millisecondsSinceEpoch}',
+          userId: userId,
+          title: 'Logging Milestone',
+          description: 'You have logged $totalEntries entries! Your consistency is building valuable insights.',
+          date: now,
+          type: InsightType.general,
+          createdAt: now,
+        ));
         if (weekdayMoods.isNotEmpty) {
           final bestWeekday = weekdayMoods.entries
               .map(
@@ -221,11 +265,34 @@ class DashboardRepository {
 
       final response = await _client.functions.invoke(
         'generate-insight',
+        body: {
+          'recentLogs': logEntries.map((e) => e.toJson()).toList(),
+        },
         body: {'recentLogs': logEntries.map((e) => e.toJson()).toList()},
       );
 
       final result = response.data;
       if (result is! Map<String, dynamic>) {
+        debugPrint('[DashboardRepository] getPredictions: unexpected response type');
+        return [];
+      }
+
+      final now = _now();
+      final insights = <InsightModel>[];
+
+      final prediction = (result['prediction'] as String? ?? '').trim();
+      if (prediction.isNotEmpty) {
+        insights.add(InsightModel(
+          id: 'prediction-${now.millisecondsSinceEpoch}',
+          userId: userId,
+          title: 'AI Prediction',
+          description: prediction,
+          date: now,
+          type: InsightType.prediction,
+          createdAt: now,
+        ));
+      }
+
         debugPrint(
           '[DashboardRepository] getPredictions: unexpected response type',
         );
@@ -255,6 +322,15 @@ class DashboardRepository {
         for (var i = 0; i < suggestions.length; i++) {
           final text = suggestions[i]?.toString().trim() ?? '';
           if (text.isEmpty) continue;
+          insights.add(InsightModel(
+            id: 'suggestion-$i-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Suggestion',
+            description: text,
+            date: now,
+            type: InsightType.general,
+            createdAt: now,
+          ));
           insights.add(
             InsightModel(
               id: 'suggestion-$i-${now.millisecondsSinceEpoch}',
@@ -271,6 +347,15 @@ class DashboardRepository {
 
       final futureLetter = (result['futureLetter'] as String? ?? '').trim();
       if (futureLetter.isNotEmpty) {
+        insights.add(InsightModel(
+          id: 'future-letter-ai-${now.millisecondsSinceEpoch}',
+          userId: userId,
+          title: 'A Letter to Your Future Self',
+          description: futureLetter,
+          date: now,
+          type: InsightType.general,
+          createdAt: now,
+        ));
         insights.add(
           InsightModel(
             id: 'future-letter-ai-${now.millisecondsSinceEpoch}',
@@ -286,6 +371,15 @@ class DashboardRepository {
 
       final calmingMessage = (result['calmingMessage'] as String? ?? '').trim();
       if (calmingMessage.isNotEmpty) {
+        insights.add(InsightModel(
+          id: 'calming-${now.millisecondsSinceEpoch}',
+          userId: userId,
+          title: 'Calming Thought',
+          description: calmingMessage,
+          date: now,
+          type: InsightType.mood,
+          createdAt: now,
+        ));
         insights.add(
           InsightModel(
             id: 'calming-${now.millisecondsSinceEpoch}',
@@ -306,6 +400,15 @@ class DashboardRepository {
             .where((s) => s.isNotEmpty)
             .toList();
         if (tracks.isNotEmpty) {
+          insights.add(InsightModel(
+            id: 'music-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Music for Your Mood',
+            description: tracks.join('\n'),
+            date: now,
+            type: InsightType.general,
+            createdAt: now,
+          ));
           insights.add(
             InsightModel(
               id: 'music-${now.millisecondsSinceEpoch}',
@@ -350,29 +453,22 @@ class DashboardRepository {
 
   InsightModel _mapFutureLetterToInsight(Map<String, dynamic> row) {
     final createdAt = _parseDateTime(
-      row['created_at'] ??
-          row['createdAt'] ??
-          row['delivery_date'] ??
-          row['date'],
+      row['created_at'] ?? row['createdAt'] ?? row['delivery_date'] ?? row['date'],
     );
     final date = _parseDateTime(
-      row['delivery_date'] ??
-          row['open_at'] ??
-          row['date'] ??
-          row['created_at'],
+      row['delivery_date'] ?? row['open_at'] ?? row['date'] ?? row['created_at'],
     );
     return InsightModel(
       id: row['id'].toString(),
       userId: (row['user_id'] ?? row['userId'] ?? '').toString(),
       title: (row['title'] ?? 'Future Letter').toString(),
-      description:
-          (row['content'] ??
-                  row['letter'] ??
-                  row['future_letter'] ??
-                  row['futureLetter'] ??
-                  row['description'] ??
-                  '')
-              .toString(),
+      description: (row['content'] ??
+              row['letter'] ??
+              row['future_letter'] ??
+              row['futureLetter'] ??
+              row['description'] ??
+              '')
+          .toString(),
       date: date,
       type: InsightType.general,
       createdAt: createdAt,
@@ -387,6 +483,8 @@ class DashboardRepository {
 
   String _formatDate(DateTime date) {
     const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
       'Jan',
       'Feb',
       'Mar',
@@ -405,6 +503,8 @@ class DashboardRepository {
 
   String _getWeekdayName(int weekday) {
     const weekdays = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+      'Friday', 'Saturday', 'Sunday',
       'Monday',
       'Tuesday',
       'Wednesday',
