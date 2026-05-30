@@ -114,8 +114,7 @@ export function MoodPinCommentsPanel({ pinId, onClose }: MoodPinCommentsPanelPro
 
       return { previousComments }
     },
-    onError: (err, newText, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (_err, _newText, context) => {
       if (context?.previousComments) {
         queryClient.setQueryData(['mood-pin-comments', pinId], context.previousComments)
       }
@@ -196,7 +195,7 @@ export function MoodPinCommentsPanel({ pinId, onClose }: MoodPinCommentsPanelPro
           )}
         </form>
 
-        <style jsx>{`
+        <style>{`
           .comments-panel-backdrop {
             position: fixed;
             top: 0;

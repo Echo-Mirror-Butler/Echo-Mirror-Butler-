@@ -22,7 +22,7 @@ class GiftButtonWidget extends ConsumerWidget {
 
     if (compact) {
       return IconButton(
-        icon: const Icon(Icons.card_giftcard_rounded),
+        icon: Icon(Icons.card_giftcard_rounded),
         color: AppTheme.primaryColor,
         tooltip: 'Send ECHO Gift',
         onPressed: () => _openGiftScreen(context),
@@ -31,8 +31,8 @@ class GiftButtonWidget extends ConsumerWidget {
 
     return OutlinedButton.icon(
       onPressed: () => _openGiftScreen(context),
-      icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-      label: Text('Gift ECHO  •  ${balance.toStringAsFixed(0)} available'),
+      icon: Icon(Icons.card_giftcard_rounded, size: 18),
+      label: Text('Gift ECHO  â€¢  ${balance.toStringAsFixed(0)} available'),
       style: OutlinedButton.styleFrom(
         foregroundColor: AppTheme.primaryColor,
         side: const BorderSide(color: AppTheme.primaryColor),

@@ -1,12 +1,13 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { LogEntry } from '../../lib/types'
 import { formatDate, moodToEmoji, toDateInputValue } from '../../lib/date'
 
 const LOGS_PAGE_SIZE = 10
+const LOGS_SCROLL_STORAGE_KEY = 'echomirror:logs-scroll-y'
 
 type LogListResult = {
   rows: LogEntry[]
@@ -59,9 +60,26 @@ async function findExistingLogIdForDate(userId: string, dateValue: string): Prom
 export function LogsListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [page, setPage] = useState(1)
+  const [searchParams, setSearchParams] = useSearchParams()
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
+
+  const pageParam = Number(searchParams.get('page') ?? '1')
+  const page = Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1
+
+  const setPage = (nextPage: number) => {
+    const nextParams = new URLSearchParams(searchParams)
+    if (nextPage <= 1) {
+      nextParams.delete('page')
+    } else {
+      nextParams.set('page', String(nextPage))
+    }
+    setSearchParams(nextParams)
+  }
+
+  const rememberScrollPosition = () => {
+    sessionStorage.setItem(LOGS_SCROLL_STORAGE_KEY, String(window.scrollY))
+  }
 
   const handleExport = async () => {
     if (!user) return
@@ -114,12 +132,27 @@ export function LogsListPage() {
     enabled: Boolean(user?.id),
     placeholderData: keepPreviousData,
   })
+  const totalPages = Math.max(1, Math.ceil((logsQuery.data?.count ?? 0) / LOGS_PAGE_SIZE))
+
+  useEffect(() => {
+    const savedScrollY = sessionStorage.getItem(LOGS_SCROLL_STORAGE_KEY)
+    if (!savedScrollY) {
+      return
+    }
+
+    sessionStorage.removeItem(LOGS_SCROLL_STORAGE_KEY)
+    requestAnimationFrame(() => window.scrollTo(0, Number(savedScrollY)))
+  }, [page])
+
+  useEffect(() => {
+    if (logsQuery.data && page > totalPages) {
+      setPage(totalPages)
+    }
+  }, [logsQuery.data, page, totalPages])
 
   if (!user) {
     return null
   }
-
-  const totalPages = Math.max(1, Math.ceil((logsQuery.data?.count ?? 0) / LOGS_PAGE_SIZE))
 
   return (
     <section className="feature-grid logs-grid">
@@ -148,7 +181,12 @@ export function LogsListPage() {
 
         <div className="list-stack">
           {logsQuery.data?.rows.map((entry) => (
-            <Link to={`/logs/${entry.id}/edit`} className="list-card" key={entry.id}>
+            <Link
+              to={`/logs/${entry.id}`}
+              className="list-card"
+              key={entry.id}
+              onClick={rememberScrollPosition}
+            >
               <div className="list-card-row">
                 <strong>{formatDate(entry.date)}</strong>
                 <span className="mood-chip">Mood {moodToEmoji(entry.mood)}</span>
@@ -166,9 +204,12 @@ export function LogsListPage() {
             </Link>
           ))}
 
-          {logsQuery.isLoading ? <div className="skeleton-line" /> : null}
+          {logsQuery.isLoading || logsQuery.isFetching ? <div className="skeleton-line" /> : null}
           {!logsQuery.data?.rows.length && !logsQuery.isLoading ? (
             <p className="muted">No log entries yet.</p>
+          ) : null}
+          {logsQuery.data?.rows.length && page >= totalPages && !logsQuery.isFetching ? (
+            <p className="muted">No more entries.</p>
           ) : null}
         </div>
 
@@ -176,7 +217,7 @@ export function LogsListPage() {
           <button
             type="button"
             disabled={page <= 1 || logsQuery.isFetching}
-            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            onClick={() => setPage(Math.max(1, page - 1))}
           >
             Prev
           </button>
@@ -186,7 +227,7 @@ export function LogsListPage() {
           <button
             type="button"
             disabled={page >= totalPages || logsQuery.isFetching}
-            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
           >
             Next
           </button>

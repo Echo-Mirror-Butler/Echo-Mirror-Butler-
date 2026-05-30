@@ -118,7 +118,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Icon(
-                    FontAwesomeIcons.userPlus,
+                    FontAwesomeIcons.userPlus.data,
                     size: 72,
                     color: AppTheme.primaryColor,
                   ),
@@ -139,7 +139,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     controller: _nameController,
                     label: 'Name (optional)',
                     hint: 'Enter your name',
-                    prefixIcon: FontAwesomeIcons.user,
+                    prefixIcon: FontAwesomeIcons.user.data,
                   ),
                   const SizedBox(height: 16),
                   CustomTextField(
@@ -147,7 +147,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     label: AppStrings.email,
                     hint: 'Enter your email',
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: FontAwesomeIcons.envelope,
+                    prefixIcon: FontAwesomeIcons.envelope.data,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
@@ -164,12 +164,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     label: AppStrings.password,
                     hint: 'Enter your password',
                     obscureText: _obscurePassword,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () {
                         setState(() {
@@ -194,7 +194,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         : _handleSignup,
                     text: AppStrings.signUp,
                     isLoading: authState.isLoading || _isProcessingSignup,
-                    icon: FontAwesomeIcons.userPlus,
+                    icon: FontAwesomeIcons.userPlus.data,
                   ),
                   const SizedBox(height: 12),
                   TextButton(

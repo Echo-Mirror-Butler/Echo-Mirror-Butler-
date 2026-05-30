@@ -40,6 +40,23 @@ cd Echo-Mirror-Butler-
 flutter pub get
 ```
 
+### Before pushing
+
+Run these from the repo root to ensure formatting, analysis, and tests pass:
+
+```bash
+dart format lib test backend   # fix formatting
+dart analyze lib test          # check for errors
+flutter test                   # run tests
+```
+
+> **Tip:** Enable the pre-push hook to catch formatting issues automatically:
+> ```bash
+> git config core.hooksPath .githooks
+> ```
+
+If the CI formatting check fails, run `dart format lib test backend` locally and commit the changes.
+
 ### Local Setup
 
 Run the app with the required `dart-define` env vars:

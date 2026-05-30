@@ -38,25 +38,25 @@ class _ProfessionalHelpScreenState
   final Map<String, Map<String, dynamic>> _helpCategories = {
     'general': {
       'title': 'General Mental Health',
-      'icon': FontAwesomeIcons.brain,
+      'icon': FontAwesomeIcons.brain.data,
       'color': const Color(0xFF6366F1),
       'description': 'General mental health support and counseling',
     },
     'anxiety': {
       'title': 'Anxiety & Stress',
-      'icon': FontAwesomeIcons.heartPulse,
+      'icon': FontAwesomeIcons.heartPulse.data,
       'color': const Color(0xFFEC4899),
       'description': 'Help with anxiety, stress, and panic disorders',
     },
     'depression': {
       'title': 'Depression',
-      'icon': FontAwesomeIcons.cloudRain,
+      'icon': FontAwesomeIcons.cloudRain.data,
       'color': const Color(0xFF8B5CF6),
       'description': 'Support for depression and mood disorders',
     },
     'crisis': {
       'title': 'Crisis Support',
-      'icon': FontAwesomeIcons.phoneVolume,
+      'icon': FontAwesomeIcons.phoneVolume.data,
       'color': const Color(0xFFEF4444),
       'description': 'Immediate crisis intervention and emergency support',
     },
@@ -304,7 +304,7 @@ class _ProfessionalHelpScreenState
                   child: Column(
                     children: [
                       Icon(
-                        FontAwesomeIcons.handHoldingHeart,
+                        FontAwesomeIcons.handHoldingHeart.data,
                         size: 48,
                         color: Theme.of(context).colorScheme.primary,
                       ),
@@ -442,7 +442,7 @@ class _ProfessionalHelpScreenState
                       Row(
                         children: [
                           Icon(
-                            FontAwesomeIcons.wandMagicSparkles,
+                            FontAwesomeIcons.wandMagicSparkles.data,
                             size: 18,
                             color: Theme.of(context).colorScheme.primary,
                           ),
@@ -514,7 +514,7 @@ class _ProfessionalHelpScreenState
                     child: Row(
                       children: [
                         Icon(
-                          FontAwesomeIcons.triangleExclamation,
+                          FontAwesomeIcons.triangleExclamation.data,
                           color: Theme.of(context).brightness == Brightness.dark
                               ? Colors.red.shade400
                               : Colors.red.shade700,
@@ -555,27 +555,27 @@ class _ProfessionalHelpScreenState
 
     switch (resource['type']) {
       case 'hotline':
-        icon = FontAwesomeIcons.phone;
+        icon = FontAwesomeIcons.phone.data;
         iconColor = Colors.red;
         break;
       case 'therapy':
-        icon = FontAwesomeIcons.userDoctor;
+        icon = FontAwesomeIcons.userDoctor.data;
         iconColor = Colors.blue;
         break;
       case 'organization':
-        icon = FontAwesomeIcons.buildingUser;
+        icon = FontAwesomeIcons.buildingUser.data;
         iconColor = Colors.purple;
         break;
       case 'app':
-        icon = FontAwesomeIcons.mobile;
+        icon = FontAwesomeIcons.mobile.data;
         iconColor = Colors.green;
         break;
       case 'directory':
-        icon = FontAwesomeIcons.addressBook;
+        icon = FontAwesomeIcons.addressBook.data;
         iconColor = Colors.orange;
         break;
       default:
-        icon = FontAwesomeIcons.link;
+        icon = FontAwesomeIcons.link.data;
         iconColor = Theme.of(context).colorScheme.onSurfaceVariant;
     }
 
@@ -642,7 +642,7 @@ class _ProfessionalHelpScreenState
                   ),
                 ),
                 Icon(
-                  FontAwesomeIcons.chevronRight,
+                  FontAwesomeIcons.chevronRight.data,
                   size: 16,
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                 ),
@@ -669,8 +669,8 @@ class _ProfessionalHelpScreenState
         });
       },
       backgroundColor: Theme.of(context).colorScheme.primary,
-      icon: FaIcon(
-        FontAwesomeIcons.commentDots,
+      icon: Icon(
+        FontAwesomeIcons.commentDots.data,
         color: Theme.of(context).colorScheme.onPrimary,
       ),
       label: Text(
@@ -732,8 +732,8 @@ class _ProfessionalHelpScreenState
                         shape: BoxShape.circle,
                       ),
                       child: Center(
-                        child: FaIcon(
-                          FontAwesomeIcons.robot,
+                        child: Icon(
+                          FontAwesomeIcons.robot.data,
                           color: theme.colorScheme.onPrimary,
                           size: 20,
                         ),

@@ -35,8 +35,8 @@ class PredictionCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    FontAwesomeIcons.wandMagicSparkles,
+                  child: Icon(
+                    FontAwesomeIcons.wandMagicSparkles.data,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -69,7 +69,7 @@ class PredictionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    FontAwesomeIcons.circleNodes,
+                    FontAwesomeIcons.circleNodes.data,
                     size: 20,
                     color: AppTheme.secondaryColor,
                   ),

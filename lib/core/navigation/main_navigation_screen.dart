@@ -23,19 +23,19 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
-      icon: FontAwesomeIcons.chartLine,
+      icon: FontAwesomeIcons.chartLine.data,
       label: 'Dashboard',
       route: '/dashboard',
       screen: const DashboardScreen(),
     ),
     NavigationItem(
-      icon: FontAwesomeIcons.book,
+      icon: FontAwesomeIcons.book.data,
       label: 'Logging',
       route: '/logging',
       screen: const LoggingScreen(),
     ),
     NavigationItem(
-      icon: FontAwesomeIcons.gear,
+      icon: FontAwesomeIcons.gear.data,
       label: 'Settings',
       route: '/settings',
       screen: const SettingsScreen(),
@@ -152,7 +152,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             onTabChange: _onItemTapped,
             tabs: [
               GButton(
-                icon: FontAwesomeIcons.chartLine,
+                icon: FontAwesomeIcons.chartLine.data,
                 text: 'Dashboard',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -160,7 +160,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
               GButton(
-                icon: FontAwesomeIcons.book,
+                icon: FontAwesomeIcons.book.data,
                 text: 'Logging',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -168,7 +168,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
               GButton(
-                icon: FontAwesomeIcons.gear,
+                icon: FontAwesomeIcons.gear.data,
                 text: 'Settings',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
