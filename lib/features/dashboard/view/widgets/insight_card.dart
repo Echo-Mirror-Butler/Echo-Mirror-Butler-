@@ -147,13 +147,13 @@ class InsightCard extends StatelessWidget {
   IconData _getIconForType(InsightType type) {
     switch (type) {
       case InsightType.prediction:
-        return FontAwesomeIcons.wandMagicSparkles;
+        return FontAwesomeIcons.wandMagicSparkles.data;
       case InsightType.habit:
-        return FontAwesomeIcons.repeat;
+        return FontAwesomeIcons.repeat.data;
       case InsightType.mood:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
       default:
-        return FontAwesomeIcons.lightbulb;
+        return FontAwesomeIcons.lightbulb.data;
     }
   }
 

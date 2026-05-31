@@ -7,6 +7,7 @@ import { useAuth } from "../lib/auth-context";
 import { WalletPage } from "../features/wallet/wallet-page";
 import { LogsListPage } from "../features/logs/logs-list-page";
 import { LogFormPage } from "../features/logs/log-form-page";
+import { LogDetailPage } from "../features/logs/log-detail-page";
 import { InsightsPage } from "../features/insights/insights-page";
 import { AnalyticsPage } from "../features/analytics/analytics-page";
 import { GlobalMirrorPage } from "../features/global-mirror/global-mirror-page";
@@ -104,9 +105,7 @@ export function AppRouter() {
       />
       <Route
         path="/update-password"
-        element={
-          user ? <Navigate to="/dashboard" replace /> : <UpdatePasswordPage />
-        }
+        element={<UpdatePasswordPage />}
       />
 
       <Route
@@ -119,6 +118,7 @@ export function AppRouter() {
         <Route path="/wallet" element={<WalletPage />} />
         <Route path="/logs" element={<LogsListPage />} />
         <Route path="/logs/new" element={<LogFormPage mode="create" />} />
+        <Route path="/logs/:id" element={<LogDetailPage />} />
         <Route path="/logs/:id/edit" element={<LogFormPage mode="edit" />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />

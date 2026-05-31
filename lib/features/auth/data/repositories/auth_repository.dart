@@ -68,7 +68,7 @@ class AuthRepository {
     }
   }
 
-  /// Complete signup — Supabase handles verification automatically via email link
+  /// Complete signup â€” Supabase handles verification automatically via email link
   Future<String> completeSignUp({
     required String accountRequestId,
     required String verificationCode,
