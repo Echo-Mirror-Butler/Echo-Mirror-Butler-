@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/themes/app_theme.dart';
@@ -51,7 +50,8 @@ class WalletScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh',
-              onPressed: () => ref.read(walletProvider.notifier).loadPublicKey(),
+              onPressed: () =>
+                  ref.read(walletProvider.notifier).loadPublicKey(),
             ),
         ],
       ),
@@ -60,21 +60,19 @@ class WalletScreen extends ConsumerWidget {
         child: walletState.isLoading
             ? const Center(child: CircularProgressIndicator())
             : walletState.error != null
-                ? _ErrorState(
-                    message: walletState.error!,
-                    onRetry: () =>
-                        ref.read(walletProvider.notifier).loadPublicKey(),
-                  )
-                : walletState.publicKey == null
-                    ? const _ErrorState(message: 'No wallet found.')
-                    : _WalletContent(
-                        publicKey: walletState.publicKey!,
-                        onCopy: () =>
-                            _copyToClipboard(context, walletState.publicKey!),
-                        onShowQr: () =>
-                            _showQrModal(context, walletState.publicKey!),
-                        theme: theme,
-                      ),
+            ? _ErrorState(
+                message: walletState.error!,
+                onRetry: () =>
+                    ref.read(walletProvider.notifier).loadPublicKey(),
+              )
+            : walletState.publicKey == null
+            ? const _ErrorState(message: 'No wallet found.')
+            : _WalletContent(
+                publicKey: walletState.publicKey!,
+                onCopy: () => _copyToClipboard(context, walletState.publicKey!),
+                onShowQr: () => _showQrModal(context, walletState.publicKey!),
+                theme: theme,
+              ),
       ),
     );
   }
@@ -98,7 +96,6 @@ class _WalletContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header card matching gift screen style
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -115,7 +112,7 @@ class _WalletContent extends StatelessWidget {
               Row(
                 children: [
                   const Icon(
-                    FontAwesomeIcons.wallet,
+                    Icons.account_balance_wallet,
                     color: Colors.white,
                     size: 28,
                   ),
@@ -150,10 +147,7 @@ class _WalletContent extends StatelessWidget {
             ],
           ),
         ),
-
         const SizedBox(height: 20),
-
-        // Action buttons
         Row(
           children: [
             Expanded(
@@ -188,15 +182,13 @@ class _WalletContent extends StatelessWidget {
             ),
           ],
         ),
-
         const SizedBox(height: 24),
-
-        // Info card
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.3),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.3,
+            ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
@@ -247,7 +239,6 @@ class _QrBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Container(
             width: 40,
             height: 4,
@@ -257,7 +248,6 @@ class _QrBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
           Text(
             'Scan to Send ECHO',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -273,8 +263,6 @@ class _QrBottomSheet extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
-
-          // QR code
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -303,15 +291,13 @@ class _QrBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Truncated key label
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.4),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -323,9 +309,7 @@ class _QrBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 20),
-
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -354,6 +338,7 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,

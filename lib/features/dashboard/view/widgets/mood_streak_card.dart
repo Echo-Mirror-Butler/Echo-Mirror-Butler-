@@ -1,29 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
-import '../../viewmodel/providers/streak_provider.dart';
 
 /// Card showing the user's current consecutive mood logging streak.
-class MoodStreakCard extends ConsumerWidget {
-  const MoodStreakCard({super.key});
+class MoodStreakCard extends StatelessWidget {
+  const MoodStreakCard({super.key, required this.streak});
+
+  final int streak;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final streakState = ref.watch(streakProvider);
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    String getSubtitle(int streak) {
-      if (streak >= 3) return 'Keep it up!';
-      if (streak == 0) return 'Start your streak today!';
-      return 'Great start, keep going!';
-    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 3,
-        shadowColor: Colors.orange.withValues(alpha: 0.25),
+        shadowColor: Colors.orange.withOpacity(0.25),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           decoration: BoxDecoration(
@@ -32,8 +25,8 @@ class MoodStreakCard extends ConsumerWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.orange.withValues(alpha: 0.15),
-                AppTheme.accentColor.withValues(alpha: 0.08),
+                Colors.orange.withOpacity(0.15),
+                AppTheme.accentColor.withOpacity(0.08),
               ],
             ),
           ),
@@ -43,10 +36,10 @@ class MoodStreakCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
+                  color: Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.local_fire_department,
                   color: Colors.deepOrange,
                   size: 24,
@@ -54,39 +47,38 @@ class MoodStreakCard extends ConsumerWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: streakState.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '\u{1F525} ${streakState.currentStreak}-day streak',
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            streakState.error ?? getSubtitle(streakState.currentStreak),
-                            style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.7,
-                              ),
-                            ),
-                          ),
-                        ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '\u{1F525} $streak-day streak',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String get _subtitle {
+    if (streak >= 3) return 'Keep it up!';
+    if (streak == 0) return 'Start your streak today!';
+    return 'Great start, keep going!';
+  }
 }

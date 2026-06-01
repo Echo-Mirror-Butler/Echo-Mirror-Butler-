@@ -2,27 +2,51 @@
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values 
   ('videos', 'videos', true, 409600, ARRAY['video/mp4', 'video/quicktime', 'video/webm']),
-  ('images', 'images', true, 409600, ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+  ('images', 'images', true, 409600, ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 -- Enable public read access for videos
-create policy "Public Access to Videos"
-  on storage.objects for select
-  using ( bucket_id = 'videos' );
+do $$
+begin
+  create policy "Public Access to Videos"
+    on storage.objects for select
+    using ( bucket_id = 'videos' );
+exception
+  when duplicate_object then null;
+end $$;
 
 -- Enable public read access for images
-create policy "Public Access to Images"
-  on storage.objects for select
-  using ( bucket_id = 'images' );
+do $$
+begin
+  create policy "Public Access to Images"
+    on storage.objects for select
+    using ( bucket_id = 'images' );
+exception
+  when duplicate_object then null;
+end $$;
 
 -- Allow authenticated users to insert videos
-create policy "Authenticated users can upload videos"
-  on storage.objects for insert
-  with check ( bucket_id = 'videos' and auth.role() = 'authenticated' );
+do $$
+begin
+  create policy "Authenticated users can upload videos"
+    on storage.objects for insert
+    with check ( bucket_id = 'videos' and auth.role() = 'authenticated' );
+exception
+  when duplicate_object then null;
+end $$;
 
 -- Allow authenticated users to insert images
-create policy "Authenticated users can upload images"
-  on storage.objects for insert
-  with check ( bucket_id = 'images' and auth.role() = 'authenticated' );
+do $$
+begin
+  create policy "Authenticated users can upload images"
+    on storage.objects for insert
+    with check ( bucket_id = 'images' and auth.role() = 'authenticated' );
+exception
+  when duplicate_object then null;
+end $$;
 
 -- Keep realtime publication setup idempotent for clean resets.
 do $$
