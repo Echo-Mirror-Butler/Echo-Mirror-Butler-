@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { Button } from '@/components/Button'
+import { toDateInputValue } from '@/lib/date'
 
 export function DashboardPage() {
   const navigate = useNavigate()
@@ -31,6 +32,17 @@ export function DashboardPage() {
           <p className="text-gray-600">
             This is your personal dashboard. More features coming soon.
           </p>
+          <div className="mt-6">
+            <Button
+              onClick={() => {
+                const today = toDateInputValue(new Date())
+                navigate(`/logs/new?date=${today}`)
+              }}
+              className="w-full"
+            >
+              Log Today's Mood
+            </Button>
+          </div>
         </div>
       </main>
     </div>
