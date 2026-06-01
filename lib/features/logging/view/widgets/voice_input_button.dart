@@ -193,6 +193,9 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
           localeId: 'en_US',
           cancelOnError: true,
           partialResults: true,
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+          localeId: 'en_US',
         ),
       );
     } catch (e) {

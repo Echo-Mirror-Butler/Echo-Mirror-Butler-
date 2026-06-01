@@ -1,3 +1,4 @@
+﻿import { FormEvent, useState } from 'react'
 import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -6,6 +7,8 @@ import { useToast } from '../../lib/use-toast'
 import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
+import { TestnetBadge } from '../../components/TestnetBadge'
+import { txExplorerUrl } from '../../lib/stellar-config'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
 
 const WALLET_PAGE_SIZE = 20
@@ -398,7 +401,7 @@ export function WalletPage() {
 
       <article className="card balance-card">
         <div className="card-header">
-          <h2>ECHO Wallet</h2>
+          <div className="flex items-center gap-2"><h2>ECHO Wallet</h2><TestnetBadge /></div>
           <button
             type="button"
             onClick={() => void walletQuery.refetch()}
@@ -415,6 +418,7 @@ export function WalletPage() {
         ) : walletQuery.data?.exists ? (
           <>
             <p className="balance-number">{walletQuery.data.balance.toFixed(2)} ECHO</p>
+            <p className="muted">Public key: {walletQuery.data.record?.public_key.slice(0, 14)}â€¦</p>
             {publicKey ? (
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <p className="muted" style={{ margin: 0 }}>
@@ -436,7 +440,7 @@ export function WalletPage() {
               onClick={() => createWalletMutation.mutate()}
               disabled={createWalletMutation.isPending}
             >
-              {createWalletMutation.isPending ? 'Creating…' : 'Create wallet'}
+              {createWalletMutation.isPending ? 'Creatingâ€¦' : 'Create wallet'}
             </button>
             {createWalletMutation.error ? (
               <p className="error-text">{(createWalletMutation.error as Error).message}</p>
@@ -672,7 +676,7 @@ export function WalletPage() {
 
           <button type="submit" disabled={isSendDisabled}>
             {sendGiftMutation.isPending
-              ? 'Sending…'
+              ? 'Sendingâ€¦'
               : `Send ${Number.isFinite(resolvedAmount) ? resolvedAmount : 0} ECHO`}
           </button>
 
@@ -693,6 +697,32 @@ export function WalletPage() {
               </tr>
             </thead>
             <tbody>
+              {(historyQuery.data?.rows ?? []).map((row) => {
+                const isSent = row.sender_user_id === user.id
+                const counterparty = isSent ? row.recipient_user_id : row.sender_user_id
+                
+                return (
+                  <tr key={row.id}>
+                    <td>{formatDateTime(row.created_at)}</td>
+                    <td>{isSent ? 'sent' : 'received'}</td>
+                    <td className={isSent ? 'amount-minus' : 'amount-plus'}>
+                      {isSent ? '-' : '+'}
+                      {row.echo_amount.toFixed(2)}
+                    </td>
+                    <td>{counterparty.slice(0, 10)}â€¦</td>
+                    <td>{row.status}</td>
+                    <td>
+                      {row.stellar_tx_hash ? (
+                        <a
+                          href={txExplorerUrl(row.stellar_tx_hash!)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {row.stellar_tx_hash.slice(0, 8)}â€¦
+                        </a>
+                      ) : (
+                        'â€”'
+                      )}
               {historyQuery.isLoading ? (
                 Array.from({ length: 3 }).map((_, index) => (
                   <tr key={`reward-skeleton-${index}`}>
@@ -744,3 +774,5 @@ export function WalletPage() {
     </section>
   )
 }
+
+
