@@ -346,7 +346,9 @@ export function AppShell() {
                 aria-expanded={isUserMenuOpen}
                 aria-label="User menu"
               >
-                {profileQuery.data?.avatar_url ? (
+                {profileQuery.isLoading ? (
+                  <span style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--surface-soft)' }} />
+                ) : profileQuery.data?.avatar_url ? (
                   <img
                     src={profileQuery.data.avatar_url}
                     alt={profileQuery.data.display_name ?? user?.email ?? 'Avatar'}
@@ -356,11 +358,19 @@ export function AppShell() {
                   <span>{avatarText}</span>
                 )}
               </button>
+              <span className="avatar-name desktop-only" style={{
+                fontSize: '0.85rem',
+                color: 'var(--text)',
+                fontWeight: 500,
+                marginLeft: '0.5rem',
+              }}>
+                {profileQuery.data?.display_name ?? user?.email ?? ''}
+              </span>
 
               {isUserMenuOpen ? (
                 <div className="avatar-menu">
-                  <button type="button" onClick={() => navigate('/settings')}>
-                    Profile
+                  <button type="button" onClick={() => { setIsUserMenuOpen(false); navigate('/settings'); }}>
+                    Settings
                   </button>
                   <button type="button" onClick={() => void onSignOut()}>
                     Sign out
