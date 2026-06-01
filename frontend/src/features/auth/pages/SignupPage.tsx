@@ -3,6 +3,22 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import '../../landing/landing-page.css'
 
+type PasswordStrength = 'weak' | 'fair' | 'strong' | null
+
+function calculatePasswordStrength(password: string): PasswordStrength {
+  if (!password) return null
+  if (password.length < 8) return 'weak'
+  
+  const hasLetters = /[a-zA-Z]/.test(password)
+  const hasNumbers = /\d/.test(password)
+  const hasSymbols = /[^a-zA-Z0-9]/.test(password)
+  
+  const mixedContent = (hasLetters && hasNumbers) || (hasLetters && hasSymbols) || (hasNumbers && hasSymbols)
+  
+  if (mixedContent) return 'strong'
+  return 'fair'
+}
+
 export function SignupPage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
@@ -10,6 +26,8 @@ export function SignupPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  const passwordStrength = calculatePasswordStrength(password)
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -87,6 +105,31 @@ export function SignupPage() {
               <label className="lp-auth-label" htmlFor="su-pass">Password</label>
               <input id="su-pass" className="lp-auth-input" type="password" required
                 value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
+              {passwordStrength && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <div style={{
+                    height: '4px',
+                    background: 'var(--lp-ink-10)',
+                    borderRadius: '2px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      width: passwordStrength === 'weak' ? '33.33%' : passwordStrength === 'fair' ? '66.67%' : '100%',
+                      background: passwordStrength === 'weak' ? '#ef4444' : passwordStrength === 'fair' ? '#f59e0b' : '#10b981',
+                      transition: 'width 0.3s ease, background 0.3s ease',
+                    }} />
+                  </div>
+                  <div style={{
+                    marginTop: '0.35rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 500,
+                    color: passwordStrength === 'weak' ? '#ef4444' : passwordStrength === 'fair' ? '#f59e0b' : '#10b981',
+                  }}>
+                    {passwordStrength === 'weak' ? 'Weak' : passwordStrength === 'fair' ? 'Fair' : 'Strong'}
+                  </div>
+                </div>
+              )}
             </div>
 
             {error && <div className="lp-auth-error">{error}</div>}
