@@ -6,6 +6,7 @@
  * Closes on outside-click or Escape.
  */
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
@@ -17,6 +18,8 @@ type Notification = {
   sentiment: string
   comment_preview: string
   is_read: boolean
+  mood_pin_id?: string
+  log_entry_id?: string
 }
 
 const SENTIMENT_EMOJI: Record<string, string> = {
@@ -30,7 +33,7 @@ const SENTIMENT_EMOJI: Record<string, string> = {
 async function fetchUnread(userId: string): Promise<Notification[]> {
   const { data, error } = await supabase
     .from('mood_comment_notifications')
-    .select('id, created_at, sentiment, comment_preview, is_read')
+    .select('id, created_at, sentiment, comment_preview, is_read, mood_pin_id, log_entry_id')
     .eq('user_id', userId)
     .eq('is_read', false)
     .order('created_at', { ascending: false })
@@ -75,6 +78,7 @@ type Props = {
 export function NotificationDrawer({ isOpen, onClose }: Props) {
   const { user } = useAuth()
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const panelRef = useRef<HTMLDivElement>(null)
 
   const notificationsQuery = useQuery({
@@ -98,6 +102,17 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
       void qc.invalidateQueries({ queryKey: ['unread-notifications-list', user?.id] })
     },
   })
+
+  const handleNotificationClick = async (n: Notification) => {
+    await markOneMutation.mutateAsync(n.id)
+    onClose()
+    
+    if (n.mood_pin_id) {
+      navigate(`/global-mirror?pin=${n.mood_pin_id}`)
+    } else if (n.log_entry_id) {
+      navigate(`/logs/${n.log_entry_id}`)
+    }
+  }
 
   // Close on Escape
   useEffect(() => {
@@ -169,7 +184,7 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
 
       {!notificationsQuery.isLoading && items.length === 0 && (
         <p style={{ color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center', padding: '1.5rem 0' }}>
-          No new notifications
+          You're all caught up
         </p>
       )}
 
@@ -177,7 +192,7 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
         {items.map((n) => (
           <li
             key={n.id}
-            onClick={() => markOneMutation.mutate(n.id)}
+            onClick={() => void handleNotificationClick(n)}
             style={{
               display: 'flex',
               gap: '0.6rem',
@@ -186,8 +201,10 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
               borderRadius: '10px',
               cursor: 'pointer',
               background: 'var(--surface-soft)',
-              transition: 'opacity 0.15s',
+              transition: 'background 0.15s',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--surface-soft)')}
           >
             <span style={{ fontSize: '1.3rem', lineHeight: 1 }}>
               {SENTIMENT_EMOJI[n.sentiment?.toLowerCase()] ?? '💬'}
