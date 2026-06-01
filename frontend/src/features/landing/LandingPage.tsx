@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { useTheme } from '../../lib/use-theme'
 import './landing-page.css'
 
 const features = [
@@ -164,12 +165,65 @@ function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
 
 export function LandingPage() {
   const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
+  const [isOverDarkSection, setIsOverDarkSection] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const closeMobileMenu = () => setMobileMenuOpen(false)
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMobileMenu()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [mobileMenuOpen])
+
+  useEffect(() => {
+    if (resolvedTheme !== 'light') {
+      setIsOverDarkSection(true)
+      return
+    }
+
+    const darkSections = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.lp-hero, .lp-stellar-section, .lp-wallet-section, .lp-cta-section, .lp-footer',
+      ),
+    )
+    const navHeight = 64
+    let frameId: number | null = null
+
+    const checkNavBackground = () => {
+      frameId = null
+      const isOverDark = darkSections.some((section) => {
+        const rect = section.getBoundingClientRect()
+        return rect.top < navHeight && rect.bottom > 0
+      })
+      setIsOverDarkSection(isOverDark)
+    }
+
+    const scheduleCheck = () => {
+      if (frameId !== null) return
+      frameId = window.requestAnimationFrame(checkNavBackground)
+    }
+
+    checkNavBackground()
+    window.addEventListener('scroll', scheduleCheck, { passive: true })
+    window.addEventListener('resize', scheduleCheck)
+
+    return () => {
+      window.removeEventListener('scroll', scheduleCheck)
+      window.removeEventListener('resize', scheduleCheck)
+      if (frameId !== null) window.cancelAnimationFrame(frameId)
+    }
+  }, [resolvedTheme])
 
   return (
     <div className="lp-root">
 
       {/* ── Nav ── */}
-      <nav className="lp-nav">
+      <nav className={`lp-nav ${isOverDarkSection ? 'lp-nav--dark' : 'lp-nav--light'}`}>
         <div className="lp-nav-logo">
           <img src="/app-icon.png" alt="EchoMirror" className="lp-nav-icon" />
           <span className="lp-nav-wordmark">EchoMirror</span>
@@ -181,7 +235,37 @@ export function LandingPage() {
           <Link to="/login" className="lp-nav-link">Sign in</Link>
         </div>
         <button className="lp-btn-solid" onClick={() => navigate('/signup')}>Get started free</button>
+        <button
+          className={`lp-hamburger ${isOverDarkSection ? 'lp-hamburger--dark' : 'lp-hamburger--light'}`}
+          onClick={() => setMobileMenuOpen((v) => !v)}
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? '✕' : '☰'}
+        </button>
       </nav>
+
+      {/* ── Mobile menu ── */}
+      <div
+        className={`lp-mobile-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={closeMobileMenu}
+      />
+      <div className={`lp-mobile-menu ${mobileMenuOpen ? 'open' : ''} ${isOverDarkSection ? 'lp-mobile-menu--dark' : 'lp-mobile-menu--light'}`}>
+        <div className="lp-mobile-menu-inner">
+          <button className="lp-mobile-menu-close" onClick={closeMobileMenu} aria-label="Close menu">
+            ✕
+          </button>
+          <div className="lp-mobile-menu-links">
+            <a href="#features" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Features</a>
+            <a href="#global" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Global Mirror</a>
+            <a href="#wallet" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Wallet</a>
+            <Link to="/login" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Sign in</Link>
+          </div>
+          <button className="lp-mobile-menu-cta" onClick={() => { closeMobileMenu(); navigate('/signup') }}>
+            Get started free
+          </button>
+        </div>
+      </div>
 
       {/* ── Hero ── */}
       <section className="lp-hero">

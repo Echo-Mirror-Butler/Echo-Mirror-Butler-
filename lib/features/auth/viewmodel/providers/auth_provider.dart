@@ -55,7 +55,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           );
         } else {
           debugPrint(
-            '[AuthNotifier] ⚠️ Authenticated but no user data available',
+            '[AuthNotifier] âš ï¸ Authenticated but no user data available',
           );
           state = state.copyWith(isLoading: false);
         }

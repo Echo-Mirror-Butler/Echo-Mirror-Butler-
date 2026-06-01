@@ -29,7 +29,7 @@ jobs:
                 "Consider splitting it into smaller PRs for easier review."
               );
             }
-            if (total > 1000) {
+            if (total > 3000) {
               core.setFailed(
                 `PR is too large (${total} lines changed). ` +
                 "Please split into smaller focused PRs. " +

@@ -112,7 +112,7 @@ class InsightSection extends StatelessWidget {
             child: Center(
               child: TextButton.icon(
                 onPressed: onViewAll,
-                icon: const Icon(Icons.arrow_forward, size: 16),
+                icon: Icon(Icons.arrow_forward, size: 16),
                 label: Text(
                   'View ${insights.length - 3} more',
                   style: theme.textTheme.labelMedium?.copyWith(

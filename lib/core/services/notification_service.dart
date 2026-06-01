@@ -167,7 +167,7 @@ class NotificationService {
       id: _dailyReminderId + 1000, // Use different ID for snooze
       scheduledDate: snoozeTime,
       title: 'Reminder: Time to Reflect',
-      body: 'Your future self is still waiting 🌟',
+      body: 'Your future self is still waiting ðŸŒŸ',
     );
 
     debugPrint('[NotificationService] Snoozed until ${snoozeTime.toString()}');
@@ -263,7 +263,7 @@ class NotificationService {
       id: _dailyReminderId,
       scheduledDate: scheduledDate,
       title: 'Time to Reflect',
-      body: 'Hey, your future self wants to hear from you today 🌟',
+      body: 'Hey, your future self wants to hear from you today ðŸŒŸ',
       repeatDaily: true,
     );
 
@@ -417,7 +417,7 @@ class NotificationService {
       id: _eveningCheckInId,
       scheduledDate: scheduledDate,
       title: 'Your future self is checking in',
-      body: 'How was your day today? 🌟',
+      body: 'How was your day today? ðŸŒŸ',
       repeatDaily: true,
     );
 
@@ -450,7 +450,7 @@ class NotificationService {
 
     final message =
         geminiMessage ??
-        'Hey, future you here—I noticed you haven\'t logged in a while. Let\'s reconnect and see how you\'re doing.';
+        'Hey, future you hereâ€”I noticed you haven\'t logged in a while. Let\'s reconnect and see how you\'re doing.';
 
     await _scheduleNotification(
       id: _inactiveNudgeId,
@@ -534,7 +534,7 @@ class NotificationService {
 
     await _notifications.zonedSchedule(
       notificationId,
-      'Video Session Starting Soon 📹',
+      'Video Session Starting Soon ðŸ“¹',
       '"$sessionTitle" with $hostName starts in 5 minutes',
       scheduledDate,
       notificationDetails,
@@ -607,7 +607,7 @@ class NotificationService {
 
     await _notifications.show(
       notificationId,
-      'Video Session Starting Now! 🎥',
+      'Video Session Starting Now! ðŸŽ¥',
       '"$sessionTitle" with $hostName is starting',
       notificationDetails,
       payload: 'scheduled_session:$sessionId',
@@ -667,9 +667,9 @@ class NotificationService {
       await _scheduleNotification(
         id: _noLogTodayId,
         scheduledDate: scheduledDate,
-        title: 'Don\'t forget to log your day 📝',
+        title: 'Don\'t forget to log your day ðŸ“',
         body:
-            'Your future self is waiting to hear about today. Take a moment to reflect! 🌟',
+            'Your future self is waiting to hear about today. Take a moment to reflect! ðŸŒŸ',
         repeatDaily: false,
       );
 
@@ -771,7 +771,7 @@ class NotificationService {
 
     await _notifications.show(
       _activeSessionId,
-      'Active Session Available! 🎥',
+      'Active Session Available! ðŸŽ¥',
       '"$sessionTitle" with $hostName - $participantText online',
       notificationDetails,
       payload: 'active_session:$sessionTitle',

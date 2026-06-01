@@ -87,7 +87,7 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],

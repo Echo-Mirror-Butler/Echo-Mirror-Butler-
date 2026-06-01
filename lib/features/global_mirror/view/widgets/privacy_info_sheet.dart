@@ -38,8 +38,8 @@ class PrivacyInfoSheet extends StatelessWidget {
             // Title
             Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.shieldHalved,
+                Icon(
+                  FontAwesomeIcons.shieldHalved.data,
                   color: AppTheme.primaryColor,
                   size: 24,
                 ),
@@ -57,28 +57,28 @@ class PrivacyInfoSheet extends StatelessWidget {
 
             // Privacy points
             _buildPrivacyPoint(
-              icon: FontAwesomeIcons.userSecret,
+              icon: FontAwesomeIcons.userSecret.data,
               title: 'Completely Anonymous',
               description:
                   'No user IDs or personal information is stored with shared moods.',
             ),
             const SizedBox(height: 16),
             _buildPrivacyPoint(
-              icon: FontAwesomeIcons.locationDot,
+              icon: FontAwesomeIcons.locationDot.data,
               title: 'Location Anonymized',
               description:
-                  'Your location is rounded to ~11km precision (0.1°) before sharing.',
+                  'Your location is rounded to ~11km precision (0.1Â°) before sharing.',
             ),
             const SizedBox(height: 16),
             _buildPrivacyPoint(
-              icon: FontAwesomeIcons.clock,
+              icon: FontAwesomeIcons.clock.data,
               title: 'Auto-Expiring',
               description:
                   'All shared content expires after 24 hours and is permanently deleted.',
             ),
             const SizedBox(height: 16),
             _buildPrivacyPoint(
-              icon: FontAwesomeIcons.handshake,
+              icon: FontAwesomeIcons.handshake.data,
               title: 'Opt-In Only',
               description:
                   'You choose when to share. Nothing is shared without your permission.',
@@ -98,8 +98,8 @@ class PrivacyInfoSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  FaIcon(
-                    FontAwesomeIcons.circleInfo,
+                  Icon(
+                    FontAwesomeIcons.circleInfo.data,
                     color: AppTheme.primaryColor,
                     size: 20,
                   ),
@@ -162,7 +162,7 @@ class PrivacyInfoSheet extends StatelessWidget {
             color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: FaIcon(icon, color: AppTheme.primaryColor, size: 16),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 16),
         ),
         const SizedBox(width: 12),
         Expanded(

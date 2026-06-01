@@ -11,7 +11,7 @@ export type Theme = 'light' | 'dark' | 'system'
 
 const STORAGE_KEY = 'echo-theme'
 
-function resolveApplied(theme: Theme): 'light' | 'dark' {
+export function resolveApplied(theme: Theme): 'light' | 'dark' {
   if (theme === 'system') {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
@@ -61,5 +61,7 @@ export function useTheme() {
     setThemeState(next)
   }, [])
 
-  return { theme, setTheme }
+  const resolvedTheme = resolveApplied(theme)
+
+  return { theme, setTheme, resolvedTheme }
 }
