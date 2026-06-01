@@ -1,18 +1,19 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
+import '../../../logging/data/models/log_entry_model.dart';
 
-/// Repository for dashboard operations.
-/// Handles Supabase Edge Function calls for insights and predictions.
+/// Repository for dashboard operations
+/// Handles all Serverpod backend calls for insights and predictions
 class DashboardRepository {
   DashboardRepository(
     this._loggingRepository, {
     SupabaseClient? supabaseClient,
     DateTime Function()? now,
-  })  : _supabase = supabaseClient,
-        _now = now ?? DateTime.now;
+  }) : _supabase = supabaseClient,
+       _now = now ?? DateTime.now;
 
   final LoggingRepository _loggingRepository;
   final SupabaseClient? _supabase;
@@ -20,20 +21,43 @@ class DashboardRepository {
 
   SupabaseClient get _client => _supabase ?? Supabase.instance.client;
 
+  /// Get insights for a user
+  /// Generates insights from log entries
   Future<List<InsightModel>> getInsights(String userId) async {
     try {
+      // Fetch log entries
       final logEntries = await _loggingRepository.getLogEntries(userId);
-      if (logEntries.isEmpty) return [];
+
+      if (logEntries.isEmpty) {
+        return [];
+      }
 
       final insights = <InsightModel>[];
       final now = _now();
 
+      // Group entries by date
+      final entriesByDate = <DateTime, List<LogEntryModel>>{};
+      for (final entry in logEntries) {
+        final date = DateTime(
+          entry.date.year,
+          entry.date.month,
+          entry.date.day,
+        );
+        entriesByDate.putIfAbsent(date, () => []).add(entry);
+      }
+
+      // Generate mood insights
+      // Normalize dates to local time for accurate comparisons
+      // (same as logging screen)
       final moodEntries = logEntries.where((e) => e.mood != null).toList();
+
       if (moodEntries.isNotEmpty) {
         final averageMood =
             moodEntries.map((e) => e.mood!).reduce((a, b) => a + b) /
-                moodEntries.length;
+            moodEntries.length;
 
+        // Weekly mood trend - use local time for comparison
+        // (same as logging screen)
         final localNow = now.isUtc ? now.toLocal() : now;
         final weekAgo = localNow.subtract(const Duration(days: 7));
         final recentMoods = moodEntries.where((e) {
@@ -44,7 +68,7 @@ class DashboardRepository {
         if (recentMoods.length >= 3) {
           final recentAvg =
               recentMoods.map((e) => e.mood!).reduce((a, b) => a + b) /
-                  recentMoods.length;
+              recentMoods.length;
           if (recentAvg > averageMood + 0.5) {
             insights.add(InsightModel(
               id: 'mood-improving-${now.millisecondsSinceEpoch}',
@@ -91,7 +115,8 @@ class DashboardRepository {
                 userId: userId,
                 title: 'Mood Improvement Detected',
                 description:
-                    'Your mood has been improving over the past week! Keep up the great work.',
+                    'Your mood has been improving over the past week! '
+                    'Keep up the great work.',
                 date: now,
                 type: InsightType.mood,
                 createdAt: now,
@@ -104,7 +129,8 @@ class DashboardRepository {
                 userId: userId,
                 title: 'Mood Trend Notice',
                 description:
-                    'Your mood has been lower recently. Consider taking some time for self-care.',
+                    'Your mood has been lower recently. Consider taking '
+                    'some time for self-care.',
                 date: now,
                 type: InsightType.mood,
                 createdAt: now,
@@ -113,6 +139,7 @@ class DashboardRepository {
           }
         }
 
+        // Best mood day
         final bestMoodEntry = moodEntries.reduce(
           (a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b,
         );
@@ -120,22 +147,14 @@ class DashboardRepository {
           final localDate = bestMoodEntry.date.isUtc
               ? bestMoodEntry.date.toLocal()
               : bestMoodEntry.date;
-          insights.add(InsightModel(
-            id: 'best-mood-${bestMoodEntry.id}',
-            userId: userId,
-            title: 'Great Mood Day',
-            description: 'You had an excellent mood on ${_formatDate(localDate)}. What made that day special?',
-            date: localDate,
-            type: InsightType.mood,
-            createdAt: now,
-          ));
           insights.add(
             InsightModel(
               id: 'best-mood-${bestMoodEntry.id}',
               userId: userId,
               title: 'Great Mood Day',
               description:
-                  'You had an excellent mood on ${_formatDate(localDate)}. What made that day special?',
+                  'You had an excellent mood on ${_formatDate(localDate)}. '
+                  'What made that day special?',
               date: localDate,
               type: InsightType.mood,
               createdAt: now,
@@ -144,6 +163,7 @@ class DashboardRepository {
         }
       }
 
+      // Generate habit insights
       final habitFrequency = <String, int>{};
       for (final entry in logEntries) {
         for (final habit in entry.habits) {
@@ -157,22 +177,14 @@ class DashboardRepository {
 
         final topHabit = sortedHabits.first;
         if (topHabit.value >= 5) {
-          insights.add(InsightModel(
-            id: 'top-habit-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'Consistent Habit',
-            description: 'You have logged "${topHabit.key}" ${topHabit.value} times. Consistency is key!',
-            date: now,
-            type: InsightType.habit,
-            createdAt: now,
-          ));
           insights.add(
             InsightModel(
               id: 'top-habit-${now.millisecondsSinceEpoch}',
               userId: userId,
               title: 'Consistent Habit',
               description:
-                  'You have logged "${topHabit.key}" ${topHabit.value} times. Consistency is key!',
+                  'You\'ve logged "${topHabit.key}" ${topHabit.value} times. '
+                  'Consistency is key!',
               date: now,
               type: InsightType.habit,
               createdAt: now,
@@ -180,6 +192,7 @@ class DashboardRepository {
           );
         }
 
+        // Check for habit streaks - normalize dates for comparison
         final localNow = now.isUtc ? now.toLocal() : now;
         final recentEntries = logEntries.where((e) {
           final localDate = e.date.isUtc ? e.date.toLocal() : e.date;
@@ -206,7 +219,8 @@ class DashboardRepository {
               userId: userId,
               title: 'Habit Variety',
               description:
-                  'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+                  'You\'ve been practicing ${recentHabits.length} different '
+                  'habits this week. Great diversity!',
               date: now,
               type: InsightType.habit,
               createdAt: now,
@@ -215,6 +229,7 @@ class DashboardRepository {
         }
       }
 
+      // Generate general insights
       final totalEntries = logEntries.length;
       if (totalEntries >= 7) {
         insights.add(
@@ -223,25 +238,29 @@ class DashboardRepository {
             userId: userId,
             title: 'Logging Milestone',
             description:
-                'You have logged $totalEntries entries! Your consistency is building valuable insights.',
+                'You\'ve logged $totalEntries entries! Your consistency is '
+                'building valuable insights.',
             date: now,
-            type: InsightType.habit,
+            type: InsightType.general,
             createdAt: now,
-          ));
-        }
+          ),
+        );
       }
 
-      final totalEntries = logEntries.length;
-      if (totalEntries >= 7) {
-        insights.add(InsightModel(
-          id: 'milestone-${now.millisecondsSinceEpoch}',
-          userId: userId,
-          title: 'Logging Milestone',
-          description: 'You have logged $totalEntries entries! Your consistency is building valuable insights.',
-          date: now,
-          type: InsightType.general,
-          createdAt: now,
-        ));
+      // Generate predictions based on patterns
+      if (moodEntries.length >= 5) {
+        final weekdayMoods = <int, List<int>>{};
+        for (final entry in moodEntries) {
+          // Normalize date to local time for weekday calculation
+          final localDate = entry.date.isUtc
+              ? entry.date.toLocal()
+              : entry.date;
+          final weekday = localDate.weekday;
+          if (entry.mood != null) {
+            weekdayMoods.putIfAbsent(weekday, () => []).add(entry.mood!);
+          }
+        }
+
         if (weekdayMoods.isNotEmpty) {
           final bestWeekday = weekdayMoods.entries
               .map(
@@ -258,7 +277,9 @@ class DashboardRepository {
               userId: userId,
               title: 'Pattern Detected',
               description:
-                  'Based on your logs, you tend to have better moods on ${_getWeekdayName(bestWeekday.key)}. Plan something special!',
+                  'Based on your logs, you tend to have better moods on '
+                  '${_getWeekdayName(bestWeekday.key)}. '
+                  'Plan something special!',
               date: now,
               type: InsightType.prediction,
               createdAt: now,
@@ -267,242 +288,17 @@ class DashboardRepository {
         }
       }
 
+      // Sort by date (most recent first)
       insights.sort((a, b) => b.date.compareTo(a.date));
-      return insights;
-    } catch (e) {
-      throw Exception('Failed to get insights: $e');
-    }
-  }
-
-  /// Calls the generate-insight Supabase Edge Function and maps the response
-  /// to a list of InsightModel objects.
-  Future<List<InsightModel>> getPredictions(String userId) async {
-    try {
-      final logEntries = await _loggingRepository.getLogEntries(userId);
-      if (logEntries.isEmpty) return [];
-
-      final response = await _client.functions.invoke(
-        'generate-insight',
-        body: {
-          'recentLogs': logEntries.map((e) => e.toJson()).toList(),
-        },
-        body: {'recentLogs': logEntries.map((e) => e.toJson()).toList()},
-      );
-
-      final result = response.data;
-      if (result is! Map<String, dynamic>) {
-        debugPrint('[DashboardRepository] getPredictions: unexpected response type');
-        return [];
-      }
-
-      final now = _now();
-      final insights = <InsightModel>[];
-
-      final prediction = (result['prediction'] as String? ?? '').trim();
-      if (prediction.isNotEmpty) {
-        insights.add(InsightModel(
-          id: 'prediction-${now.millisecondsSinceEpoch}',
-          userId: userId,
-          title: 'AI Prediction',
-          description: prediction,
-          date: now,
-          type: InsightType.prediction,
-          createdAt: now,
-        ));
-      }
-
-        debugPrint(
-          '[DashboardRepository] getPredictions: unexpected response type',
-        );
-        return [];
-      }
-
-      final now = _now();
-      final insights = <InsightModel>[];
-
-      final prediction = (result['prediction'] as String? ?? '').trim();
-      if (prediction.isNotEmpty) {
-        insights.add(
-          InsightModel(
-            id: 'prediction-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'AI Prediction',
-            description: prediction,
-            date: now,
-            type: InsightType.prediction,
-            createdAt: now,
-          ),
-        );
-      }
-
-      final suggestions = result['suggestions'];
-      if (suggestions is List) {
-        for (var i = 0; i < suggestions.length; i++) {
-          final text = suggestions[i]?.toString().trim() ?? '';
-          if (text.isEmpty) continue;
-          insights.add(InsightModel(
-            id: 'suggestion-$i-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'Suggestion',
-            description: text,
-            date: now,
-            type: InsightType.general,
-            createdAt: now,
-          ));
-          insights.add(
-            InsightModel(
-              id: 'suggestion-$i-${now.millisecondsSinceEpoch}',
-              userId: userId,
-              title: 'Suggestion',
-              description: text,
-              date: now,
-              type: InsightType.general,
-              createdAt: now,
-            ),
-          );
-        }
-      }
-
-      final futureLetter = (result['futureLetter'] as String? ?? '').trim();
-      if (futureLetter.isNotEmpty) {
-        insights.add(InsightModel(
-          id: 'future-letter-ai-${now.millisecondsSinceEpoch}',
-          userId: userId,
-          title: 'A Letter to Your Future Self',
-          description: futureLetter,
-          date: now,
-          type: InsightType.general,
-          createdAt: now,
-        ));
-        insights.add(
-          InsightModel(
-            id: 'future-letter-ai-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'A Letter to Your Future Self',
-            description: futureLetter,
-            date: now,
-            type: InsightType.general,
-            createdAt: now,
-          ),
-        );
-      }
-
-      final calmingMessage = (result['calmingMessage'] as String? ?? '').trim();
-      if (calmingMessage.isNotEmpty) {
-        insights.add(InsightModel(
-          id: 'calming-${now.millisecondsSinceEpoch}',
-          userId: userId,
-          title: 'Calming Thought',
-          description: calmingMessage,
-          date: now,
-          type: InsightType.mood,
-          createdAt: now,
-        ));
-        insights.add(
-          InsightModel(
-            id: 'calming-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'Calming Thought',
-            description: calmingMessage,
-            date: now,
-            type: InsightType.mood,
-            createdAt: now,
-          ),
-        );
-      }
-
-      final music = result['musicRecommendations'];
-      if (music is List && music.isNotEmpty) {
-        final tracks = music
-            .map((m) => m?.toString() ?? '')
-            .where((s) => s.isNotEmpty)
-            .toList();
-        if (tracks.isNotEmpty) {
-          insights.add(InsightModel(
-            id: 'music-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'Music for Your Mood',
-            description: tracks.join('\n'),
-            date: now,
-            type: InsightType.general,
-            createdAt: now,
-          ));
-          insights.add(
-            InsightModel(
-              id: 'music-${now.millisecondsSinceEpoch}',
-              userId: userId,
-              title: 'Music for Your Mood',
-              description: tracks.join('\n'),
-              date: now,
-              type: InsightType.general,
-              createdAt: now,
-            ),
-          );
-        }
-      }
 
       return insights;
     } catch (e) {
-      debugPrint('[DashboardRepository] getPredictions error -> $e');
-      return [];
+      throw Exception('Failed to get insights: ${e.toString()}');
     }
-  }
-
-  /// Queries the future_letters table in Supabase and maps each row
-  /// to an InsightModel.
-  Future<List<InsightModel>> getFutureLetters(String userId) async {
-    try {
-      final response = await _client
-          .from('future_letters')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .limit(10);
-
-      return (response as List<dynamic>)
-          .whereType<Map<String, dynamic>>()
-          .map(_mapFutureLetterToInsight)
-          .toList();
-    } catch (e) {
-      debugPrint('[DashboardRepository] getFutureLetters error -> $e');
-      return [];
-    }
-  }
-
-  InsightModel _mapFutureLetterToInsight(Map<String, dynamic> row) {
-    final createdAt = _parseDateTime(
-      row['created_at'] ?? row['createdAt'] ?? row['delivery_date'] ?? row['date'],
-    );
-    final date = _parseDateTime(
-      row['delivery_date'] ?? row['open_at'] ?? row['date'] ?? row['created_at'],
-    );
-    return InsightModel(
-      id: row['id'].toString(),
-      userId: (row['user_id'] ?? row['userId'] ?? '').toString(),
-      title: (row['title'] ?? 'Future Letter').toString(),
-      description: (row['content'] ??
-              row['letter'] ??
-              row['future_letter'] ??
-              row['futureLetter'] ??
-              row['description'] ??
-              '')
-          .toString(),
-      date: date,
-      type: InsightType.general,
-      createdAt: createdAt,
-    );
-  }
-
-  DateTime _parseDateTime(dynamic value) {
-    if (value is DateTime) return value;
-    if (value is String && value.isNotEmpty) return DateTime.parse(value);
-    return _now();
   }
 
   String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    final months = [
       'Jan',
       'Feb',
       'Mar',
@@ -521,8 +317,6 @@ class DashboardRepository {
 
   String _getWeekdayName(int weekday) {
     const weekdays = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
       'Monday',
       'Tuesday',
       'Wednesday',
@@ -532,5 +326,121 @@ class DashboardRepository {
       'Sunday',
     ];
     return weekdays[weekday - 1];
+  }
+
+  /// Get predictions for a user
+  Future<List<InsightModel>> getPredictions(String userId) async {
+    try {
+      final logEntries = await _loggingRepository.getLogEntries(userId);
+      if (logEntries.isEmpty) {
+        return [];
+      }
+
+      final response = await _client.functions.invoke(
+        'generate-insight',
+        body: {
+          'recentLogs': logEntries.map((entry) => entry.toJson()).toList(),
+        },
+      );
+
+      // Check for rate limit error (429)
+      if (response.status != null && response.status! >= 400) {
+        final data = response.data;
+        if (data is Map &&
+            data['error']?.toString().contains('Rate limit') == true) {
+          debugPrint(
+            '[DashboardRepository] Rate limit exceeded for generate-insight',
+          );
+          return [];
+        }
+      }
+
+      final result = response.data;
+      if (result is! Map) {
+        return [];
+      }
+
+      final prediction = result['prediction'] as String? ?? '';
+      if (prediction.trim().isEmpty) {
+        return [];
+      }
+
+      final now = _now();
+      return [
+        InsightModel(
+          id: 'prediction-${now.millisecondsSinceEpoch}',
+          userId: userId,
+          title: 'AI Prediction',
+          description: prediction,
+          date: now,
+          type: InsightType.prediction,
+          createdAt: now,
+        ),
+      ];
+    } catch (e) {
+      debugPrint('[DashboardRepository] getPredictions error -> $e');
+      return [];
+    }
+  }
+
+  /// Get future letters (time capsule feature)
+  Future<List<InsightModel>> getFutureLetters(String userId) async {
+    try {
+      final response = await _client
+          .from('future_letters')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List<dynamic>)
+          .whereType<Map<String, dynamic>>()
+          .map(_mapFutureLetterToInsight)
+          .toList();
+    } catch (e) {
+      debugPrint('[DashboardRepository] getFutureLetters error -> $e');
+      return [];
+    }
+  }
+
+  InsightModel _mapFutureLetterToInsight(Map<String, dynamic> row) {
+    final createdAt = _parseDateTime(
+      row['created_at'] ??
+          row['createdAt'] ??
+          row['delivery_date'] ??
+          row['date'],
+    );
+    final date = _parseDateTime(
+      row['delivery_date'] ??
+          row['open_at'] ??
+          row['date'] ??
+          row['created_at'],
+    );
+
+    return InsightModel(
+      id: row['id'].toString(),
+      userId: (row['user_id'] ?? row['userId'] ?? '').toString(),
+      title: (row['title'] ?? 'Future Letter').toString(),
+      description:
+          (row['content'] ??
+                  row['letter'] ??
+                  row['future_letter'] ??
+                  row['futureLetter'] ??
+                  row['description'] ??
+                  '')
+              .toString(),
+      date: date,
+      type: InsightType.general,
+      createdAt: createdAt,
+    );
+  }
+
+  DateTime _parseDateTime(dynamic value) {
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is String && value.isNotEmpty) {
+      return DateTime.parse(value);
+    }
+    return _now();
   }
 }
