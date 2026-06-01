@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { daysAgo } from '../../lib/date'
 
 const mockSupabaseChain = vi.hoisted(() => {
@@ -31,7 +31,7 @@ import {
   buildHabitCorrelation,
   buildHabitFrequency,
   fetchEntries,
-} from './analytics-page'
+} from './analytics-helpers'
 
 describe('analytics page data helpers', () => {
   beforeEach(() => {
