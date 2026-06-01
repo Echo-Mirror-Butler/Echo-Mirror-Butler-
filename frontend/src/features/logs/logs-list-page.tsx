@@ -8,7 +8,7 @@ import { formatDate, moodToEmoji, toDateInputValue } from '../../lib/date'
 
 const LOGS_PAGE_SIZE = 10
 const LOGS_SCROLL_STORAGE_KEY = 'echomirror:logs-scroll-y'
-const MOOD_EMOJIS = ['😞', '😕', '😐', '🙂', '😄'] as const
+const MOOD_EMOJIS = ['🙁', '😕', '😐', '🙂', '😁'] as const
 
 type LogListResult = {
   rows: LogEntry[]
