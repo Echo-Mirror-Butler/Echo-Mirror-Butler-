@@ -53,7 +53,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _checkMilestones(List<InsightModel> insights) {
     if (_hasCheckedMilestone) return;
 
-    // Mock milestone check - trigger confetti for 7+ insights
     if (insights.length >= 7) {
       _hasCheckedMilestone = true;
       _confettiController.play();
@@ -67,38 +66,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final streakState = ref.watch(streakProvider);
     final theme = Theme.of(context);
 
-    // Load logs and insights when we have a user ID
     if (authState.isAuthenticated && authState.user != null) {
       final userId = authState.user!.id;
-      // Use addPostFrameCallback to avoid calling during build
+
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (userId.isNotEmpty) {
-          // Load logs first (needed for analytics and AI insights)
           await ref
               .read(loggingProvider.notifier)
               .loadLogEntries(userId: userId);
 
-          // Check daily log and schedule notification if needed
           ref.read(dailyLogCheckProvider.future);
 
-          // Load insights
           ref
               .read(dashboardProvider.notifier)
               .loadInsights(userId: userId, forceReload: false);
 
-          // Load streak via RPC
           ref.read(streakProvider.notifier).loadStreak(userId);
 
-          // Load ECHO balance
           ref.read(echoBalanceProvider.notifier).loadBalance(userId);
 
-          // Auto-generate AI insights if we have enough logs (after logs are loaded)
           Future.delayed(const Duration(milliseconds: 500), () {
-            // Check if widget is still mounted before using ref
             if (!mounted) return;
 
             final loggingState = ref.read(loggingProvider);
             final logs = loggingState.value ?? [];
+
             if (logs.length >= 3) {
               final now = DateTime.now();
               final recentLogs =
@@ -112,12 +104,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ..sort((a, b) => b.date.compareTo(a.date));
 
               if (recentLogs.length >= 3) {
-                // Check if insight already exists
                 if (!mounted) return;
+
                 final aiState = ref.read(aiInsightProvider);
                 if (aiState.value == null) {
                   if (!mounted) return;
-                  // Auto-generate insight
                   ref
                       .read(aiInsightProvider.notifier)
                       .generateInsight(recentLogs);
@@ -133,7 +124,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
-          // Need Help? button
           IconButton(
             icon: Icon(FontAwesomeIcons.handHoldingHeart.data),
             tooltip: 'Need Help?',
@@ -156,10 +146,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 return _buildEmptyState(context, theme, ref);
               }
 
-              // Check milestones and trigger confetti
               _checkMilestones(insights);
 
-              // Group insights by type
               final predictions =
                   insights
                       .where((i) => i.type == InsightType.prediction)
@@ -194,45 +182,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Stats section
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
-                      // Mood streak card
-                      const MoodStreakCard(),
+                      MoodStreakCard(streak: streakState.currentStreak),
                       const SizedBox(height: 8),
-                      // ECHO Balance card
                       if (authState.isAuthenticated && authState.user != null)
                         EchoBalanceCard(userId: authState.user!.id),
                       const SizedBox(height: 8),
-                      // Mood Trend Chart
                       MoodTrendChart(
                         recentLogs: ref.watch(moodChartDataProvider),
                       ),
                       const SizedBox(height: 8),
-                      // AI Insights section
                       const AiInsightSection(),
                       const SizedBox(height: 8),
-                      // Mood Analytics card
                       _buildMoodAnalyticsCard(context, theme),
                       const SizedBox(height: 8),
-
-                      // Predictions section
                       InsightSection(
                         title: 'Predictions',
                         insights: predictions,
                         icon: FontAwesomeIcons.wandMagicSparkles.data,
                         color: AppTheme.secondaryColor,
                       ),
-
-                      // Habits section
                       InsightSection(
                         title: 'Habits',
                         insights: habits,
                         icon: FontAwesomeIcons.repeat.data,
                         color: AppTheme.primaryColor,
                       ),
-
-                      // Moods section
                       InsightSection(
                         title: 'Mood Insights',
                         insights: moods,
@@ -241,8 +217,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onInsightTap: (insight) =>
                             _handleInsightTap(context, ref, insight),
                       ),
-
-                      // General insights section
                       if (general.isNotEmpty)
                         InsightSection(
                           title: 'General Insights',
@@ -250,7 +224,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           icon: FontAwesomeIcons.lightbulb.data,
                           color: AppTheme.primaryColor,
                         ),
-
                       const SizedBox(height: 16),
                     ],
                   ),
@@ -263,12 +236,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onRetry: () => ref.refresh(dashboardProvider),
             ),
           ),
-          // Confetti overlay
           Align(
             alignment: Alignment.topCenter,
             child: ConfettiWidget(
               confettiController: _confettiController,
-              blastDirection: 3.14 / 2, // Down
+              blastDirection: 3.14 / 2,
               maxBlastForce: 5,
               minBlastForce: 2,
               emissionFrequency: 0.05,
@@ -429,10 +401,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () {
-                      // Navigate directly to create entry screen
-                      context.push('/logging/create');
-                    },
+                    onTap: () => context.push('/logging/create'),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -478,44 +447,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) return;
 
-    // For mood insights that reference a specific date, try to find and navigate to that log entry
     if (insight.type == InsightType.mood) {
       try {
-        // Get log entries from provider
         final loggingState = ref.read(loggingProvider);
         final entries = loggingState.value ?? [];
 
         if (entries.isEmpty) {
-          // No entries loaded, try to load them first
           await ref
               .read(loggingProvider.notifier)
               .loadLogEntries(userId: authState.user!.id);
-          // Wait a bit for the load to complete
+
           await Future.delayed(const Duration(milliseconds: 300));
+
           final updatedState = ref.read(loggingProvider);
           final updatedEntries = updatedState.value ?? [];
+
           if (updatedEntries.isEmpty) {
             throw Exception('No entries available');
           }
         }
 
-        // Find entry for the insight date
         final insightDate = DateTime(
           insight.date.year,
           insight.date.month,
           insight.date.day,
         );
+
         final currentEntries = ref.read(loggingProvider).value ?? [];
 
         final matchingEntry = currentEntries.firstWhere((entry) {
           final localDate = entry.date.isUtc
               ? entry.date.toLocal()
               : entry.date;
+
           final entryDate = DateTime(
             localDate.year,
             localDate.month,
             localDate.day,
           );
+
           return entryDate.isAtSameMomentAs(insightDate);
         });
 
@@ -526,7 +496,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           );
         }
       } catch (e) {
-        // If entry not found, show a message with option to create entry
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
