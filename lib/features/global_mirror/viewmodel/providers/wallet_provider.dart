@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WalletState {
-  const WalletState({
-    this.publicKey,
-    this.isLoading = false,
-    this.error,
-  });
+  const WalletState({this.publicKey, this.isLoading = false, this.error});
 
   final String? publicKey;
   final bool isLoading;
@@ -35,14 +31,13 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
   Future<void> loadPublicKey() async {
     state = state.copyWith(isLoading: true, clearError: true);
+
     try {
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser?.id;
+
       if (userId == null) {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Not authenticated.',
-        );
+        state = state.copyWith(isLoading: false, error: 'Not authenticated.');
         return;
       }
 
