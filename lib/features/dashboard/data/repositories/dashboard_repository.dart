@@ -70,6 +70,45 @@ class DashboardRepository {
               recentMoods.map((e) => e.mood!).reduce((a, b) => a + b) /
               recentMoods.length;
           if (recentAvg > averageMood + 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-improving-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Improvement Detected',
+              description: 'Your mood has been improving over the past week! Keep up the great work.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          } else if (recentAvg < averageMood - 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-declining-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Trend Notice',
+              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          }
+        }
+
+        final bestMoodEntry =
+            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
+          } else if (recentAvg < averageMood - 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-declining-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Trend Notice',
+              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          }
+        }
+
+        final bestMoodEntry =
+            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
             insights.add(
               InsightModel(
                 id: 'mood-improving-${now.millisecondsSinceEpoch}',
@@ -166,6 +205,14 @@ class DashboardRepository {
         }
 
         if (recentHabits.length >= 3) {
+          insights.add(InsightModel(
+            id: 'habit-variety-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Habit Variety',
+            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+            userId: userId,
+            title: 'Habit Variety',
+            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
           insights.add(
             InsightModel(
               id: 'habit-variety-${now.millisecondsSinceEpoch}',
