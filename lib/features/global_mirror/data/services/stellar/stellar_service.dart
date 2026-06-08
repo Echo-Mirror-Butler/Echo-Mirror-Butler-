@@ -97,7 +97,7 @@ class StellarService {
   }) async {
     final issuer = issuerPublicKey ?? StellarConfig.issuerPublicKey;
     if (issuer.isEmpty) {
-      debugPrint('[StellarService] No issuer configured — cannot send ECHO');
+      debugPrint('[StellarService] No issuer configured â€” cannot send ECHO');
       return null;
     }
     try {
@@ -128,7 +128,7 @@ class StellarService {
       final response = await (sdk ?? _sdk).submitTransaction(transaction);
       if (response.success) {
         final hash = response.hash;
-        debugPrint('[StellarService] Sent $amount ECHO — tx: $hash');
+        debugPrint('[StellarService] Sent $amount ECHO â€” tx: $hash');
         return hash;
       }
       debugPrint(

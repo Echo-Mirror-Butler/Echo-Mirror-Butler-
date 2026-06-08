@@ -113,7 +113,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         title: const Text('Send ECHO Gift'),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
       ),
@@ -184,7 +184,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(FontAwesomeIcons.gift),
+                      : Icon(FontAwesomeIcons.gift.data),
                   label: Text(
                     isActionLoading
                         ? 'Sending...'
@@ -275,7 +275,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       ),
       child: Row(
         children: [
-          const Icon(FontAwesomeIcons.coins, color: Colors.white, size: 32),
+          Icon(FontAwesomeIcons.coins.data, color: Colors.white, size: 32),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -337,7 +337,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         // Custom amount
         ActionChip(
           label: const Text('Custom'),
-          avatar: const Icon(Icons.edit, size: 16),
+          avatar: Icon(Icons.edit, size: 16),
           onPressed: _showCustomAmountDialog,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -365,7 +365,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
             ],
             decoration: InputDecoration(
-              labelText: 'ECHO amount (0.1–1000)',
+              labelText: 'ECHO amount (0.1â€“1000)',
               suffixText: 'ECHO',
               errorText: errorText,
             ),
@@ -406,18 +406,18 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
         children: [
           Icon(
-            FontAwesomeIcons.gift,
+            FontAwesomeIcons.gift.data,
             size: 40,
-            color: theme.colorScheme.outline.withOpacity(0.5),
+            color: theme.colorScheme.outline.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -444,9 +444,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer.withOpacity(0.25),
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.error.withOpacity(0.25)),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.25),
+        ),
       ),
       child: Column(
         children: [
@@ -463,7 +465,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () => ref.read(giftProvider.notifier).loadHistory(),
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             label: const Text('Retry'),
           ),
         ],
@@ -497,7 +499,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -510,12 +512,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             ),
             leading: CircleAvatar(
               backgroundColor: isSent
-                  ? AppTheme.primaryColor.withOpacity(0.1)
-                  : Colors.green.withOpacity(0.1),
+                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                  : Colors.green.withValues(alpha: 0.1),
               child: Icon(
                 isSent
-                    ? FontAwesomeIcons.gift
-                    : FontAwesomeIcons.handHoldingHeart,
+                    ? FontAwesomeIcons.gift.data
+                    : FontAwesomeIcons.handHoldingHeart.data,
                 size: 16,
                 color: isSent ? AppTheme.primaryColor : Colors.green,
               ),
@@ -605,9 +607,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

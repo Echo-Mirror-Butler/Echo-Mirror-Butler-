@@ -4,16 +4,97 @@ import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
-import {
-  buildBestDayOfWeek,
-  buildHabitCorrelation,
-  buildHabitFrequency,
-  buildMoodDistribution,
-  buildMoodTrend,
-  buildStreakDays,
-  fetchEntries,
-} from './analytics-helpers'
+
+type LogEntry = {
+  id: string
+  date: string
+  mood: number | null
+  habits: string[] | null
+}
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function daysAgo(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  return d.toISOString().slice(0, 10)
+}
+
+async function fetchEntries(userId: string, range: number): Promise<LogEntry[]> {
+  const { data, error } = await supabase
+    .from('log_entries')
+    .select('id, date, mood, habits')
+    .eq('user_id', userId)
+    .gte('date', daysAgo(range))
+    .order('date', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as LogEntry[]
+}
+
+function buildMoodTrend(entries: LogEntry[]): { date: string; mood: number }[] {
+  return entries
+    .filter((e) => e.mood != null)
+    .map((e) => ({ date: e.date.slice(5), mood: e.mood as number }))
+}
+
+function buildMoodDistribution(entries: LogEntry[]): { mood: string; count: number }[] {
+  const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  for (const e of entries) {
+    if (e.mood != null) {
+      counts[e.mood] = (counts[e.mood] ?? 0) + 1
+    }
+  }
+  return Object.entries(counts).map(([mood, count]) => ({ mood, count }))
+}
+
+function buildBestDayOfWeek(entries: LogEntry[]): { day: string; avg: number }[] {
+  const daySums: Record<number, { sum: number; count: number }> = {}
+  for (const e of entries) {
+    if (e.mood == null) continue
+    const day = new Date(e.date).getDay()
+    if (!daySums[day]) daySums[day] = { sum: 0, count: 0 }
+    daySums[day].sum += e.mood
+    daySums[day].count += 1
+  }
+  return DAY_NAMES.map((day, i) => ({
+    day,
+    avg: daySums[i] ? +(daySums[i].sum / daySums[i].count).toFixed(2) : 0,
+  }))
+}
+
+function buildHabitCorrelation(entries: LogEntry[]): { habit: string; count: number }[] {
+  const highMoodEntries = entries.filter((e) => e.mood != null && e.mood >= 4)
+  const freq: Record<string, number> = {}
+  for (const e of highMoodEntries) {
+    for (const h of e.habits ?? []) {
+      freq[h] = (freq[h] ?? 0) + 1
+    }
+  }
+  return Object.entries(freq)
+    .map(([habit, count]) => ({ habit, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+}
+
+function buildHabitFrequency(entries: LogEntry[]): { habit: string; count: number }[] {
+  const freq: Record<string, number> = {}
+  for (const e of entries) {
+    for (const h of e.habits ?? []) {
+      freq[h] = (freq[h] ?? 0) + 1
+    }
+  }
+  return Object.entries(freq)
+    .map(([habit, count]) => ({ habit, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+}
+
+function buildStreakDays(entries: LogEntry[]): Set<string> {
+  return new Set(entries.map((e) => e.date.slice(0, 10)))
+}
 
 function StreakCalendar({ loggedDays }: { loggedDays: Set<string> }) {
   const cells = useMemo(() => {

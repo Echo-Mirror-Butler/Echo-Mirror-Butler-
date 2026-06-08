@@ -163,7 +163,6 @@ export function LogsListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
-  const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('csv')
   const [habitAutocompleteOpen, setHabitAutocompleteOpen] = useState(false)
   const habitInputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<HTMLDivElement>(null)
@@ -227,38 +226,29 @@ export function LogsListPage() {
 
       if (error) throw error
 
-      const entries = data ?? []
-      const dateStr = new Date().toISOString().slice(0, 10)
+      const header = 'date,mood,habits,notes,created_at'
 
-      if (exportFormat === 'json') {
-        const json = JSON.stringify(entries, null, 2)
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `echomirror-logs-${dateStr}.json`
-        a.click()
-        URL.revokeObjectURL(url)
-      } else {
-        const header = 'date,mood,habits,notes,created_at'
-        const rows = entries.map((e) =>
-          [
-            e.date,
-            e.mood ?? '',
-            JSON.stringify(e.habits),
-            (e.notes ?? '').replace(/,/g, ';'),
-            e.created_at,
-          ].join(','),
-        )
-        const csv = [header, ...rows].join('\n')
-        const blob = new Blob([csv], { type: 'text/csv' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `echomirror-logs-${dateStr}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
+      const rows = (data ?? []).map((e) =>
+        [
+          e.date,
+          e.mood ?? '',
+          JSON.stringify(e.habits),
+          (e.notes ?? '').replace(/,/g, ';'),
+          e.created_at,
+        ].join(','),
+      )
+
+      const csv = [header, ...rows].join('\n')
+
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `echomirror-logs-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+
+      URL.revokeObjectURL(url)
     } catch (err) {
       console.error(err)
       setExportError('Failed to export logs')
@@ -362,41 +352,9 @@ export function LogsListPage() {
           >
             Log Today
           </button>
-          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: '0.15rem', fontSize: '0.82rem' }}>
-              <button
-                type="button"
-                onClick={() => setExportFormat('csv')}
-                style={{
-                  padding: '0.4rem 0.55rem',
-                  background: exportFormat === 'csv' ? 'var(--brand)' : 'var(--surface-soft)',
-                  color: exportFormat === 'csv' ? '#fff' : 'var(--text)',
-                  border: '1px solid var(--line)',
-                  borderRadius: '8px 0 0 8px',
-                  fontSize: '0.82rem',
-                }}
-              >
-                CSV
-              </button>
-              <button
-                type="button"
-                onClick={() => setExportFormat('json')}
-                style={{
-                  padding: '0.4rem 0.55rem',
-                  background: exportFormat === 'json' ? 'var(--brand)' : 'var(--surface-soft)',
-                  color: exportFormat === 'json' ? '#fff' : 'var(--text)',
-                  border: '1px solid var(--line)',
-                  borderRadius: '0 8px 8px 0',
-                  fontSize: '0.82rem',
-                }}
-              >
-                JSON
-              </button>
-            </div>
-            <button type="button" className="secondary" onClick={handleExport} disabled={isExporting}>
-              {isExporting ? 'Exporting…' : 'Export'}
-            </button>
-          </div>
+          <button type="button" className="secondary" onClick={handleExport} disabled={isExporting}>
+            {isExporting ? 'Exporting…' : 'Export CSV'}
+          </button>
         </div>
         {exportError && <p className="error-text" style={{ padding: '0 1.5rem' }}>{exportError}</p>}
 
@@ -603,48 +561,10 @@ export function LogsListPage() {
           ))}
 
           {logsQuery.isLoading || logsQuery.isFetching ? <div className="skeleton-line" /> : null}
-          {!logsQuery.data?.rows.length && !logsQuery.isLoading && hasFilters ? (
+          {!logsQuery.data?.rows.length && !logsQuery.isLoading ? (
             <p className="muted" style={{ padding: '1rem 1.5rem' }}>
-              No entries match the current filters.{' '}
-              <button
-                type="button"
-                onClick={clearFilters}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--brand)',
-                  cursor: 'pointer',
-                  fontSize: 'inherit',
-                  padding: 0,
-                  textDecoration: 'underline',
-                }}
-              >
-                Clear filters
-              </button>
+              {hasFilters ? 'No entries match the current filters.' : 'No log entries yet.'}
             </p>
-          ) : null}
-          {!logsQuery.data?.rows.length && !logsQuery.isLoading && !hasFilters ? (
-            <div style={{ textAlign: 'center', padding: '2.5rem 1.5rem' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }} aria-hidden="true">📓</div>
-              <h3 style={{ fontFamily: "'Fraunces', serif", margin: '0 0 0.4rem', fontSize: '1.3rem' }}>No entries yet</h3>
-              <p className="muted" style={{ margin: '0 0 1.2rem', fontSize: '0.9rem', maxWidth: '28ch', marginInline: 'auto' }}>
-                Start logging your mood to track patterns and earn ECHO tokens
-              </p>
-              <button
-                type="button"
-                onClick={async () => {
-                  const today = toDateInputValue(new Date())
-                  const existingId = await findExistingLogIdForDate(user.id, today)
-                  if (existingId) {
-                    navigate(`/logs/${existingId}/edit`)
-                    return
-                  }
-                  navigate(`/logs/new?date=${today}`)
-                }}
-              >
-                Log Today's Mood
-              </button>
-            </div>
           ) : null}
           {logsQuery.data?.rows.length && page >= totalPages && !logsQuery.isFetching ? (
             <p className="muted" style={{ padding: '0.5rem 0' }}>No more entries.</p>

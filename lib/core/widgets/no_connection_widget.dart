@@ -31,10 +31,10 @@ class NoConnectionWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   ),
                   child: Icon(
-                    FontAwesomeIcons.wifi,
+                    FontAwesomeIcons.wifi.data,
                     size: isMobile ? 48 : 64,
                     color: AppTheme.primaryColor,
                   ),
@@ -80,7 +80,7 @@ class NoConnectionWidget extends StatelessWidget {
                 duration: const Duration(milliseconds: 600),
                 child: ElevatedButton.icon(
                   onPressed: onRetry,
-                  icon: const FaIcon(FontAwesomeIcons.rotateRight, size: 18),
+                  icon: Icon(FontAwesomeIcons.rotateRight.data, size: 18),
                   label: Text(
                     'Try Again',
                     style: GoogleFonts.poppins(

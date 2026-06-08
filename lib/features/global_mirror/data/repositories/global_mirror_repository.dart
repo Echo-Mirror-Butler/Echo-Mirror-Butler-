@@ -315,15 +315,6 @@ class GlobalMirrorRepository {
         body: {'sentiment': sentiment, 'nearbyCount': nearbyCount},
       );
 
-      // Check for rate limit error (429)
-      if (response.status != null && response.status! >= 400) {
-        final data = response.data;
-        if (data is Map &&
-            data['error']?.toString().contains('Rate limit') == true) {
-          return 'You\'ve reached your AI encouragement limit for this hour. Try again later.';
-        }
-      }
-
       final data = response.data;
       if (data != null && data is Map && data.containsKey('message')) {
         return data['message'] as String;
@@ -333,7 +324,7 @@ class GlobalMirrorRepository {
       debugPrint(
         '[GlobalMirrorRepository] Error generating cluster encouragement: $e',
       );
-      return 'Others nearby are feeling similar—many found short '
+      return 'Others nearby are feeling similarâ€”many found short '
           'walks or deep breathing helped today.';
     }
   }

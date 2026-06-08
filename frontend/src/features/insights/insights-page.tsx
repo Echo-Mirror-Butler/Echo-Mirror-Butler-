@@ -12,7 +12,6 @@
  * - Mobile-friendly layout
  */
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
@@ -628,37 +627,6 @@ export function InsightsPage() {
           </>
         )}
       </article>
-
-      {/* Used Logs */}
-      {currentInsight && logsQuery.data && logsQuery.data.length > 0 && (
-        <article className="card full-width">
-          <details>
-            <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem' }}>
-              Based on your last {logsQuery.data.length} entries
-            </summary>
-            <div className="list-stack" style={{ marginTop: '0.75rem' }}>
-              {logsQuery.data.slice(0, 10).map((entry) => (
-                <Link
-                  key={entry.id}
-                  to={`/logs/${entry.id}/edit`}
-                  className="list-card"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem 0.7rem' }}
-                >
-                  <span style={{ flexShrink: 0, fontSize: '0.85rem', color: 'var(--muted)', minWidth: '7ch' }}>
-                    {formatDate(entry.date)}
-                  </span>
-                  <span style={{ flexShrink: 0, fontSize: '1rem' }}>
-                    {moodToEmoji(entry.mood)}
-                  </span>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {entry.notes?.slice(0, 40) || 'No note'}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </details>
-        </article>
-      )}
 
       {/* Insight History */}
       <article className="card full-width">

@@ -85,7 +85,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                     .read(moodCommentNotificationProvider.notifier)
                     .markAllAsRead();
               },
-              icon: const Icon(FontAwesomeIcons.checkDouble, size: 16),
+              icon: Icon(FontAwesomeIcons.checkDouble.data, size: 16),
               label: const Text('Mark all read'),
               style: TextButton.styleFrom(
                 foregroundColor: AppTheme.primaryColor,
@@ -93,7 +93,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
             ),
           if (notifications.isNotEmpty)
             IconButton(
-              icon: const Icon(FontAwesomeIcons.trash),
+              icon: Icon(FontAwesomeIcons.trash.data),
               onPressed: () {
                 showDialog(
                   context: context,
@@ -142,9 +142,11 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            FontAwesomeIcons.heart,
+                            FontAwesomeIcons.heart.data,
                             size: 64,
-                            color: theme.colorScheme.primary.withOpacity(0.3),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.3,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -161,8 +163,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                             'you\'ll see it here',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: theme.colorScheme.onSurface.withOpacity(
-                                0.6,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.6,
                               ),
                             ),
                             textAlign: TextAlign.center,
@@ -193,8 +195,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        FontAwesomeIcons.trash,
+                      child: Icon(
+                        FontAwesomeIcons.trash.data,
                         color: Colors.white,
                       ),
                     ),
@@ -240,12 +242,14 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: notification.isRead
                                 ? theme.colorScheme.surface
-                                : sentimentColor.withOpacity(0.1),
+                                : sentimentColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: notification.isRead
-                                  ? theme.colorScheme.outline.withOpacity(0.2)
-                                  : sentimentColor.withOpacity(0.3),
+                                  ? theme.colorScheme.outline.withValues(
+                                      alpha: 0.2,
+                                    )
+                                  : sentimentColor.withValues(alpha: 0.3),
                               width: notification.isRead ? 1 : 2,
                             ),
                           ),
@@ -269,7 +273,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                     Row(
                                       children: [
                                         Icon(
-                                          FontAwesomeIcons.heart,
+                                          FontAwesomeIcons.heart.data,
                                           size: 14,
                                           color: AppTheme.primaryColor,
                                         ),
@@ -281,7 +285,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
                                               color: theme.colorScheme.onSurface
-                                                  .withOpacity(0.7),
+                                                  .withValues(alpha: 0.7),
                                             ),
                                           ),
                                         ),
@@ -304,7 +308,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
                                           color: theme.colorScheme.outline
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                         ),
                                       ),
                                       child: Text(
@@ -323,7 +327,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                           style: GoogleFonts.poppins(
                                             fontSize: 11,
                                             color: theme.colorScheme.onSurface
-                                                .withOpacity(0.5),
+                                                .withValues(alpha: 0.5),
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -333,8 +337,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: sentimentColor.withOpacity(
-                                              0.2,
+                                            color: sentimentColor.withValues(
+                                              alpha: 0.2,
                                             ),
                                             borderRadius: BorderRadius.circular(
                                               8,
@@ -370,7 +374,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                     .read(moodCommentNotificationProvider.notifier)
                     .markAllAsRead();
               },
-              icon: const Icon(FontAwesomeIcons.checkDouble),
+              icon: Icon(FontAwesomeIcons.checkDouble.data),
               label: Text('Mark all read ($unreadCount)'),
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,

@@ -23,19 +23,19 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
-      icon: FontAwesomeIcons.chartLine,
+      icon: FontAwesomeIcons.chartLine.data,
       label: 'Dashboard',
       route: '/dashboard',
       screen: const DashboardScreen(),
     ),
     NavigationItem(
-      icon: FontAwesomeIcons.book,
+      icon: FontAwesomeIcons.book.data,
       label: 'Logging',
       route: '/logging',
       screen: const LoggingScreen(),
     ),
     NavigationItem(
-      icon: FontAwesomeIcons.gear,
+      icon: FontAwesomeIcons.gear.data,
       label: 'Settings',
       route: '/settings',
       screen: const SettingsScreen(),
@@ -126,7 +126,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         color: isDark ? AppTheme.darkSurfaceColor : AppTheme.surfaceColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 30,
             offset: const Offset(0, -8),
             spreadRadius: 0,
@@ -137,22 +137,22 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: GNav(
-            rippleColor: AppTheme.primaryColor.withOpacity(0.1),
-            hoverColor: AppTheme.primaryColor.withOpacity(0.1),
+            rippleColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+            hoverColor: AppTheme.primaryColor.withValues(alpha: 0.1),
             gap: 6,
             activeColor: AppTheme.primaryColor,
             iconSize: 26,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             duration: const Duration(milliseconds: 400),
-            tabBackgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+            tabBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
             color: isDark
-                ? Colors.white.withOpacity(0.5)
-                : Colors.black.withOpacity(0.5),
+                ? Colors.white.withValues(alpha: 0.5)
+                : Colors.black.withValues(alpha: 0.5),
             selectedIndex: _currentIndex,
             onTabChange: _onItemTapped,
             tabs: [
               GButton(
-                icon: FontAwesomeIcons.chartLine,
+                icon: FontAwesomeIcons.chartLine.data,
                 text: 'Dashboard',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -160,7 +160,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
               GButton(
-                icon: FontAwesomeIcons.book,
+                icon: FontAwesomeIcons.book.data,
                 text: 'Logging',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -168,7 +168,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
               GButton(
-                icon: FontAwesomeIcons.gear,
+                icon: FontAwesomeIcons.gear.data,
                 text: 'Settings',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,

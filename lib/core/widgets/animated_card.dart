@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../themes/app_theme.dart';
 
-/// Reusable animated card widget with elevation, shadow, and entrance animation
+/// Reusable animated card widget with elevation, shadow, and entrance animation.
 class AnimatedCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry? margin;
@@ -34,13 +34,14 @@ class AnimatedCard extends StatefulWidget {
 
 class _AnimatedCardState extends State<AnimatedCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       duration: widget.animationDuration,
       vsync: this,
@@ -54,7 +55,6 @@ class _AnimatedCardState extends State<AnimatedCard>
       CurvedAnimation(parent: _controller, curve: widget.animationCurve),
     );
 
-    // Start animation
     _controller.forward();
   }
 
@@ -76,30 +76,34 @@ class _AnimatedCardState extends State<AnimatedCard>
         scale: _scaleAnimation,
         child: Card(
           elevation: cardElevation,
-          shadowColor: AppTheme.primaryColor.withOpacity(0.15),
+          shadowColor: AppTheme.primaryColor.withValues(alpha: 0.15),
           shape: RoundedRectangleBorder(borderRadius: borderRadius),
           margin:
               widget.margin ??
               const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: InkWell(
-            onTap: widget.onTap,
+          clipBehavior: Clip.antiAlias,
+          child: Material(
+            color: widget.backgroundColor ?? theme.colorScheme.surface,
             borderRadius: borderRadius,
-            child: Container(
-              padding: widget.padding ?? const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: borderRadius,
-                color: widget.backgroundColor ?? theme.colorScheme.surface,
-                gradient: widget.gradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                    spreadRadius: 0,
-                  ),
-                ],
+            child: InkWell(
+              onTap: widget.onTap,
+              borderRadius: borderRadius,
+              child: Ink(
+                padding: widget.padding ?? const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: borderRadius,
+                  gradient: widget.gradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: widget.child,
               ),
-              child: widget.child,
             ),
           ),
         ),

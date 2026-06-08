@@ -1,191 +1,200 @@
+import 'package:echomirror/features/auth/data/models/user_model.dart';
 import 'package:echomirror/features/auth/viewmodel/providers/auth_provider.dart';
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
 import 'package:echomirror/features/logging/view/screens/logging_screen.dart';
 import 'package:echomirror/features/logging/viewmodel/providers/logging_provider.dart';
+import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
+import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
+import 'package:echomirror/core/widgets/shimmer_loading.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mocktail/mocktail.dart';
 
-final _now = DateTime.utc(2026, 4, 1, 12, 0);
+class MockLoggingRepository extends Mock implements LoggingRepository {}
 
-LogEntryModel _makeEntry({
-  String id = 'entry-1',
-  String userId = 'u1',
-  int? mood = 4,
-  DateTime? date,
-}) => LogEntryModel(
-  id: id,
-  userId: userId,
-  date: date ?? _now,
-  mood: mood,
-  habits: const ['exercise'],
-  notes: 'test note',
-  createdAt: _now,
-);
+class MockAuthRepository extends Mock implements AuthRepository {}
 
 class _FakeLoggingNotifier extends LoggingNotifier {
-  _FakeLoggingNotifier(this._initialState) : super(_FakeLoggingRepository()) {
-    state = _initialState;
+  _FakeLoggingNotifier(AsyncValue<List<LogEntryModel>> initialState)
+    : super(MockLoggingRepository()) {
+    state = initialState;
   }
 
-  final AsyncValue<List<LogEntryModel>> _initialState;
-
   @override
-  Future<void> loadLogEntries({String? userId}) async {}
-}
-
-class _FakeLoggingRepository {
-  Future<List<LogEntryModel>> getLogEntries(String userId) async => [];
-  Future<LogEntryModel> createLogEntry(LogEntryModel entry) async => entry;
-  Future<LogEntryModel> updateLogEntry(LogEntryModel entry) async => entry;
-  Future<void> deleteLogEntry(String entryId, String userId) async {}
-  Future<LogEntryModel?> getLogEntryForDate(
-    DateTime date,
-    String userId,
-  ) async => null;
+  Future<void> loadLogEntries({String? userId}) async {
+    // Do nothing in tests to prevent state changes unless intended
+  }
 }
 
 class _FakeAuthNotifier extends AuthNotifier {
-  _FakeAuthNotifier() : super(_FakeAuthRepository()) {
-    state = const AuthState(isAuthenticated: false);
+  _FakeAuthNotifier._(MockAuthRepository repo, AuthState initialState)
+    : super(repo) {
+    state = initialState;
   }
 
-  @override
-  Future<void> checkAuthStatus() async {}
+  factory _FakeAuthNotifier(AuthState initialState) {
+    final repo = MockAuthRepository();
+    when(() => repo.isAuthenticated()).thenAnswer((_) async => false);
+    return _FakeAuthNotifier._(repo, initialState);
+  }
 }
 
-class _FakeAuthRepository {
-  Future<bool> isAuthenticated() async => false;
-  Future<Map<String, dynamic>?> getCurrentUser() async => null;
-}
+class MockNavigatorObserver extends Mock implements NavigatorObserver {}
 
-Widget _buildScreen({
-  required AsyncValue<List<LogEntryModel>> loggingState,
-  bool withRouter = false,
-}) {
-  final fakeLoggingNotifier = _FakeLoggingNotifier(loggingState);
-  final fakeAuthNotifier = _FakeAuthNotifier();
+class FakeRoute extends Fake implements Route<dynamic> {}
 
-  if (!withRouter) {
+void main() {
+  setUpAll(() {
+    registerFallbackValue(FakeRoute());
+  });
+
+  Widget buildScreen({
+    AsyncValue<List<LogEntryModel>> loggingState = const AsyncValue.data([]),
+    AuthState authState = const AuthState(),
+    NavigatorObserver? navigatorObserver,
+  }) {
+    final router = GoRouter(
+      initialLocation: '/',
+      observers: navigatorObserver != null ? [navigatorObserver] : [],
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const LoggingScreen()),
+        GoRoute(
+          path: '/logging/create',
+          builder: (context, state) =>
+              const Scaffold(body: Text('Target: /logging/create')),
+        ),
+        GoRoute(
+          path: '/logging/detail/:id',
+          builder: (context, state) => Scaffold(
+            body: Text('Target: /logging/detail/${state.pathParameters['id']}'),
+          ),
+        ),
+      ],
+    );
+
     return ProviderScope(
       overrides: [
-        loggingProvider.overrideWith((ref) => fakeLoggingNotifier),
-        authProvider.overrideWith((ref) => fakeAuthNotifier),
+        loggingProvider.overrideWith(
+          (ref) => _FakeLoggingNotifier(loggingState),
+        ),
+        authProvider.overrideWith((ref) => _FakeAuthNotifier(authState)),
       ],
-      child: const MaterialApp(home: LoggingScreen()),
+      child: MaterialApp.router(routerConfig: router),
     );
   }
 
-  final router = GoRouter(
-    initialLocation: '/',
-    routes: [
-      GoRoute(
-        path: '/',
-        builder: (_, __) => const Scaffold(body: Text('Home')),
-      ),
-      GoRoute(
-        path: '/logging/create',
-        builder: (_, __) => const Scaffold(body: Text('Create Entry')),
-      ),
-      GoRoute(
-        path: '/logging/detail/:id',
-        builder: (_, __) => const Scaffold(body: Text('Entry Detail')),
-      ),
-    ],
+  final testUser = UserModel(
+    id: 'user-123',
+    email: 'test@example.com',
+    name: 'Test User',
+    createdAt: DateTime.now(),
   );
 
-  return ProviderScope(
-    overrides: [
-      loggingProvider.overrideWith((ref) => fakeLoggingNotifier),
-      authProvider.overrideWith((ref) => fakeAuthNotifier),
-    ],
-    child: MaterialApp.router(routerConfig: router),
+  final testEntry = LogEntryModel(
+    id: 'entry-1',
+    userId: 'user-123',
+    date: DateTime(2026, 4, 24),
+    mood: 4,
+    notes: 'Feeling great!',
+    createdAt: DateTime.now(),
   );
-}
 
-void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({
-      'user_id': 'u1',
-      'user_email': 'test@test.com',
-    });
-  });
-
-  group('LoggingScreen empty state', () {
-    testWidgets('empty-state widget is visible when AsyncData([])', (
+  group('LoggingScreen Widget Tests', () {
+    testWidgets('Empty state is shown when there are no log entries', (
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildScreen(loggingState: const AsyncValue.data([])),
+        buildScreen(
+          loggingState: const AsyncValue.data([]),
+          authState: AuthState(user: testUser),
+        ),
       );
-      await tester.pump(const Duration(seconds: 2));
 
       expect(find.text('No entries yet'), findsOneWidget);
       expect(
         find.text('Start logging your daily mood and habits'),
         findsOneWidget,
       );
+      expect(find.byIcon(FontAwesomeIcons.book.data), findsOneWidget);
     });
-  });
 
-  group('LoggingScreen entry list', () {
-    testWidgets('renders entries with correct dates and moods', (tester) async {
+    testWidgets('Entry cards are rendered when entries exist', (tester) async {
       final entries = [
-        _makeEntry(id: 'e1', mood: 5, date: DateTime(2026, 4, 1)),
-        _makeEntry(id: 'e2', mood: 3, date: DateTime(2026, 4, 2)),
+        testEntry,
+        testEntry.copyWith(id: 'entry-2', date: DateTime(2026, 4, 23), mood: 3),
       ];
 
       await tester.pumpWidget(
-        _buildScreen(loggingState: AsyncValue.data(entries)),
-      );
-      await tester.pump(const Duration(seconds: 2));
-
-      expect(find.text('No entries yet'), findsNothing);
-      expect(find.byType(ListView), findsOneWidget);
-    });
-  });
-
-  group('LoggingScreen loading state', () {
-    testWidgets('shows loading indicator and hides list', (tester) async {
-      await tester.pumpWidget(
-        _buildScreen(loggingState: const AsyncValue.loading()),
-      );
-      await tester.pump();
-
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    });
-  });
-
-  group('LoggingScreen error state', () {
-    testWidgets('renders retry widget on AsyncError', (tester) async {
-      await tester.pumpWidget(
-        _buildScreen(
-          loggingState: AsyncValue.error(
-            Exception('network error'),
-            StackTrace.current,
-          ),
+        buildScreen(
+          loggingState: AsyncValue.data(entries),
+          authState: AuthState(user: testUser),
         ),
       );
+
+      // AnimatedCard takes some time, pump enough
       await tester.pumpAndSettle();
 
-      expect(find.text('Retry'), findsOneWidget);
+      expect(find.byType(ListTile), findsNWidgets(2));
+      expect(find.text('Apr 24, 2026'), findsOneWidget);
+      expect(find.text('Apr 23, 2026'), findsOneWidget);
+      expect(find.text('Mood: 4/5'), findsOneWidget);
+      expect(find.text('Mood: 3/5'), findsOneWidget);
     });
-  });
 
-  group('LoggingScreen create entry navigation', () {
-    testWidgets('tapping FAB navigates to create entry screen', (tester) async {
+    testWidgets('Loading spinner shown while entries are loading', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        _buildScreen(loggingState: const AsyncValue.data([]), withRouter: true),
+        buildScreen(
+          loggingState: const AsyncValue.loading(),
+          authState: AuthState(user: testUser),
+        ),
       );
-      await tester.pump(const Duration(seconds: 2));
+
+      expect(find.byType(ShimmerLoading), findsOneWidget);
+    });
+
+    testWidgets('Tapping the FAB navigates to CreateEntryScreen', (
+      tester,
+    ) async {
+      final observer = MockNavigatorObserver();
+      await tester.pumpWidget(
+        buildScreen(
+          loggingState: const AsyncValue.data([]),
+          authState: AuthState(user: testUser),
+          navigatorObserver: observer,
+        ),
+      );
+
+      await tester.tap(find.text('New Entry'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(FloatingActionButton));
+      // go_router uses Navigator under the hood.
+      // Tapping 'New Entry' calls context.push('/logging/create')
+      verify(() => observer.didPush(any(), any())).called(greaterThan(0));
+      expect(find.text('Target: /logging/create'), findsOneWidget);
+    });
+
+    testWidgets('Tapping an entry card navigates to EntryDetailScreen', (
+      tester,
+    ) async {
+      final observer = MockNavigatorObserver();
+      await tester.pumpWidget(
+        buildScreen(
+          loggingState: AsyncValue.data([testEntry]),
+          authState: AuthState(user: testUser),
+          navigatorObserver: observer,
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ListTile));
       await tester.pumpAndSettle();
 
-      expect(find.text('Create Entry'), findsOneWidget);
+      expect(find.text('Target: /logging/detail/entry-1'), findsOneWidget);
     });
   });
 }

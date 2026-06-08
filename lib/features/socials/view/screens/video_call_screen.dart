@@ -354,9 +354,13 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           WakelockPlus.disable();
           await pipOverlay.engine?.leaveChannel();
           await pipOverlay.engine?.release();
-          // Try to leave session (might fail if widget is disposed, that's OK)
+          // Try to leave/end session (might fail if widget is disposed, that's OK)
           try {
-            await socialsNotifier.leaveSession(sessionId);
+            if (isHost) {
+              await socialsNotifier.endSession(sessionId);
+            } else {
+              await socialsNotifier.leaveSession(sessionId);
+            }
           } catch (e) {
             debugPrint(
               '[VideoCallScreen] Error leaving session from overlay: $e',
@@ -496,7 +500,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
       await _engine?.leaveChannel();
       await _engine?.release();
 
-      await ref.read(socialsProvider.notifier).leaveSession(widget.sessionId);
+      // If host, end the session (mark as inactive). Otherwise, just leave.
+      if (widget.isHost) {
+        await ref.read(socialsProvider.notifier).endSession(widget.sessionId);
+      } else {
+        await ref.read(socialsProvider.notifier).leaveSession(widget.sessionId);
+      }
 
       // Check if we can pop before actually popping
       if (mounted && Navigator.canPop(context)) {
@@ -533,9 +542,12 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        await _handleBackButton();
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (!didPop) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _handleBackButton();
+          });
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -711,7 +723,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                             width: 1,
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
                           color: Colors.white,
                           size: 24,
@@ -790,22 +802,22 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                       children: [
                         _buildControlButton(
                           icon: _isVideoEnabled
-                              ? FontAwesomeIcons.video
-                              : FontAwesomeIcons.videoSlash,
+                              ? FontAwesomeIcons.video.data
+                              : FontAwesomeIcons.videoSlash.data,
                           label: _isVideoEnabled ? 'Video On' : 'Video Off',
                           isActive: _isVideoEnabled,
                           onTap: _toggleVideo,
                         ),
                         _buildControlButton(
                           icon: _isAudioEnabled
-                              ? FontAwesomeIcons.microphone
-                              : FontAwesomeIcons.microphoneSlash,
+                              ? FontAwesomeIcons.microphone.data
+                              : FontAwesomeIcons.microphoneSlash.data,
                           label: _isAudioEnabled ? 'Mic On' : 'Mic Off',
                           isActive: _isAudioEnabled,
                           onTap: _toggleAudio,
                         ),
                         _buildControlButton(
-                          icon: FontAwesomeIcons.rotate,
+                          icon: FontAwesomeIcons.rotate.data,
                           label: 'Switch',
                           isActive: true,
                           onTap: _switchCamera,
@@ -813,15 +825,17 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                         if (_isPipSupported)
                           _buildControlButton(
                             icon: _isInPipMode
-                                ? FontAwesomeIcons.windowMaximize
-                                : FontAwesomeIcons.upRightAndDownLeftFromCenter,
+                                ? FontAwesomeIcons.windowMaximize.data
+                                : FontAwesomeIcons
+                                      .upRightAndDownLeftFromCenter
+                                      .data,
                             label: _isInPipMode ? 'Minimized' : 'Minimize',
                             isActive: !_isInPipMode,
                             onTap: _togglePipMode,
                           ),
                         _buildControlButton(
-                          icon: FontAwesomeIcons.phone,
-                          label: 'Leave',
+                          icon: FontAwesomeIcons.phone.data,
+                          label: widget.isHost ? 'End Call' : 'Leave',
                           isActive: false,
                           isDanger: true,
                           onTap: _leaveCall,
@@ -911,8 +925,8 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(
-                    FontAwesomeIcons.videoSlash,
+                  Icon(
+                    FontAwesomeIcons.videoSlash.data,
                     color: Colors.white70,
                     size: 16,
                   ),
@@ -960,7 +974,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                 width: 2,
               ),
             ),
-            child: Center(child: FaIcon(icon, color: Colors.white, size: 24)),
+            child: Center(child: Icon(icon, color: Colors.white, size: 24)),
           ),
         ),
         const SizedBox(height: 8),

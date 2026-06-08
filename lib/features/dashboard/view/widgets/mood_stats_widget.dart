@@ -22,7 +22,7 @@ class MoodStatsWidget extends StatelessWidget {
             child: Text(
               'No mood data available',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -44,11 +44,11 @@ class MoodStatsWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppTheme.accentColor.withOpacity(0.1),
+                    color: AppTheme.accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    FontAwesomeIcons.chartBar,
+                    FontAwesomeIcons.chartBar.data,
                     color: AppTheme.accentColor,
                     size: 20,
                   ),
@@ -69,7 +69,7 @@ class MoodStatsWidget extends StatelessWidget {
                   child: _StatCard(
                     label: 'Average Mood',
                     value: analytics.averageMood.toStringAsFixed(1),
-                    icon: FontAwesomeIcons.chartLine,
+                    icon: FontAwesomeIcons.chartLine.data,
                     color: AppTheme.primaryColor,
                   ),
                 ),
@@ -79,7 +79,7 @@ class MoodStatsWidget extends StatelessWidget {
                     child: _StatCard(
                       label: 'Weekly Avg',
                       value: analytics.weeklyAverage!.toStringAsFixed(1),
-                      icon: FontAwesomeIcons.calendarWeek,
+                      icon: FontAwesomeIcons.calendarWeek.data,
                       color: AppTheme.secondaryColor,
                     ),
                   ),
@@ -94,7 +94,7 @@ class MoodStatsWidget extends StatelessWidget {
                       child: _StatCard(
                         label: 'Best Mood',
                         value: analytics.bestMoodDay.toString(),
-                        icon: FontAwesomeIcons.faceGrinStars,
+                        icon: FontAwesomeIcons.faceGrinStars.data,
                         color: Colors.green,
                       ),
                     ),
@@ -106,7 +106,7 @@ class MoodStatsWidget extends StatelessWidget {
                       child: _StatCard(
                         label: 'Lowest Mood',
                         value: analytics.worstMoodDay.toString(),
-                        icon: FontAwesomeIcons.faceFrown,
+                        icon: FontAwesomeIcons.faceFrown.data,
                         color: Colors.red,
                       ),
                     ),
@@ -132,7 +132,7 @@ class MoodStatsWidget extends StatelessWidget {
       return Text(
         'No distribution data',
         style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       );
     }
@@ -189,7 +189,7 @@ class MoodStatsWidget extends StatelessWidget {
                   '$count',
                   textAlign: TextAlign.right,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -238,9 +238,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,7 +253,7 @@ class _StatCard extends StatelessWidget {
                 child: Text(
                   label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),

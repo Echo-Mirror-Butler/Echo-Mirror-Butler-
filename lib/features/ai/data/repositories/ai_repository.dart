@@ -148,18 +148,6 @@ class AiRepository {
         'generate-insight',
         body: {'recentLogs': logPayloads},
       );
-
-      // Check for rate limit error (429)
-      if (response.status != null && response.status! >= 400) {
-        final result = response.data;
-        if (result is Map &&
-            result['error']?.toString().contains('Rate limit') == true) {
-          throw Exception(
-            'You\'ve reached your AI insight limit for this hour. Please try again later.',
-          );
-        }
-      }
-
       final result = response.data;
 
       // Validate that we got real data from Gemini (not empty or null)
@@ -242,13 +230,11 @@ class AiRepository {
       debugPrint('[AiRepository]   Suggestions: ${suggestions.length} items');
 
       final stressLevel = result['stressLevel'] as int?;
-      if (stressLevel != null) {
-        debugPrint(
-          '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})',
-        );
-      } else {
-        debugPrint('[AiRepository]   Stress Level: NOT PROVIDED by server.');
-      }
+      debugPrint(
+        stressLevel != null
+            ? '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})'
+            : '[AiRepository]   Stress Level: NOT PROVIDED by server.',
+      );
 
       for (var i = 0; i < suggestions.length; i++) {
         if (suggestions[i].length < 30) {

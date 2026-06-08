@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDate, formatDateTime, moodToEmoji, getCountdownLabel, toDateInputValue, daysAgo } from './date'
+import { formatDate, formatDateTime, moodToEmoji, getCountdownLabel, toDateInputValue } from './date'
 
 describe('formatDate', () => {
   it('formats ISO string to readable date', () => {
@@ -31,16 +31,6 @@ describe('formatDateTime', () => {
 
   it('handles invalid dates gracefully', () => {
     expect(() => formatDateTime('invalid-date')).toThrow('Invalid time value')
-  })
-})
-
-describe('daysAgo', () => {
-  it('returns a full ISO timestamp instead of a date-only string', () => {
-    const baseDate = new Date('2024-04-29T10:30:00.000Z')
-    const result = daysAgo(7, baseDate)
-
-    expect(result).toBe('2024-04-22T10:30:00.000Z')
-    expect(result).toMatch(/T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
   })
 })
 

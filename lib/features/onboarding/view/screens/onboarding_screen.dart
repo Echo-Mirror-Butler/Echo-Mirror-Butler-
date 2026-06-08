@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,7 +28,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       subtitle: 'Your Future Self as a Butler',
       description:
           'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
-      icon: FontAwesomeIcons.userTie,
+      icon: FontAwesomeIcons.userTie.data,
       imageUrl:
           'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
       lottieAsset: LottieAnimations.mirrorReflection,
@@ -39,7 +38,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Log Daily Moods & Habits',
       description:
           'Capture your daily reflections, track your mood, and build meaningful habits. Your journey starts with a single entry.',
-      icon: FontAwesomeIcons.book,
+      icon: FontAwesomeIcons.book.data,
       imageUrl:
           'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
       lottieAsset: LottieAnimations.habitCheck,
@@ -49,7 +48,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Receive Predictions & Letters',
       description:
           'Get AI-powered insights about your patterns, predictions for your future, and motivational letters from your future self.',
-      icon: FontAwesomeIcons.envelopeOpen,
+      icon: FontAwesomeIcons.envelopeOpen.data,
       imageUrl:
           'https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=800&q=80',
       lottieAsset: LottieAnimations.envelopeOpen,
@@ -89,15 +88,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       debugPrint('[OnboardingScreen] Error completing onboarding: $e');
       debugPrint('[OnboardingScreen] Stack trace: $stackTrace');
       // Fallback: try to navigate anyway after marking as completed
-      if (mounted) {
-        try {
-          await markOnboardingCompleted();
-          await Future.delayed(const Duration(milliseconds: 100));
-          if (!mounted) return;
-          context.go('/login');
-        } catch (e2) {
-          debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
-        }
+      if (!mounted) return;
+      try {
+        await markOnboardingCompleted();
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
+        context.go('/login');
+      } catch (e2) {
+        debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
       }
     }
   }
@@ -126,7 +124,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ),
@@ -159,7 +157,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     count: _pages.length,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface.withOpacity(0.2),
+                      dotColor: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.2,
+                      ),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,
@@ -188,8 +188,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.7,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
                                 ),
                               ),
                             ),
@@ -232,8 +232,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               const SizedBox(width: 8),
                               Icon(
                                 isLastPage
-                                    ? FontAwesomeIcons.arrowRight
-                                    : FontAwesomeIcons.chevronRight,
+                                    ? FontAwesomeIcons.arrowRight.data
+                                    : FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                               ),
                             ],
@@ -287,7 +287,7 @@ class _OnboardingPage extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: data.gradient.first.withOpacity(0.3),
+                      color: data.gradient.first.withValues(alpha: 0.3),
                       blurRadius: 30,
                       spreadRadius: 10,
                     ),
@@ -371,8 +371,8 @@ class _OnboardingPage extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.2),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.2),
                     ],
                   ),
                 ),
@@ -434,7 +434,7 @@ class _OnboardingPage extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.normal,
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.6,
               ),
               textAlign: TextAlign.center,

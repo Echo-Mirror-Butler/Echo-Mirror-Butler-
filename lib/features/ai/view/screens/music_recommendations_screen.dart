@@ -65,7 +65,7 @@ class MusicRecommendationsScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor.withOpacity(0.05),
+      backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.05),
       appBar: AppBar(
         title: Text(
           'Relaxing Music',
@@ -84,7 +84,7 @@ class MusicRecommendationsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    FontAwesomeIcons.music,
+                    FontAwesomeIcons.music.data,
                     size: 48,
                     color: AppTheme.primaryColor,
                   ),
@@ -102,7 +102,7 @@ class MusicRecommendationsScreen extends StatelessWidget {
                     'Continue your relaxation with these calming playlists',
                     style: GoogleFonts.poppins(
                       fontSize: 16,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -139,8 +139,8 @@ class MusicRecommendationsScreen extends StatelessWidget {
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
-                                  FontAwesomeIcons.music,
+                                child: Icon(
+                                  FontAwesomeIcons.music.data,
                                   color: Colors.white,
                                   size: 24,
                                 ),
@@ -164,7 +164,7 @@ class MusicRecommendationsScreen extends StatelessWidget {
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         color: theme.colorScheme.onSurface
-                                            .withOpacity(0.6),
+                                            .withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
@@ -177,8 +177,8 @@ class MusicRecommendationsScreen extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  icon: const Icon(
-                                    FontAwesomeIcons.spotify,
+                                  icon: Icon(
+                                    FontAwesomeIcons.spotify.data,
                                     size: 16,
                                   ),
                                   label: const Text('Spotify'),
@@ -196,8 +196,8 @@ class MusicRecommendationsScreen extends StatelessWidget {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  icon: const Icon(
-                                    FontAwesomeIcons.apple,
+                                  icon: Icon(
+                                    FontAwesomeIcons.apple.data,
                                     size: 16,
                                   ),
                                   label: const Text('Apple Music'),

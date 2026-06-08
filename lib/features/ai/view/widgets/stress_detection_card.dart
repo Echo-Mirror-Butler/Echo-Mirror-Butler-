@@ -23,9 +23,9 @@ class StressDetectionCard extends StatelessWidget {
 
     final level = insight.stressLevel ?? 0;
     if (level >= 4) {
-      return 'Hey, future you here—I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';
+      return 'Hey, future you hereâ€”I notice you\'re feeling tense today. Remember how good that walk felt last week? Let\'s breathe together.';
     } else if (level >= 3) {
-      return 'Hey, future you here—I noticed you\'ve been working hard. A quick breathing break might help.';
+      return 'Hey, future you hereâ€”I noticed you\'ve been working hard. A quick breathing break might help.';
     }
     return '';
   }
@@ -49,8 +49,8 @@ class StressDetectionCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.orange.withOpacity(0.1),
-              Colors.red.withOpacity(0.1),
+              Colors.orange.withValues(alpha: 0.1),
+              Colors.red.withValues(alpha: 0.1),
             ],
           ),
         ),
@@ -64,11 +64,11 @@ class StressDetectionCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.2),
+                      color: Colors.orange.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      FontAwesomeIcons.circleExclamation,
+                    child: Icon(
+                      FontAwesomeIcons.circleExclamation.data,
                       color: Colors.orange,
                       size: 24,
                     ),
@@ -91,7 +91,7 @@ class StressDetectionCard extends StatelessWidget {
                 _stressMessage,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
-                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                   height: 1.5,
                 ),
               ),
@@ -99,7 +99,7 @@ class StressDetectionCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  icon: const Icon(FontAwesomeIcons.wind),
+                  icon: Icon(FontAwesomeIcons.wind.data),
                   label: const Text('Start Breathing Exercise'),
                   onPressed: () {
                     Navigator.of(context).push(
