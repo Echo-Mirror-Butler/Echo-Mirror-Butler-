@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { useToast } from '../../lib/use-toast'
 import type { LogEntry } from '../../lib/types'
-import { toDateInputValue, formatDate } from '../../lib/date'
+import { toDateInputValue } from '../../lib/date'
 
 type LogFormMode = 'create' | 'edit'
 

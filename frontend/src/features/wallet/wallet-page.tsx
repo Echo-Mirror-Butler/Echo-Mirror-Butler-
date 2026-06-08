@@ -1,5 +1,4 @@
-﻿import { FormEvent, useState } from 'react'
-import { FormEvent, useEffect, useState } from 'react'
+﻿import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
@@ -8,7 +7,6 @@ import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
 import { TestnetBadge } from '../../components/TestnetBadge'
-import { txExplorerUrl } from '../../lib/stellar-config'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
 
 const WALLET_PAGE_SIZE = 20
@@ -368,7 +366,7 @@ export function WalletPage() {
   const handleManualKeySave = async () => {
     const key = manualKeyInput.trim()
     if (!isValidStellarKey(key)) {
-      setManualKeyError('Invalid key — must start with G and be 56 characters.')
+      setManualKeyError('Invalid key -- must start with G and be 56 characters.')
       return
     }
     setManualKeyError(null)
@@ -418,11 +416,11 @@ export function WalletPage() {
         ) : walletQuery.data?.exists ? (
           <>
             <p className="balance-number">{walletQuery.data.balance.toFixed(2)} ECHO</p>
-            <p className="muted">Public key: {walletQuery.data.record?.public_key.slice(0, 14)}â€¦</p>
+            <p className="muted">Public key: {walletQuery.data.record?.public_key?.slice(0, 14) ?? ""}â€¦</p>
             {publicKey ? (
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <p className="muted" style={{ margin: 0 }}>
-                  Public key: {publicKey.slice(0, 14)}…{publicKey.slice(-4)}
+                  Public key: {publicKey.slice(0, 14)}...{publicKey.slice(-4)}
                 </p>
                 <button type="button" className="secondary" onClick={() => void handleCopyWalletAddress()}>
                   {copiedWalletAddress ? 'Copied' : 'Copy'}
@@ -518,7 +516,7 @@ export function WalletPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span className="chip active">Connected via Freighter</span>
                 <span className="muted" style={{ fontSize: '0.875rem' }}>
-                  {freighterAddress.slice(0, 8)}…{freighterAddress.slice(-4)}
+                  {freighterAddress.slice(0, 8)}...{freighterAddress.slice(-4)}
                 </span>
                 <button
                   type="button"
@@ -544,7 +542,7 @@ export function WalletPage() {
                 onClick={() => void handleFreighterConnect()}
                 disabled={freighterStatus === 'connecting' || savePublicKeyMutation.isPending}
               >
-                {freighterStatus === 'connecting' ? 'Connecting…' : 'Connect Freighter'}
+                {freighterStatus === 'connecting' ? 'Connecting...' : 'Connect Freighter'}
               </button>
             )}
             {freighterStatus === 'error' && freighterError ? (
@@ -557,7 +555,7 @@ export function WalletPage() {
             {walletQuery.data?.record?.public_key && !freighterAddress ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span className="muted" style={{ fontSize: '0.875rem' }}>
-                  {walletQuery.data.record.public_key.slice(0, 8)}…
+                  {walletQuery.data.record.public_key.slice(0, 8)}...
                   {walletQuery.data.record.public_key.slice(-4)}
                 </span>
                 <button
@@ -570,14 +568,14 @@ export function WalletPage() {
                   }}
                   disabled={removePublicKeyMutation.isPending}
                 >
-                  {removePublicKeyMutation.isPending ? 'Removing…' : 'Remove wallet'}
+                  {removePublicKeyMutation.isPending ? 'Removing...' : 'Remove wallet'}
                 </button>
               </div>
             ) : (
               <>
                 <input
                   type="text"
-                  placeholder="GABCD… (56 characters)"
+                  placeholder="GABCD... (56 characters)"
                   value={manualKeyInput}
                   onChange={(e) => {
                     setManualKeyInput(e.target.value)
@@ -593,7 +591,7 @@ export function WalletPage() {
                   onClick={() => void handleManualKeySave()}
                   disabled={savePublicKeyMutation.isPending || !manualKeyInput.trim()}
                 >
-                  {savePublicKeyMutation.isPending ? 'Saving…' : 'Save address'}
+                  {savePublicKeyMutation.isPending ? 'Saving...' : 'Save address'}
                 </button>
                 {manualKeyError ? <p className="error-text">{manualKeyError}</p> : null}
                 {savePublicKeyMutation.error ? (
@@ -697,32 +695,6 @@ export function WalletPage() {
               </tr>
             </thead>
             <tbody>
-              {(historyQuery.data?.rows ?? []).map((row) => {
-                const isSent = row.sender_user_id === user.id
-                const counterparty = isSent ? row.recipient_user_id : row.sender_user_id
-                
-                return (
-                  <tr key={row.id}>
-                    <td>{formatDateTime(row.created_at)}</td>
-                    <td>{isSent ? 'sent' : 'received'}</td>
-                    <td className={isSent ? 'amount-minus' : 'amount-plus'}>
-                      {isSent ? '-' : '+'}
-                      {row.echo_amount.toFixed(2)}
-                    </td>
-                    <td>{counterparty.slice(0, 10)}â€¦</td>
-                    <td>{row.status}</td>
-                    <td>
-                      {row.stellar_tx_hash ? (
-                        <a
-                          href={txExplorerUrl(row.stellar_tx_hash!)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {row.stellar_tx_hash.slice(0, 8)}â€¦
-                        </a>
-                      ) : (
-                        'â€”'
-                      )}
               {historyQuery.isLoading ? (
                 Array.from({ length: 3 }).map((_, index) => (
                   <tr key={`reward-skeleton-${index}`}>
