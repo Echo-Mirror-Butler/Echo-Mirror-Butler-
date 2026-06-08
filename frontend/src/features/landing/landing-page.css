@@ -523,6 +523,7 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
 /* Floating chips */
 .lp-float-chip {
   position: absolute;
+  z-index: 3;
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(20,99,255,0.12);
@@ -2122,6 +2123,7 @@ a.lp-mobile-menu-link {
   background: rgba(251,191,36,0.95);
   color: #0c1a2e;
   border-color: rgba(251,191,36,0.3);
+  z-index: 3;
 }
 
 /* ── Trust bar ───────────────────────────────────────────────── */

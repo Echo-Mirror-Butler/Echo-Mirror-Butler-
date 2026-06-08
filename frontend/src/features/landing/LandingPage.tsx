@@ -412,7 +412,7 @@ export function LandingPage() {
               Feeling calm today
             </div>
             <div className="lp-float-chip lp-float-chip--2">
-              🌍 Lagos is feeling motivated
+              🌍 New York is feeling motivated
             </div>
             <div className="lp-float-chip lp-float-chip--3">
               ✦ +5 ECHO earned today
@@ -426,7 +426,7 @@ export function LandingPage() {
       {/* ── Logos / trust bar ── */}
       <div className="lp-trust-bar">
         <span className="lp-trust-label">Built on</span>
-        {['Stellar', 'Supabase', 'Claude AI', 'React'].map((t) => (
+        {['Stellar', 'Supabase', 'Flutter', 'React'].map((t) => (
           <span key={t} className="lp-trust-item">{t}</span>
         ))}
       </div>
