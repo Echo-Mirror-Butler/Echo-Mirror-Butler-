@@ -375,10 +375,6 @@ export function LandingPage() {
 
         <div className="lp-hero-inner">
           <div className="lp-hero-copy">
-            <div className="lp-hero-eyebrow">
-              <span className="lp-eyebrow-pip" />
-              Wellbeing, amplified by AI
-            </div>
             <h1 className="lp-hero-title">
               Your mind,<br />
               <em>reflected</em><br />
@@ -393,14 +389,6 @@ export function LandingPage() {
                 Start for free <span className="lp-cta-arrow">→</span>
               </button>
               <Link to="/login" className="lp-cta-ghost">Sign in</Link>
-            </div>
-            <div className="lp-hero-social-proof">
-              <div className="lp-avatar-stack">
-                {['#1463ff','#0a8a5b','#7c3aed','#e67a00'].map((c, i) => (
-                  <div key={i} className="lp-avatar" style={{ background: c, zIndex: 4 - i }} />
-                ))}
-              </div>
-              <span>Join <strong>2,400+</strong> people tracking their wellbeing</span>
             </div>
           </div>
 

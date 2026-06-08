@@ -9,7 +9,7 @@
   --lp-ink-60:    rgba(12, 26, 46, 0.6);
   --lp-ink-30:    rgba(12, 26, 46, 0.3);
   --lp-ink-10:    rgba(12, 26, 46, 0.07);
-  --lp-canvas:    #f7f9ff;
+  --lp-canvas:    #ffffff;
   --lp-white:     #ffffff;
   --lp-teal:      #0a8a5b;
   --lp-teal-pale: #d6f8ef;
@@ -21,7 +21,7 @@
 
 /* ── Reset for landing ─────────────────────────────────────── */
 .lp-root * { box-sizing: border-box; margin: 0; padding: 0; }
-.lp-root { font-family: 'Geist', 'Space Grotesk', sans-serif; color: var(--lp-ink); background: var(--lp-canvas); overflow-x: hidden; }
+.lp-root { font-family: 'Geist', 'Space Grotesk', sans-serif; color: var(--lp-ink); background: #ffffff; overflow-x: hidden; }
 .lp-root a { text-decoration: none; color: inherit; }
 
 /* ── Nav ────────────────────────────────────────────────────── */
@@ -523,17 +523,16 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
 /* Floating chips */
 .lp-float-chip {
   position: absolute;
-  z-index: 3;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(20,99,255,0.12);
+  z-index: 10;
+  background: #ffffff;
+  border: 1px solid rgba(12,26,46,0.10);
   border-radius: 999px;
-  padding: 0.42rem 0.9rem;
-  font-size: 0.72rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: var(--lp-ink);
+  color: #0c1a2e;
   white-space: nowrap;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -2120,10 +2119,10 @@ a.lp-mobile-menu-link {
   transform: translateY(-50%);
   animation: chip-float-1 8s ease-in-out infinite;
   animation-delay: 1s;
-  background: rgba(251,191,36,0.95);
+  background: #ffffff;
   color: #0c1a2e;
-  border-color: rgba(251,191,36,0.3);
-  z-index: 3;
+  border-color: rgba(12,26,46,0.10);
+  z-index: 10;
 }
 
 /* ── Trust bar ───────────────────────────────────────────────── */
