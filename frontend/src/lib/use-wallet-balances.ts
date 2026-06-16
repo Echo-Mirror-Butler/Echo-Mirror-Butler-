@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { stellarConfig } from './stellar-config'
 
 type HorizonBalance = {
   asset_type: string
@@ -14,7 +15,7 @@ export type WalletBalancesResult = {
 }
 
 async function fetchHorizonBalances(publicKey: string): Promise<WalletBalancesResult> {
-  const res = await fetch(`https://horizon-testnet.stellar.org/accounts/${publicKey}`)
+  const res = await fetch(`${stellarConfig.horizonUrl}/accounts/${publicKey}`)
   if (res.status === 404) {
     return { xlm: '0', echo: '0', notFunded: true, fetchedAt: Date.now() }
   }

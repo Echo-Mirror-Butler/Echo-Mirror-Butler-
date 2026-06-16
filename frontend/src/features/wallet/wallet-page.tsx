@@ -8,6 +8,7 @@ import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
 import { TestnetBadge } from '../../components/TestnetBadge'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
+import { isTestnet, stellarConfig } from '../../lib/stellar-config'
 
 const WALLET_PAGE_SIZE = 20
 const PRESET_AMOUNTS = [5, 10, 25, 50]
@@ -110,37 +111,69 @@ async function resolveRecipientId(recipientInput: string): Promise<string> {
   }
 
   if (isValidStellarKey(trimmed)) {
-    const { data, error } = await supabase
-      .from('user_wallets')
-      .select('user_id')
-      .eq('public_key', trimmed)
-      .maybeSingle()
+    let data: { user_id: string } | null = null
+    let lookupFailed = false
 
-    if (!error && data?.user_id) {
+    try {
+      const result = await supabase
+        .from('user_wallets')
+        .select('user_id')
+        .eq('public_key', trimmed)
+        .maybeSingle()
+      data = result.data
+      lookupFailed = Boolean(result.error)
+    } catch {
+      lookupFailed = true
+    }
+
+    if (data?.user_id) {
       return data.user_id as string
     }
 
-    throw new Error('Could not resolve recipient from Stellar address. Use recipient user ID.')
+    if (lookupFailed) {
+      throw new Error('Network error while looking up that Stellar address. Please try again.')
+    }
+
+    throw new Error('Address not found. No wallet is linked to that Stellar address.')
   }
 
   if (!trimmed.includes('@')) {
     throw new Error('Use a valid recipient UUID, email address, or Stellar address.')
   }
 
+  let lookupFailed = false
   const profileTables = ['profiles', 'user_profiles']
   for (const table of profileTables) {
-    const { data, error } = await supabase.from(table).select('id').eq('email', trimmed).maybeSingle()
-    if (!error && data?.id) {
-      return data.id as string
+    try {
+      const { data, error } = await supabase.from(table).select('id').eq('email', trimmed).maybeSingle()
+      if (error) {
+        lookupFailed = true
+        continue
+      }
+      if (data?.id) {
+        return data.id as string
+      }
+    } catch {
+      lookupFailed = true
     }
   }
 
-  const { data: rpcData, error: rpcError } = await supabase.rpc('lookup_user_by_email', {
-    email_input: trimmed,
-  })
+  try {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('lookup_user_by_email', {
+      email_input: trimmed,
+    })
 
-  if (!rpcError && rpcData && typeof rpcData.user_id === 'string') {
-    return rpcData.user_id
+    if (rpcError) {
+      lookupFailed = true
+    } else if (rpcData && typeof rpcData.user_id === 'string') {
+      return rpcData.user_id
+    }
+  } catch {
+    lookupFailed = true
+  }
+
+  if (lookupFailed) {
+    throw new Error('Network error while resolving that email. Please try again.')
   }
 
   throw new Error('Could not resolve recipient from email. Use recipient user ID.')
@@ -189,11 +222,22 @@ async function requestFreighterAccess(): Promise<string> {
   if (!isFreighterInstalled()) {
     throw new Error('FREIGHTER_NOT_INSTALLED')
   }
-  const { requestAccess } = await import('@stellar/freighter-api')
+  const { requestAccess, getNetwork } = await import('@stellar/freighter-api')
   const result = await requestAccess()
   if (result.error) {
     throw new Error(result.error.message ?? 'Freighter connection rejected')
   }
+
+  const network = await getNetwork()
+  if (network.error) {
+    throw new Error(network.error.message ?? 'Could not verify the Freighter network.')
+  }
+  if (network.networkPassphrase !== stellarConfig.networkPassphrase) {
+    throw new Error(
+      `Freighter is set to ${network.network}, but this app requires ${stellarConfig.network}. Switch networks in Freighter and try again.`,
+    )
+  }
+
   return result.address
 }
 
@@ -397,6 +441,16 @@ export function WalletPage() {
     <section className="feature-grid wallet-grid">
       <ConfettiBlast active={showConfetti} />
 
+      {isTestnet ? (
+        <div
+          role="status"
+          className="full-width flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-900"
+        >
+          <span aria-hidden="true">⚠</span>
+          You are on Testnet — ECHO and XLM here have no real-world value.
+        </div>
+      ) : null}
+
       <article className="card balance-card">
         <div className="card-header">
           <div className="flex items-center gap-2"><h2>ECHO Wallet</h2><TestnetBadge /></div>
@@ -416,7 +470,6 @@ export function WalletPage() {
         ) : walletQuery.data?.exists ? (
           <>
             <p className="balance-number">{walletQuery.data.balance.toFixed(2)} ECHO</p>
-            <p className="muted">Public key: {walletQuery.data.record?.public_key?.slice(0, 14) ?? ""}â€¦</p>
             {publicKey ? (
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <p className="muted" style={{ margin: 0 }}>
@@ -438,7 +491,7 @@ export function WalletPage() {
               onClick={() => createWalletMutation.mutate()}
               disabled={createWalletMutation.isPending}
             >
-              {createWalletMutation.isPending ? 'Creatingâ€¦' : 'Create wallet'}
+              {createWalletMutation.isPending ? 'Creating…' : 'Create wallet'}
             </button>
             {createWalletMutation.error ? (
               <p className="error-text">{(createWalletMutation.error as Error).message}</p>
@@ -674,7 +727,7 @@ export function WalletPage() {
 
           <button type="submit" disabled={isSendDisabled}>
             {sendGiftMutation.isPending
-              ? 'Sendingâ€¦'
+              ? 'Sending…'
               : `Send ${Number.isFinite(resolvedAmount) ? resolvedAmount : 0} ECHO`}
           </button>
 
