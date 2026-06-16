@@ -1,13 +1,13 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:echomirror/features/dashboard/data/repositories/dashboard_repository.dart';
 import 'package:echomirror/features/dashboard/data/models/insight_model.dart';
-import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
+import 'package:echomirror/features/dashboard/data/repositories/dashboard_repository.dart';
 import 'package:echomirror/features/logging/data/models/log_entry_model.dart';
+import 'package:echomirror/features/logging/data/repositories/logging_repository.dart';
 
 class MockLoggingRepository extends Mock implements LoggingRepository {}
 
@@ -17,50 +17,10 @@ class MockFunctionsClient extends Mock implements FunctionsClient {}
 
 class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
 
-class MockPostgrestFilterBuilder extends Mock
-    implements PostgrestFilterBuilder<PostgrestList> {}
-
-// A fake transform builder that resolves to a fixed list when awaited.
-class FakeTransformBuilder extends Fake
-    implements PostgrestTransformBuilder<PostgrestList> {
-  FakeTransformBuilder(this._result);
-  final Future<PostgrestList> _result;
-
-  @override
-  Stream<PostgrestList> asStream() => _result.asStream();
-
-  @override
-  Future<PostgrestList> catchError(
-    Function onError, {
-    bool Function(Object error)? test,
-  }) => _result.catchError(onError, test: test);
-
-  @override
-  Future<R> then<R>(
-    FutureOr<R> Function(PostgrestList value) onValue, {
-    Function? onError,
-  }) => _result.then(onValue, onError: onError);
-
-  @override
-  Future<PostgrestList> timeout(
-    Duration timeLimit, {
-    FutureOr<PostgrestList> Function()? onTimeout,
-  }) => _result.timeout(timeLimit, onTimeout: onTimeout);
-
-  @override
-  Future<PostgrestList> whenComplete(FutureOr<void> Function() action) =>
-      _result.whenComplete(action);
-
-  @override
-  PostgrestTransformBuilder<PostgrestList> limit(
-    int count, {
-    String? referencedTable,
-  }) => this;
-}
-
 class FakeFutureLettersBuilder extends Fake
     implements PostgrestFilterBuilder<PostgrestList> {
   FakeFutureLettersBuilder(this._result);
+
   final Future<PostgrestList> _result;
 
   @override
@@ -72,52 +32,75 @@ class FakeFutureLettersBuilder extends Fake
     bool ascending = true,
     bool nullsFirst = false,
     String? referencedTable,
-  }) => this;
+  }) =>
+      this;
 
   @override
   PostgrestFilterBuilder<PostgrestList> limit(
     int count, {
     String? referencedTable,
-  }) => this;
+  }) =>
+      this;
 
   @override
-  Future<U> then<U>(
-    FutureOr<U> Function(PostgrestList) onValue, {
+  Stream<PostgrestList> asStream() => _result.asStream();
+
+  @override
+  Future<PostgrestList> catchError(
+    Function onError, {
+    bool Function(Object error)? test,
+  }) =>
+      _result.catchError(onError, test: test);
+
+  @override
+  Future<R> then<R>(
+    FutureOr<R> Function(PostgrestList value) onValue, {
     Function? onError,
-  }) {
-    return _result.then(onValue, onError: onError);
-  }
+  }) =>
+      _result.then(onValue, onError: onError);
+
+  @override
+  Future<PostgrestList> timeout(
+    Duration timeLimit, {
+    FutureOr<PostgrestList> Function()? onTimeout,
+  }) =>
+      _result.timeout(timeLimit, onTimeout: onTimeout);
+
+  @override
+  Future<PostgrestList> whenComplete(FutureOr<void> Function() action) =>
+      _result.whenComplete(action);
 }
 
 List<LogEntryModel> _fakeLogEntries() => [
-  LogEntryModel(
-    id: '1',
-    userId: 'user-123',
-    date: DateTime(2024, 1, 1),
-    mood: 4,
-    habits: ['exercise', 'reading'],
-    notes: 'Good day',
-    createdAt: DateTime(2024, 1, 1),
-  ),
-  LogEntryModel(
-    id: '2',
-    userId: 'user-123',
-    date: DateTime(2024, 1, 2),
-    mood: 3,
-    habits: ['meditation'],
-    notes: 'Average day',
-    createdAt: DateTime(2024, 1, 2),
-  ),
-];
+      LogEntryModel(
+        id: '1',
+        userId: 'user-123',
+        date: DateTime(2024, 1, 1),
+        mood: 4,
+        habits: ['exercise', 'reading'],
+        notes: 'Good day',
+        createdAt: DateTime(2024, 1, 1),
+      ),
+      LogEntryModel(
+        id: '2',
+        userId: 'user-123',
+        date: DateTime(2024, 1, 2),
+        mood: 3,
+        habits: ['meditation'],
+        notes: 'Average day',
+        createdAt: DateTime(2024, 1, 2),
+      ),
+    ];
 
 DashboardRepository buildRepo({
   required MockLoggingRepository loggingRepo,
   required MockSupabaseClient supabaseClient,
-}) => DashboardRepository(
-  loggingRepo,
-  supabaseClient: supabaseClient,
-  now: () => DateTime(2024, 1, 10),
-);
+}) =>
+    DashboardRepository(
+      loggingRepo,
+      supabaseClient: supabaseClient,
+      now: () => DateTime(2024, 1, 10),
+    );
 
 void main() {
   late MockLoggingRepository loggingRepo;
@@ -128,6 +111,7 @@ void main() {
     loggingRepo = MockLoggingRepository();
     supabase = MockSupabaseClient();
     functions = MockFunctionsClient();
+
     when(() => supabase.functions).thenReturn(functions);
   });
 
@@ -141,6 +125,7 @@ void main() {
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final result = await repo.getPredictions('user-123');
 
       expect(result, isEmpty);
@@ -165,6 +150,7 @@ void main() {
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final results = await repo.getPredictions('user-123');
 
       expect(results, isNotEmpty);
@@ -186,33 +172,35 @@ void main() {
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final results = await repo.getPredictions('user-123');
 
       expect(results, isEmpty);
     });
 
-    test(
-      'returns empty list when edge function returns non-map data',
-      () async {
-        when(
-          () => loggingRepo.getLogEntries('user-123'),
-        ).thenAnswer((_) async => _fakeLogEntries());
+    test('returns empty list when edge function returns non-map data', () async {
+      when(
+        () => loggingRepo.getLogEntries('user-123'),
+      ).thenAnswer((_) async => _fakeLogEntries());
 
-        when(
-          () => functions.invoke('generate-insight', body: any(named: 'body')),
-        ).thenAnswer(
-          (_) async => FunctionResponse(data: 'unexpected string', status: 200),
-        );
+      when(
+        () => functions.invoke('generate-insight', body: any(named: 'body')),
+      ).thenAnswer(
+        (_) async => FunctionResponse(
+          data: 'unexpected string',
+          status: 200,
+        ),
+      );
 
-        final repo = buildRepo(
-          loggingRepo: loggingRepo,
-          supabaseClient: supabase,
-        );
-        final results = await repo.getPredictions('user-123');
+      final repo = buildRepo(
+        loggingRepo: loggingRepo,
+        supabaseClient: supabase,
+      );
 
-        expect(results, isEmpty);
-      },
-    );
+      final results = await repo.getPredictions('user-123');
+
+      expect(results, isEmpty);
+    });
 
     test('maps calmingMessage to InsightModel with mood type', () async {
       when(
@@ -232,11 +220,13 @@ void main() {
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final results = await repo.getPredictions('user-123');
 
       final calming = results
-          .where((r) => r.title == 'Calming Thought')
+          .where((insight) => insight.title == 'Calming Thought')
           .toList();
+
       expect(calming, hasLength(1));
       expect(calming.first.type, InsightType.mood);
     });
@@ -247,6 +237,7 @@ void main() {
 
     void stubChain(Future<PostgrestList> result) {
       final fakeBuilder = FakeFutureLettersBuilder(result);
+
       when(() => supabase.from('future_letters')).thenReturn(queryBuilder);
       when(() => queryBuilder.select()).thenReturn(fakeBuilder);
     }
@@ -262,6 +253,7 @@ void main() {
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final results = await repo.getFutureLetters('user-123');
 
       expect(results, isEmpty);
@@ -276,12 +268,14 @@ void main() {
         'created_at': '2024-01-01T00:00:00Z',
         'delivery_date': '2025-01-01T00:00:00Z',
       };
+
       stubChain(Future.value([fakeRow]));
 
       final repo = buildRepo(
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final results = await repo.getFutureLetters('user-123');
 
       expect(results, hasLength(1));
@@ -298,6 +292,7 @@ void main() {
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final results = await repo.getFutureLetters('user-123');
 
       expect(results, isEmpty);
@@ -310,12 +305,14 @@ void main() {
         'content': 'No title here',
         'created_at': '2024-01-01T00:00:00Z',
       };
+
       stubChain(Future.value([fakeRow]));
 
       final repo = buildRepo(
         loggingRepo: loggingRepo,
         supabaseClient: supabase,
       );
+
       final results = await repo.getFutureLetters('user-123');
 
       expect(results.first.title, 'Future Letter');

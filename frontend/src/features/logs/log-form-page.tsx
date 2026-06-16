@@ -83,6 +83,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
   const [habitInput, setHabitInput] = useState('')
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' } | null>(null)
   const [fieldErrors, setFieldErrors] = useState<{ date?: string; mood?: string; habits?: string; notes?: string }>({})
 
   const hydrated = useMemo(
@@ -117,6 +118,9 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     if (selectedDate > today) {
       errors.date = 'Date cannot be in the future'
     }
+    if (mood === null) {
+      errors.mood = 'Mood score is required'
+    }
     if (notes.length > MAX_NOTES_LENGTH) {
       errors.notes = `Notes must be under ${MAX_NOTES_LENGTH} characters`
     }
@@ -128,10 +132,6 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     mutationFn: async () => {
       if (!user) {
         throw new Error('No signed in user found.')
-      }
-
-      if (!mood && habits.length === 0 && !notes.trim()) {
-        throw new Error('Fill at least one field: mood, habit, or note.')
       }
 
       if (mode === 'create') {
@@ -181,11 +181,14 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     },
     onMutate: () => {
       setFormError(null)
+      setToast(null)
       setFieldErrors({})
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['logs', user?.id] })
-      await queryClient.invalidateQueries({ queryKey: ['log-entry', id] })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['logs', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['log-entry', id] }),
+      ])
       showToast(mode === 'create' ? 'Mood logged! +1 ECHO earned 🎉' : 'Changes saved', 'success')
       navigate('/logs')
     },
@@ -215,7 +218,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
       navigate('/logs')
     },
     onError: (error: Error) => {
-      setFormError(error.message)
+      setToast({ show: true, message: error.message, type: 'error' })
     },
   })
 
@@ -248,6 +251,14 @@ export function LogFormPage({ mode }: LogFormPageProps) {
 
   return (
     <section className="feature-grid">
+      {toast && (
+        <div className={`toast toast-${toast.type} fixed top-4 right-4 px-6 py-3 rounded shadow-lg z-50`}
+          role="alert"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      )}
       <article className="card full-width">
         <div className="card-header">
           <h2>{mode === 'create' ? 'New Log Entry' : 'Edit Log Entry'}</h2>
@@ -260,6 +271,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
           className="form-stack"
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault()
+            setFormError(null)
             if (!validate()) return
             saveMutation.mutate()
           }}
@@ -281,7 +293,10 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                     type="button"
                     style={{ fontSize: '1.3rem', padding: '0.5rem 0.8rem' }}
                     className={mood === value ? 'chip active' : 'chip'}
-                    onClick={() => setMood((prev) => (prev === value ? null : value))}
+                    onClick={() => {
+                      setMood((prev) => (prev === value ? null : value))
+                      setFieldErrors((prev) => ({ ...prev, mood: undefined }))
+                    }}
                     aria-label={`Mood ${value}`}
                   >
                     {emoji}
@@ -289,6 +304,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                 )
               })}
             </div>
+            {fieldErrors.mood && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.mood}</p>}
           </div>
 
           <div>
@@ -370,7 +386,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             </button>
           ) : null}
 
-          {formError ? <p className="error-text">{formError}</p> : null}
+          {formError && <p className="error-text">{formError}</p>}
         </form>
       </article>
     </section>

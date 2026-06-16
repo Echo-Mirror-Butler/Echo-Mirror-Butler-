@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../lib/use-theme'
 import './landing-page.css'
@@ -75,6 +76,99 @@ function useReveal() {
 function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useReveal()
   return <div ref={ref} className={`lp-reveal${delay ? ` lp-reveal-delay-${delay}` : ''} ${className}`}>{children}</div>
+}
+
+interface GithubContributor {
+  login: string
+  avatar_url: string
+  html_url: string
+  contributions: number
+}
+
+function ContributorsSection() {
+  const { data, isLoading, isError } = useQuery<GithubContributor[]>({
+    queryKey: ['github-contributors'],
+    queryFn: async () => {
+      const res = await fetch(
+        'https://api.github.com/repos/Echo-Mirror-Butler/Echo-Mirror-Butler-/contributors?per_page=100&anon=false',
+        { headers: { Accept: 'application/vnd.github+json' } },
+      )
+      if (!res.ok) throw new Error('Failed to fetch contributors')
+      return res.json()
+    },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+  })
+
+  return (
+    <section className="lp-section lp-contributors-section" id="contributors">
+      <div className="lp-section-inner">
+        <Reveal>
+          <div className="lp-section-eyebrow" style={{ color: '#7c3aed' }}>Open Source</div>
+          <h2 className="lp-section-title">Built by the community,<br />for the community.</h2>
+          <p className="lp-section-sub">
+            EchoMirror is proudly open source on Stellar Wave. Every contributor below
+            has shipped real code that people use every day.
+          </p>
+        </Reveal>
+
+        {isLoading && (
+          <div className="lp-contributors-skeleton">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="lp-contributor-skel">
+                <div className="lp-skel-avatar" style={{ animationDelay: `${i * 0.08}s` }} />
+                <div className="lp-skel-name" style={{ animationDelay: `${i * 0.08}s` }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <p style={{ marginTop: '2rem', fontSize: '0.85rem', color: 'var(--lp-ink-30)', textAlign: 'center' }}>
+            Could not load contributors right now.
+          </p>
+        )}
+
+        {data && (
+          <div className="lp-contributors-grid">
+            {data.map((c) => (
+              <a
+                key={c.login}
+                href={c.html_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lp-contributor"
+                title={`${c.login} — ${c.contributions} commit${c.contributions !== 1 ? 's' : ''}`}
+              >
+                <img
+                  src={c.avatar_url}
+                  alt={c.login}
+                  className="lp-contributor-avatar"
+                  loading="lazy"
+                />
+                <span className="lp-contributor-name">{c.login}</span>
+                <span className="lp-contributor-commits">{c.contributions} commit{c.contributions !== 1 ? 's' : ''}</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center' }}>
+          <a
+            href="https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lp-contributors-gh-link"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+            </svg>
+            View all contributors on GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+  )
 }
 
 function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
@@ -232,6 +326,7 @@ export function LandingPage() {
           <a href="#features" className="lp-nav-link">Features</a>
           <a href="#global" className="lp-nav-link">Global Mirror</a>
           <a href="#wallet" className="lp-nav-link">Wallet</a>
+          <a href="#contributors" className="lp-nav-link">Contributors</a>
           <Link to="/login" className="lp-nav-link">Sign in</Link>
         </div>
         <button className="lp-btn-solid" onClick={() => navigate('/signup')}>Get started free</button>
@@ -259,6 +354,7 @@ export function LandingPage() {
             <a href="#features" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Features</a>
             <a href="#global" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Global Mirror</a>
             <a href="#wallet" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Wallet</a>
+            <a href="#contributors" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Contributors</a>
             <Link to="/login" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Sign in</Link>
           </div>
           <button className="lp-mobile-menu-cta" onClick={() => { closeMobileMenu(); navigate('/signup') }}>
@@ -279,10 +375,6 @@ export function LandingPage() {
 
         <div className="lp-hero-inner">
           <div className="lp-hero-copy">
-            <div className="lp-hero-eyebrow">
-              <span className="lp-eyebrow-pip" />
-              Wellbeing, amplified by AI
-            </div>
             <h1 className="lp-hero-title">
               Your mind,<br />
               <em>reflected</em><br />
@@ -298,14 +390,6 @@ export function LandingPage() {
               </button>
               <Link to="/login" className="lp-cta-ghost">Sign in</Link>
             </div>
-            <div className="lp-hero-social-proof">
-              <div className="lp-avatar-stack">
-                {['#1463ff','#0a8a5b','#7c3aed','#e67a00'].map((c, i) => (
-                  <div key={i} className="lp-avatar" style={{ background: c, zIndex: 4 - i }} />
-                ))}
-              </div>
-              <span>Join <strong>2,400+</strong> people tracking their wellbeing</span>
-            </div>
           </div>
 
           <div className="lp-hero-mockup">
@@ -316,7 +400,7 @@ export function LandingPage() {
               Feeling calm today
             </div>
             <div className="lp-float-chip lp-float-chip--2">
-              🌍 Lagos is feeling motivated
+              🌍 New York is feeling motivated
             </div>
             <div className="lp-float-chip lp-float-chip--3">
               ✦ +5 ECHO earned today
@@ -330,7 +414,7 @@ export function LandingPage() {
       {/* ── Logos / trust bar ── */}
       <div className="lp-trust-bar">
         <span className="lp-trust-label">Built on</span>
-        {['Stellar', 'Supabase', 'Claude AI', 'React'].map((t) => (
+        {['Stellar', 'Supabase', 'Flutter', 'React'].map((t) => (
           <span key={t} className="lp-trust-item">{t}</span>
         ))}
       </div>
@@ -559,6 +643,9 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Contributors ── */}
+      <ContributorsSection />
 
       {/* ── CTA ── */}
       <section className="lp-section lp-cta-section">

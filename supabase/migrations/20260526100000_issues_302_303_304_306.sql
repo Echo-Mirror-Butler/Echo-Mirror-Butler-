@@ -35,18 +35,33 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
-create policy "Avatar images are publicly readable"
-  on storage.objects for select
-  using (bucket_id = 'avatars');
+do $$
+begin
+  create policy "Avatar images are publicly readable"
+    on storage.objects for select
+    using (bucket_id = 'avatars');
+exception
+  when duplicate_object then null;
+end $$;
 
-create policy "Users can upload own avatar"
-  on storage.objects for insert
-  with check (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]);
+do $$
+begin
+  create policy "Users can upload own avatar"
+    on storage.objects for insert
+    with check (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]);
+exception
+  when duplicate_object then null;
+end $$;
 
-create policy "Users can update own avatar"
-  on storage.objects for update
-  using (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1])
-  with check (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]);
+do $$
+begin
+  create policy "Users can update own avatar"
+    on storage.objects for update
+    using (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1])
+    with check (bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]);
+exception
+  when duplicate_object then null;
+end $$;
 
 -- Auto-create profile on user signup
 create or replace function public.handle_new_user()
@@ -106,7 +121,7 @@ create table if not exists public.push_subscriptions (
   updated_at timestamptz not null default now()
 );
 
-create index idx_push_subscriptions_user on public.push_subscriptions(user_id);
+create index if not exists idx_push_subscriptions_user on public.push_subscriptions(user_id);
 
 alter table public.push_subscriptions enable row level security;
 
@@ -139,8 +154,8 @@ create table if not exists public.mood_logs (
   created_at timestamptz not null default now()
 );
 
-create index idx_mood_logs_created on public.mood_logs(created_at desc);
-create index idx_mood_logs_country on public.mood_logs(country);
+create index if not exists idx_mood_logs_created on public.mood_logs(created_at desc);
+create index if not exists idx_mood_logs_country on public.mood_logs(country);
 
 alter table public.mood_logs enable row level security;
 
@@ -153,7 +168,29 @@ create policy "Authenticated users can insert mood logs"
   with check (auth.role() = 'authenticated');
 
 -- Enable realtime for mood_logs
-alter publication supabase_realtime add table public.mood_logs;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'mood_logs'
+  ) then
+    alter publication supabase_realtime add table public.mood_logs;
+  end if;
+end $$;
 
 -- Enable realtime for profiles
-alter publication supabase_realtime add table public.profiles;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'profiles'
+  ) then
+    alter publication supabase_realtime add table public.profiles;
+  end if;
+end $$;

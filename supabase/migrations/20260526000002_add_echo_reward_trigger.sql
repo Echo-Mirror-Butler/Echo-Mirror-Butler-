@@ -6,6 +6,30 @@ CREATE TABLE IF NOT EXISTS echo_rewards (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.echo_rewards
+  ADD COLUMN IF NOT EXISTS id uuid DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS user_id uuid,
+  ADD COLUMN IF NOT EXISTS amount integer,
+  ADD COLUMN IF NOT EXISTS reason text,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
+
+ALTER TABLE public.echo_rewards
+  ALTER COLUMN id SET DEFAULT gen_random_uuid(),
+  ALTER COLUMN created_at SET DEFAULT now();
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'echo_rewards_user_id_fkey'
+      AND conrelid = 'public.echo_rewards'::regclass
+  ) THEN
+    ALTER TABLE public.echo_rewards
+      ADD CONSTRAINT echo_rewards_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES auth.users(id);
+  END IF;
+END $$;
+
 -- Index to prevent full table scan when checking for daily farming
 CREATE INDEX IF NOT EXISTS idx_echo_rewards_user_created 
 ON echo_rewards(user_id, created_at);
@@ -14,10 +38,15 @@ ON echo_rewards(user_id, created_at);
 ALTER TABLE echo_rewards ENABLE ROW LEVEL SECURITY;
 
 -- Allow users to read their own rewards
-CREATE POLICY "Users can view own rewards"
-ON echo_rewards FOR SELECT
-TO authenticated
-USING (auth.uid() = user_id);
+DO $$
+BEGIN
+    CREATE POLICY "Users can view own rewards"
+    ON echo_rewards FOR SELECT
+    TO authenticated
+    USING (auth.uid() = user_id);
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 CREATE OR REPLACE FUNCTION grant_echo_reward()
 RETURNS trigger

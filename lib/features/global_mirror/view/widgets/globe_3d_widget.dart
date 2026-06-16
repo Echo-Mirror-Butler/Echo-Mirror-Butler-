@@ -45,22 +45,22 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
                 var originalLog = console.log;
                 var originalError = console.error;
                 var originalWarn = console.warn;
-                
+
                 console.log = function(...args) {
                   originalLog.apply(console, args);
                   window.Flutter?.postMessage('LOG: ' + args.join(' '));
                 };
-                
+
                 console.error = function(...args) {
                   originalError.apply(console, args);
                   window.Flutter?.postMessage('ERROR: ' + args.join(' '));
                 };
-                
+
                 console.warn = function(...args) {
                   originalWarn.apply(console, args);
                   window.Flutter?.postMessage('WARN: ' + args.join(' '));
                 };
-                
+
                 window.addEventListener('error', function(e) {
                   window.Flutter?.postMessage('JS ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
                 });
@@ -157,7 +157,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
   <script>
     let scene, camera, renderer, globe, pins = []; // pins array now contains objects with {mesh, light}
     let isInitialized = false;
-    
+
     function init() {
       console.log('init() called, THREE available:', typeof THREE !== 'undefined');
       try {
@@ -165,7 +165,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
           console.error('THREE is not defined!');
           return;
         }
-        
+
         console.log('Creating scene...');
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x000000);
@@ -176,18 +176,18 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
         renderer.setClearColor(0x000000, 1);
         document.body.appendChild(renderer.domElement);
         console.log('Renderer created and added to DOM');
-        
+
         // Create globe with default material first (blue-green sphere)
         console.log('Creating globe geometry...');
         const geometry = new THREE.SphereGeometry(5, 32, 32);
-        const defaultMaterial = new THREE.MeshPhongMaterial({ 
+        const defaultMaterial = new THREE.MeshPhongMaterial({
           color: 0x2233ff,
           shininess: 30
         });
         globe = new THREE.Mesh(geometry, defaultMaterial);
         scene.add(globe);
         console.log('Globe added to scene');
-        
+
         // Try to load texture, but don't wait for it
         const loader = new THREE.TextureLoader();
         loader.load(
@@ -210,27 +210,27 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
             console.warn('Texture failed to load, using default material:', error);
           }
         );
-        
+
         // Add lights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
-        
+
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(5, 5, 5);
         scene.add(directionalLight);
-        
+
         // Position camera
         camera.position.z = 10;
-        
+
         // Add controls (mouse drag to rotate)
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
-        
+
         renderer.domElement.addEventListener('mousedown', (e) => {
           isDragging = true;
           previousMousePosition = { x: e.clientX, y: e.clientY };
         });
-        
+
         renderer.domElement.addEventListener('mousemove', (e) => {
           if (isDragging && globe) {
             const deltaX = e.clientX - previousMousePosition.x;
@@ -240,22 +240,22 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
             previousMousePosition = { x: e.clientX, y: e.clientY };
           }
         });
-        
+
         renderer.domElement.addEventListener('mouseup', () => {
           isDragging = false;
         });
-        
+
         renderer.domElement.addEventListener('mouseleave', () => {
           isDragging = false;
         });
-        
+
         // Touch controls
         renderer.domElement.addEventListener('touchstart', (e) => {
           e.preventDefault();
           isDragging = true;
           previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         });
-        
+
         renderer.domElement.addEventListener('touchmove', (e) => {
           e.preventDefault();
           if (isDragging && globe) {
@@ -266,19 +266,19 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
             previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
           }
         });
-        
+
         renderer.domElement.addEventListener('touchend', (e) => {
           e.preventDefault();
           isDragging = false;
         });
-        
+
         // Handle window resize
         window.addEventListener('resize', () => {
           camera.aspect = window.innerWidth / window.innerHeight;
           camera.updateProjectionMatrix();
           renderer.setSize(window.innerWidth, window.innerHeight);
         });
-        
+
         isInitialized = true;
         console.log('Starting animation loop...');
         // Render immediately
@@ -290,17 +290,17 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
         console.error('Error stack:', error.stack);
       }
     }
-    
+
     function addPin(lat, lon, sentiment) {
       // Convert lat/lon to 3D coordinates
       const phi = (90 - lat) * (Math.PI / 180);
       const theta = (lon + 180) * (Math.PI / 180);
       const radius = 5.15; // Slightly further from globe surface for better visibility
-      
+
       const x = -(radius * Math.sin(phi) * Math.cos(theta));
       const y = radius * Math.cos(phi);
       const z = radius * Math.sin(phi) * Math.sin(theta);
-      
+
       // Color based on sentiment
       const colors = {
         'positive': 0x00ff00,
@@ -314,16 +314,16 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
         'sad': 0xff0000,
         'anxious': 0xff0000,
       };
-      
+
       const color = colors[sentiment.toLowerCase()] || 0x888888;
-      
+
       // Make pins MUCH larger and more visible - using a two-part design
       const pinGroup = new THREE.Group();
-      
+
       // Large sphere that sits on the globe surface - much bigger for visibility
       const sphereSize = 0.25; // Significantly larger
       const sphereGeometry = new THREE.SphereGeometry(sphereSize, 16, 16);
-      const sphereMaterial = new THREE.MeshPhongMaterial({ 
+      const sphereMaterial = new THREE.MeshPhongMaterial({
         color: color,
         emissive: color,
         emissiveIntensity: 1.0, // Full emissive for maximum visibility
@@ -332,11 +332,11 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
       const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
       sphere.position.set(x, y, z);
       pinGroup.add(sphere);
-      
+
       // Add a smaller glowing sphere on top for extra visibility
       const topSphereSize = 0.12;
       const topSphereGeometry = new THREE.SphereGeometry(topSphereSize, 12, 12);
-      const topSphereMaterial = new THREE.MeshBasicMaterial({ 
+      const topSphereMaterial = new THREE.MeshBasicMaterial({
         color: color,
         emissive: color,
         emissiveIntensity: 1.5
@@ -347,35 +347,35 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
       const topPosition = direction.multiplyScalar(radius + sphereSize + topSphereSize);
       topSphere.position.copy(topPosition);
       pinGroup.add(topSphere);
-      
+
       pinGroup.position.set(0, 0, 0);
       scene.add(pinGroup);
-      
+
       // Add a bright point light for extra visibility
       const pinLight = new THREE.PointLight(color, 1.0, 0.6);
       pinLight.position.set(x, y, z);
       scene.add(pinLight);
-      
+
       pins.push({ mesh: pinGroup, light: pinLight });
       console.log('Added pin at (' + lat + ', ' + lon + ') with color: ' + color.toString(16));
     }
-    
+
     window.updatePins = function(newPins) {
       try {
         if (!scene || !isInitialized) {
           console.warn('Scene not initialized yet, cannot update pins');
           return;
         }
-        
+
         console.log('updatePins called with', newPins ? newPins.length : 0, 'pins');
-        
+
         // Remove old pins (both mesh and light)
         pins.forEach(pinObj => {
           if (pinObj.mesh) scene.remove(pinObj.mesh);
           if (pinObj.light) scene.remove(pinObj.light);
         });
         pins = [];
-        
+
         // Add new pins
         if (newPins && Array.isArray(newPins)) {
           console.log('Adding ' + newPins.length + ' pins to scene');
@@ -395,10 +395,10 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
         console.error('Error stack:', e.stack);
       }
     };
-    
+
     // Make updatePins available globally
     console.log('updatePins function registered');
-    
+
     function animate() {
       requestAnimationFrame(animate);
       if (globe && isInitialized) {
@@ -408,7 +408,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
         renderer.render(scene, camera);
       }
     }
-    
+
     // Wait for Three.js to load - use DOMContentLoaded for better reliability
     function waitForThreeJS() {
       if (typeof THREE !== 'undefined') {
@@ -419,7 +419,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
         setTimeout(waitForThreeJS, 50);
       }
     }
-    
+
     // Start checking when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', waitForThreeJS);
@@ -427,7 +427,7 @@ class _Globe3DWidgetState extends State<Globe3DWidget> {
       // DOM already loaded, start checking
       waitForThreeJS();
     }
-    
+
     // Also try on window load as backup
     window.addEventListener('load', () => {
       console.log('Window load event fired');
