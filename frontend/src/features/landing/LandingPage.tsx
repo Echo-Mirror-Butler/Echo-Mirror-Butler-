@@ -8,7 +8,8 @@ import './landing-page.css'
 const features = [
   {
     icon: '🧠',
-    bg: 'linear-gradient(135deg,#dbeafe,#eff6ff)',
+    bg:     'linear-gradient(135deg,#dbeafe,#eff6ff)',
+    bgDark: 'linear-gradient(135deg,rgba(59,130,246,0.18),rgba(59,130,246,0.08))',
     accent: '#1463ff',
     title: 'AI Mood Insights',
     desc: 'Your AI companion surfaces personalised reflections shaped by your history — not generic advice.',
@@ -16,7 +17,8 @@ const features = [
   },
   {
     icon: '🌍',
-    bg: 'linear-gradient(135deg,#d6f8ef,#ecfdf5)',
+    bg:     'linear-gradient(135deg,#d6f8ef,#ecfdf5)',
+    bgDark: 'linear-gradient(135deg,rgba(16,185,129,0.18),rgba(16,185,129,0.08))',
     accent: '#0a8a5b',
     title: 'Global Mirror',
     desc: 'See how your emotional state compares with thousands worldwide, in real time.',
@@ -24,7 +26,8 @@ const features = [
   },
   {
     icon: '📓',
-    bg: 'linear-gradient(135deg,#ede9fe,#f5f3ff)',
+    bg:     'linear-gradient(135deg,#ede9fe,#f5f3ff)',
+    bgDark: 'linear-gradient(135deg,rgba(139,92,246,0.18),rgba(139,92,246,0.08))',
     accent: '#7c3aed',
     title: 'Habit & Mood Logs',
     desc: 'Log what you feel. Over time, patterns emerge you\'d never catch in the moment.',
@@ -32,7 +35,8 @@ const features = [
   },
   {
     icon: '✦',
-    bg: 'linear-gradient(135deg,#fef3c7,#fffbeb)',
+    bg:     'linear-gradient(135deg,#fef3c7,#fffbeb)',
+    bgDark: 'linear-gradient(135deg,rgba(251,191,36,0.18),rgba(251,191,36,0.08))',
     accent: '#d97706',
     title: 'ECHO Wallet',
     desc: 'Earn ECHO tokens on Stellar just by showing up. Consistency has real value here.',
@@ -434,7 +438,7 @@ export function LandingPage() {
             {features.map((f, i) => (
               <Reveal key={f.title} delay={(i % 2) + 1 as 1 | 2}>
                 <div className="lp-feature">
-                  <div className="lp-feature-top" style={{ background: f.bg }}>
+                  <div className="lp-feature-top" style={{ background: resolvedTheme === 'dark' ? f.bgDark : f.bg }}>
                     <div className="lp-feature-icon-wrap">{f.icon}</div>
                     <div className="lp-feature-stat" style={{ color: f.accent }}>{f.stat}</div>
                   </div>
