@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AppShell } from "../components/layout/app-shell";
@@ -20,7 +21,7 @@ import { UpdatePasswordPage } from "../features/auth/pages/UpdatePasswordPage";
 import { OnboardingPage } from "../features/onboarding/onboarding-page";
 import { supabase } from "../lib/supabase";
 
-function withRouteBoundary(routeName: string, element: React.ReactNode) {
+function withRouteBoundary(routeName: string, element: ReactNode) {
   return <RouteErrorBoundary routeName={routeName}>{element}</RouteErrorBoundary>;
 }
 
