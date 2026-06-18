@@ -1,0 +1,71 @@
+.route-error-card {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.route-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 0.62rem 0.9rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  color: var(--brand-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.toast-viewport {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 10000;
+  display: grid;
+  gap: 0.75rem;
+  width: min(380px, calc(100vw - 2rem));
+}
+
+.toast-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  padding: 0.9rem 2.4rem 0.9rem 0.95rem;
+}
+
+.toast-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.toast-card small {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.toast-dismiss {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+}
