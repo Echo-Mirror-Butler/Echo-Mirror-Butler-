@@ -31,9 +31,10 @@ export class ErrorBoundary extends Component<BoundaryProps, BoundaryState> {
     const routeName = this.props.routeName ?? 'Unknown route'
     const routePath = this.props.routePath ?? window.location.pathname
     const userId = this.props.userId ?? 'anonymous'
+    const timestamp = new Date().toISOString()
 
     console.warn(
-      `[EchoMirror route error] ref=${this.state.referenceCode} route=${routeName} path=${routePath} user=${userId}`,
+      `[EchoMirror route error] ref=${this.state.referenceCode} route=${routeName} path=${routePath} user=${userId} at=${timestamp}`,
       error,
       errorInfo.componentStack,
     )
