@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react'
+﻿import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
@@ -6,7 +6,9 @@ import { useToast } from '../../lib/use-toast'
 import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
+import { TestnetBadge } from '../../components/TestnetBadge'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
+import { isTestnet, stellarConfig } from '../../lib/stellar-config'
 
 const WALLET_PAGE_SIZE = 20
 const PRESET_AMOUNTS = [5, 10, 25, 50]
@@ -109,37 +111,69 @@ async function resolveRecipientId(recipientInput: string): Promise<string> {
   }
 
   if (isValidStellarKey(trimmed)) {
-    const { data, error } = await supabase
-      .from('user_wallets')
-      .select('user_id')
-      .eq('public_key', trimmed)
-      .maybeSingle()
+    let data: { user_id: string } | null = null
+    let lookupFailed = false
 
-    if (!error && data?.user_id) {
+    try {
+      const result = await supabase
+        .from('user_wallets')
+        .select('user_id')
+        .eq('public_key', trimmed)
+        .maybeSingle()
+      data = result.data
+      lookupFailed = Boolean(result.error)
+    } catch {
+      lookupFailed = true
+    }
+
+    if (data?.user_id) {
       return data.user_id as string
     }
 
-    throw new Error('Could not resolve recipient from Stellar address. Use recipient user ID.')
+    if (lookupFailed) {
+      throw new Error('Network error while looking up that Stellar address. Please try again.')
+    }
+
+    throw new Error('Address not found. No wallet is linked to that Stellar address.')
   }
 
   if (!trimmed.includes('@')) {
     throw new Error('Use a valid recipient UUID, email address, or Stellar address.')
   }
 
+  let lookupFailed = false
   const profileTables = ['profiles', 'user_profiles']
   for (const table of profileTables) {
-    const { data, error } = await supabase.from(table).select('id').eq('email', trimmed).maybeSingle()
-    if (!error && data?.id) {
-      return data.id as string
+    try {
+      const { data, error } = await supabase.from(table).select('id').eq('email', trimmed).maybeSingle()
+      if (error) {
+        lookupFailed = true
+        continue
+      }
+      if (data?.id) {
+        return data.id as string
+      }
+    } catch {
+      lookupFailed = true
     }
   }
 
-  const { data: rpcData, error: rpcError } = await supabase.rpc('lookup_user_by_email', {
-    email_input: trimmed,
-  })
+  try {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('lookup_user_by_email', {
+      email_input: trimmed,
+    })
 
-  if (!rpcError && rpcData && typeof rpcData.user_id === 'string') {
-    return rpcData.user_id
+    if (rpcError) {
+      lookupFailed = true
+    } else if (rpcData && typeof rpcData.user_id === 'string') {
+      return rpcData.user_id
+    }
+  } catch {
+    lookupFailed = true
+  }
+
+  if (lookupFailed) {
+    throw new Error('Network error while resolving that email. Please try again.')
   }
 
   throw new Error('Could not resolve recipient from email. Use recipient user ID.')
@@ -188,11 +222,22 @@ async function requestFreighterAccess(): Promise<string> {
   if (!isFreighterInstalled()) {
     throw new Error('FREIGHTER_NOT_INSTALLED')
   }
-  const { requestAccess } = await import('@stellar/freighter-api')
+  const { requestAccess, getNetwork } = await import('@stellar/freighter-api')
   const result = await requestAccess()
   if (result.error) {
     throw new Error(result.error.message ?? 'Freighter connection rejected')
   }
+
+  const network = await getNetwork()
+  if (network.error) {
+    throw new Error(network.error.message ?? 'Could not verify the Freighter network.')
+  }
+  if (network.networkPassphrase !== stellarConfig.networkPassphrase) {
+    throw new Error(
+      `Freighter is set to ${network.network}, but this app requires ${stellarConfig.network}. Switch networks in Freighter and try again.`,
+    )
+  }
+
   return result.address
 }
 
@@ -365,7 +410,7 @@ export function WalletPage() {
   const handleManualKeySave = async () => {
     const key = manualKeyInput.trim()
     if (!isValidStellarKey(key)) {
-      setManualKeyError('Invalid key — must start with G and be 56 characters.')
+      setManualKeyError('Invalid key -- must start with G and be 56 characters.')
       return
     }
     setManualKeyError(null)
@@ -396,9 +441,19 @@ export function WalletPage() {
     <section className="feature-grid wallet-grid">
       <ConfettiBlast active={showConfetti} />
 
+      {isTestnet ? (
+        <div
+          role="status"
+          className="full-width flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-900"
+        >
+          <span aria-hidden="true">⚠</span>
+          You are on Testnet — ECHO and XLM here have no real-world value.
+        </div>
+      ) : null}
+
       <article className="card balance-card">
         <div className="card-header">
-          <h2>ECHO Wallet</h2>
+          <div className="flex items-center gap-2"><h2>ECHO Wallet</h2><TestnetBadge /></div>
           <button
             type="button"
             onClick={() => void walletQuery.refetch()}
@@ -418,7 +473,7 @@ export function WalletPage() {
             {publicKey ? (
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <p className="muted" style={{ margin: 0 }}>
-                  Public key: {publicKey.slice(0, 14)}…{publicKey.slice(-4)}
+                  Public key: {publicKey.slice(0, 14)}...{publicKey.slice(-4)}
                 </p>
                 <button type="button" className="secondary" onClick={() => void handleCopyWalletAddress()}>
                   {copiedWalletAddress ? 'Copied' : 'Copy'}
@@ -514,7 +569,7 @@ export function WalletPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span className="chip active">Connected via Freighter</span>
                 <span className="muted" style={{ fontSize: '0.875rem' }}>
-                  {freighterAddress.slice(0, 8)}…{freighterAddress.slice(-4)}
+                  {freighterAddress.slice(0, 8)}...{freighterAddress.slice(-4)}
                 </span>
                 <button
                   type="button"
@@ -540,7 +595,7 @@ export function WalletPage() {
                 onClick={() => void handleFreighterConnect()}
                 disabled={freighterStatus === 'connecting' || savePublicKeyMutation.isPending}
               >
-                {freighterStatus === 'connecting' ? 'Connecting…' : 'Connect Freighter'}
+                {freighterStatus === 'connecting' ? 'Connecting...' : 'Connect Freighter'}
               </button>
             )}
             {freighterStatus === 'error' && freighterError ? (
@@ -553,7 +608,7 @@ export function WalletPage() {
             {walletQuery.data?.record?.public_key && !freighterAddress ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span className="muted" style={{ fontSize: '0.875rem' }}>
-                  {walletQuery.data.record.public_key.slice(0, 8)}…
+                  {walletQuery.data.record.public_key.slice(0, 8)}...
                   {walletQuery.data.record.public_key.slice(-4)}
                 </span>
                 <button
@@ -566,14 +621,14 @@ export function WalletPage() {
                   }}
                   disabled={removePublicKeyMutation.isPending}
                 >
-                  {removePublicKeyMutation.isPending ? 'Removing…' : 'Remove wallet'}
+                  {removePublicKeyMutation.isPending ? 'Removing...' : 'Remove wallet'}
                 </button>
               </div>
             ) : (
               <>
                 <input
                   type="text"
-                  placeholder="GABCD… (56 characters)"
+                  placeholder="GABCD... (56 characters)"
                   value={manualKeyInput}
                   onChange={(e) => {
                     setManualKeyInput(e.target.value)
@@ -589,7 +644,7 @@ export function WalletPage() {
                   onClick={() => void handleManualKeySave()}
                   disabled={savePublicKeyMutation.isPending || !manualKeyInput.trim()}
                 >
-                  {savePublicKeyMutation.isPending ? 'Saving…' : 'Save address'}
+                  {savePublicKeyMutation.isPending ? 'Saving...' : 'Save address'}
                 </button>
                 {manualKeyError ? <p className="error-text">{manualKeyError}</p> : null}
                 {savePublicKeyMutation.error ? (
@@ -744,3 +799,5 @@ export function WalletPage() {
     </section>
   )
 }
+
+

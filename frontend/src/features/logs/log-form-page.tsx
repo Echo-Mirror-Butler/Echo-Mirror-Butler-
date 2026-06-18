@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { useToast } from '../../lib/use-toast'
 import type { LogEntry } from '../../lib/types'
-import { toDateInputValue, formatDate } from '../../lib/date'
+import { toDateInputValue } from '../../lib/date'
 
 type LogFormMode = 'create' | 'edit'
 
@@ -118,6 +118,9 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     if (selectedDate > today) {
       errors.date = 'Date cannot be in the future'
     }
+    if (mood === null) {
+      errors.mood = 'Mood score is required'
+    }
     if (notes.length > MAX_NOTES_LENGTH) {
       errors.notes = `Notes must be under ${MAX_NOTES_LENGTH} characters`
     }
@@ -182,18 +185,15 @@ export function LogFormPage({ mode }: LogFormPageProps) {
       setFieldErrors({})
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['logs', user?.id] })
-      await queryClient.invalidateQueries({ queryKey: ['log-entry', id] })
-      setToast({ show: true, message: 'Log saved successfully!', type: 'success' })
-      // Redirect after 1.5 seconds to allow toast to be seen
-      setTimeout(() => {
-        navigate('/logs')
-      }, 1500)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['logs', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['log-entry', id] }),
+      ])
       showToast(mode === 'create' ? 'Mood logged! +1 ECHO earned 🎉' : 'Changes saved', 'success')
       navigate('/logs')
     },
     onError: (error: Error) => {
-      setToast({ show: true, message: error.message, type: 'error' })
+      setFormError(error.message)
     },
   })
 
@@ -245,24 +245,6 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     }
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    // Validate mood is required and between 1-5
-    if (mood === null || mood < 1 || mood > 5) {
-      setFormError('Mood score is required and must be between 1 and 5.')
-      return
-    }
-    // Validate date is not in the future
-    const selectedDate = new Date(date)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (selectedDate > today) {
-      setFormError('Date cannot be in the future.')
-      return
-    }
-    saveMutation.mutate()
-  }
-
   if (!user) {
     return null
   }
@@ -287,9 +269,9 @@ export function LogFormPage({ mode }: LogFormPageProps) {
 
         <form
           className="form-stack"
-          onSubmit={handleSubmit}
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault()
+            setFormError(null)
             if (!validate()) return
             saveMutation.mutate()
           }}
@@ -311,7 +293,10 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                     type="button"
                     style={{ fontSize: '1.3rem', padding: '0.5rem 0.8rem' }}
                     className={mood === value ? 'chip active' : 'chip'}
-                    onClick={() => setMood((prev) => (prev === value ? null : value))}
+                    onClick={() => {
+                      setMood((prev) => (prev === value ? null : value))
+                      setFieldErrors((prev) => ({ ...prev, mood: undefined }))
+                    }}
                     aria-label={`Mood ${value}`}
                   >
                     {emoji}
@@ -319,6 +304,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                 )
               })}
             </div>
+            {fieldErrors.mood && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.mood}</p>}
           </div>
 
           <div>
@@ -354,7 +340,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                   className="chip active"
                   onClick={() => setHabits((prev) => prev.filter((item) => item !== habit))}
                 >
-                  {habit} A-
+                  {habit} ×
                 </button>
               ))}
             </div>
@@ -381,7 +367,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
           </label>
 
           <button type="submit" disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? 'Saving�?�' : 'Save log entry'}
+            {saveMutation.isPending ? 'Saving…' : 'Save log entry'}
           </button>
 
           {mode === 'edit' ? (
@@ -396,7 +382,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
               }}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? 'Deleting�?�' : 'Delete entry'}
+              {deleteMutation.isPending ? 'Deleting…' : 'Delete entry'}
             </button>
           ) : null}
 
