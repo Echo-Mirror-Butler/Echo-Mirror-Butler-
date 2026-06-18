@@ -12,13 +12,17 @@ import { AnalyticsPage } from "../features/analytics/analytics-page";
 import { GlobalMirrorPage } from "../features/global-mirror/global-mirror-page";
 import { DashboardPage } from "../features/dashboard/dashboard-page";
 import { SettingsPage } from "../features/settings/settings-page";
-import { ErrorBoundary } from "../components/error-boundary";
+import { RouteErrorBoundary } from "../components/error-boundary";
 import NotFoundPage from "../features/shared/not-found-page";
 import { SignupPage } from "../features/auth/pages/SignupPage";
 import { ResetPasswordPage } from "../features/auth/pages/ResetPasswordPage";
 import { UpdatePasswordPage } from "../features/auth/pages/UpdatePasswordPage";
 import { OnboardingPage } from "../features/onboarding/onboarding-page";
 import { supabase } from "../lib/supabase";
+
+function withRouteBoundary(routeName: string, element: React.ReactNode) {
+  return <RouteErrorBoundary routeName={routeName}>{element}</RouteErrorBoundary>;
+}
 
 function OnboardingGuard() {
   const { user, isLoading } = useAuth();
@@ -72,11 +76,7 @@ function RequireAuth() {
     return <Navigate to="/onboarding" replace />;
   }
 
-  return (
-    <ErrorBoundary>
-      <AppShell />
-    </ErrorBoundary>
-  );
+  return <AppShell />;
 }
 
 export function AppRouter() {
@@ -111,19 +111,19 @@ export function AppRouter() {
 
       <Route
         path="/onboarding"
-        element={user ? <OnboardingGuard /> : <Navigate to="/login" replace />}
+        element={user ? withRouteBoundary("Onboarding", <OnboardingGuard />) : <Navigate to="/login" replace />}
       />
 
       <Route element={<RequireAuth />}>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/wallet" element={<WalletPage />} />
-        <Route path="/logs" element={<LogsListPage />} />
-        <Route path="/logs/new" element={<LogFormPage mode="create" />} />
-        <Route path="/logs/:id/edit" element={<LogFormPage mode="edit" />} />
-        <Route path="/insights" element={<InsightsPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/global-mirror" element={<GlobalMirrorPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/dashboard" element={withRouteBoundary("Dashboard", <DashboardPage />)} />
+        <Route path="/wallet" element={withRouteBoundary("Wallet", <WalletPage />)} />
+        <Route path="/logs" element={withRouteBoundary("Logs", <LogsListPage />)} />
+        <Route path="/logs/new" element={withRouteBoundary("New Log", <LogFormPage mode="create" />)} />
+        <Route path="/logs/:id/edit" element={withRouteBoundary("Edit Log", <LogFormPage mode="edit" />)} />
+        <Route path="/insights" element={withRouteBoundary("AI Insights", <InsightsPage />)} />
+        <Route path="/analytics" element={withRouteBoundary("Analytics", <AnalyticsPage />)} />
+        <Route path="/global-mirror" element={withRouteBoundary("Global Mirror", <GlobalMirrorPage />)} />
+        <Route path="/settings" element={withRouteBoundary("Settings", <SettingsPage />)} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />
