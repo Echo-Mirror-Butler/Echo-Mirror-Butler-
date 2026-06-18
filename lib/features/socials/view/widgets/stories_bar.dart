@@ -78,7 +78,7 @@ class _StoriesBarState extends State<StoriesBar>
         lifecycleState == AppLifecycleState.inactive;
     final shouldAnimate =
         widget.liveSessions.isNotEmpty &&
-        TickerMode.of(context) &&
+        TickerMode.valuesOf(context).enabled &&
         isAppVisible;
 
     if (shouldAnimate) {
@@ -358,10 +358,10 @@ class _StoriesBarState extends State<StoriesBar>
             ),
             child: session.hostAvatarUrl == null
                 ? Center(
-                    child: FaIcon(
+                    child: Icon(
                       session.isVoiceOnly
-                          ? FontAwesomeIcons.phone
-                          : FontAwesomeIcons.video,
+                          ? FontAwesomeIcons.phone.data
+                          : FontAwesomeIcons.video.data,
                       color: Colors.red,
                       size: 24,
                     ),

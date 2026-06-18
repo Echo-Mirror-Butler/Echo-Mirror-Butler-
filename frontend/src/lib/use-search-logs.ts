@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { supabase } from './supabase'
 import type { LogEntry } from './types'
 
@@ -6,17 +6,29 @@ export interface SearchResult extends Pick<LogEntry, 'id' | 'date' | 'mood' | 'n
 
 const DEBOUNCE_MS = 300
 
+function parseQuery(raw: string): { text: string; moodFilter: number | null } {
+  const trimmed = raw.trim()
+  const moodMatch = trimmed.match(/mood:(\d)\b/i)
+  if (!moodMatch) return { text: trimmed, moodFilter: null }
+
+  const moodFilter = Number(moodMatch[1])
+  const text = trimmed.replace(/mood:\d\b/i, '').trim()
+  return { text, moodFilter }
+}
+
 export function useSearchLogs(userId: string | undefined, query: string) {
   const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const debounceTimer = useRef<NodeJS.Timeout>()
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const { text, moodFilter } = useMemo(() => parseQuery(query), [query])
 
   useEffect(() => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
     }
 
-    if (!userId || !query.trim()) {
+    if (!userId || (!text && moodFilter === null)) {
       setResults([])
       return
     }
@@ -24,13 +36,23 @@ export function useSearchLogs(userId: string | undefined, query: string) {
     setIsLoading(true)
     debounceTimer.current = setTimeout(async () => {
       try {
-        const { data, error } = await supabase
+        let builder = supabase
           .from('log_entries')
           .select('id, date, mood, notes, habits')
           .eq('user_id', userId)
-          .or(`notes.ilike.%${query}%,habits::text.ilike.%${query}%`)
-          .order('date', { ascending: false })
           .limit(8)
+
+        if (text) {
+          builder = builder.or(`notes.ilike.%${text}%,habits::text.ilike.%${text}%`)
+        }
+
+        if (moodFilter !== null) {
+          builder = builder.eq('mood', moodFilter)
+        }
+
+        builder = builder.order('date', { ascending: false })
+
+        const { data, error } = await builder
 
         if (error) {
           console.error('Search error:', error)
@@ -51,7 +73,7 @@ export function useSearchLogs(userId: string | undefined, query: string) {
         clearTimeout(debounceTimer.current)
       }
     }
-  }, [userId, query])
+  }, [userId, text, moodFilter])
 
   return { results, isLoading }
 }

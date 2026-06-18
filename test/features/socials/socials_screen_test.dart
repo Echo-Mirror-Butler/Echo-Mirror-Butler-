@@ -230,6 +230,6 @@ void main() {
     await tester.pumpWidget(buildScreen(const SocialsState()));
     await settle(tester);
 
-    expect(find.byIcon(FontAwesomeIcons.bell), findsOneWidget);
+    expect(find.byIcon(FontAwesomeIcons.bell.data), findsOneWidget);
   });
 }

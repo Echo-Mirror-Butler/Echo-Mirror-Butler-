@@ -70,8 +70,8 @@ class MoodTrendChart extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    FontAwesomeIcons.chartLine,
+                  child: Icon(
+                    FontAwesomeIcons.chartLine.data,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -348,7 +348,7 @@ class MoodTrendChart extends StatelessWidget {
         child: Column(
           children: [
             Icon(
-              FontAwesomeIcons.chartLine,
+              FontAwesomeIcons.chartLine.data,
               size: 48,
               color: AppTheme.primaryColor.withValues(alpha: 0.3),
             ),

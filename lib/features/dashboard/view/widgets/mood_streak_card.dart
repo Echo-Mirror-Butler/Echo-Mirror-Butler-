@@ -16,7 +16,7 @@ class MoodStreakCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 3,
-        shadowColor: Colors.orange.withValues(alpha: 0.25),
+        shadowColor: Colors.orange.withOpacity(0.25),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           decoration: BoxDecoration(
@@ -25,8 +25,8 @@ class MoodStreakCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.orange.withValues(alpha: 0.15),
-                AppTheme.accentColor.withValues(alpha: 0.08),
+                Colors.orange.withOpacity(0.15),
+                AppTheme.accentColor.withOpacity(0.08),
               ],
             ),
           ),
@@ -36,7 +36,7 @@ class MoodStreakCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
+                  color: Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -63,9 +63,7 @@ class MoodStreakCard extends StatelessWidget {
                       _subtitle,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                   ],

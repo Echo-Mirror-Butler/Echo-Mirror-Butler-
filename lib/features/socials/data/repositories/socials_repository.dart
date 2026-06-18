@@ -87,7 +87,7 @@ class SocialsRepository {
       title: (data['title'] ?? '').toString(),
       createdAt:
           DateTime.tryParse((data['created_at'] ?? '').toString()) ??
-          DateTime.now(),
+              DateTime.now(),
       expiresAt: data['expires_at'] != null
           ? DateTime.tryParse(data['expires_at'].toString())
           : null,
@@ -111,10 +111,10 @@ class SocialsRepository {
           : const [],
       createdAt:
           DateTime.tryParse((data['created_at'] ?? '').toString()) ??
-          DateTime.now(),
+              DateTime.now(),
       expiresAt:
           DateTime.tryParse((data['expires_at'] ?? '').toString()) ??
-          DateTime.now().add(const Duration(hours: 24)),
+              DateTime.now().add(const Duration(hours: 24)),
       viewCount: (data['view_count'] as num?)?.toInt() ?? 0,
       viewedBy: viewedByRaw is List
           ? viewedByRaw.map((e) => e.toString()).toList()
@@ -133,10 +133,10 @@ class SocialsRepository {
       description: data['description'] as String?,
       scheduledTime:
           DateTime.tryParse((data['scheduled_time'] ?? '').toString()) ??
-          DateTime.now(),
+              DateTime.now(),
       createdAt:
           DateTime.tryParse((data['created_at'] ?? '').toString()) ??
-          DateTime.now(),
+              DateTime.now(),
       isVideoEnabled: data['is_video_enabled'] as bool? ?? true,
       isVoiceOnly: data['is_voice_only'] as bool? ?? false,
       isNotified: data['is_notified'] as bool? ?? false,

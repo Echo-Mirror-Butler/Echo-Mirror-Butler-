@@ -6,6 +6,8 @@
 
 *Track your mood, compete with friends, gift Stellar crypto during live sessions, and grow together*
 
+### 🌐 [echomirrorbutler.vercel.app](https://echomirrorbutler.vercel.app)
+
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
@@ -108,16 +110,18 @@ We believe wellness is better together. EchoMirror Butler helps you:
 
 ## 📸 Screenshots
 
-> *Screenshots coming soon!*
+### Landing Page
+![Landing Page](assets/screenshots/landing.png)
 
-### Planned Screenshots:
-- 📱 Login Screen
-- 📅 Daily Logging Interface
-- 📊 Dashboard with AI Insights
-- 💌 Future Letter Card
-- 🔮 Prediction Card
-- 💡 Suggestions List
-- 📈 Mood Analytics
+### Features
+![Features Section](assets/screenshots/features.png)
+
+![ECHO Wallet & Habit Logs](assets/screenshots/features2.png)
+
+### Authentication
+![Sign In](assets/screenshots/login.png)
+
+![Create Account](assets/screenshots/signup.png)
 
 ---
 
@@ -456,14 +460,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/echomirror/issues)
+- **Issues**: [GitHub Issues](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-/issues)
 - **Questions**: Open a discussion on GitHub
 
 ---
 
 ## ⭐ Show Your Support
 
-If you find EchoMirror Butler helpful, please give it a ⭐ on GitHub!
+If you find EchoMirror Butler helpful, please **[give it a ⭐ on GitHub](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-)** — it helps more contributors discover the project and directly supports our ranking in the Stellar Wave program!
 
 ---
 

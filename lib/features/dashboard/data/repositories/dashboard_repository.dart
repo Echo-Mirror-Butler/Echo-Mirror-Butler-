@@ -71,6 +71,49 @@ class DashboardRepository {
 
         final bestMoodEntry =
             moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
+          } else if (recentAvg < averageMood - 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-declining-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Trend Notice',
+              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          }
+        }
+
+        final bestMoodEntry =
+            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
+            insights.add(
+              InsightModel(
+                id: 'mood-improving-${now.millisecondsSinceEpoch}',
+                userId: userId,
+                title: 'Mood Improvement Detected',
+                description:
+                    'Your mood has been improving over the past week! '
+                    'Keep up the great work.',
+                date: now,
+                type: InsightType.mood,
+                createdAt: now,
+              ),
+            );
+          } else if (recentAvg < averageMood - 0.5) {
+            insights.add(InsightModel(
+              id: 'mood-declining-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Mood Trend Notice',
+              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              date: now,
+              type: InsightType.mood,
+              createdAt: now,
+            ));
+          }
+        }
+
+        final bestMoodEntry =
+            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
         if (bestMoodEntry.mood != null && bestMoodEntry.mood! >= 4) {
           final localDate = bestMoodEntry.date.isUtc
               ? bestMoodEntry.date.toLocal()
@@ -128,6 +171,34 @@ class DashboardRepository {
             userId: userId,
             title: 'Habit Variety',
             description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+            userId: userId,
+            title: 'Habit Variety',
+            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+          insights.add(
+            InsightModel(
+              id: 'habit-variety-${now.millisecondsSinceEpoch}',
+              userId: userId,
+              title: 'Habit Variety',
+              description:
+                  'You\'ve been practicing ${recentHabits.length} different '
+                  'habits this week. Great diversity!',
+              date: now,
+              type: InsightType.habit,
+              createdAt: now,
+            ),
+          );
+        }
+      }
+
+      // Generate general insights
+      final totalEntries = logEntries.length;
+      if (totalEntries >= 7) {
+        insights.add(
+          InsightModel(
+            id: 'milestone-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Habit Variety',
+            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
             date: now,
             type: InsightType.habit,
             createdAt: now,
@@ -168,6 +239,18 @@ class DashboardRepository {
           'recentLogs': logEntries.map((e) => e.toJson()).toList(),
         },
       );
+
+      // Check for rate limit error (429)
+      if (response.status != null && response.status! >= 400) {
+        final data = response.data;
+        if (data is Map &&
+            data['error']?.toString().contains('Rate limit') == true) {
+          debugPrint(
+            '[DashboardRepository] Rate limit exceeded for generate-insight',
+          );
+          return [];
+        }
+      }
 
       final result = response.data;
       if (result is! Map<String, dynamic>) {
@@ -268,8 +351,7 @@ class DashboardRepository {
           .from('future_letters')
           .select()
           .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .limit(10);
+          .order('created_at', ascending: false);
 
       return (response as List<dynamic>)
           .whereType<Map<String, dynamic>>()

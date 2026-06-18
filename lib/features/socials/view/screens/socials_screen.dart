@@ -94,7 +94,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               return Stack(
                 children: [
                   IconButton(
-                    icon: const FaIcon(FontAwesomeIcons.bell),
+                    icon: Icon(FontAwesomeIcons.bell.data),
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -281,8 +281,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                 color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: FaIcon(
-                FontAwesomeIcons.video,
+              child: Icon(
+                FontAwesomeIcons.video.data,
                 size: 64,
                 color: AppTheme.primaryColor,
               ),
@@ -372,8 +372,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                     ? NetworkImage(session.hostAvatarUrl!)
                     : null,
                 child: session.hostAvatarUrl == null
-                    ? FaIcon(
-                        FontAwesomeIcons.user,
+                    ? Icon(
+                        FontAwesomeIcons.user.data,
                         color: AppTheme.primaryColor,
                         size: 20,
                       )
@@ -396,8 +396,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        FaIcon(
-                          FontAwesomeIcons.user,
+                        Icon(
+                          FontAwesomeIcons.user.data,
                           size: 12,
                           color: theme.colorScheme.onSurface.withValues(
                             alpha: 0.6,
@@ -431,8 +431,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(
-                      FontAwesomeIcons.video,
+                    Icon(
+                      FontAwesomeIcons.video.data,
                       color: Colors.white,
                       size: 14,
                     ),
@@ -499,10 +499,10 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
             CircleAvatar(
               radius: 28,
               backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
-              child: FaIcon(
+              child: Icon(
                 session.isVoiceOnly as bool
-                    ? FontAwesomeIcons.phone
-                    : FontAwesomeIcons.video,
+                    ? FontAwesomeIcons.phone.data
+                    : FontAwesomeIcons.video.data,
                 color: AppTheme.secondaryColor,
                 size: 20,
               ),
@@ -523,8 +523,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const FaIcon(
-                        FontAwesomeIcons.clock,
+                      Icon(
+                        FontAwesomeIcons.clock.data,
                         size: 12,
                         color: AppTheme.secondaryColor,
                       ),
@@ -756,8 +756,8 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     child: Column(
                       children: [
-                        FaIcon(
-                          FontAwesomeIcons.video,
+                        Icon(
+                          FontAwesomeIcons.video.data,
                           color: !_isVoiceOnly
                               ? AppTheme.primaryColor
                               : theme.colorScheme.onSurface.withValues(
@@ -805,8 +805,8 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     ),
                     child: Column(
                       children: [
-                        FaIcon(
-                          FontAwesomeIcons.phone,
+                        Icon(
+                          FontAwesomeIcons.phone.data,
                           color: _isVoiceOnly
                               ? AppTheme.primaryColor
                               : theme.colorScheme.onSurface.withValues(
@@ -871,8 +871,8 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                 ),
                 child: Row(
                   children: [
-                    const FaIcon(
-                      FontAwesomeIcons.clock,
+                    Icon(
+                      FontAwesomeIcons.clock.data,
                       color: AppTheme.primaryColor,
                       size: 16,
                     ),
@@ -889,8 +889,8 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                       ),
                     ),
                     const Spacer(),
-                    const FaIcon(
-                      FontAwesomeIcons.penToSquare,
+                    Icon(
+                      FontAwesomeIcons.penToSquare.data,
                       color: AppTheme.primaryColor,
                       size: 14,
                     ),

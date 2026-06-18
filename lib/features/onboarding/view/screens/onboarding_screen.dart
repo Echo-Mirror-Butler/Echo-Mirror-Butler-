@@ -41,6 +41,39 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   // Step 0 — habit presets
   final Set<String> _selectedHabits = {};
+  final List<OnboardingPageData> _pages = [
+    OnboardingPageData(
+      title: 'Meet EchoMirror',
+      subtitle: 'Your Future Self as a Butler',
+      description:
+          'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
+      icon: FontAwesomeIcons.userTie.data,
+      imageUrl:
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+      lottieAsset: LottieAnimations.mirrorReflection,
+      gradient: [AppTheme.primaryColor, AppTheme.secondaryColor],
+    ),
+    OnboardingPageData(
+      title: 'Log Daily Moods & Habits',
+      description:
+          'Capture your daily reflections, track your mood, and build meaningful habits. Your journey starts with a single entry.',
+      icon: FontAwesomeIcons.book.data,
+      imageUrl:
+          'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
+      lottieAsset: LottieAnimations.habitCheck,
+      gradient: [AppTheme.secondaryColor, AppTheme.accentColor],
+    ),
+    OnboardingPageData(
+      title: 'Receive Predictions & Letters',
+      description:
+          'Get AI-powered insights about your patterns, predictions for your future, and motivational letters from your future self.',
+      icon: FontAwesomeIcons.envelopeOpen.data,
+      imageUrl:
+          'https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=800&q=80',
+      lottieAsset: LottieAnimations.envelopeOpen,
+      gradient: [AppTheme.accentColor, AppTheme.primaryColor],
+    ),
+  ];
 
   // Step 2 — reminder time
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
@@ -84,6 +117,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       );
     } else {
       _completeOnboarding();
+      if (mounted) {
+        // Navigate to login - the router redirect should now allow this
+        context.go('/login');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[OnboardingScreen] Error completing onboarding: $e');
+      debugPrint('[OnboardingScreen] Stack trace: $stackTrace');
+      // Fallback: try to navigate anyway after marking as completed
+      if (!mounted) return;
+      try {
+        await markOnboardingCompleted();
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
+        context.go('/login');
+      } catch (e2) {
+        debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
+      }
     }
   }
 
@@ -220,6 +270,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 isLast
                                     ? FontAwesomeIcons.arrowRight
                                     : FontAwesomeIcons.chevronRight,
+                                isLastPage
+                                    ? FontAwesomeIcons.arrowRight.data
+                                    : FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                               ),
                             ],
