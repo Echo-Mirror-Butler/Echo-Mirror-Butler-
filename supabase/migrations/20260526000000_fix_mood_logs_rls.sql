@@ -1,4 +1,13 @@
 -- Drop all existing policies on mood_logs to avoid conflicts
+CREATE TABLE IF NOT EXISTS public.mood_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  country text,
+  city text,
+  mood text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
 DO $$
 DECLARE
     pol record;

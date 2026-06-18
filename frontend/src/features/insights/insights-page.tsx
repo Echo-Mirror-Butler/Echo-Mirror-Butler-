@@ -450,18 +450,17 @@ export function InsightsPage() {
   const isFutureLetterLocked = unlockAt ? unlockAt.getTime() > Date.now() : false
   const history = useMemo(() => (historyQuery.data ?? []).slice(0, 5), [historyQuery.data])
 
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+  const lastGeneratedToday = createdAt
+    ? createdAt.getTime() >= todayMidnight.getTime()
+    : false
+  const isRateLimited = canGenerate && lastGeneratedToday && !generateMutation.data
+
   const moodDrivers: { label: string; percentage: number }[] = useMemo(() => {
     if (!currentInsight) return []
     if (currentInsight.mood_drivers?.length) return currentInsight.mood_drivers
-    const parsed = parseMoodDriversFromText(currentInsight.prediction)
-    if (parsed.length) return parsed
-    return [
-      { label: 'Sleep', percentage: 35 },
-      { label: 'Exercise', percentage: 25 },
-      { label: 'Social', percentage: 20 },
-      { label: 'Nutrition', percentage: 12 },
-      { label: 'Stress', percentage: 8 },
-    ]
+    return parseMoodDriversFromText(currentInsight.prediction)
   }, [currentInsight])
   const recommendations = currentInsight?.recommendations?.length
     ? currentInsight.recommendations
@@ -490,7 +489,7 @@ export function InsightsPage() {
         <button
           type="button"
           onClick={() => generateMutation.mutate()}
-          disabled={!canGenerate || isPending}
+          disabled={!canGenerate || isPending || isRateLimited}
           style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
         >
           {isPending ? (
@@ -518,7 +517,13 @@ export function InsightsPage() {
 
         {!canGenerate && (
           <p className="muted" style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-            At least 3 logs are required to generate insights.
+            Log at least 3 moods to unlock your first insight.
+          </p>
+        )}
+
+        {isRateLimited && (
+          <p className="muted" style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+            You have already generated an insight today. Come back tomorrow.
           </p>
         )}
 

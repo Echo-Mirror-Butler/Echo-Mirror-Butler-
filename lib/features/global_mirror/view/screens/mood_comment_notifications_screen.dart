@@ -85,7 +85,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                     .read(moodCommentNotificationProvider.notifier)
                     .markAllAsRead();
               },
-              icon: const Icon(FontAwesomeIcons.checkDouble, size: 16),
+              icon: Icon(FontAwesomeIcons.checkDouble.data, size: 16),
               label: const Text('Mark all read'),
               style: TextButton.styleFrom(
                 foregroundColor: AppTheme.primaryColor,
@@ -93,7 +93,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
             ),
           if (notifications.isNotEmpty)
             IconButton(
-              icon: const Icon(FontAwesomeIcons.trash),
+              icon: Icon(FontAwesomeIcons.trash.data),
               onPressed: () {
                 showDialog(
                   context: context,
@@ -142,7 +142,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            FontAwesomeIcons.heart,
+                            FontAwesomeIcons.heart.data,
                             size: 64,
                             color: theme.colorScheme.primary.withValues(
                               alpha: 0.3,
@@ -195,8 +195,8 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
-                        FontAwesomeIcons.trash,
+                      child: Icon(
+                        FontAwesomeIcons.trash.data,
                         color: Colors.white,
                       ),
                     ),
@@ -273,7 +273,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                                     Row(
                                       children: [
                                         Icon(
-                                          FontAwesomeIcons.heart,
+                                          FontAwesomeIcons.heart.data,
                                           size: 14,
                                           color: AppTheme.primaryColor,
                                         ),
@@ -374,7 +374,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                     .read(moodCommentNotificationProvider.notifier)
                     .markAllAsRead();
               },
-              icon: const Icon(FontAwesomeIcons.checkDouble),
+              icon: Icon(FontAwesomeIcons.checkDouble.data),
               label: Text('Mark all read ($unreadCount)'),
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,

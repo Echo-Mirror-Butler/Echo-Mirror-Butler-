@@ -71,7 +71,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   // Logo/Icon
                   Icon(
-                    FontAwesomeIcons.userAstronaut,
+                    FontAwesomeIcons.userAstronaut.data,
                     size: 80,
                     color: AppTheme.primaryColor,
                   ),
@@ -95,7 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: AppStrings.email,
                     hint: 'Enter your email',
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: FontAwesomeIcons.envelope,
+                    prefixIcon: FontAwesomeIcons.envelope.data,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
@@ -113,12 +113,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: AppStrings.password,
                     hint: 'Enter your password',
                     obscureText: _obscurePassword,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () {
                         setState(() {
@@ -142,7 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: authState.isLoading ? null : _handleLogin,
                     text: AppStrings.login,
                     isLoading: authState.isLoading,
-                    icon: FontAwesomeIcons.rightToBracket,
+                    icon: FontAwesomeIcons.rightToBracket.data,
                   ),
                   const SizedBox(height: 8),
                   // Forgot password link

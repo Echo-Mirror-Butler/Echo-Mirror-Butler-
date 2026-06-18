@@ -7,6 +7,28 @@ on:
     branches: [main, development]
 
 jobs:
+  supabase-db-tests:
+    name: Supabase DB Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local stack
+        run: supabase start
+
+      - name: Run pgTAP database tests
+        run: supabase test db
+
+      - name: Stop Supabase local stack
+        if: always()
+        run: supabase stop --no-backup
+
   flutter-ci:
     name: Format · Analyze · Test
     runs-on: ubuntu-latest
@@ -29,8 +51,10 @@ jobs:
           dart format --output=show lib/features/socials/data/repositories/socials_repository.dart
           echo "=== SOCIALS_FORMATTED_END ==="
 
-      - name: Check formatting
-        run: dart format --set-exit-if-changed lib test backend
+      - name: Check Dart formatting
+        run: |
+          dart format lib test backend
+          git diff --exit-code lib test backend || (echo "Run 'dart format lib test backend' locally before pushing" && exit 1)
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos

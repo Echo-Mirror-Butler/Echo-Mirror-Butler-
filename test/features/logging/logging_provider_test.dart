@@ -56,7 +56,7 @@ void main() {
     );
 
     test(
-      'loadLogEntries — success: state becomes AsyncData with list',
+      'loadLogEntries â€” success: state becomes AsyncData with list',
       () async {
         final entries = [_makeEntry(id: 'e1'), _makeEntry(id: 'e2')];
         when(
@@ -70,7 +70,7 @@ void main() {
       },
     );
 
-    test('loadLogEntries — failure: state becomes AsyncError', () async {
+    test('loadLogEntries â€” failure: state becomes AsyncError', () async {
       when(
         () => mockRepo.getLogEntries('user_err'),
       ).thenThrow(Exception('network error'));
@@ -113,7 +113,7 @@ void main() {
     );
 
     test(
-      'createLogEntry — returns true on success and appends entry to state',
+      'createLogEntry â€” returns true on success and appends entry to state',
       () async {
         final existing = _makeEntry(id: 'e_old');
         final newEntry = _makeEntry(id: 'e_new', mood: 5);
@@ -137,7 +137,7 @@ void main() {
       },
     );
 
-    test('createLogEntry — returns false on repository error', () async {
+    test('createLogEntry â€” returns false on repository error', () async {
       when(
         () => mockRepo.createLogEntry(any()),
       ).thenThrow(Exception('write failed'));
@@ -149,7 +149,7 @@ void main() {
     });
 
     test(
-      'updateLogEntry — returns true on success and updates entry in state',
+      'updateLogEntry â€” returns true on success and updates entry in state',
       () async {
         final original = _makeEntry(id: 'e1', mood: 2);
         final updated = _makeEntry(id: 'e1', mood: 4);
@@ -171,7 +171,7 @@ void main() {
       },
     );
 
-    test('updateLogEntry — returns false on repository error', () async {
+    test('updateLogEntry â€” returns false on repository error', () async {
       when(
         () => mockRepo.updateLogEntry(any()),
       ).thenThrow(Exception('update failed'));
@@ -182,7 +182,7 @@ void main() {
       expect(notifier.state, isA<AsyncError>());
     });
 
-    test('deleteLogEntry — removes entry from state', () async {
+    test('deleteLogEntry â€” removes entry from state', () async {
       final e1 = _makeEntry(id: 'e1');
       final e2 = _makeEntry(id: 'e2', mood: 5);
 
@@ -203,7 +203,7 @@ void main() {
       expect(data.first.id, 'e2');
     });
 
-    test('deleteLogEntry — returns false on repository error', () async {
+    test('deleteLogEntry â€” returns false on repository error', () async {
       when(
         () => mockRepo.getLogEntries('user_1'),
       ).thenAnswer((_) async => [_makeEntry()]);
@@ -224,7 +224,7 @@ void main() {
     });
 
     test(
-      'getLogEntryForDate — returns entry from repository when userId is set',
+      'getLogEntryForDate â€” returns entry from repository when userId is set',
       () async {
         final date = DateTime(2025, 6, 1);
         final entry = _makeEntry();
@@ -244,7 +244,7 @@ void main() {
     );
 
     test(
-      'getLogEntryForDate — returns null when repository returns null',
+      'getLogEntryForDate â€” returns null when repository returns null',
       () async {
         final date = DateTime(2025, 6, 2);
 

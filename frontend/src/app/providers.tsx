@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { ToastProvider } from '../components/toast-provider'
 import { AuthProvider } from '../lib/auth-context'
+import { ToastProvider } from '../lib/use-toast'
 import { queryClient } from '../lib/query-client'
 
 export function AppProviders({ children }: { children: ReactNode }) {

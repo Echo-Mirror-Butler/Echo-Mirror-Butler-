@@ -104,7 +104,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
           _loadComments(); // Reload comments
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Comment sent! 💙'),
+              content: Text('Comment sent! ðŸ’™'),
               duration: Duration(seconds: 2),
               backgroundColor: Colors.green,
             ),
@@ -236,7 +236,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                       compact: true,
                     ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -260,7 +260,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                 child: Row(
                   children: [
                     Icon(
-                      FontAwesomeIcons.heart,
+                      FontAwesomeIcons.heart.data,
                       color: AppTheme.primaryColor,
                       size: 20,
                     ),
@@ -303,7 +303,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              FontAwesomeIcons.heart,
+                              FontAwesomeIcons.heart.data,
                               size: 48,
                               color: theme.colorScheme.onSurface.withValues(
                                 alpha: 0.3,
@@ -356,7 +356,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               Row(
                                 children: [
                                   Icon(
-                                    FontAwesomeIcons.heart,
+                                    FontAwesomeIcons.heart.data,
                                     size: 14,
                                     color: AppTheme.primaryColor,
                                   ),
@@ -448,8 +448,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               baseColor: Colors.white70,
                               highlightColor: Colors.white,
                             )
-                          : const Icon(
-                              FontAwesomeIcons.paperPlane,
+                          : Icon(
+                              FontAwesomeIcons.paperPlane.data,
                               color: Colors.white,
                               size: 18,
                             ),

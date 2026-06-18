@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
+import { useToast } from '../../lib/use-toast'
 import type { LogEntry } from '../../lib/types'
 import { toDateInputValue } from '../../lib/date'
 
@@ -17,6 +18,10 @@ const HABIT_PRESETS = [
   'Sleep 8h', 'Journaling', 'Healthy eating', 'No alcohol',
   'Gratitude', 'Cold shower',
 ]
+
+const MOOD_EMOJIS = ['🙁', '😕', '😐', '🙂', '😄']
+const MAX_NOTES_LENGTH = 500
+const MAX_HABITS = 5
 
 async function fetchLogById(id: string): Promise<LogEntry | null> {
   const { data, error } = await supabase.from('log_entries').select('*').eq('id', id).maybeSingle()
@@ -70,12 +75,16 @@ export function LogFormPage({ mode }: LogFormPageProps) {
 
   const existingEntry = entryQuery.data
 
+  const { showToast } = useToast()
+
   const [date, setDate] = useState(initialDate)
   const [mood, setMood] = useState<number | null>(null)
   const [habits, setHabits] = useState<string[]>([])
   const [habitInput, setHabitInput] = useState('')
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' } | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<{ date?: string; mood?: string; habits?: string; notes?: string }>({})
 
   const hydrated = useMemo(
     () =>
@@ -101,14 +110,28 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     setNotes(hydrated.notes)
   }, [hydrated])
 
+  function validate(): boolean {
+    const errors: { date?: string; mood?: string; habits?: string; notes?: string } = {}
+    const selectedDate = new Date(date)
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    if (selectedDate > today) {
+      errors.date = 'Date cannot be in the future'
+    }
+    if (mood === null) {
+      errors.mood = 'Mood score is required'
+    }
+    if (notes.length > MAX_NOTES_LENGTH) {
+      errors.notes = `Notes must be under ${MAX_NOTES_LENGTH} characters`
+    }
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!user) {
         throw new Error('No signed in user found.')
-      }
-
-      if (!mood && habits.length === 0 && !notes.trim()) {
-        throw new Error('Fill at least one field: mood, habit, or note.')
       }
 
       if (mode === 'create') {
@@ -158,10 +181,15 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     },
     onMutate: () => {
       setFormError(null)
+      setToast(null)
+      setFieldErrors({})
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['logs', user?.id] })
-      await queryClient.invalidateQueries({ queryKey: ['log-entry', id] })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['logs', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['log-entry', id] }),
+      ])
+      showToast(mode === 'create' ? 'Mood logged! +1 ECHO earned 🎉' : 'Changes saved', 'success')
       navigate('/logs')
     },
     onError: (error: Error) => {
@@ -190,13 +218,17 @@ export function LogFormPage({ mode }: LogFormPageProps) {
       navigate('/logs')
     },
     onError: (error: Error) => {
-      setFormError(error.message)
+      setToast({ show: true, message: error.message, type: 'error' })
     },
   })
 
   const addHabitFromInput = () => {
     const next = habitInput.trim()
     if (!next) {
+      return
+    }
+
+    if (habits.length >= MAX_HABITS) {
       return
     }
 
@@ -219,6 +251,14 @@ export function LogFormPage({ mode }: LogFormPageProps) {
 
   return (
     <section className="feature-grid">
+      {toast && (
+        <div className={`toast toast-${toast.type} fixed top-4 right-4 px-6 py-3 rounded shadow-lg z-50`}
+          role="alert"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+      )}
       <article className="card full-width">
         <div className="card-header">
           <h2>{mode === 'create' ? 'New Log Entry' : 'Edit Log Entry'}</h2>
@@ -231,32 +271,44 @@ export function LogFormPage({ mode }: LogFormPageProps) {
           className="form-stack"
           onSubmit={(event: FormEvent<HTMLFormElement>) => {
             event.preventDefault()
+            setFormError(null)
+            if (!validate()) return
             saveMutation.mutate()
           }}
         >
           <label>
             Date
-            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+            <input type="date" value={date} max={toDateInputValue(new Date())} onChange={(event) => { setDate(event.target.value); setFieldErrors((prev) => ({ ...prev, date: undefined })) }} />
+            {fieldErrors.date && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.date}</p>}
           </label>
 
           <div>
             <p className="field-label">Mood</p>
             <div className="chip-row">
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={mood === value ? 'chip active' : 'chip'}
-                  onClick={() => setMood((prev) => (prev === value ? null : value))}
-                >
-                  {value}
-                </button>
-              ))}
+              {MOOD_EMOJIS.map((emoji, idx) => {
+                const value = idx + 1
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    style={{ fontSize: '1.3rem', padding: '0.5rem 0.8rem' }}
+                    className={mood === value ? 'chip active' : 'chip'}
+                    onClick={() => {
+                      setMood((prev) => (prev === value ? null : value))
+                      setFieldErrors((prev) => ({ ...prev, mood: undefined }))
+                    }}
+                    aria-label={`Mood ${value}`}
+                  >
+                    {emoji}
+                  </button>
+                )
+              })}
             </div>
+            {fieldErrors.mood && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.mood}</p>}
           </div>
 
           <div>
-            <p className="field-label">Habits</p>
+            <p className="field-label">Habits (max {MAX_HABITS})</p>
             <div className="chip-row">
               {HABIT_PRESETS.map((preset) => (
                 <button
@@ -292,6 +344,11 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                 </button>
               ))}
             </div>
+            {habits.length >= MAX_HABITS && (
+              <p className="muted" style={{ fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
+                Maximum {MAX_HABITS} habits reached
+              </p>
+            )}
           </div>
 
           <label>
@@ -299,9 +356,14 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             <textarea
               rows={4}
               value={notes}
-              onChange={(event) => setNotes(event.target.value)}
+              onChange={(event) => { setNotes(event.target.value); setFieldErrors((prev) => ({ ...prev, notes: undefined })) }}
               placeholder="Optional notes"
+              maxLength={MAX_NOTES_LENGTH}
             />
+            <span className="muted" style={{ fontSize: '0.8rem', marginTop: '0.2rem', display: 'block', textAlign: 'right' }}>
+              {notes.length}/{MAX_NOTES_LENGTH}
+            </span>
+            {fieldErrors.notes && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.notes}</p>}
           </label>
 
           <button type="submit" disabled={saveMutation.isPending}>
@@ -324,7 +386,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             </button>
           ) : null}
 
-          {formError ? <p className="error-text">{formError}</p> : null}
+          {formError && <p className="error-text">{formError}</p>}
         </form>
       </article>
     </section>

@@ -1,8 +1,15 @@
 import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tzdata;
 
 /// Utility class for date formatting
 class DateFormatter {
   DateFormatter._();
+
+  /// Initialize timezone data (call once at app start)
+  static void initTimezones() {
+    tzdata.initializeTimeZones();
+  }
 
   /// Format date as "MMM dd, yyyy" (e.g., "Jan 15, 2024")
   /// Normalizes to local date to avoid timezone issues
@@ -62,6 +69,24 @@ class DateFormatter {
   static DateTime normalizeToLocalDate(DateTime date) {
     final localDate = date.isUtc ? date.toLocal() : date;
     return DateTime(localDate.year, localDate.month, localDate.day);
+  }
+
+  /// Convert a UTC DateTime to a local DateTime in the given IANA timezone.
+  /// Returns the same instant, but with the timezone's offset applied.
+  static DateTime toLocalDate(DateTime utcDate, String timezone) {
+    // Ensure timezone database is initialized.
+    tz.initializeTimeZones();
+    final location = tz.getLocation(timezone);
+    final tzDate = tz.TZDateTime.from(utcDate, location);
+    // Strip time part to get a pure date.
+    return DateTime(tzDate.year, tzDate.month, tzDate.day);
+  }
+
+  /// Returns a DateTime representing `days` days ago from today in the given timezone.
+  static DateTime daysAgo(int days, String timezone) {
+    final nowUtc = DateTime.now().toUtc();
+    final todayLocal = toLocalDate(nowUtc, timezone);
+    return todayLocal.subtract(Duration(days: days));
   }
 
   /// Format relative time (e.g., "2 hours ago")

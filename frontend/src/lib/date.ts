@@ -40,6 +40,12 @@ export function moodToEmoji(mood: number | null): string {
   }
 }
 
+export function daysAgo(days: number, base: Date = new Date()): string {
+  const d = new Date(base)
+  d.setDate(d.getDate() - days)
+  return toDateInputValue(d)
+}
+
 export function getCountdownLabel(targetIso: string): string {
   const now = Date.now()
   const target = new Date(targetIso).getTime()

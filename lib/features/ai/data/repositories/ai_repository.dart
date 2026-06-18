@@ -230,13 +230,11 @@ class AiRepository {
       debugPrint('[AiRepository]   Suggestions: ${suggestions.length} items');
 
       final stressLevel = result['stressLevel'] as int?;
-      if (stressLevel != null) {
-        debugPrint(
-          '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})',
-        );
-      } else {
-        debugPrint('[AiRepository]   Stress Level: NOT PROVIDED by server.');
-      }
+      debugPrint(
+        stressLevel != null
+            ? '[AiRepository]   Stress Level: $stressLevel/5 (${stressLevel >= 3 ? "HIGH - will trigger breathing exercise" : "normal"})'
+            : '[AiRepository]   Stress Level: NOT PROVIDED by server.',
+      );
 
       for (var i = 0; i < suggestions.length; i++) {
         if (suggestions[i].length < 30) {

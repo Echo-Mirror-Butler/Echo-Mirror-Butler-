@@ -61,7 +61,7 @@
 }
 [data-theme='dark'] .chip.active {
   background: rgba(16, 185, 129, 0.15);
-  color: #6ee7b7;
+  color: #ffffff;
   border-color: rgba(16, 185, 129, 0.25);
 }
 [data-theme='dark'] .avatar-menu {
@@ -133,7 +133,7 @@
   :root:not([data-theme='light']) .shell-topbar { background: rgba(26, 26, 36, 0.88); }
   :root:not([data-theme='light']) .shell-nav-item.active { background: rgba(129, 140, 248, 0.1); border-color: rgba(129, 140, 248, 0.2); color: var(--brand-strong); }
   :root:not([data-theme='light']) .chip { background: rgba(129, 140, 248, 0.12); color: #c7d2fe; border-color: rgba(129, 140, 248, 0.2); }
-  :root:not([data-theme='light']) .chip.active { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.25); }
+  :root:not([data-theme='light']) .chip.active { background: rgba(16, 185, 129, 0.15); color: #ffffff; border-color: rgba(16, 185, 129, 0.25); }
   :root:not([data-theme='light']) .avatar-menu { background: var(--surface); }
   :root:not([data-theme='light']) .avatar-menu button:hover { background: var(--surface-soft); }
   :root:not([data-theme='light']) .avatar-btn { background: rgba(129, 140, 248, 0.12); border-color: rgba(129, 140, 248, 0.2); color: #c7d2fe; }
@@ -400,7 +400,7 @@ textarea {
 
 .chip.active {
   background: #d8f3e8;
-  color: #05553d;
+  color: #ffffff;
   border-color: #b9ebd7;
 }
 
@@ -807,6 +807,11 @@ td {
 
 .animate-rise {
   animation: rise-up 0.42s ease both;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(0.75rem); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes rise-up {
