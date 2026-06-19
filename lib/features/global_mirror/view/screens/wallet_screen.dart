@@ -79,7 +79,7 @@ class WalletScreen extends ConsumerWidget {
         }
       }
 
-      final lookup = await supabase.rpc('lookup_user_by_email', {
+      final lookup = await supabase.rpc('lookup_user_by_email', params: {
         'email_input': trimmed,
       });
 
@@ -138,9 +138,7 @@ class WalletScreen extends ConsumerWidget {
         body: {'recipient_id': recipientId, 'amount': amount},
       );
 
-      if (response.error != null) {
-        throw response.error!;
-      }
+      // In Supabase v2, invoke() throws FunctionException on errors, no .error property.
 
       final data = response.data;
       if (data is Map && data['error'] != null) {
@@ -148,6 +146,7 @@ class WalletScreen extends ConsumerWidget {
       }
 
       await ref.read(walletProvider.notifier).loadWallet();
+      if (!context.mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -347,7 +346,7 @@ class WalletScreen extends ConsumerWidget {
                   )
                 : !walletState.exists
                     ? _buildEmptyState(context, walletNotifier)
-                    : _buildWalletContent(context, theme, walletState, walletNotifier),
+                    : _buildWalletContent(context, ref, theme, walletState, walletNotifier),
       ),
     );
   }
@@ -381,6 +380,7 @@ class WalletScreen extends ConsumerWidget {
 
   Widget _buildWalletContent(
     BuildContext context,
+    WidgetRef ref,
     ThemeData theme,
     WalletState walletState,
     WalletNotifier walletNotifier,
