@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,6 +34,7 @@ class WalletScreen extends ConsumerWidget {
     );
   }
 
+  void _showQrModal(BuildContext context, String publicKey) {
   bool _isValidStellarKey(String key) {
     return key.length == 56 && key.startsWith('G');
   }
@@ -161,6 +164,7 @@ class WalletScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      builder: (_) => _QrBottomSheet(publicKey: publicKey),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -328,6 +332,11 @@ class WalletScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Wallet'),
         actions: [
+          if (walletState.publicKey != null)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+              onPressed: () => ref.read(walletProvider.notifier).loadPublicKey(),
           if (walletState.exists)
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -339,6 +348,173 @@ class WalletScreen extends ConsumerWidget {
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: walletState.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : walletState.error != null
+                ? _ErrorState(
+                    message: walletState.error!,
+                    onRetry: () =>
+                        ref.read(walletProvider.notifier).loadPublicKey(),
+                  )
+                : walletState.publicKey == null
+                    ? const _ErrorState(message: 'No wallet found.')
+                    : _WalletContent(
+                        publicKey: walletState.publicKey!,
+                        onCopy: () =>
+                            _copyToClipboard(context, walletState.publicKey!),
+                        onShowQr: () =>
+                            _showQrModal(context, walletState.publicKey!),
+                        theme: theme,
+                      ),
+      ),
+    );
+  }
+}
+
+class _WalletContent extends StatelessWidget {
+  const _WalletContent({
+    required this.publicKey,
+    required this.onCopy,
+    required this.onShowQr,
+    required this.theme,
+  });
+
+  final String publicKey;
+  final VoidCallback onCopy;
+  final VoidCallback onShowQr;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Header card matching gift screen style
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    FontAwesomeIcons.wallet,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Stellar Public Key',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SelectableText(
+                  publicKey,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white,
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                    height: 1.6,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Action buttons
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onCopy,
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copy Key'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.primaryColor,
+                  side: const BorderSide(color: AppTheme.primaryColor),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: onShowQr,
+                icon: const Icon(Icons.qr_code, size: 18),
+                label: const Text('Show QR'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // Info card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 18,
+                color: theme.colorScheme.outline,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Share your public key or QR code to receive ECHO tokens. '
+                  'Never share your secret key with anyone.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
             ? _buildLoading(theme)
             : walletState.error != null
                 ? _ErrorState(
@@ -568,6 +744,7 @@ class _QrBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Handle bar
           Container(
             width: 40,
             height: 4,
@@ -577,6 +754,7 @@ class _QrBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+
           Text(
             'Scan to Send ECHO',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -592,6 +770,8 @@ class _QrBottomSheet extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
+
+          // QR code
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -620,6 +800,15 @@ class _QrBottomSheet extends StatelessWidget {
               ),
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // Truncated key label
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest
+                  .withValues(alpha: 0.4),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -638,6 +827,9 @@ class _QrBottomSheet extends StatelessWidget {
               ),
             ),
           ),
+
+          const SizedBox(height: 20),
+
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
