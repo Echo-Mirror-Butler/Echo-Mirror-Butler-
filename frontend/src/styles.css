@@ -371,6 +371,10 @@ textarea {
   }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -473,6 +477,137 @@ td {
   background: #f4f8ff;
   border-radius: 999px;
   padding: 0.2rem 0.55rem;
+}
+
+/* Checkboxes should not stretch to full width like text inputs. */
+input[type='checkbox'] {
+  width: auto;
+  margin-top: 0;
+  cursor: pointer;
+}
+
+/* Secondary / outline button variant. */
+button.secondary {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+button.secondary:hover:enabled {
+  background: var(--surface);
+}
+
+/* Highlighted search matches in the notes preview. Opaque background + dark
+   text keeps contrast strong in light, dark, and system-dark themes. */
+mark {
+  background: #ffe082;
+  color: #12212f;
+  border-radius: 3px;
+  padding: 0 0.1em;
+}
+
+[data-theme='dark'] mark {
+  background: #facc15;
+  color: #12212f;
+}
+
+/* ── Logs list: selection + bulk actions ── */
+.logs-selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.5rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.logs-select-all {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.logs-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.logs-bulk-actions button {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.log-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.log-row-card {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Subtle by default but always visible (and focusable) so keyboard users can
+   discover it; fully opaque on hover, focus, or when the row is selected. */
+.log-row-check {
+  display: flex;
+  align-items: center;
+  padding-top: 0.85rem;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+.log-row:hover .log-row-check,
+.log-row-check:focus-within,
+.log-row.selected .log-row-check {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .log-row-check {
+    opacity: 1;
+  }
+}
+
+/* ── Modal dialog ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(17, 33, 56, 0.45);
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .stress-meter {
