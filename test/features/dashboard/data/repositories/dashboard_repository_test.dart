@@ -1,3 +1,17 @@
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:echo_mirror_butler/features/dashboard/data/repositories/dashboard_repository.dart';
+import 'package:echo_mirror_butler/features/dashboard/data/models/insight_model.dart';
+import 'package:echo_mirror_butler/features/logging/data/repositories/logging_repository.dart';
+import 'package:echo_mirror_butler/features/logging/data/models/log_entry_model.dart';
+
+class MockLoggingRepository extends Mock implements LoggingRepository {}
+class MockSupabaseClient extends Mock implements SupabaseClient {}
+class MockFunctionsClient extends Mock implements FunctionsClient {}
+class MockSupabaseQueryBuilder extends Mock implements SupabaseQueryBuilder {}
+
 ﻿import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -88,6 +102,10 @@ List<LogEntryModel> _fakeLogEntries() => [
         mood: 3,
         habits: ['meditation'],
         notes: 'Average day',
+      ),
+    ];
+
+DashboardRepository _buildRepo({
         createdAt: DateTime(2024, 1, 2),
       ),
     ];
@@ -117,6 +135,10 @@ void main() {
 
   group('getPredictions', () {
     test('returns empty list when user has no log entries', () async {
+      when(() => loggingRepo.getLogEntries('user-123'))
+          .thenAnswer((_) async => []);
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
       when(
         () => loggingRepo.getLogEntries('user-123'),
       ).thenAnswer((_) async => []);
@@ -133,6 +155,16 @@ void main() {
     });
 
     test('maps prediction field to InsightModel', () async {
+      when(() => loggingRepo.getLogEntries('user-123'))
+          .thenAnswer((_) async => _fakeLogEntries());
+
+      when(() => functions.invoke('generate-insight', body: any(named: 'body')))
+          .thenAnswer((_) async => FunctionResponse(
+                data: {'prediction': 'You tend to feel great on Fridays.'},
+                status: 200,
+              ));
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
       when(
         () => loggingRepo.getLogEntries('user-123'),
       ).thenAnswer((_) async => _fakeLogEntries());
@@ -160,6 +192,13 @@ void main() {
     });
 
     test('returns empty list when edge function throws', () async {
+      when(() => loggingRepo.getLogEntries('user-123'))
+          .thenAnswer((_) async => _fakeLogEntries());
+
+      when(() => functions.invoke('generate-insight', body: any(named: 'body')))
+          .thenThrow(Exception('Network error'));
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
       when(
         () => loggingRepo.getLogEntries('user-123'),
       ).thenAnswer((_) async => _fakeLogEntries());
@@ -179,6 +218,16 @@ void main() {
     });
 
     test('returns empty list when edge function returns non-map data', () async {
+      when(() => loggingRepo.getLogEntries('user-123'))
+          .thenAnswer((_) async => _fakeLogEntries());
+
+      when(() => functions.invoke('generate-insight', body: any(named: 'body')))
+          .thenAnswer((_) async => FunctionResponse(
+                data: 'unexpected string',
+                status: 200,
+              ));
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
       when(
         () => loggingRepo.getLogEntries('user-123'),
       ).thenAnswer((_) async => _fakeLogEntries());
@@ -203,6 +252,19 @@ void main() {
     });
 
     test('maps calmingMessage to InsightModel with mood type', () async {
+      when(() => loggingRepo.getLogEntries('user-123'))
+          .thenAnswer((_) async => _fakeLogEntries());
+
+      when(() => functions.invoke('generate-insight', body: any(named: 'body')))
+          .thenAnswer((_) async => FunctionResponse(
+                data: {'calmingMessage': 'Breathe and be present.'},
+                status: 200,
+              ));
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
+      final results = await repo.getPredictions('user-123');
+
+      final calming = results.where((r) => r.title == 'Calming Thought').toList();
       when(
         () => loggingRepo.getLogEntries('user-123'),
       ).thenAnswer((_) async => _fakeLogEntries());
@@ -235,6 +297,20 @@ void main() {
   group('getFutureLetters', () {
     late MockSupabaseQueryBuilder queryBuilder;
 
+    setUp(() {
+      queryBuilder = MockSupabaseQueryBuilder();
+      when(() => supabase.from('future_letters')).thenReturn(queryBuilder);
+      when(() => queryBuilder.select()).thenReturn(queryBuilder);
+      when(() => queryBuilder.eq('user_id', any())).thenReturn(queryBuilder);
+      when(() => queryBuilder.order('created_at', ascending: false))
+          .thenReturn(queryBuilder);
+      when(() => queryBuilder.limit(10)).thenReturn(queryBuilder);
+    });
+
+    test('returns empty list when table is empty', () async {
+      when(() => queryBuilder).thenAnswer((_) async => <dynamic>[]);
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
     void stubChain(Future<PostgrestList> result) {
       final fakeBuilder = FakeFutureLettersBuilder(result);
 
@@ -260,6 +336,7 @@ void main() {
     });
 
     test('maps rows to InsightModel correctly', () async {
+      final fakeRow = {
       final fakeRow = <String, dynamic>{
         'id': 'letter-1',
         'user_id': 'user-123',
@@ -269,6 +346,9 @@ void main() {
         'delivery_date': '2025-01-01T00:00:00Z',
       };
 
+      when(() => queryBuilder).thenAnswer((_) async => [fakeRow]);
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
       stubChain(Future.value([fakeRow]));
 
       final repo = buildRepo(
@@ -286,6 +366,9 @@ void main() {
     });
 
     test('returns empty list when Supabase throws', () async {
+      when(() => queryBuilder).thenThrow(Exception('DB error'));
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
       stubChain(Future.error(Exception('DB error')));
 
       final repo = buildRepo(
@@ -299,6 +382,7 @@ void main() {
     });
 
     test('uses default title when title is absent', () async {
+      final fakeRow = {
       final fakeRow = <String, dynamic>{
         'id': 'letter-2',
         'user_id': 'user-123',
@@ -306,6 +390,9 @@ void main() {
         'created_at': '2024-01-01T00:00:00Z',
       };
 
+      when(() => queryBuilder).thenAnswer((_) async => [fakeRow]);
+
+      final repo = _buildRepo(loggingRepo: loggingRepo, supabaseClient: supabase);
       stubChain(Future.value([fakeRow]));
 
       final repo = buildRepo(
@@ -318,4 +405,5 @@ void main() {
       expect(results.first.title, 'Future Letter');
     });
   });
+}
 }
