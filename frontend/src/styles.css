@@ -1184,6 +1184,74 @@ mark {
   padding: 1rem;
 }
 
+/* ── Search dropdown ──────────────────────────────────────── */
+.search-dropdown {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-top: 0.35rem;
+  overflow: hidden;
+}
+
+.search-empty {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--line);
+  transform: none;
+}
+
+.search-result:last-child {
+  border-bottom: none;
+}
+
+.search-result:hover:enabled,
+.search-result.focused {
+  background: var(--surface-soft);
+  transform: none;
+}
+
+.result-date {
+  color: var(--muted);
+  font-size: 0.8rem;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.result-mood {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.result-notes {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .placeholder-page {
   min-height: 220px;
   display: grid;
