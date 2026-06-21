@@ -5,6 +5,7 @@ import '../../features/auth/view/screens/login_screen.dart';
 import '../../features/auth/view/screens/signup_screen.dart';
 import '../../features/auth/view/screens/forgot_password_screen.dart';
 import '../../features/auth/view/screens/reset_password_screen.dart';
+import '../../features/auth/view/screens/verify_email_screen.dart';
 import '../../features/settings/view/screens/change_password_screen.dart';
 import '../../features/auth/viewmodel/providers/auth_provider.dart';
 import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
@@ -47,7 +48,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
+      final isVerifyEmail = state.matchedLocation == '/verify-email';
       final isAuthRoute = isLoggingIn || isSigningUp;
+
+      // /verify-email is always accessible — no redirect applied
+      if (isVerifyEmail) return null;
 
       bool onboardingCompleted = false;
       try {
@@ -87,6 +92,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/signup',
         name: 'signup',
         builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/verify-email',
+        name: 'verify-email',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return VerifyEmailScreen(email: email);
+        },
       ),
       GoRoute(
         path: '/forgot-password',

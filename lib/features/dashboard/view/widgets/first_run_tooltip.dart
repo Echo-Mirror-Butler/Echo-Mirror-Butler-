@@ -156,9 +156,7 @@ class _FirstRunTooltipOverlayState extends State<FirstRunTooltipOverlay>
             if (_targetOffset != Offset.zero)
               Positioned(
                 top: (tooltipTop.clamp(80.0, double.infinity)) + 90,
-                left: _targetOffset.dx +
-                    (_targetSize.width / 2) -
-                    12,
+                left: _targetOffset.dx + (_targetSize.width / 2) - 12,
                 child: CustomPaint(
                   size: const Size(24, 16),
                   painter: _ArrowPainter(),
