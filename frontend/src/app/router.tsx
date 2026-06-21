@@ -90,6 +90,10 @@ export function AppRouter() {
         path="/"
         element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />}
       />
+      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <SignInPanel />} />
+      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupPage />} />
+      <Route path="/reset-password" element={user ? <Navigate to="/dashboard" replace /> : <ResetPasswordPage />} />
+      <Route path="/update-password" element={user ? <Navigate to="/dashboard" replace /> : <UpdatePasswordPage />} />
       <Route
         path="/login"
         element={user ? <Navigate to="/dashboard" replace /> : <SignInPanel />}

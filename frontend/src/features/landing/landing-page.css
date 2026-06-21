@@ -1877,7 +1877,7 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   .lp-auth-hero-body { display: none; }
   .lp-auth-chips { display: none; }
   .lp-auth-right { border-left: none; border-top: 1px solid var(--lp-border); padding: 2rem 1.5rem; background: var(--lp-canvas); }
-  .lp-auth-input { background: white; }
+  .lp-auth-input { background: var(--lp-canvas); }
 }
 
 @media (max-width: 640px) {
@@ -2437,6 +2437,22 @@ a.lp-mobile-menu-link {
 [data-theme='dark'] .lp-auth-input:focus { background: var(--lp-white); }
 [data-theme='dark'] .lp-how-num { background: var(--lp-white); color: var(--lp-ink); }
 
+/* Pin permanently-dark sections: --lp-ink remaps to near-white text in dark mode,
+   so sections that use it as a background colour must be pinned to their dark value. */
+[data-theme='dark'] .lp-hero     { background: #0c1a2e !important; }
+[data-theme='dark'] .lp-cta-section { background: #0c1a2e !important; }
+[data-theme='dark'] .lp-footer   { background: #0c1a2e !important; }
+
+/* Contributor skeleton shimmer */
+[data-theme='dark'] .lp-skel-avatar,
+[data-theme='dark'] .lp-skel-name {
+  background: linear-gradient(90deg, #2d2d3a 25%, #3a3a4a 50%, #2d2d3a 75%);
+  background-size: 200% 100%;
+}
+
+/* Auth input: responsive block hardcodes white; use the canvas variable instead */
+[data-theme='dark'] .lp-auth-input { background: var(--lp-canvas); }
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .lp-root {
     --lp-canvas: #0f0f13;
@@ -2454,4 +2470,16 @@ a.lp-mobile-menu-link {
   :root:not([data-theme='light']) .lp-hero-cta-secondary { background: var(--lp-white); color: var(--lp-ink); }
   :root:not([data-theme='light']) .lp-auth-input:focus { background: var(--lp-white); }
   :root:not([data-theme='light']) .lp-how-num { background: var(--lp-white); color: var(--lp-ink); }
+
+  :root:not([data-theme='light']) .lp-hero     { background: #0c1a2e !important; }
+  :root:not([data-theme='light']) .lp-cta-section { background: #0c1a2e !important; }
+  :root:not([data-theme='light']) .lp-footer   { background: #0c1a2e !important; }
+
+  :root:not([data-theme='light']) .lp-skel-avatar,
+  :root:not([data-theme='light']) .lp-skel-name {
+    background: linear-gradient(90deg, #2d2d3a 25%, #3a3a4a 50%, #2d2d3a 75%);
+    background-size: 200% 100%;
+  }
+
+  :root:not([data-theme='light']) .lp-auth-input { background: var(--lp-canvas); }
 }
