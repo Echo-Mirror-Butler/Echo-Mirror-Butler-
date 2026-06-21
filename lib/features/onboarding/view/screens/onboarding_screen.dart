@@ -117,23 +117,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       );
     } else {
       _completeOnboarding();
-      if (mounted) {
-        // Navigate to login - the router redirect should now allow this
-        context.go('/login');
-      }
-    } catch (e, stackTrace) {
-      debugPrint('[OnboardingScreen] Error completing onboarding: $e');
-      debugPrint('[OnboardingScreen] Stack trace: $stackTrace');
-      // Fallback: try to navigate anyway after marking as completed
-      if (!mounted) return;
-      try {
-        await markOnboardingCompleted();
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (!mounted) return;
-        context.go('/login');
-      } catch (e2) {
-        debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
-      }
     }
   }
 
@@ -270,9 +253,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 isLast
                                     ? FontAwesomeIcons.arrowRight
                                     : FontAwesomeIcons.chevronRight,
-                                isLastPage
-                                    ? FontAwesomeIcons.arrowRight.data
-                                    : FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                               ),
                             ],

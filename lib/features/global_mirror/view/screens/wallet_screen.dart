@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -28,13 +27,22 @@ class WalletScreen extends ConsumerWidget {
         ),
         backgroundColor: AppTheme.successColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
     );
   }
 
   void _showQrModal(BuildContext context, String publicKey) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _QrBottomSheet(publicKey: publicKey),
+    );
+  }
+
   bool _isValidStellarKey(String key) {
     return key.length == 56 && key.startsWith('G');
   }
@@ -53,9 +61,7 @@ class WalletScreen extends ConsumerWidget {
       caseSensitive: false,
     );
 
-    if (uuidRegex.hasMatch(trimmed)) {
-      return trimmed;
-    }
+    if (uuidRegex.hasMatch(trimmed)) return trimmed;
 
     if (_isValidStellarKey(trimmed)) {
       final wallet = await supabase
@@ -85,14 +91,15 @@ class WalletScreen extends ConsumerWidget {
       final lookup = await supabase.rpc('lookup_user_by_email', {
         'email_input': trimmed,
       });
-
       if (lookup != null && lookup['user_id'] != null) {
         return lookup['user_id'] as String;
       }
       throw Exception('Could not resolve recipient from email.');
     }
 
-    throw Exception('Use a valid recipient UUID, email address, or Stellar address.');
+    throw Exception(
+      'Use a valid recipient UUID, email address, or Stellar address.',
+    );
   }
 
   String _formatRewardReason(String reason) {
@@ -106,9 +113,7 @@ class WalletScreen extends ConsumerWidget {
       'welcome_bonus': 'Welcome bonus',
     };
 
-    if (labels.containsKey(reason)) {
-      return labels[reason]!;
-    }
+    if (labels.containsKey(reason)) return labels[reason]!;
 
     return reason
         .split(RegExp(r'[_-]'))
@@ -120,7 +125,8 @@ class WalletScreen extends ConsumerWidget {
   void _showSendEchoSheet(BuildContext context, WidgetRef ref) {
     final supabase = Supabase.instance.client;
     final recipientController = TextEditingController();
-    final customAmountController = TextEditingController(text: _presetAmounts[1].toString());
+    final customAmountController =
+        TextEditingController(text: _presetAmounts[1].toString());
     var selectedAmount = _presetAmounts[1];
     var isSending = false;
     String? errorMessage;
@@ -129,58 +135,54 @@ class WalletScreen extends ConsumerWidget {
       if (recipientController.text.trim().isEmpty) {
         throw Exception('Recipient is required.');
       }
+      final amount =
+          int.tryParse(customAmountController.text.trim()) ?? selectedAmount;
+      if (amount <= 0) throw Exception('Enter a valid ECHO amount.');
 
-      final amount = int.tryParse(customAmountController.text.trim()) ?? selectedAmount;
-      if (amount <= 0) {
-        throw Exception('Enter a valid ECHO amount.');
-      }
-
-      final recipientId = await _resolveRecipientId(supabase, recipientController.text);
+      final recipientId =
+          await _resolveRecipientId(supabase, recipientController.text);
       final response = await supabase.functions.invoke(
         'send-echo',
         body: {'recipient_id': recipientId, 'amount': amount},
       );
-
-      if (response.error != null) {
-        throw response.error!;
-      }
-
+      if (response.error != null) throw response.error!;
       final data = response.data;
       if (data is Map && data['error'] != null) {
         throw Exception(data['error'].toString());
       }
-
       await ref.read(walletProvider.notifier).loadWallet();
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('ECHO sent successfully.'),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ECHO sent successfully.'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+      }
     }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _QrBottomSheet(publicKey: publicKey),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
             return Padding(
               padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 16,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               child: Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -190,13 +192,19 @@ class WalletScreen extends ConsumerWidget {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     Text(
                       'Send ECHO',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -224,7 +232,8 @@ class WalletScreen extends ConsumerWidget {
                             if (!selected) return;
                             setState(() {
                               selectedAmount = amount;
-                              customAmountController.text = amount.toString();
+                              customAmountController.text =
+                                  amount.toString();
                             });
                           },
                         );
@@ -249,7 +258,10 @@ class WalletScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                       Text(
                         errorMessage!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: TextStyle(
+                          color:
+                              Theme.of(context).colorScheme.error,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 20),
@@ -265,24 +277,27 @@ class WalletScreen extends ConsumerWidget {
                                 await sendEcho();
                               } catch (e) {
                                 setState(() {
-                                  errorMessage = e.toString().replaceFirst('Exception: ', '');
+                                  errorMessage = e
+                                      .toString()
+                                      .replaceFirst('Exception: ', '');
                                 });
                               }
-                              setState(() {
-                                isSending = false;
-                              });
+                              setState(() => isSending = false);
                             },
                       child: isSending
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Text('Send ECHO'),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
-                      onPressed: isSending ? null : () => Navigator.pop(context),
+                      onPressed:
+                          isSending ? null : () => Navigator.pop(context),
                       child: const Text('Cancel'),
                     ),
                   ],
@@ -311,7 +326,7 @@ class WalletScreen extends ConsumerWidget {
   Widget _buildShimmerCard(ThemeData theme, {required double height}) {
     return Shimmer.fromColors(
       baseColor: theme.colorScheme.surface,
-      highlightColor: theme.colorScheme.surfaceVariant,
+      highlightColor: theme.colorScheme.surfaceContainerHighest,
       child: Container(
         height: height,
         decoration: BoxDecoration(
@@ -332,11 +347,6 @@ class WalletScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('My Wallet'),
         actions: [
-          if (walletState.publicKey != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Refresh',
-              onPressed: () => ref.read(walletProvider.notifier).loadPublicKey(),
           if (walletState.exists)
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -348,173 +358,6 @@ class WalletScreen extends ConsumerWidget {
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: walletState.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : walletState.error != null
-                ? _ErrorState(
-                    message: walletState.error!,
-                    onRetry: () =>
-                        ref.read(walletProvider.notifier).loadPublicKey(),
-                  )
-                : walletState.publicKey == null
-                    ? const _ErrorState(message: 'No wallet found.')
-                    : _WalletContent(
-                        publicKey: walletState.publicKey!,
-                        onCopy: () =>
-                            _copyToClipboard(context, walletState.publicKey!),
-                        onShowQr: () =>
-                            _showQrModal(context, walletState.publicKey!),
-                        theme: theme,
-                      ),
-      ),
-    );
-  }
-}
-
-class _WalletContent extends StatelessWidget {
-  const _WalletContent({
-    required this.publicKey,
-    required this.onCopy,
-    required this.onShowQr,
-    required this.theme,
-  });
-
-  final String publicKey;
-  final VoidCallback onCopy;
-  final VoidCallback onShowQr;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Header card matching gift screen style
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    FontAwesomeIcons.wallet,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Stellar Public Key',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: SelectableText(
-                  publicKey,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white,
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                    letterSpacing: 0.5,
-                    height: 1.6,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Action buttons
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onCopy,
-                icon: const Icon(Icons.copy, size: 18),
-                label: const Text('Copy Key'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.primaryColor,
-                  side: const BorderSide(color: AppTheme.primaryColor),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: onShowQr,
-                icon: const Icon(Icons.qr_code, size: 18),
-                label: const Text('Show QR'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 24),
-
-        // Info card
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 18,
-                color: theme.colorScheme.outline,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Share your public key or QR code to receive ECHO tokens. '
-                  'Never share your secret key with anyone.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
             ? _buildLoading(theme)
             : walletState.error != null
                 ? _ErrorState(
@@ -523,17 +366,30 @@ class _WalletContent extends StatelessWidget {
                   )
                 : !walletState.exists
                     ? _buildEmptyState(context, walletNotifier)
-                    : _buildWalletContent(context, theme, walletState, walletNotifier),
+                    : _buildWalletContent(
+                        context,
+                        theme,
+                        walletState,
+                        walletNotifier,
+                        ref,
+                      ),
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, WalletNotifier walletNotifier) {
+  Widget _buildEmptyState(
+    BuildContext context,
+    WalletNotifier walletNotifier,
+  ) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.account_balance_wallet_outlined, size: 72, color: AppTheme.primaryColor),
+          const Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 72,
+            color: AppTheme.primaryColor,
+          ),
           const SizedBox(height: 20),
           Text(
             'Wallet not set up yet',
@@ -560,6 +416,7 @@ class _WalletContent extends StatelessWidget {
     ThemeData theme,
     WalletState walletState,
     WalletNotifier walletNotifier,
+    WidgetRef ref,
   ) {
     return SingleChildScrollView(
       child: Column(
@@ -596,14 +453,18 @@ class _WalletContent extends StatelessWidget {
                 if (walletState.hasStreakBonus) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.18),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       'Streak bonus active',
-                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.white),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: Colors.white),
                     ),
                   ),
                 ],
@@ -612,12 +473,15 @@ class _WalletContent extends StatelessWidget {
                   children: [
                     Expanded(
                       child: FilledButton(
-                        onPressed: () => _showSendEchoSheet(context, ref),
+                        onPressed: () =>
+                            _showSendEchoSheet(context, ref),
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppTheme.primaryColor,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Text('Send ECHO'),
                       ),
@@ -625,12 +489,17 @@ class _WalletContent extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => _copyToClipboard(context, walletState.publicKey!),
+                        onPressed: () => _copyToClipboard(
+                          context,
+                          walletState.publicKey!,
+                        ),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Text('Copy address'),
                       ),
@@ -654,7 +523,10 @@ class _WalletContent extends StatelessWidget {
                   children: [
                     const Icon(Icons.account_balance_wallet, size: 22),
                     const SizedBox(width: 12),
-                    Text('Stellar Public Key', style: theme.textTheme.titleSmall),
+                    Text(
+                      'Stellar Public Key',
+                      style: theme.textTheme.titleSmall,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -662,7 +534,7 @@ class _WalletContent extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: SelectableText(
@@ -672,6 +544,32 @@ class _WalletContent extends StatelessWidget {
                       letterSpacing: 0.5,
                     ),
                   ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _copyToClipboard(
+                          context,
+                          walletState.publicKey!,
+                        ),
+                        icon: const Icon(Icons.copy, size: 18),
+                        label: const Text('Copy Key'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () => _showQrModal(
+                          context,
+                          walletState.publicKey!,
+                        ),
+                        icon: const Icon(Icons.qr_code, size: 18),
+                        label: const Text('Show QR'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -684,7 +582,7 @@ class _WalletContent extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceVariant,
+                color: theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
@@ -695,17 +593,27 @@ class _WalletContent extends StatelessWidget {
           else
             Column(
               children: walletState.history.map((reward) {
-                final amountText = '${reward.amount >= 0 ? '+' : '-'}${reward.amount.toStringAsFixed(reward.amount.truncateToDouble() == reward.amount ? 0 : 2)} ECHO';
+                final amountText =
+                    '${reward.amount >= 0 ? '+' : '-'}'
+                    '${reward.amount.toStringAsFixed(reward.amount.truncateToDouble() == reward.amount ? 0 : 2)} ECHO';
                 return Column(
                   children: [
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(_formatRewardReason(reward.reason)),
-                      subtitle: Text(reward.createdAt.toLocal().toIso8601String().split('T').first),
+                      subtitle: Text(
+                        reward.createdAt
+                            .toLocal()
+                            .toIso8601String()
+                            .split('T')
+                            .first,
+                      ),
                       trailing: Text(
                         amountText,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: reward.amount >= 0 ? AppTheme.successColor : theme.colorScheme.error,
+                          color: reward.amount >= 0
+                              ? AppTheme.successColor
+                              : theme.colorScheme.error,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -715,11 +623,6 @@ class _WalletContent extends StatelessWidget {
                 );
               }).toList(),
             ),
-          const SizedBox(height: 12),
-          Text(
-            'Latest transactions are pulled from your Supabase echo_rewards table.',
-            style: theme.textTheme.bodySmall,
-          ),
         ],
       ),
     );
@@ -744,7 +647,6 @@ class _QrBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Container(
             width: 40,
             height: 4,
@@ -754,24 +656,19 @@ class _QrBottomSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
           Text(
             'Scan to Send ECHO',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: theme.textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           Text(
             'Scan this QR code to get your Stellar public key',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
-            ),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.outline),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
-
-          // QR code
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -800,22 +697,13 @@ class _QrBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Truncated key label
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest
                   .withValues(alpha: 0.4),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.4,
-              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -827,9 +715,6 @@ class _QrBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-
-          const SizedBox(height: 20),
-
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
