@@ -19,7 +19,8 @@ _PasswordStrength _scorePassword(String password) {
   final hasSpecial = RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(password);
   final hasUpper = RegExp(r'[A-Z]').hasMatch(password);
 
-  final score = (hasLength ? 1 : 0) +
+  final score =
+      (hasLength ? 1 : 0) +
       (hasNumber || hasSpecial ? 1 : 0) +
       (hasUpper ? 1 : 0);
 
@@ -120,10 +121,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     // Requirement checks
     final hasLength = password.length >= 8;
-    final hasNumberOrSpecial =
-        RegExp(r'[\d!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(password);
-    final confirmMismatch = _confirmValue.isNotEmpty &&
-        _confirmValue != _passwordController.text;
+    final hasNumberOrSpecial = RegExp(
+      r'[\d!@#\$%^&*(),.?":{}|<>_\-]',
+    ).hasMatch(password);
+    final confirmMismatch =
+        _confirmValue.isNotEmpty && _confirmValue != _passwordController.text;
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.signUp)),
@@ -247,8 +249,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       padding: const EdgeInsets.only(top: 4, left: 4),
                       child: Text(
                         'Passwords do not match',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppTheme.errorColor),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppTheme.errorColor,
+                        ),
                       ),
                     ),
                   const SizedBox(height: 24),
@@ -338,8 +341,10 @@ class _PasswordRequirements extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 strengthLabel,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: strengthColor, fontWeight: FontWeight.w600),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: strengthColor,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -375,8 +380,8 @@ class _Requirement extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: met ? AppTheme.successColor : AppTheme.errorColor,
-                ),
+              color: met ? AppTheme.successColor : AppTheme.errorColor,
+            ),
           ),
         ],
       ),

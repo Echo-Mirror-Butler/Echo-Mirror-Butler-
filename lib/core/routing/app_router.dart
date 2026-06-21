@@ -97,8 +97,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/verify-email',
         name: 'verify-email',
         builder: (context, state) {
-          final email =
-              state.uri.queryParameters['email'] ?? '';
+          final email = state.uri.queryParameters['email'] ?? '';
           return VerifyEmailScreen(email: email);
         },
       ),

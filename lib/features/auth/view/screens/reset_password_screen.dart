@@ -196,16 +196,13 @@ class _ResetFormView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.access_time,
-                  size: 16,
-                  color: Colors.amber.shade800,
-                ),
+                Icon(Icons.access_time, size: 16, color: Colors.amber.shade800),
                 const SizedBox(width: 8),
                 Text(
                   'This link expires in 1 hour.',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: Colors.amber.shade900),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.amber.shade900,
+                  ),
                 ),
               ],
             ),
@@ -291,9 +288,7 @@ class _ExpiredLinkView extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'A new reset link has been sent to your inbox.',
-            ),
+            content: Text('A new reset link has been sent to your inbox.'),
             backgroundColor: AppTheme.successColor,
           ),
         );
