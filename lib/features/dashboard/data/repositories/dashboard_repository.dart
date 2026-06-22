@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
@@ -6,7 +6,6 @@ import '../../../logging/data/repositories/logging_repository.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
 /// Repository for dashboard operations.
-/// Handles Supabase Edge Function calls for insights and predictions.
 class DashboardRepository {
   DashboardRepository(
     this._loggingRepository, {
@@ -51,7 +50,9 @@ class DashboardRepository {
               id: 'mood-improving-${now.millisecondsSinceEpoch}',
               userId: userId,
               title: 'Mood Improvement Detected',
-              description: 'Your mood has been improving over the past week! Keep up the great work.',
+              description:
+                  'Your mood has been improving over the past week! '
+                  'Keep up the great work.',
               date: now,
               type: InsightType.mood,
               createdAt: now,
@@ -61,7 +62,9 @@ class DashboardRepository {
               id: 'mood-declining-${now.millisecondsSinceEpoch}',
               userId: userId,
               title: 'Mood Trend Notice',
-              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              description:
+                  'Your mood has been lower recently. '
+                  'Consider taking some time for self-care.',
               date: now,
               type: InsightType.mood,
               createdAt: now,
@@ -69,51 +72,8 @@ class DashboardRepository {
           }
         }
 
-        final bestMoodEntry =
-            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
-          } else if (recentAvg < averageMood - 0.5) {
-            insights.add(InsightModel(
-              id: 'mood-declining-${now.millisecondsSinceEpoch}',
-              userId: userId,
-              title: 'Mood Trend Notice',
-              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
-              date: now,
-              type: InsightType.mood,
-              createdAt: now,
-            ));
-          }
-        }
-
-        final bestMoodEntry =
-            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
-            insights.add(
-              InsightModel(
-                id: 'mood-improving-${now.millisecondsSinceEpoch}',
-                userId: userId,
-                title: 'Mood Improvement Detected',
-                description:
-                    'Your mood has been improving over the past week! '
-                    'Keep up the great work.',
-                date: now,
-                type: InsightType.mood,
-                createdAt: now,
-              ),
-            );
-          } else if (recentAvg < averageMood - 0.5) {
-            insights.add(InsightModel(
-              id: 'mood-declining-${now.millisecondsSinceEpoch}',
-              userId: userId,
-              title: 'Mood Trend Notice',
-              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
-              date: now,
-              type: InsightType.mood,
-              createdAt: now,
-            ));
-          }
-        }
-
-        final bestMoodEntry =
-            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
+        final bestMoodEntry = moodEntries
+            .reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
         if (bestMoodEntry.mood != null && bestMoodEntry.mood! >= 4) {
           final localDate = bestMoodEntry.date.isUtc
               ? bestMoodEntry.date.toLocal()
@@ -122,7 +82,9 @@ class DashboardRepository {
             id: 'best-mood-${bestMoodEntry.id}',
             userId: userId,
             title: 'Great Mood Day',
-            description: 'You had an excellent mood on ${_formatDate(localDate)}. What made that day special?',
+            description:
+                'You had an excellent mood on ${_formatDate(localDate)}. '
+                'What made that day special?',
             date: localDate,
             type: InsightType.mood,
             createdAt: now,
@@ -147,7 +109,9 @@ class DashboardRepository {
             id: 'top-habit-${now.millisecondsSinceEpoch}',
             userId: userId,
             title: 'Consistent Habit',
-            description: 'You have logged "${topHabit.key}" ${topHabit.value} times. Consistency is key!',
+            description:
+                'You have logged "${topHabit.key}" ${topHabit.value} times. '
+                'Consistency is key!',
             date: now,
             type: InsightType.habit,
             createdAt: now,
@@ -157,7 +121,8 @@ class DashboardRepository {
         final localNow = now.isUtc ? now.toLocal() : now;
         final recentEntries = logEntries.where((e) {
           final localDate = e.date.isUtc ? e.date.toLocal() : e.date;
-          return localDate.isAfter(localNow.subtract(const Duration(days: 7)));
+          return localDate
+              .isAfter(localNow.subtract(const Duration(days: 7)));
         }).toList();
 
         final recentHabits = <String>{};
@@ -170,35 +135,9 @@ class DashboardRepository {
             id: 'habit-variety-${now.millisecondsSinceEpoch}',
             userId: userId,
             title: 'Habit Variety',
-            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
-            userId: userId,
-            title: 'Habit Variety',
-            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
-          insights.add(
-            InsightModel(
-              id: 'habit-variety-${now.millisecondsSinceEpoch}',
-              userId: userId,
-              title: 'Habit Variety',
-              description:
-                  'You\'ve been practicing ${recentHabits.length} different '
-                  'habits this week. Great diversity!',
-              date: now,
-              type: InsightType.habit,
-              createdAt: now,
-            ),
-          );
-        }
-      }
-
-      // Generate general insights
-      final totalEntries = logEntries.length;
-      if (totalEntries >= 7) {
-        insights.add(
-          InsightModel(
-            id: 'milestone-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'Habit Variety',
-            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+            description:
+                "You've been practicing ${recentHabits.length} different "
+                'habits this week. Great diversity!',
             date: now,
             type: InsightType.habit,
             createdAt: now,
@@ -212,7 +151,9 @@ class DashboardRepository {
           id: 'milestone-${now.millisecondsSinceEpoch}',
           userId: userId,
           title: 'Logging Milestone',
-          description: 'You have logged $totalEntries entries! Your consistency is building valuable insights.',
+          description:
+              'You have logged $totalEntries entries! '
+              'Your consistency is building valuable insights.',
           date: now,
           type: InsightType.general,
           createdAt: now,
@@ -226,8 +167,6 @@ class DashboardRepository {
     }
   }
 
-  /// Calls the generate-insight Supabase Edge Function and maps the response
-  /// to a list of InsightModel objects.
   Future<List<InsightModel>> getPredictions(String userId) async {
     try {
       final logEntries = await _loggingRepository.getLogEntries(userId);
@@ -240,7 +179,6 @@ class DashboardRepository {
         },
       );
 
-      // Check for rate limit error (429)
       if (response.status != null && response.status! >= 400) {
         final data = response.data;
         if (data is Map &&
@@ -254,7 +192,9 @@ class DashboardRepository {
 
       final result = response.data;
       if (result is! Map<String, dynamic>) {
-        debugPrint('[DashboardRepository] getPredictions: unexpected response type');
+        debugPrint(
+          '[DashboardRepository] getPredictions: unexpected response type',
+        );
         return [];
       }
 
@@ -304,7 +244,8 @@ class DashboardRepository {
         ));
       }
 
-      final calmingMessage = (result['calmingMessage'] as String? ?? '').trim();
+      final calmingMessage =
+          (result['calmingMessage'] as String? ?? '').trim();
       if (calmingMessage.isNotEmpty) {
         insights.add(InsightModel(
           id: 'calming-${now.millisecondsSinceEpoch}',
@@ -343,8 +284,6 @@ class DashboardRepository {
     }
   }
 
-  /// Queries the future_letters table in Supabase and maps each row
-  /// to an InsightModel.
   Future<List<InsightModel>> getFutureLetters(String userId) async {
     try {
       final response = await _client
@@ -365,10 +304,16 @@ class DashboardRepository {
 
   InsightModel _mapFutureLetterToInsight(Map<String, dynamic> row) {
     final createdAt = _parseDateTime(
-      row['created_at'] ?? row['createdAt'] ?? row['delivery_date'] ?? row['date'],
+      row['created_at'] ??
+          row['createdAt'] ??
+          row['delivery_date'] ??
+          row['date'],
     );
     final date = _parseDateTime(
-      row['delivery_date'] ?? row['open_at'] ?? row['date'] ?? row['created_at'],
+      row['delivery_date'] ??
+          row['open_at'] ??
+          row['date'] ??
+          row['created_at'],
     );
     return InsightModel(
       id: row['id'].toString(),
@@ -395,17 +340,19 @@ class DashboardRepository {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
-
-  String _getWeekdayName(int weekday) {
-    const weekdays = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
-    ];
-    return weekdays[weekday - 1];
   }
 }

@@ -2,9 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class WalletState {
-  const WalletState({
-    this.publicKey,
 class WalletReward {
   const WalletReward({
     required this.reason,
@@ -27,19 +24,6 @@ class WalletState {
     this.error,
   });
 
-  final String? publicKey;
-  final bool isLoading;
-  final String? error;
-
-  WalletState copyWith({
-    String? publicKey,
-    bool? isLoading,
-    String? error,
-    bool clearError = false,
-    bool clearPublicKey = false,
-  }) {
-    return WalletState(
-      publicKey: clearPublicKey ? null : publicKey ?? this.publicKey,
   final bool exists;
   final String? publicKey;
   final double balance;
@@ -49,7 +33,9 @@ class WalletState {
 
   bool get hasStreakBonus {
     return history.any(
-      (reward) => reward.reason.contains('streak') || reward.reason.contains('bonus'),
+      (reward) =>
+          reward.reason.contains('streak') ||
+          reward.reason.contains('bonus'),
     );
   }
 
@@ -75,19 +61,6 @@ class WalletState {
 
 class WalletNotifier extends StateNotifier<WalletState> {
   WalletNotifier() : super(const WalletState()) {
-    loadPublicKey();
-  }
-
-  Future<void> loadPublicKey() async {
-    state = state.copyWith(isLoading: true, clearError: true);
-    try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'Not authenticated.',
-        );
     loadWallet();
   }
 
@@ -105,26 +78,11 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
       final wallet = await supabase
           .from('user_wallets')
-          .select('public_key')
           .select('public_key, balance')
           .eq('user_id', userId)
           .maybeSingle();
 
       if (wallet == null) {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'No wallet found for this account.',
-        );
-        return;
-      }
-
-      state = state.copyWith(
-        publicKey: wallet['public_key'] as String,
-        isLoading: false,
-        clearError: true,
-      );
-    } catch (e) {
-      debugPrint('[WalletNotifier] loadPublicKey error: $e');
         state = const WalletState(exists: false, isLoading: false);
         return;
       }
@@ -139,7 +97,8 @@ class WalletNotifier extends StateNotifier<WalletState> {
               ?.map((item) {
                 return WalletReward(
                   reason: item['reason'] as String? ?? 'Unknown',
-                  amount: double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
+                  amount:
+                      double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
                   createdAt: DateTime.parse(item['created_at'] as String),
                 );
               })
@@ -149,7 +108,8 @@ class WalletNotifier extends StateNotifier<WalletState> {
       state = WalletState(
         exists: true,
         publicKey: wallet['public_key'] as String?,
-        balance: double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0,
+        balance:
+            double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0,
         history: history,
         isLoading: false,
       );
@@ -204,7 +164,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
   }
 }
 
-final walletProvider = StateNotifierProvider<WalletNotifier, WalletState>((ref) {
+final walletProvider =
+    StateNotifierProvider<WalletNotifier, WalletState>((ref) {
   return WalletNotifier();
-});
 });
