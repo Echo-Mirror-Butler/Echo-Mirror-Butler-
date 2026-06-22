@@ -13,4 +13,29 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-router-dom') || id.includes('react-router') || id.includes('@remix-run')) {
+              return 'react-router';
+            }
+            if (id.includes('react')) {
+              return 'react-core';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'react-query';
+            }
+            if (id.includes('@supabase')) {
+              return 'supabase';
+            }
+            if (id.includes('recharts')) {
+              return 'recharts';
+            }
+          }
+        },
+      },
+    },
+  },
 })
