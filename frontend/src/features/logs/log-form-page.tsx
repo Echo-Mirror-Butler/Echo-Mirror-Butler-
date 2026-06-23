@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { useToast } from '../../lib/use-toast'
 import type { LogEntry } from '../../lib/types'
-import { toDateInputValue, formatDate } from '../../lib/date'
+import { toDateInputValue } from '../../lib/date'
 
 type LogFormMode = 'create' | 'edit'
 
@@ -284,14 +284,14 @@ export function LogFormPage({ mode }: LogFormPageProps) {
 
           <div>
             <p className="field-label">Mood</p>
-            <div className="chip-row">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.4rem', marginTop: '0.45rem' }}>
               {MOOD_EMOJIS.map((emoji, idx) => {
                 const value = idx + 1
                 return (
                   <button
                     key={value}
                     type="button"
-                    style={{ fontSize: '1.3rem', padding: '0.5rem 0.8rem' }}
+                    style={{ fontSize: '1.3rem', minHeight: '44px', width: '100%', padding: '0.25rem' }}
                     className={mood === value ? 'chip active' : 'chip'}
                     onClick={() => {
                       setMood((prev) => (prev === value ? null : value))
@@ -308,13 +308,19 @@ export function LogFormPage({ mode }: LogFormPageProps) {
           </div>
 
           <div>
-            <p className="field-label">Habits (max {MAX_HABITS})</p>
+            <p className="field-label">
+              Habits{' '}
+              <span style={{ color: habits.length >= MAX_HABITS ? 'var(--danger)' : 'inherit' }}>
+                {habits.length}/{MAX_HABITS}
+              </span>
+            </p>
             <div className="chip-row">
               {HABIT_PRESETS.map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   className={habits.includes(preset) ? 'chip active' : 'chip'}
+                  disabled={habits.length >= MAX_HABITS && !habits.includes(preset)}
                   onClick={() =>
                     setHabits((prev) =>
                       prev.includes(preset) ? prev.filter((h) => h !== preset) : [...prev, preset],
@@ -328,6 +334,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             <input
               type="text"
               value={habitInput}
+              disabled={habits.length >= MAX_HABITS}
               onChange={(event) => setHabitInput(event.target.value)}
               onKeyDown={onHabitKeyDown}
               placeholder="Type a habit and press Enter"
@@ -338,17 +345,18 @@ export function LogFormPage({ mode }: LogFormPageProps) {
                   type="button"
                   key={habit}
                   className="chip active"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', paddingRight: '0.4rem' }}
                   onClick={() => setHabits((prev) => prev.filter((item) => item !== habit))}
                 >
-                  {habit} ×
+                  {habit}
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    minWidth: '22px', minHeight: '22px', borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.15)', fontSize: '0.75rem',
+                  }}>✕</span>
                 </button>
               ))}
             </div>
-            {habits.length >= MAX_HABITS && (
-              <p className="muted" style={{ fontSize: '0.8rem', margin: '0.25rem 0 0' }}>
-                Maximum {MAX_HABITS} habits reached
-              </p>
-            )}
           </div>
 
           <label>
@@ -356,17 +364,28 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             <textarea
               rows={4}
               value={notes}
+              style={{ minHeight: '120px' }}
               onChange={(event) => { setNotes(event.target.value); setFieldErrors((prev) => ({ ...prev, notes: undefined })) }}
               placeholder="Optional notes"
               maxLength={MAX_NOTES_LENGTH}
             />
-            <span className="muted" style={{ fontSize: '0.8rem', marginTop: '0.2rem', display: 'block', textAlign: 'right' }}>
+            <span style={{
+              fontSize: '0.8rem', marginTop: '0.2rem', display: 'block', textAlign: 'right',
+              color: MAX_NOTES_LENGTH - notes.length <= 50 ? 'var(--danger)' : 'var(--muted)',
+            }}>
               {notes.length}/{MAX_NOTES_LENGTH}
             </span>
             {fieldErrors.notes && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.notes}</p>}
           </label>
 
-          <button type="submit" disabled={saveMutation.isPending}>
+          <button type="submit" disabled={saveMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
+            {saveMutation.isPending && (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }} aria-hidden="true">
+                <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                <path d="M12 2a10 10 0 0 1 10 10" />
+              </svg>
+            )}
             {saveMutation.isPending ? 'Saving…' : 'Save log entry'}
           </button>
 

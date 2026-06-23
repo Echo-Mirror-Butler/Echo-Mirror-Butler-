@@ -325,7 +325,24 @@ export function DashboardPage() {
             <p className="muted">Loading…</p>
           )}
           {recentLogsQuery.data && recentLogsQuery.data.length === 0 && (
-            <p className="muted">No logs yet</p>
+            <div className="muted">
+              <p>No logs yet</p>
+              <button
+                type="button"
+                onClick={() => navigate("/logs/new")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--brand)",
+                  cursor: "pointer",
+                  fontSize: "0.85rem",
+                  marginTop: "0.25rem",
+                  padding: 0,
+                }}
+              >
+                Create your first log →
+              </button>
+            </div>
           )}
           {recentLogsQuery.data && recentLogsQuery.data.length > 0 && (
             <div className="list-card">
@@ -385,6 +402,9 @@ export function DashboardPage() {
           ) : (
             <>
               <p className="muted">No insights yet</p>
+              <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>
+                Insights are generated after you log a few entries
+              </p>
               <button
                 type="button"
                 onClick={() => navigate("/insights")}
@@ -398,7 +418,7 @@ export function DashboardPage() {
                   marginTop: "0.5rem",
                 }}
               >
-                Generate insights
+                View insights page
               </button>
             </>
           )}
