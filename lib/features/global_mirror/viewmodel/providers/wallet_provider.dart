@@ -140,10 +140,6 @@ class WalletNotifier extends StateNotifier<WalletState> {
         },
       );
 
-      if (response.error != null) {
-        throw response.error!;
-      }
-
       final data = response.data;
       if (data is Map && data['error'] != null) {
         throw Exception(data['error'].toString());

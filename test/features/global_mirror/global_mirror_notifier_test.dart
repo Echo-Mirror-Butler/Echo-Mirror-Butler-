@@ -232,7 +232,7 @@ class _FakePosition implements Position {
   _FakePosition({
     this.latitude = 37.7749,
     this.longitude = -122.4194,
-    this.timestamp,
+    DateTime? timestamp,
     this.accuracy = 0.0,
     this.altitude = 0.0,
     this.altitudeAccuracy = 0.0,
@@ -242,8 +242,7 @@ class _FakePosition implements Position {
     this.speedAccuracy = 0.0,
     this.floor = 0,
     this.isMocked = false,
-    this.extras = const {},
-  });
+  }) : timestamp = timestamp ?? DateTime.now();
 
   @override
   final double latitude;
@@ -252,7 +251,7 @@ class _FakePosition implements Position {
   final double longitude;
 
   @override
-  final DateTime? timestamp;
+  final DateTime timestamp;
 
   @override
   final double accuracy;
@@ -280,15 +279,6 @@ class _FakePosition implements Position {
 
   @override
   final bool isMocked;
-
-  @override
-  final Map<String, dynamic> extras;
-
-  @override
-  double get speedAccuracyMetersPerSecond => 0.0;
-
-  @override
-  String toString() => '_FakePosition($latitude, $longitude)';
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
