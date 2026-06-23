@@ -112,7 +112,7 @@ class _FirstRunTooltipOverlayState extends State<FirstRunTooltipOverlay>
                       children: [
                         Row(
                           children: [
-                            const FaIcon(
+                            const Icon(
                               FontAwesomeIcons.handPointer,
                               color: Colors.white,
                               size: 16,

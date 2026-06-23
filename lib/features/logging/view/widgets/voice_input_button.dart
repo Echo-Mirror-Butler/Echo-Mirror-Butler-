@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart'
     as stt
-    show SpeechToText;
+    show SpeechListenOptions, SpeechToText;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
@@ -187,11 +187,16 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
             }
           }
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
-        localeId: 'en_US',
-        cancelOnError: true,
-        partialResults: true,
+        listenOptions: stt.SpeechListenOptions(
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+          localeId: 'en_US',
+          cancelOnError: true,
+          partialResults: true,
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
+          localeId: 'en_US',
+        ),
       );
     } catch (e) {
       debugPrint('[VoiceInput] Error starting listening: $e');

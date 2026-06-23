@@ -34,7 +34,8 @@ class WalletState {
   bool get hasStreakBonus {
     return history.any(
       (reward) =>
-          reward.reason.contains('streak') || reward.reason.contains('bonus'),
+          reward.reason.contains('streak') ||
+          reward.reason.contains('bonus'),
     );
   }
 
@@ -92,20 +93,23 @@ class WalletNotifier extends StateNotifier<WalletState> {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      final history =
-          (historyData as List<dynamic>?)?.map((item) {
-            return WalletReward(
-              reason: item['reason'] as String? ?? 'Unknown',
-              amount: double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
-              createdAt: DateTime.parse(item['created_at'] as String),
-            );
-          }).toList() ??
+      final history = (historyData as List<dynamic>?)
+              ?.map((item) {
+                return WalletReward(
+                  reason: item['reason'] as String? ?? 'Unknown',
+                  amount:
+                      double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
+                  createdAt: DateTime.parse(item['created_at'] as String),
+                );
+              })
+              .toList() ??
           [];
 
       state = WalletState(
         exists: true,
         publicKey: wallet['public_key'] as String?,
-        balance: double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0,
+        balance:
+            double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0,
         history: history,
         isLoading: false,
       );
@@ -140,6 +144,10 @@ class WalletNotifier extends StateNotifier<WalletState> {
         },
       );
 
+      if (response.error != null) {
+        throw response.error!;
+      }
+
       final data = response.data;
       if (data is Map && data['error'] != null) {
         throw Exception(data['error'].toString());
@@ -156,8 +164,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
   }
 }
 
-final walletProvider = StateNotifierProvider<WalletNotifier, WalletState>((
-  ref,
-) {
+final walletProvider =
+    StateNotifierProvider<WalletNotifier, WalletState>((ref) {
   return WalletNotifier();
 });

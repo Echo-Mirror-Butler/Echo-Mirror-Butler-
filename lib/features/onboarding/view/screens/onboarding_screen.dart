@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:lottie/lottie.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/animations/lottie_animations.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../viewmodel/providers/onboarding_provider.dart';
 
@@ -38,6 +41,39 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   // Step 0 — habit presets
   final Set<String> _selectedHabits = {};
+  final List<OnboardingPageData> _pages = [
+    OnboardingPageData(
+      title: 'Meet EchoMirror',
+      subtitle: 'Your Future Self as a Butler',
+      description:
+          'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
+      icon: FontAwesomeIcons.userTie.data,
+      imageUrl:
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+      lottieAsset: LottieAnimations.mirrorReflection,
+      gradient: [AppTheme.primaryColor, AppTheme.secondaryColor],
+    ),
+    OnboardingPageData(
+      title: 'Log Daily Moods & Habits',
+      description:
+          'Capture your daily reflections, track your mood, and build meaningful habits. Your journey starts with a single entry.',
+      icon: FontAwesomeIcons.book.data,
+      imageUrl:
+          'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
+      lottieAsset: LottieAnimations.habitCheck,
+      gradient: [AppTheme.secondaryColor, AppTheme.accentColor],
+    ),
+    OnboardingPageData(
+      title: 'Receive Predictions & Letters',
+      description:
+          'Get AI-powered insights about your patterns, predictions for your future, and motivational letters from your future self.',
+      icon: FontAwesomeIcons.envelopeOpen.data,
+      imageUrl:
+          'https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=800&q=80',
+      lottieAsset: LottieAnimations.envelopeOpen,
+      gradient: [AppTheme.accentColor, AppTheme.primaryColor],
+    ),
+  ];
 
   // Step 2 — reminder time
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
@@ -159,9 +195,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     count: _totalSteps,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.2,
-                      ),
+                      dotColor: theme.colorScheme.onSurface
+                          .withValues(alpha: 0.2),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,
@@ -182,9 +217,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface.withValues(
-                                  alpha: 0.7,
-                                ),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
                               ),
                             ),
                           )
@@ -215,7 +249,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              FaIcon(
+                              Icon(
                                 isLast
                                     ? FontAwesomeIcons.arrowRight
                                     : FontAwesomeIcons.chevronRight,
@@ -243,7 +277,10 @@ class _WelcomeStep extends StatelessWidget {
   final Set<String> selectedHabits;
   final void Function(String) onToggle;
 
-  const _WelcomeStep({required this.selectedHabits, required this.onToggle});
+  const _WelcomeStep({
+    required this.selectedHabits,
+    required this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +307,7 @@ class _WelcomeStep extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const FaIcon(
+              child: const Icon(
                 FontAwesomeIcons.userTie,
                 size: 80,
                 color: Colors.white,
@@ -347,9 +384,8 @@ class _WelcomeStep extends StatelessWidget {
                     boxShadow: selected
                         ? [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withValues(
-                                alpha: 0.3,
-                              ),
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -360,7 +396,7 @@ class _WelcomeStep extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (selected) ...[
-                        const FaIcon(
+                        const Icon(
                           FontAwesomeIcons.check,
                           size: 12,
                           color: Colors.white,
@@ -414,27 +450,24 @@ class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
   final PageController _cardController = PageController(viewportFraction: 0.85);
   int _cardIndex = 0;
 
-  static final _cards = [
+  static const _cards = [
     _FeatureCard(
       icon: FontAwesomeIcons.faceSmile,
       title: 'Log your mood daily',
-      description:
-          'Takes just 2 minutes — capture how you feel and what matters.',
-      gradient: const [Color(0xFF6D5CE8), Color(0xFF8B5CF6)],
+      description: 'Takes just 2 minutes — capture how you feel and what matters.',
+      gradient: [Color(0xFF6D5CE8), Color(0xFF8B5CF6)],
     ),
     _FeatureCard(
       icon: FontAwesomeIcons.star,
       title: 'Earn ECHO tokens on Stellar',
-      description:
-          'Stay consistent and earn crypto rewards for your growth journey.',
-      gradient: const [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+      description: 'Stay consistent and earn crypto rewards for your growth journey.',
+      gradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
     ),
     _FeatureCard(
       icon: FontAwesomeIcons.lightbulb,
       title: 'Unlock AI insights',
-      description:
-          'After just 3 logs, your future self starts sending insights.',
-      gradient: const [Color(0xFFEC4899), Color(0xFF6D5CE8)],
+      description: 'After just 3 logs, your future self starts sending insights.',
+      gradient: [Color(0xFFEC4899), Color(0xFF6D5CE8)],
     ),
   ];
 
@@ -520,7 +553,7 @@ class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
                               color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: FaIcon(
+                            child: Icon(
                               card.icon,
                               size: 32,
                               color: Colors.white,
@@ -580,11 +613,11 @@ class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
 }
 
 class _FeatureCard {
-  final FaIconData icon;
+  final IconData icon;
   final String title;
   final String description;
   final List<Color> gradient;
-  _FeatureCard({
+  const _FeatureCard({
     required this.icon,
     required this.title,
     required this.description,
@@ -638,7 +671,7 @@ class _ReminderStep extends StatelessWidget {
                 ),
               ],
             ),
-            child: const FaIcon(
+            child: const Icon(
               FontAwesomeIcons.bell,
               size: 48,
               color: Colors.white,
@@ -673,9 +706,9 @@ class _ReminderStep extends StatelessWidget {
                 initialTime: reminderTime,
                 builder: (context, child) => Theme(
                   data: Theme.of(context).copyWith(
-                    colorScheme: Theme.of(
-                      context,
-                    ).colorScheme.copyWith(primary: AppTheme.primaryColor),
+                    colorScheme: Theme.of(context).colorScheme.copyWith(
+                          primary: AppTheme.primaryColor,
+                        ),
                   ),
                   child: child!,
                 ),
@@ -694,7 +727,7 @@ class _ReminderStep extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const FaIcon(
+                  const Icon(
                     FontAwesomeIcons.clock,
                     color: AppTheme.primaryColor,
                     size: 20,
@@ -709,7 +742,7 @@ class _ReminderStep extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const FaIcon(
+                  const Icon(
                     FontAwesomeIcons.penToSquare,
                     color: AppTheme.primaryColor,
                     size: 16,
@@ -724,7 +757,7 @@ class _ReminderStep extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: onRequestPermission,
-              icon: const FaIcon(FontAwesomeIcons.bell, size: 16),
+              icon: const Icon(FontAwesomeIcons.bell, size: 16),
               label: Text(
                 'Enable Reminders',
                 style: GoogleFonts.poppins(
@@ -755,7 +788,7 @@ class _ReminderStep extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const FaIcon(
+                  const Icon(
                     FontAwesomeIcons.circleInfo,
                     color: AppTheme.accentColor,
                     size: 16,

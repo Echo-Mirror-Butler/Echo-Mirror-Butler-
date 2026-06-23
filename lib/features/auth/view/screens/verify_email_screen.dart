@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/error_handler.dart';
-import '../../viewmodel/providers/auth_provider.dart' hide AuthState;
+import '../../viewmodel/providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
 
 /// Screen shown after signup — asks user to verify their email.

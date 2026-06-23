@@ -32,13 +32,15 @@ class FakeFutureLettersBuilder extends Fake
     bool ascending = true,
     bool nullsFirst = false,
     String? referencedTable,
-  }) => this;
+  }) =>
+      this;
 
   @override
   PostgrestFilterBuilder<PostgrestList> limit(
     int count, {
     String? referencedTable,
-  }) => this;
+  }) =>
+      this;
 
   @override
   Stream<PostgrestList> asStream() => _result.asStream();
@@ -47,19 +49,22 @@ class FakeFutureLettersBuilder extends Fake
   Future<PostgrestList> catchError(
     Function onError, {
     bool Function(Object error)? test,
-  }) => _result.catchError(onError, test: test);
+  }) =>
+      _result.catchError(onError, test: test);
 
   @override
   Future<R> then<R>(
     FutureOr<R> Function(PostgrestList value) onValue, {
     Function? onError,
-  }) => _result.then(onValue, onError: onError);
+  }) =>
+      _result.then(onValue, onError: onError);
 
   @override
   Future<PostgrestList> timeout(
     Duration timeLimit, {
     FutureOr<PostgrestList> Function()? onTimeout,
-  }) => _result.timeout(timeLimit, onTimeout: onTimeout);
+  }) =>
+      _result.timeout(timeLimit, onTimeout: onTimeout);
 
   @override
   Future<PostgrestList> whenComplete(FutureOr<void> Function() action) =>
@@ -67,34 +72,35 @@ class FakeFutureLettersBuilder extends Fake
 }
 
 List<LogEntryModel> _fakeLogEntries() => [
-  LogEntryModel(
-    id: '1',
-    userId: 'user-123',
-    date: DateTime(2024, 1, 1),
-    mood: 4,
-    habits: ['exercise', 'reading'],
-    notes: 'Good day',
-    createdAt: DateTime(2024, 1, 1),
-  ),
-  LogEntryModel(
-    id: '2',
-    userId: 'user-123',
-    date: DateTime(2024, 1, 2),
-    mood: 3,
-    habits: ['meditation'],
-    notes: 'Average day',
-    createdAt: DateTime(2024, 1, 2),
-  ),
-];
+      LogEntryModel(
+        id: '1',
+        userId: 'user-123',
+        date: DateTime(2024, 1, 1),
+        mood: 4,
+        habits: ['exercise', 'reading'],
+        notes: 'Good day',
+        createdAt: DateTime(2024, 1, 1),
+      ),
+      LogEntryModel(
+        id: '2',
+        userId: 'user-123',
+        date: DateTime(2024, 1, 2),
+        mood: 3,
+        habits: ['meditation'],
+        notes: 'Average day',
+        createdAt: DateTime(2024, 1, 2),
+      ),
+    ];
 
 DashboardRepository buildRepo({
   required MockLoggingRepository loggingRepo,
   required MockSupabaseClient supabaseClient,
-}) => DashboardRepository(
-  loggingRepo,
-  supabaseClient: supabaseClient,
-  now: () => DateTime(2024, 1, 10),
-);
+}) =>
+    DashboardRepository(
+      loggingRepo,
+      supabaseClient: supabaseClient,
+      now: () => DateTime(2024, 1, 10),
+    );
 
 void main() {
   late MockLoggingRepository loggingRepo;
@@ -172,29 +178,29 @@ void main() {
       expect(results, isEmpty);
     });
 
-    test(
-      'returns empty list when edge function returns non-map data',
-      () async {
-        when(
-          () => loggingRepo.getLogEntries('user-123'),
-        ).thenAnswer((_) async => _fakeLogEntries());
+    test('returns empty list when edge function returns non-map data', () async {
+      when(
+        () => loggingRepo.getLogEntries('user-123'),
+      ).thenAnswer((_) async => _fakeLogEntries());
 
-        when(
-          () => functions.invoke('generate-insight', body: any(named: 'body')),
-        ).thenAnswer(
-          (_) async => FunctionResponse(data: 'unexpected string', status: 200),
-        );
+      when(
+        () => functions.invoke('generate-insight', body: any(named: 'body')),
+      ).thenAnswer(
+        (_) async => FunctionResponse(
+          data: 'unexpected string',
+          status: 200,
+        ),
+      );
 
-        final repo = buildRepo(
-          loggingRepo: loggingRepo,
-          supabaseClient: supabase,
-        );
+      final repo = buildRepo(
+        loggingRepo: loggingRepo,
+        supabaseClient: supabase,
+      );
 
-        final results = await repo.getPredictions('user-123');
+      final results = await repo.getPredictions('user-123');
 
-        expect(results, isEmpty);
-      },
-    );
+      expect(results, isEmpty);
+    });
 
     test('maps calmingMessage to InsightModel with mood type', () async {
       when(
