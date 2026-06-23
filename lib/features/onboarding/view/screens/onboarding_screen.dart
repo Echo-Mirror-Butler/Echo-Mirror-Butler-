@@ -195,8 +195,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     count: _totalSteps,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface
-                          .withValues(alpha: 0.2),
+                      dotColor: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.2,
+                      ),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,
@@ -217,8 +218,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.7),
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
                               ),
                             ),
                           )
@@ -277,10 +279,7 @@ class _WelcomeStep extends StatelessWidget {
   final Set<String> selectedHabits;
   final void Function(String) onToggle;
 
-  const _WelcomeStep({
-    required this.selectedHabits,
-    required this.onToggle,
-  });
+  const _WelcomeStep({required this.selectedHabits, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -384,8 +383,9 @@ class _WelcomeStep extends StatelessWidget {
                     boxShadow: selected
                         ? [
                             BoxShadow(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.3,
+                              ),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -454,19 +454,22 @@ class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
     _FeatureCard(
       icon: FontAwesomeIcons.faceSmile,
       title: 'Log your mood daily',
-      description: 'Takes just 2 minutes — capture how you feel and what matters.',
+      description:
+          'Takes just 2 minutes — capture how you feel and what matters.',
       gradient: [Color(0xFF6D5CE8), Color(0xFF8B5CF6)],
     ),
     _FeatureCard(
       icon: FontAwesomeIcons.star,
       title: 'Earn ECHO tokens on Stellar',
-      description: 'Stay consistent and earn crypto rewards for your growth journey.',
+      description:
+          'Stay consistent and earn crypto rewards for your growth journey.',
       gradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
     ),
     _FeatureCard(
       icon: FontAwesomeIcons.lightbulb,
       title: 'Unlock AI insights',
-      description: 'After just 3 logs, your future self starts sending insights.',
+      description:
+          'After just 3 logs, your future self starts sending insights.',
       gradient: [Color(0xFFEC4899), Color(0xFF6D5CE8)],
     ),
   ];
@@ -706,9 +709,9 @@ class _ReminderStep extends StatelessWidget {
                 initialTime: reminderTime,
                 builder: (context, child) => Theme(
                   data: Theme.of(context).copyWith(
-                    colorScheme: Theme.of(context).colorScheme.copyWith(
-                          primary: AppTheme.primaryColor,
-                        ),
+                    colorScheme: Theme.of(
+                      context,
+                    ).colorScheme.copyWith(primary: AppTheme.primaryColor),
                   ),
                   child: child!,
                 ),
