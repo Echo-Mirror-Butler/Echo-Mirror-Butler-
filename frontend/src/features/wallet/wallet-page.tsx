@@ -274,6 +274,7 @@ export function WalletPage() {
   const { showToast } = useToast()
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   // External wallet state
   const [manualKeyInput, setManualKeyInput] = useState('')
