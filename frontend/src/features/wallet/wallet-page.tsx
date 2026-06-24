@@ -50,16 +50,60 @@ async function fetchWallet(userId: string): Promise<WalletSnapshot> {
   }
 }
 
-async function fetchRewardHistory(userId: string, page: number): Promise<RewardHistoryResult> {
+async function fetchRewardHistory(
+  userId: string,
+  page: number,
+  filters: {
+    search?: string
+    type?: 'all' | 'earned' | 'sent' | 'received'
+    dateFrom?: string
+    dateTo?: string
+    sortBy?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'
+  } = {}
+): Promise<RewardHistoryResult> {
   const start = (page - 1) * WALLET_PAGE_SIZE
   const end = start + WALLET_PAGE_SIZE - 1
 
-  const { data, count, error } = await supabase
+  let query = supabase
     .from('echo_rewards')
     .select('*', { count: 'exact' })
     .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range(start, end)
+
+  if (filters.search) {
+    query = query.ilike('reason', `%${filters.search}%`)
+  }
+
+  if (filters.type && filters.type !== 'all') {
+    if (filters.type === 'earned') {
+      query = query.in('reason', [
+        'daily_mood_log',
+        'daily_log',
+        '7_day_streak_bonus',
+        'seven_day_streak',
+        'streak_bonus',
+        'welcome_bonus',
+      ])
+    } else if (filters.type === 'sent') {
+      query = query.eq('reason', 'gift_sent').lt('amount', 0)
+    } else if (filters.type === 'received') {
+      query = query.eq('reason', 'gift_received').gt('amount', 0)
+    }
+  }
+
+  if (filters.dateFrom) {
+    query = query.gte('created_at', `${filters.dateFrom}T00:00:00.000Z`)
+  }
+
+  if (filters.dateTo) {
+    query = query.lte('created_at', `${filters.dateTo}T23:59:59.999Z`)
+  }
+
+  const sortField = filters.sortBy?.startsWith('amount') ? 'amount' : 'created_at'
+  const sortDirection = filters.sortBy?.endsWith('asc') ? true : false
+
+  query = query.order(sortField, { ascending: sortDirection }).range(start, end)
+
+  const { data, count, error } = await query
 
   if (error) {
     throw error
@@ -276,6 +320,13 @@ export function WalletPage() {
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'earned' | 'sent' | 'received'>('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'>('date_desc')
+
   // External wallet state
   const [manualKeyInput, setManualKeyInput] = useState('')
   const [manualKeyError, setManualKeyError] = useState<string | null>(null)
@@ -292,6 +343,34 @@ export function WalletPage() {
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    const filters = { search: debouncedSearch, type: typeFilter, dateFrom, dateTo, sortBy }
+    sessionStorage.setItem('wallet-filters', JSON.stringify(filters))
+  }, [debouncedSearch, typeFilter, dateFrom, dateTo, sortBy])
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('wallet-filters')
+    if (stored) {
+      try {
+        const filters = JSON.parse(stored)
+        if (filters.search) setSearchQuery(filters.search)
+        if (filters.type) setTypeFilter(filters.type)
+        if (filters.dateFrom) setDateFrom(filters.dateFrom)
+        if (filters.dateTo) setDateTo(filters.dateTo)
+        if (filters.sortBy) setSortBy(filters.sortBy)
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, [])
+
   const walletQuery = useQuery({
     queryKey: ['wallet', user?.id],
     queryFn: () => fetchWallet(user!.id),
@@ -299,8 +378,15 @@ export function WalletPage() {
   })
 
   const historyQuery = useQuery({
-    queryKey: ['wallet-history', user?.id, page],
-    queryFn: () => fetchRewardHistory(user!.id, page),
+    queryKey: ['wallet-history', user?.id, page, debouncedSearch, typeFilter, dateFrom, dateTo, sortBy],
+    queryFn: () =>
+      fetchRewardHistory(user!.id, page, {
+        search: debouncedSearch,
+        type: typeFilter,
+        dateFrom,
+        dateTo,
+        sortBy,
+      }),
     enabled: Boolean(user?.id),
     placeholderData: keepPreviousData,
   })
@@ -365,6 +451,8 @@ export function WalletPage() {
       setMessage('')
       setCustomAmount(String(PRESET_AMOUNTS[1]))
       setSelectedAmount(PRESET_AMOUNTS[1])
+      setRecipientInput('')
+      setShowConfirmDialog(false)
       showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
@@ -372,6 +460,7 @@ export function WalletPage() {
     onError: (error: Error) => {
       showToast(error.message, 'error')
       setInlineError(error.message)
+      setShowConfirmDialog(false)
     },
   })
 
@@ -417,6 +506,94 @@ export function WalletPage() {
     setManualKeyError(null)
     await savePublicKeyMutation.mutateAsync(key)
     setManualKeyInput('')
+  }
+
+  const handleConfirmSend = () => {
+    sendGiftMutation.mutate()
+  }
+
+  const handleCancelSend = () => {
+    setShowConfirmDialog(false)
+  }
+
+  const handleDownloadCSV = async () => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('echo_rewards')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error || !data) {
+      showToast('Failed to export transactions', 'error')
+      return
+    }
+
+    let filteredData = data
+
+    if (debouncedSearch) {
+      filteredData = filteredData.filter((row) =>
+        row.reason.toLowerCase().includes(debouncedSearch.toLowerCase())
+      )
+    }
+
+    if (typeFilter !== 'all') {
+      if (typeFilter === 'earned') {
+        filteredData = filteredData.filter((row) =>
+          [
+            'daily_mood_log',
+            'daily_log',
+            '7_day_streak_bonus',
+            'seven_day_streak',
+            'streak_bonus',
+            'welcome_bonus',
+          ].includes(row.reason)
+        )
+      } else if (typeFilter === 'sent') {
+        filteredData = filteredData.filter((row) => row.reason === 'gift_sent' && row.amount < 0)
+      } else if (typeFilter === 'received') {
+        filteredData = filteredData.filter((row) => row.reason === 'gift_received' && row.amount > 0)
+      }
+    }
+
+    if (dateFrom) {
+      filteredData = filteredData.filter((row) => row.created_at >= `${dateFrom}T00:00:00.000Z`)
+    }
+
+    if (dateTo) {
+      filteredData = filteredData.filter((row) => row.created_at <= `${dateTo}T23:59:59.999Z`)
+    }
+
+    const csv = [
+      ['Date', 'Type', 'Amount', 'Reason'],
+      ...filteredData.map((row) => [
+        formatDateTime(row.created_at),
+        row.amount >= 0 ? 'Received' : 'Sent',
+        row.amount.toFixed(2),
+        formatRewardReason(row.reason),
+      ]),
+    ]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `echo-transactions-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setDebouncedSearch('')
+    setTypeFilter('all')
+    setDateFrom('')
+    setDateTo('')
+    setSortBy('date_desc')
+    setPage(1)
   }
 
   if (!user) {
@@ -738,14 +915,127 @@ export function WalletPage() {
       </article>
 
       <article className="card full-width">
-        <h2>Transaction History</h2>
+        <div className="card-header">
+          <h2>Transaction History</h2>
+          <button type="button" onClick={() => void handleDownloadCSV()}>
+            Download CSV
+          </button>
+        </div>
+
+        <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '4px', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <div style={{ flex: '1 1 250px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                Search
+              </label>
+              <input
+                type="text"
+                placeholder="Search by reason..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                From Date
+              </label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                To Date
+              </label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 150px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                Sort By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value as typeof sortBy)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              >
+                <option value="date_desc">Date (newest)</option>
+                <option value="date_asc">Date (oldest)</option>
+                <option value="amount_desc">Amount (high)</option>
+                <option value="amount_asc">Amount (low)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Type:</span>
+            {(['all', 'earned', 'sent', 'received'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={typeFilter === type ? 'chip active' : 'chip'}
+                onClick={() => {
+                  setTypeFilter(type)
+                  setPage(1)
+                }}
+                style={{ textTransform: 'capitalize' }}
+              >
+                {type}
+              </button>
+            ))}
+            {(searchQuery || typeFilter !== 'all' || dateFrom || dateTo || sortBy !== 'date_desc') && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--brand)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  textDecoration: 'underline',
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Date</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => setSortBy(sortBy === 'date_desc' ? 'date_asc' : 'date_desc')}>
+                  Date {sortBy.startsWith('date') && (sortBy === 'date_desc' ? '↓' : '↑')}
+                </th>
                 <th>Reason</th>
-                <th>Amount</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => setSortBy(sortBy === 'amount_desc' ? 'amount_asc' : 'amount_desc')}>
+                  Amount {sortBy.startsWith('amount') && (sortBy === 'amount_desc' ? '↓' : '↑')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -773,7 +1063,11 @@ export function WalletPage() {
 
           {historyQuery.isError ? <p className="error-text">Failed to load transactions.</p> : null}
           {!historyQuery.isLoading && !historyQuery.data?.rows.length ? (
-            <p className="muted">No transactions yet.</p>
+            <p className="muted">
+              {searchQuery || typeFilter !== 'all' || dateFrom || dateTo
+                ? `No transactions match "${searchQuery || 'your filters'}"`
+                : 'No transactions yet.'}
+            </p>
           ) : null}
         </div>
 
