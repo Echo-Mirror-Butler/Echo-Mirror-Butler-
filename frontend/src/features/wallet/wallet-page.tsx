@@ -214,12 +214,18 @@ function isValidStellarKey(key: string): boolean {
   return key.length === 56 && key.startsWith('G')
 }
 
-function isFreighterInstalled(): boolean {
-  return typeof window !== 'undefined' && Boolean((window as unknown as { freighter?: boolean }).freighter)
+async function isFreighterInstalled(): Promise<boolean> {
+  try {
+    const { isConnected } = await import('@stellar/freighter-api')
+    const { isAppConnected } = await isConnected()
+    return Boolean(isAppConnected)
+  } catch {
+    return false
+  }
 }
 
 async function requestFreighterAccess(): Promise<string> {
-  if (!isFreighterInstalled()) {
+  if (!(await isFreighterInstalled())) {
     throw new Error('FREIGHTER_NOT_INSTALLED')
   }
   const { requestAccess, getNetwork } = await import('@stellar/freighter-api')
@@ -279,7 +285,7 @@ export function WalletPage() {
   const [manualKeyInput, setManualKeyInput] = useState('')
   const [manualKeyError, setManualKeyError] = useState<string | null>(null)
   const [freighterStatus, setFreighterStatus] = useState<
-    'idle' | 'connecting' | 'not_installed' | 'error'
+    'idle' | 'connecting' | 'connected' | 'not_installed' | 'error'
   >('idle')
   const [freighterError, setFreighterError] = useState<string | null>(null)
   const [freighterAddress, setFreighterAddress] = useState<string | null>(null)
@@ -394,7 +400,7 @@ export function WalletPage() {
     try {
       const address = await requestFreighterAccess()
       setFreighterAddress(address)
-      setFreighterStatus('idle')
+      setFreighterStatus('connected')
       await savePublicKeyMutation.mutateAsync(address)
     } catch (err) {
       const msg = (err as Error).message ?? ''
@@ -404,6 +410,19 @@ export function WalletPage() {
         setFreighterStatus('error')
         setFreighterError(msg || 'Connection failed')
       }
+    }
+  }
+
+  const handleFreighterDisconnect = async () => {
+    setFreighterError(null)
+    try {
+      await removePublicKeyMutation.mutateAsync()
+      setFreighterAddress(null)
+      setFreighterStatus('idle')
+    } catch (err) {
+      const msg = (err as Error).message ?? ''
+      setFreighterStatus('error')
+      setFreighterError(msg || 'Could not disconnect wallet')
     }
   }
 
@@ -574,12 +593,10 @@ export function WalletPage() {
                 <button
                   type="button"
                   className="secondary"
-                  onClick={() => {
-                    setFreighterAddress(null)
-                    setFreighterStatus('idle')
-                  }}
+                  onClick={() => void handleFreighterDisconnect()}
+                  disabled={removePublicKeyMutation.isPending}
                 >
-                  Disconnect
+                  {removePublicKeyMutation.isPending ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </div>
             ) : freighterStatus === 'not_installed' ? (
