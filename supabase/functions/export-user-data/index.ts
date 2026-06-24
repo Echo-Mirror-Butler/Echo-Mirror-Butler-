@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,6 +37,25 @@ function toCsv(label: string, rows: Record<string, unknown>[]): string {
     }).join(',')
   ).join('\n');
   return `--- ${label} ---\n${header}\n${body}\n`;
+}
+
+const BATCH_SIZE = 200;
+
+async function fetchAllPages<T>(
+  query: (from: number, to: number) => ReturnType<ReturnType<SupabaseClient['from']>['select']>,
+): Promise<T[]> {
+  const results: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await query(from, from + BATCH_SIZE - 1);
+    if (error || !data || data.length === 0) break;
+    results.push(...(data as T[]));
+    if (data.length < BATCH_SIZE) break;
+    from += BATCH_SIZE;
+  }
+
+  return results;
 }
 
 Deno.serve(async (req) => {
@@ -87,20 +106,56 @@ Deno.serve(async (req) => {
   const format = url.searchParams.get('format') === 'csv' ? 'csv' : 'json';
   const userId = user.id;
 
+  // Fetch all tables in parallel, each paginated in 200-row batches
   const [logs, gifts, insights, habits, completions] = await Promise.all([
-    admin.from('log_entries').select('id, date, mood, habits, notes, created_at, updated_at').eq('user_id', userId).order('date', { ascending: false }),
-    admin.from('gift_transactions').select('id, echo_amount, stellar_tx_hash, message, status, created_at').or(`sender_user_id.eq.${userId},recipient_user_id.eq.${userId}`).order('created_at', { ascending: false }),
-    admin.from('ai_insights').select('id, prediction, suggestions, future_letter, stress_level, calming_message, music_recommendations, created_at').eq('user_id', userId).order('created_at', { ascending: false }),
-    admin.from('habits').select('id, name, created_at').eq('user_id', userId).order('created_at', { ascending: false }),
-    admin.from('habit_completions').select('id, habit_id, completed_date, created_at').eq('user_id', userId).order('completed_date', { ascending: false }),
+    fetchAllPages((from, to) =>
+      admin
+        .from('log_entries')
+        .select('id, date, mood, habits, notes, created_at, updated_at')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .range(from, to),
+    ),
+    fetchAllPages((from, to) =>
+      admin
+        .from('gift_transactions')
+        .select('id, echo_amount, stellar_tx_hash, message, status, created_at')
+        .or(`sender_user_id.eq.${userId},recipient_user_id.eq.${userId}`)
+        .order('created_at', { ascending: false })
+        .range(from, to),
+    ),
+    fetchAllPages((from, to) =>
+      admin
+        .from('ai_insights')
+        .select('id, prediction, suggestions, future_letter, stress_level, calming_message, music_recommendations, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range(from, to),
+    ),
+    fetchAllPages((from, to) =>
+      admin
+        .from('habits')
+        .select('id, name, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range(from, to),
+    ),
+    fetchAllPages((from, to) =>
+      admin
+        .from('habit_completions')
+        .select('id, habit_id, completed_date, created_at')
+        .eq('user_id', userId)
+        .order('completed_date', { ascending: false })
+        .range(from, to),
+    ),
   ]);
 
   const data = {
-    log_entries: logs.data ?? [],
-    gift_transactions: gifts.data ?? [],
-    ai_insights: insights.data ?? [],
-    habits: habits.data ?? [],
-    habit_completions: completions.data ?? [],
+    log_entries: logs,
+    gift_transactions: gifts,
+    ai_insights: insights,
+    habits: habits,
+    habit_completions: completions,
   };
 
   await admin.auth.admin.updateUserById(userId, {
@@ -111,11 +166,11 @@ Deno.serve(async (req) => {
 
   if (format === 'csv') {
     const csv = [
-      toCsv('Log Entries', data.log_entries),
-      toCsv('Gift Transactions', data.gift_transactions),
-      toCsv('AI Insights', data.ai_insights),
-      toCsv('Habits', data.habits),
-      toCsv('Habit Completions', data.habit_completions),
+      toCsv('Log Entries', data.log_entries as Record<string, unknown>[]),
+      toCsv('Gift Transactions', data.gift_transactions as Record<string, unknown>[]),
+      toCsv('AI Insights', data.ai_insights as Record<string, unknown>[]),
+      toCsv('Habits', data.habits as Record<string, unknown>[]),
+      toCsv('Habit Completions', data.habit_completions as Record<string, unknown>[]),
     ].join('\n');
 
     return new Response(csv, {
