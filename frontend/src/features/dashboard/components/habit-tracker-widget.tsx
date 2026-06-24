@@ -223,10 +223,23 @@ export function HabitTrackerWidget() {
           </div>
         )}
 
-        {habitsQuery.isLoading && <p className="muted">Loading habits…</p>}
+        {habitsQuery.isLoading && (
+          <div style={{ display: "grid", gap: "0.65rem" }}>
+            <div className="skeleton-line" style={{ maxWidth: "200px" }} />
+            <div className="skeleton-line" style={{ maxWidth: "180px" }} />
+            <div className="skeleton-line" style={{ maxWidth: "160px" }} />
+          </div>
+        )}
 
         {habits.length === 0 && !habitsQuery.isLoading && (
-          <p className="muted">No habits yet. Click + to add one.</p>
+          <div>
+            <p className="muted" style={{ marginBottom: "0.5rem" }}>
+              No habits yet. Click + to add one.
+            </p>
+            <p className="muted" style={{ fontSize: "0.85rem" }}>
+              Track daily habits like exercise, reading, or meditation.
+            </p>
+          </div>
         )}
 
         {habits.length > 0 && (
