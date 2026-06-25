@@ -127,7 +127,7 @@ function getStressLabel(level: number): string {
 }
 
 function parseMoodDriversFromText(text: string): { label: string; percentage: number }[] {
-  const matches = [...text.matchAll(/([A-Za-z][A-Za-z\s-]{1,24})\s*[:=-]?\s*(\d{1,3})%/g)]
+  const matches = [...text.matchAll(/([A-Za-z][A-Za-z\s-]{1,}?)\s*[:=-]?\s*(\d{1,3})%/g)]
   return matches
     .map((match) => ({
       label: match[1].trim().replace(/\s+/g, ' '),
@@ -270,10 +270,7 @@ function MoodDriversChart({ drivers, prediction }: { drivers: { label: string; p
   if (drivers.length === 0) {
     return (
       <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--surface-soft)', border: '1px dashed var(--line)', fontSize: '0.85rem', color: 'var(--muted)', fontStyle: 'italic' }}>
-        No chart metrics parsed. Fallback raw overview:
-        <p style={{ marginTop: '0.4rem', fontStyle: 'normal', color: 'var(--text)' }}>
-          {prediction ? (prediction.length > 200 ? prediction.slice(0, 200) + '...' : prediction) : 'No description available.'}
-        </p>
+        Mood driver breakdown not available for this insight
       </div>
     )
   }
