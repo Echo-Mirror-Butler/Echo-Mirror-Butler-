@@ -1267,6 +1267,37 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   box-shadow: 0 0 0 3px rgba(20, 99, 255, 0.1);
 }
 
+/* ── Password strength bar ────────────────────────────── */
+.ps-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 4px;
+  margin-top: 0.2rem;
+}
+
+.ps-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+
+.ps-bar-fill[data-strength='weak']   { background: #ef4444; }
+.ps-bar-fill[data-strength='fair']   { background: #f59e0b; }
+.ps-bar-fill[data-strength='strong'] { background: #22c55e; }
+
+.ps-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.ps-label[data-strength='weak']   { color: #ef4444; }
+.ps-label[data-strength='fair']   { color: #f59e0b; }
+.ps-label[data-strength='strong'] { color: #22c55e; }
+
 .lp-auth-submit {
   width: 100%;
   margin-top: 0.25rem;
