@@ -8,6 +8,7 @@ import { SignupPage } from '../features/auth/pages/SignupPage'
 import { ResetPasswordPage } from '../features/auth/pages/ResetPasswordPage'
 import { UpdatePasswordPage } from '../features/auth/pages/UpdatePasswordPage'
 import { ErrorBoundary } from '../components/error-boundary'
+import { RouteErrorBoundary } from '../components/RouteErrorBoundary'
 import { useAuth } from '../lib/auth-context'
 import { supabase } from '../lib/supabase'
 
@@ -136,41 +137,145 @@ export function AppRouter() {
       <Routes>
         <Route
           path="/"
-          element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+          element={
+            <RouteErrorBoundary routeName="Home">
+              {user ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+            </RouteErrorBoundary>
+          }
         />
         <Route
           path="/login"
-          element={user ? <Navigate to="/dashboard" replace /> : <SignInPanel />}
+          element={
+            <RouteErrorBoundary routeName="Login">
+              {user ? <Navigate to="/dashboard" replace /> : <SignInPanel />}
+            </RouteErrorBoundary>
+          }
         />
         <Route
           path="/signup"
-          element={user ? <Navigate to="/dashboard" replace /> : <SignupPage />}
+          element={
+            <RouteErrorBoundary routeName="Signup">
+              {user ? <Navigate to="/dashboard" replace /> : <SignupPage />}
+            </RouteErrorBoundary>
+          }
         />
         <Route
           path="/reset-password"
-          element={user ? <Navigate to="/dashboard" replace /> : <ResetPasswordPage />}
+          element={
+            <RouteErrorBoundary routeName="Reset Password">
+              {user ? <Navigate to="/dashboard" replace /> : <ResetPasswordPage />}
+            </RouteErrorBoundary>
+          }
         />
-        <Route path="/update-password" element={<UpdatePasswordPage />} />
+        <Route
+          path="/update-password"
+          element={
+            <RouteErrorBoundary routeName="Update Password">
+              <UpdatePasswordPage />
+            </RouteErrorBoundary>
+          }
+        />
 
         <Route
           path="/onboarding"
-          element={user ? <OnboardingGuard /> : <Navigate to="/login" replace />}
+          element={
+            <RouteErrorBoundary routeName="Onboarding">
+              {user ? <OnboardingGuard /> : <Navigate to="/login" replace />}
+            </RouteErrorBoundary>
+          }
         />
 
         <Route element={<RequireAuth />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/wallet" element={<WalletPage />} />
-          <Route path="/logs" element={<LogsListPage />} />
-          <Route path="/logs/new" element={<LogFormPage mode="create" />} />
-          <Route path="/logs/:id" element={<LogDetailPage />} />
-          <Route path="/logs/:id/edit" element={<LogFormPage mode="edit" />} />
-          <Route path="/insights" element={<InsightsPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/global-mirror" element={<GlobalMirrorPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RouteErrorBoundary routeName="Dashboard">
+                <DashboardPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/wallet"
+            element={
+              <RouteErrorBoundary routeName="Wallet">
+                <WalletPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs"
+            element={
+              <RouteErrorBoundary routeName="Logs">
+                <LogsListPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs/new"
+            element={
+              <RouteErrorBoundary routeName="New Log">
+                <LogFormPage mode="create" />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs/:id"
+            element={
+              <RouteErrorBoundary routeName="Log Detail">
+                <LogDetailPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs/:id/edit"
+            element={
+              <RouteErrorBoundary routeName="Edit Log">
+                <LogFormPage mode="edit" />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/insights"
+            element={
+              <RouteErrorBoundary routeName="Insights">
+                <InsightsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <RouteErrorBoundary routeName="Analytics">
+                <AnalyticsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/global-mirror"
+            element={
+              <RouteErrorBoundary routeName="Global Mirror">
+                <GlobalMirrorPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RouteErrorBoundary routeName="Settings">
+                <SettingsPage />
+              </RouteErrorBoundary>
+            }
+          />
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
+        <Route
+          path="*"
+          element={
+            <RouteErrorBoundary routeName="404">
+              <NotFoundPage />
+            </RouteErrorBoundary>
+          }
+        />
       </Routes>
     </Suspense>
   )
