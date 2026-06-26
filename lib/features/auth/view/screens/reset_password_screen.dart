@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../viewmodel/providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
@@ -39,11 +40,34 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     super.dispose();
   }
 
-  bool _isExpiredError(Object e) {
+  String? _getErrorMessage(Object e) {
+    if (e is AuthException) {
+      switch (e.statusCode) {
+        case '422':
+          return 'expired';
+        case '400':
+          return 'invalid';
+        default:
+          if (e.message.toLowerCase().contains('network') ||
+              e.message.toLowerCase().contains('connection')) {
+            return 'network';
+          }
+          return 'generic';
+      }
+    }
+    
     final msg = e.toString().toLowerCase();
-    return msg.contains('expired') ||
-        msg.contains('invalid') ||
-        msg.contains('token');
+    if (msg.contains('network') || msg.contains('connection')) {
+      return 'network';
+    }
+    if (msg.contains('expired')) {
+      return 'expired';
+    }
+    if (msg.contains('invalid') || msg.contains('token')) {
+      return 'invalid';
+    }
+    
+    return 'generic';
   }
 
   Future<void> _handleReset() async {
@@ -76,16 +100,29 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final errorType = _getErrorMessage(e);
         setState(() {
           _isLoading = false;
-          if (_isExpiredError(e)) {
+          if (errorType == 'expired' || errorType == 'invalid') {
             _linkExpired = true;
           }
         });
+        
         if (!_linkExpired) {
+          String message;
+          switch (errorType) {
+            case 'network':
+              message = 'Could not connect. Check your internet and try again.';
+              break;
+            case 'generic':
+            default:
+              message = 'Error: ${e.toString()}';
+              break;
+          }
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error: ${e.toString()}'),
+              content: Text(message),
               backgroundColor: AppTheme.errorColor,
             ),
           );
@@ -292,7 +329,7 @@ class _ExpiredLinkView extends ConsumerWidget {
             backgroundColor: AppTheme.successColor,
           ),
         );
-        context.go('/login');
+        context.go('/forgot-password');
       }
     }
 
@@ -320,7 +357,7 @@ class _ExpiredLinkView extends ConsumerWidget {
         const SizedBox(height: 40),
         CustomButton(
           onPressed: requestNew,
-          text: 'Request a new link',
+          text: 'Request new link',
           icon: FontAwesomeIcons.rotate.data,
         ),
         const SizedBox(height: 16),
