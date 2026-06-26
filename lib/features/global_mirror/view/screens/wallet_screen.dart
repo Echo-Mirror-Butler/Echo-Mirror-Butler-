@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/themes/app_theme.dart';
 import '../../viewmodel/providers/wallet_provider.dart';
+
+const _testnetDismissKey = 'testnet_banner_dismissed';
 
 const _presetAmounts = [5, 10, 25, 50];
 
@@ -130,13 +135,18 @@ class WalletScreen extends ConsumerWidget {
     var selectedAmount = _presetAmounts[1];
     var isSending = false;
     String? errorMessage;
+    String? recipientError;
+    String? recipientSuccess;
+    bool isResolvingRecipient = false;
+    bool hasValidRecipient = false;
+    String? amountError;
+    Timer? _debounce;
 
     Future<void> sendEcho() async {
       if (recipientController.text.trim().isEmpty) {
         throw Exception('Recipient is required.');
       }
-      final amount =
-          int.tryParse(customAmountController.text.trim()) ?? selectedAmount;
+      final amount = double.tryParse(customAmountController.text.trim()) ?? selectedAmount.toDouble();
       if (amount <= 0) throw Exception('Enter a valid ECHO amount.');
 
       final recipientId =
@@ -162,6 +172,63 @@ class WalletScreen extends ConsumerWidget {
       }
     }
 
+    void validateRecipient(String value) {
+      _debounce?.cancel();
+      if (value.trim().isEmpty) {
+        setState(() {
+          isResolvingRecipient = false;
+          recipientError = null;
+          recipientSuccess = null;
+          hasValidRecipient = false;
+        });
+        return;
+      }
+      setState(() {
+        isResolvingRecipient = true;
+        recipientError = null;
+        recipientSuccess = null;
+        hasValidRecipient = false;
+      });
+      _debounce = Timer(const Duration(milliseconds: 500), () async {
+        try {
+          final resolvedId = await _resolveRecipientId(supabase, value);
+          setState(() {
+            isResolvingRecipient = false;
+            recipientSuccess = 'Sending to: $resolvedId';
+            recipientError = null;
+            hasValidRecipient = true;
+          });
+        } catch (e) {
+          setState(() {
+            isResolvingRecipient = false;
+            recipientError = 'Recipient not found';
+            recipientSuccess = null;
+            hasValidRecipient = false;
+          });
+        }
+      });
+    }
+
+    void validateAmount(String value) {
+      if (value.trim().isEmpty) {
+        setState(() => amountError = null);
+        return;
+      }
+      final parsed = double.tryParse(value.trim());
+      if (parsed == null) {
+        setState(() => amountError = 'Enter a valid number');
+      } else if (parsed <= 0) {
+        setState(() => amountError = 'Amount must be greater than 0');
+      } else if (parsed > (ref.read(walletProvider).balance)) {
+        setState(() => amountError = 'Insufficient ECHO balance');
+      } else {
+        setState(() {
+          amountError = null;
+          selectedAmount = parsed.roundToDouble();
+        });
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -169,6 +236,8 @@ class WalletScreen extends ConsumerWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            final canSend = hasValidRecipient && amountError == null && !isSending;
+
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -187,6 +256,8 @@ class WalletScreen extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    _TestnetBanner(),
+                    const SizedBox(height: 12),
                     Container(
                       width: 40,
                       height: 4,
@@ -215,11 +286,48 @@ class WalletScreen extends ConsumerWidget {
                     TextField(
                       controller: recipientController,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Recipient',
                         hintText: 'User ID, email, or Stellar address',
+                        suffixIcon: isResolvingRecipient
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : recipientSuccess != null
+                                ? const Icon(Icons.check_circle, color: AppTheme.successColor)
+                                : recipientError != null
+                                    ? const Icon(Icons.error, color: AppTheme.errorColor)
+                                    : null,
                       ),
+                      onChanged: (value) => validateRecipient(value),
                     ),
+                    if (recipientSuccess != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 12),
+                        child: Text(
+                          recipientSuccess!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.successColor,
+                          ),
+                        ),
+                      ),
+                    if (recipientError != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 12),
+                        child: Text(
+                          recipientError!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 16),
                     Wrap(
                       spacing: 10,
@@ -234,6 +342,7 @@ class WalletScreen extends ConsumerWidget {
                               selectedAmount = amount;
                               customAmountController.text =
                                   amount.toString();
+                              amountError = null;
                             });
                           },
                         );
@@ -242,16 +351,19 @@ class WalletScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     TextField(
                       controller: customAmountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
                         labelText: 'Amount',
                         suffixText: 'ECHO',
+                        errorText: amountError,
                       ),
                       onChanged: (value) {
-                        final parsed = int.tryParse(value.trim());
+                        final parsed = double.tryParse(value.trim());
                         if (parsed != null) {
                           setState(() => selectedAmount = parsed);
                         }
+                        validateAmount(value);
                       },
                     ),
                     if (errorMessage != null) ...[
@@ -266,9 +378,8 @@ class WalletScreen extends ConsumerWidget {
                     ],
                     const SizedBox(height: 20),
                     FilledButton(
-                      onPressed: isSending
-                          ? null
-                          : () async {
+                      onPressed: canSend
+                          ? () async {
                               setState(() {
                                 isSending = true;
                                 errorMessage = null;
@@ -283,7 +394,8 @@ class WalletScreen extends ConsumerWidget {
                                 });
                               }
                               setState(() => isSending = false);
-                            },
+                            }
+                          : null,
                       child: isSending
                           ? const SizedBox(
                               height: 20,
@@ -422,6 +534,8 @@ class WalletScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _TestnetBanner(),
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -728,6 +842,67 @@ class _QrBottomSheet extends StatelessWidget {
               ),
               child: const Text('Close'),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TestnetBanner extends StatefulWidget {
+  @override
+  State<_TestnetBanner> createState() => _TestnetBannerState();
+}
+
+class _TestnetBannerState extends State<_TestnetBanner> {
+  bool _dismissed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDismissed();
+  }
+
+  Future<void> _loadDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() => _dismissed = prefs.getBool(_testnetDismissKey) ?? false);
+    }
+  }
+
+  Future<void> _dismiss() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_testnetDismissKey, true);
+    if (mounted) {
+      setState(() => _dismissed = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.shade300),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              '⚠ Testnet — ECHO and XLM here have no real-world value',
+              style: TextStyle(fontSize: 13, color: Colors.brown),
+            ),
+          ),
+          GestureDetector(
+            onTap: _dismiss,
+            child: const Icon(Icons.close, size: 18, color: Colors.brown),
           ),
         ],
       ),
