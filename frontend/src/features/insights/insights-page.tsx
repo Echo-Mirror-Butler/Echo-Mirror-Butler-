@@ -13,6 +13,9 @@
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { Insight, LogEntry, InsightAction } from '../../lib/types'
@@ -167,6 +170,18 @@ async function fetchInsightHistory(userId: string, limit: number = 10): Promise<
   const rows = (data ?? []) as Insight[]
   if (!rows.length) return getLocalInsights(userId)
   return rows
+}
+
+async function fetchMoodDriverTrends(userId: string): Promise<Insight[]> {
+  const { data, error } = await supabase
+    .from('ai_insights')
+    .select('id, created_at, mood_drivers, prediction')
+    .eq('user_id', userId)
+    .not('mood_drivers', 'is', null)
+    .order('created_at', { ascending: true })
+    .limit(5)
+  if (error) return []
+  return (data ?? []) as Insight[]
 }
 
 async function persistInsight(insight: Insight) {
@@ -631,16 +646,30 @@ function InsightComparisonModal({
               📊 Mood Drivers Comparison
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {driversComparison.map(d => (
-                <div key={d.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.75rem', borderRadius: '8px', background: 'var(--surface-soft)' }}>
-                  <span style={{ fontWeight: 500, flex: 2 }}>{d.label}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, justifyContent: 'flex-end' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Prev: {d.prevVal}%</span>
-                    <span style={{ fontWeight: 'bold', color: d.trendColor, fontSize: '1.1rem' }}>{d.trend}</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Curr: {d.latestVal}%</span>
+              {driversComparison.map(d => {
+                const diff = d.latestVal - d.prevVal
+                const absChange = diff >= 0 ? `+${diff}%` : `${diff}%`
+                return (
+                  <div key={d.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.75rem', borderRadius: '8px', background: 'var(--surface-soft)' }}>
+                    <span style={{ fontWeight: 500, flex: 2 }}>{d.label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>{d.prevVal}%</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>→</span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{d.latestVal}%</span>
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: d.trendColor,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.15rem',
+                      }}>
+                        {d.trend} {absChange}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
               {driversComparison.length === 0 && <p className="muted">No mood drivers to compare.</p>}
             </div>
           </div>
@@ -716,6 +745,83 @@ function InsightComparisonModal({
   )
 }
 
+// ── Driver Trends Chart ───────────────────────────────────────────────────────
+
+const DRIVER_COLORS = ['#6366f1', '#22c55e', '#f97316', '#ec4899', '#8b5cf6']
+
+function DriverTrendsChart({ insights }: { insights: Insight[] }) {
+  if (insights.length < 2) {
+    return (
+      <div style={{ padding: '1rem', borderRadius: '8px', background: 'var(--surface-soft)', border: '1px dashed var(--line)', fontSize: '0.85rem', color: 'var(--muted)', fontStyle: 'italic', textAlign: 'center' }}>
+        Generate at least 2 insights to see how your mood drivers change over time
+      </div>
+    )
+  }
+
+  const allDrivers = insights.flatMap((i) => i.mood_drivers ?? [])
+  const driverTotals: Record<string, { sum: number; count: number }> = {}
+  for (const d of allDrivers) {
+    if (!driverTotals[d.label]) driverTotals[d.label] = { sum: 0, count: 0 }
+    driverTotals[d.label].sum += d.percentage
+    driverTotals[d.label].count += 1
+  }
+
+  const topDrivers = Object.entries(driverTotals)
+    .map(([label, val]) => ({ label, avg: val.sum / val.count }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 5)
+    .map((d) => d.label)
+
+  const chartData = insights.map((insight) => {
+    const driverMap: Record<string, number> = {}
+    for (const d of insight.mood_drivers ?? []) {
+      driverMap[d.label] = d.percentage
+    }
+    const point: Record<string, string | number> = {
+      date: new Date(insight.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+    }
+    for (const label of topDrivers) {
+      point[label] = driverMap[label] ?? 0
+    }
+    return point
+  })
+
+  return (
+    <div>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+          <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--muted)' }} />
+          <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--muted)' }} tickFormatter={(v: number) => `${v}%`} />
+          <Tooltip
+            contentStyle={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: '8px' }}
+            formatter={(value: number, name: string) => [`${value}%`, name]}
+          />
+          {topDrivers.map((label, i) => (
+            <Line
+              key={label}
+              type="monotone"
+              dataKey={label}
+              stroke={DRIVER_COLORS[i % DRIVER_COLORS.length]}
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              connectNulls
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', justifyContent: 'center' }}>
+        {topDrivers.map((label, i) => (
+          <span key={label} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--muted)' }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: DRIVER_COLORS[i % DRIVER_COLORS.length], display: 'inline-block' }} />
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function InsightsPage() {
@@ -749,6 +855,13 @@ export function InsightsPage() {
       return (data ?? []) as InsightAction[]
     },
     enabled: Boolean(user?.id),
+  })
+
+  const driverTrendsQuery = useQuery({
+    queryKey: ['mood-driver-trends', user?.id],
+    queryFn: () => fetchMoodDriverTrends(user!.id),
+    enabled: Boolean(user?.id),
+    staleTime: 10 * 60 * 1000,
   })
 
   const toggleActionMutation = useMutation({
@@ -941,6 +1054,16 @@ export function InsightsPage() {
               </p>
               <MoodDriversChart drivers={moodDrivers} prediction={currentInsight.prediction} />
             </div>
+
+            {/* Driver Trends Chart */}
+            {driverTrendsQuery.data && driverTrendsQuery.data.length >= 2 && (
+              <div style={{ marginTop: '1.25rem' }}>
+                <p className="field-label" style={{ marginBottom: '0.6rem', fontWeight: 600 }}>
+                  Driver Trends
+                </p>
+                <DriverTrendsChart insights={driverTrendsQuery.data} />
+              </div>
+            )}
 
             {/* Best Time of Day */}
             <div style={{ marginTop: '1.25rem' }}>
