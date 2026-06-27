@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
@@ -314,22 +314,32 @@ class DashboardRepository {
       }
 
       final prediction = result['prediction'] as String? ?? '';
-      if (prediction.trim().isEmpty) {
-        return [];
-      }
-
+      final calmingMessage = result['calmingMessage'] as String? ?? '';
       final now = _now();
-      return [
-        InsightModel(
-          id: 'prediction-${now.millisecondsSinceEpoch}',
+      final insights = <InsightModel>[];
+      if (prediction.trim().isNotEmpty) {
+        insights.add(InsightModel(
+          id: 'prediction-\${now.millisecondsSinceEpoch}',
           userId: userId,
           title: 'AI Prediction',
           description: prediction,
           date: now,
           type: InsightType.prediction,
           createdAt: now,
-        ),
-      ];
+        ));
+      }
+      if (calmingMessage.trim().isNotEmpty) {
+        insights.add(InsightModel(
+          id: 'calming-\${now.millisecondsSinceEpoch}',
+          userId: userId,
+          title: 'Calming Thought',
+          description: calmingMessage,
+          date: now,
+          type: InsightType.mood,
+          createdAt: now,
+        ));
+      }
+      return insights;
     } catch (e) {
       debugPrint('[DashboardRepository] getPredictions error -> $e');
       return [];
@@ -397,3 +407,5 @@ class DashboardRepository {
     return _now();
   }
 }
+
+
