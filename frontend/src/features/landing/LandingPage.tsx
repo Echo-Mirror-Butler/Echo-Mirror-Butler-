@@ -1,5 +1,157 @@
+import { Link } from 'react-router-dom'
+
+const features = [
+  {
+    icon: '📓',
+    title: 'Daily Logging',
+    description: 'Capture your mood, stress, and thoughts every day with guided prompts.',
+  },
+  {
+    icon: '🤖',
+    title: 'AI Predictions',
+    description: 'Get personalized insights and forecasts based on your logged patterns.',
+  },
+  {
+    icon: '🔄',
+    title: 'Habit Tweaks',
+    description: 'Automated suggestions to adjust your habits for better wellbeing.',
+  },
+  {
+    icon: '🌍',
+    title: 'Global Mirror',
+    description: 'See how your mood compares with others around the world in real time.',
+  },
+  {
+    icon: '🎁',
+    title: 'ECHO Tokens',
+    description: "Send and receive ECHO tokens to celebrate each other's growth.",
+  },
+  {
+    icon: '📊',
+    title: 'Analytics',
+    description: 'Beautiful charts and reports to track your progress over time.',
+  },
+]
+
+const testimonials = [
+  {
+    name: 'Amara K.',
+    text: 'EchoMirror helped me spot stress patterns I never noticed. Game changer.',
+  },
+  {
+    name: 'James O.',
+    text: 'The AI habit suggestions are surprisingly accurate. I sleep better now.',
+  },
+  {
+    name: 'Sana R.',
+    text: "Love the global mirror feature — feels good to know I'm not alone.",
+  },
+]
+
+export function LandingPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-100 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <span className="text-xl font-bold text-gray-900">EchoMirror Butler</span>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/login"
+              className="text-sm text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/signup"
+              className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Get started
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
+        <h1 className="text-5xl font-bold text-gray-900 leading-tight mb-4">
+          Your personal growth,{' '}
+          <span className="text-blue-600">understood</span>
+        </h1>
+        <p className="text-lg text-gray-500 max-w-xl mx-auto mb-8">
+          EchoMirror Butler combines daily logging, AI predictions, and automated
+          habit tweaks to help you become the best version of yourself.
+        </p>
+        <div className="flex items-center justify-center gap-3">
+          <Link
+            to="/signup"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+          >
+            Start for free
+          </Link>
+          <Link
+            to="/login"
+            className="text-gray-600 hover:text-gray-900 px-6 py-3 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 transition-colors"
+          >
+            Sign in
+          </Link>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="max-w-5xl mx-auto px-6 pb-20">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Every tool you need to understand yourself
+          </h2>
+          <p className="text-gray-500">
+            Built for people serious about personal growth.
+          </p>
+        </div>
+        {/*
+          lp-features-grid: margin-top kept at ~2rem (mb-8 on header above)
+          to avoid dead space between heading and cards — fixes #379
+        */}
+        <div className="lp-features-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="text-3xl mb-3">{f.icon}</div>
+              <h3 className="font-semibold text-gray-900 mb-1">{f.title}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Health awareness */}
+      <section className="bg-blue-50 border-y border-blue-100">
+        <div className="max-w-5xl mx-auto px-6 py-16">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Built with your wellbeing in mind
+            </h2>
+            <p className="text-gray-500">
+              We take mental health seriously — no dark patterns, no pressure.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              { icon: '🔒', title: 'Private by default', desc: 'Your data is yours. We never sell it.' },
+              { icon: '🧘', title: 'No streaks pressure', desc: 'Log when you want. No guilt trips.' },
+              { icon: '💬', title: 'Evidence-based', desc: 'Suggestions grounded in psychology research.' },
+            ].map((item) => (
+              <div key={item.title} className="bg-white rounded-2xl p-6 border border-blue-100 shadow-sm">
+                <div className="text-3xl mb-3">{item.icon}</div>
+                <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
+              </div>
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../lib/use-theme'
 import './landing-page.css'
@@ -7,7 +159,8 @@ import './landing-page.css'
 const features = [
   {
     icon: '🧠',
-    bg: 'linear-gradient(135deg,#dbeafe,#eff6ff)',
+    bg:     'linear-gradient(135deg,#dbeafe,#eff6ff)',
+    bgDark: 'linear-gradient(135deg,rgba(59,130,246,0.18),rgba(59,130,246,0.08))',
     accent: '#1463ff',
     title: 'AI Mood Insights',
     desc: 'Your AI companion surfaces personalised reflections shaped by your history — not generic advice.',
@@ -15,7 +168,8 @@ const features = [
   },
   {
     icon: '🌍',
-    bg: 'linear-gradient(135deg,#d6f8ef,#ecfdf5)',
+    bg:     'linear-gradient(135deg,#d6f8ef,#ecfdf5)',
+    bgDark: 'linear-gradient(135deg,rgba(16,185,129,0.18),rgba(16,185,129,0.08))',
     accent: '#0a8a5b',
     title: 'Global Mirror',
     desc: 'See how your emotional state compares with thousands worldwide, in real time.',
@@ -23,7 +177,8 @@ const features = [
   },
   {
     icon: '📓',
-    bg: 'linear-gradient(135deg,#ede9fe,#f5f3ff)',
+    bg:     'linear-gradient(135deg,#ede9fe,#f5f3ff)',
+    bgDark: 'linear-gradient(135deg,rgba(139,92,246,0.18),rgba(139,92,246,0.08))',
     accent: '#7c3aed',
     title: 'Habit & Mood Logs',
     desc: 'Log what you feel. Over time, patterns emerge you\'d never catch in the moment.',
@@ -31,7 +186,8 @@ const features = [
   },
   {
     icon: '✦',
-    bg: 'linear-gradient(135deg,#fef3c7,#fffbeb)',
+    bg:     'linear-gradient(135deg,#fef3c7,#fffbeb)',
+    bgDark: 'linear-gradient(135deg,rgba(251,191,36,0.18),rgba(251,191,36,0.08))',
     accent: '#d97706',
     title: 'ECHO Wallet',
     desc: 'Earn ECHO tokens on Stellar just by showing up. Consistency has real value here.',
@@ -75,6 +231,99 @@ function useReveal() {
 function Reveal({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useReveal()
   return <div ref={ref} className={`lp-reveal${delay ? ` lp-reveal-delay-${delay}` : ''} ${className}`}>{children}</div>
+}
+
+interface GithubContributor {
+  login: string
+  avatar_url: string
+  html_url: string
+  contributions: number
+}
+
+function ContributorsSection() {
+  const { data, isLoading, isError } = useQuery<GithubContributor[]>({
+    queryKey: ['github-contributors'],
+    queryFn: async () => {
+      const res = await fetch(
+        'https://api.github.com/repos/Echo-Mirror-Butler/Echo-Mirror-Butler-/contributors?per_page=100&anon=false',
+        { headers: { Accept: 'application/vnd.github+json' } },
+      )
+      if (!res.ok) throw new Error('Failed to fetch contributors')
+      return res.json()
+    },
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+  })
+
+  return (
+    <section className="lp-section lp-contributors-section" id="contributors">
+      <div className="lp-section-inner">
+        <Reveal>
+          <div className="lp-section-eyebrow" style={{ color: '#7c3aed' }}>Open Source</div>
+          <h2 className="lp-section-title">Built by the community,<br />for the community.</h2>
+          <p className="lp-section-sub">
+            EchoMirror is proudly open source on Stellar Wave. Every contributor below
+            has shipped real code that people use every day.
+          </p>
+        </Reveal>
+
+        {isLoading && (
+          <div className="lp-contributors-skeleton">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="lp-contributor-skel">
+                <div className="lp-skel-avatar" style={{ animationDelay: `${i * 0.08}s` }} />
+                <div className="lp-skel-name" style={{ animationDelay: `${i * 0.08}s` }} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <p style={{ marginTop: '2rem', fontSize: '0.85rem', color: 'var(--lp-ink-30)', textAlign: 'center' }}>
+            Could not load contributors right now.
+          </p>
+        )}
+
+        {data && (
+          <div className="lp-contributors-grid">
+            {data.map((c) => (
+              <a
+                key={c.login}
+                href={c.html_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lp-contributor"
+                title={`${c.login} — ${c.contributions} commit${c.contributions !== 1 ? 's' : ''}`}
+              >
+                <img
+                  src={c.avatar_url}
+                  alt={c.login}
+                  className="lp-contributor-avatar"
+                  loading="lazy"
+                />
+                <span className="lp-contributor-name">{c.login}</span>
+                <span className="lp-contributor-commits">{c.contributions} commit{c.contributions !== 1 ? 's' : ''}</span>
+              </a>
+            ))}
+          </div>
+        )}
+
+        <div style={{ textAlign: 'center' }}>
+          <a
+            href="https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lp-contributors-gh-link"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+            </svg>
+            View all contributors on GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+  )
 }
 
 function WalletConnectSection({ onSignup }: { onSignup: () => void }) {
@@ -232,6 +481,7 @@ export function LandingPage() {
           <a href="#features" className="lp-nav-link">Features</a>
           <a href="#global" className="lp-nav-link">Global Mirror</a>
           <a href="#wallet" className="lp-nav-link">Wallet</a>
+          <a href="#contributors" className="lp-nav-link">Contributors</a>
           <Link to="/login" className="lp-nav-link">Sign in</Link>
         </div>
         <button className="lp-btn-solid" onClick={() => navigate('/signup')}>Get started free</button>
@@ -259,6 +509,7 @@ export function LandingPage() {
             <a href="#features" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Features</a>
             <a href="#global" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Global Mirror</a>
             <a href="#wallet" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Wallet</a>
+            <a href="#contributors" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Contributors</a>
             <Link to="/login" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Sign in</Link>
           </div>
           <button className="lp-mobile-menu-cta" onClick={() => { closeMobileMenu(); navigate('/signup') }}>
@@ -279,10 +530,6 @@ export function LandingPage() {
 
         <div className="lp-hero-inner">
           <div className="lp-hero-copy">
-            <div className="lp-hero-eyebrow">
-              <span className="lp-eyebrow-pip" />
-              Wellbeing, amplified by AI
-            </div>
             <h1 className="lp-hero-title">
               Your mind,<br />
               <em>reflected</em><br />
@@ -298,14 +545,6 @@ export function LandingPage() {
               </button>
               <Link to="/login" className="lp-cta-ghost">Sign in</Link>
             </div>
-            <div className="lp-hero-social-proof">
-              <div className="lp-avatar-stack">
-                {['#1463ff','#0a8a5b','#7c3aed','#e67a00'].map((c, i) => (
-                  <div key={i} className="lp-avatar" style={{ background: c, zIndex: 4 - i }} />
-                ))}
-              </div>
-              <span>Join <strong>2,400+</strong> people tracking their wellbeing</span>
-            </div>
           </div>
 
           <div className="lp-hero-mockup">
@@ -316,7 +555,7 @@ export function LandingPage() {
               Feeling calm today
             </div>
             <div className="lp-float-chip lp-float-chip--2">
-              🌍 Lagos is feeling motivated
+              🌍 New York is feeling motivated
             </div>
             <div className="lp-float-chip lp-float-chip--3">
               ✦ +5 ECHO earned today
@@ -330,7 +569,7 @@ export function LandingPage() {
       {/* ── Logos / trust bar ── */}
       <div className="lp-trust-bar">
         <span className="lp-trust-label">Built on</span>
-        {['Stellar', 'Supabase', 'Claude AI', 'React'].map((t) => (
+        {['Stellar', 'Supabase', 'Flutter', 'React'].map((t) => (
           <span key={t} className="lp-trust-item">{t}</span>
         ))}
       </div>
@@ -350,7 +589,7 @@ export function LandingPage() {
             {features.map((f, i) => (
               <Reveal key={f.title} delay={(i % 2) + 1 as 1 | 2}>
                 <div className="lp-feature">
-                  <div className="lp-feature-top" style={{ background: f.bg }}>
+                  <div className="lp-feature-top" style={{ background: resolvedTheme === 'dark' ? f.bgDark : f.bg }}>
                     <div className="lp-feature-icon-wrap">{f.icon}</div>
                     <div className="lp-feature-stat" style={{ color: f.accent }}>{f.stat}</div>
                   </div>
@@ -432,6 +671,27 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            What our users say
+          </h2>
+          <p className="text-gray-500">Real people, real growth.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {testimonials.map((t) => (
+            <div key={t.name} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+              <p className="text-gray-700 mb-4 leading-relaxed">"{t.text}"</p>
+              <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100 py-8 text-center text-sm text-gray-400">
+        © {new Date().getFullYear()} EchoMirror Butler. All rights reserved.
       {/* ── Global Mirror ── */}
       <section className="lp-section lp-globe-section" id="global">
         <div className="lp-section-inner">
@@ -559,6 +819,9 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Contributors ── */}
+      <ContributorsSection />
 
       {/* ── CTA ── */}
       <section className="lp-section lp-cta-section">

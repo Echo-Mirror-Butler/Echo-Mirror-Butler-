@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 
 type Toast = {
   id: number
@@ -27,6 +27,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       setToasts((prev) => prev.filter((t) => t.id !== id))
     }, 4000)
   }, [])
+
+  useEffect(() => {
+    const handleToastEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ message: string; type: 'success' | 'error' | 'info' }>
+      showToast(customEvent.detail.message, customEvent.detail.type)
+    }
+
+    window.addEventListener('app:show-toast', handleToastEvent)
+    return () => {
+      window.removeEventListener('app:show-toast', handleToastEvent)
+    }
+  }, [showToast])
 
   return (
     <ToastContext.Provider value={{ showToast }}>

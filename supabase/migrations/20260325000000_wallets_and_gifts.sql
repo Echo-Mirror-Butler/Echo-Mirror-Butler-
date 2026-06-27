@@ -1,0 +1,2 @@
+-- Neutralized: tables created by 20260325000000_echo_wallet_and_gift_transactions.sql
+-- Kept as placeholder to preserve migration ordering.

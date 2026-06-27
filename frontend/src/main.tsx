@@ -7,6 +7,11 @@ import './styles.css'
 
 // Fail fast with a clear message if required env vars are absent or invalid.
 validateEnv()
+import { initializeGlobalErrorHandler } from './lib/global-error-handler'
+import './styles.css'
+
+validateEnv()
+initializeGlobalErrorHandler()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

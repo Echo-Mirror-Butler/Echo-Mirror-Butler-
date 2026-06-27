@@ -1,0 +1,2 @@
+-- Neutralized: superseded by 20260525000000_restore_wallet_and_gift_tables.sql
+-- Kept as placeholder to preserve migration ordering.

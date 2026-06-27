@@ -1,5 +1,6 @@
 ﻿import { FormEvent, useState } from 'react'
 import { FormEvent, useEffect, useState } from 'react'
+﻿import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
@@ -10,6 +11,7 @@ import { formatDateTime } from '../../lib/date'
 import { TestnetBadge } from '../../components/TestnetBadge'
 import { txExplorerUrl } from '../../lib/stellar-config'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
+import { isTestnet, stellarConfig } from '../../lib/stellar-config'
 
 const WALLET_PAGE_SIZE = 20
 const PRESET_AMOUNTS = [5, 10, 25, 50]
@@ -51,16 +53,60 @@ async function fetchWallet(userId: string): Promise<WalletSnapshot> {
   }
 }
 
-async function fetchRewardHistory(userId: string, page: number): Promise<RewardHistoryResult> {
+async function fetchRewardHistory(
+  userId: string,
+  page: number,
+  filters: {
+    search?: string
+    type?: 'all' | 'earned' | 'sent' | 'received'
+    dateFrom?: string
+    dateTo?: string
+    sortBy?: 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'
+  } = {}
+): Promise<RewardHistoryResult> {
   const start = (page - 1) * WALLET_PAGE_SIZE
   const end = start + WALLET_PAGE_SIZE - 1
 
-  const { data, count, error } = await supabase
+  let query = supabase
     .from('echo_rewards')
     .select('*', { count: 'exact' })
     .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range(start, end)
+
+  if (filters.search) {
+    query = query.ilike('reason', `%${filters.search}%`)
+  }
+
+  if (filters.type && filters.type !== 'all') {
+    if (filters.type === 'earned') {
+      query = query.in('reason', [
+        'daily_mood_log',
+        'daily_log',
+        '7_day_streak_bonus',
+        'seven_day_streak',
+        'streak_bonus',
+        'welcome_bonus',
+      ])
+    } else if (filters.type === 'sent') {
+      query = query.eq('reason', 'gift_sent').lt('amount', 0)
+    } else if (filters.type === 'received') {
+      query = query.eq('reason', 'gift_received').gt('amount', 0)
+    }
+  }
+
+  if (filters.dateFrom) {
+    query = query.gte('created_at', `${filters.dateFrom}T00:00:00.000Z`)
+  }
+
+  if (filters.dateTo) {
+    query = query.lte('created_at', `${filters.dateTo}T23:59:59.999Z`)
+  }
+
+  const sortField = filters.sortBy?.startsWith('amount') ? 'amount' : 'created_at'
+  const sortDirection = filters.sortBy?.endsWith('asc') ? true : false
+
+  query = query.order(sortField, { ascending: sortDirection }).range(start, end)
+
+  const { data, count, error } = await query
 
   if (error) {
     throw error
@@ -112,37 +158,69 @@ async function resolveRecipientId(recipientInput: string): Promise<string> {
   }
 
   if (isValidStellarKey(trimmed)) {
-    const { data, error } = await supabase
-      .from('user_wallets')
-      .select('user_id')
-      .eq('public_key', trimmed)
-      .maybeSingle()
+    let data: { user_id: string } | null = null
+    let lookupFailed = false
 
-    if (!error && data?.user_id) {
+    try {
+      const result = await supabase
+        .from('user_wallets')
+        .select('user_id')
+        .eq('public_key', trimmed)
+        .maybeSingle()
+      data = result.data
+      lookupFailed = Boolean(result.error)
+    } catch {
+      lookupFailed = true
+    }
+
+    if (data?.user_id) {
       return data.user_id as string
     }
 
-    throw new Error('Could not resolve recipient from Stellar address. Use recipient user ID.')
+    if (lookupFailed) {
+      throw new Error('Network error while looking up that Stellar address. Please try again.')
+    }
+
+    throw new Error('Address not found. No wallet is linked to that Stellar address.')
   }
 
   if (!trimmed.includes('@')) {
     throw new Error('Use a valid recipient UUID, email address, or Stellar address.')
   }
 
+  let lookupFailed = false
   const profileTables = ['profiles', 'user_profiles']
   for (const table of profileTables) {
-    const { data, error } = await supabase.from(table).select('id').eq('email', trimmed).maybeSingle()
-    if (!error && data?.id) {
-      return data.id as string
+    try {
+      const { data, error } = await supabase.from(table).select('id').eq('email', trimmed).maybeSingle()
+      if (error) {
+        lookupFailed = true
+        continue
+      }
+      if (data?.id) {
+        return data.id as string
+      }
+    } catch {
+      lookupFailed = true
     }
   }
 
-  const { data: rpcData, error: rpcError } = await supabase.rpc('lookup_user_by_email', {
-    email_input: trimmed,
-  })
+  try {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('lookup_user_by_email', {
+      email_input: trimmed,
+    })
 
-  if (!rpcError && rpcData && typeof rpcData.user_id === 'string') {
-    return rpcData.user_id
+    if (rpcError) {
+      lookupFailed = true
+    } else if (rpcData && typeof rpcData.user_id === 'string') {
+      return rpcData.user_id
+    }
+  } catch {
+    lookupFailed = true
+  }
+
+  if (lookupFailed) {
+    throw new Error('Network error while resolving that email. Please try again.')
   }
 
   throw new Error('Could not resolve recipient from email. Use recipient user ID.')
@@ -191,11 +269,22 @@ async function requestFreighterAccess(): Promise<string> {
   if (!isFreighterInstalled()) {
     throw new Error('FREIGHTER_NOT_INSTALLED')
   }
-  const { requestAccess } = await import('@stellar/freighter-api')
+  const { requestAccess, getNetwork } = await import('@stellar/freighter-api')
   const result = await requestAccess()
   if (result.error) {
     throw new Error(result.error.message ?? 'Freighter connection rejected')
   }
+
+  const network = await getNetwork()
+  if (network.error) {
+    throw new Error(network.error.message ?? 'Could not verify the Freighter network.')
+  }
+  if (network.networkPassphrase !== stellarConfig.networkPassphrase) {
+    throw new Error(
+      `Freighter is set to ${network.network}, but this app requires ${stellarConfig.network}. Switch networks in Freighter and try again.`,
+    )
+  }
+
   return result.address
 }
 
@@ -232,6 +321,14 @@ export function WalletPage() {
   const { showToast } = useToast()
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'earned' | 'sent' | 'received'>('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'>('date_desc')
 
   // External wallet state
   const [manualKeyInput, setManualKeyInput] = useState('')
@@ -249,6 +346,34 @@ export function WalletPage() {
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  useEffect(() => {
+    const filters = { search: debouncedSearch, type: typeFilter, dateFrom, dateTo, sortBy }
+    sessionStorage.setItem('wallet-filters', JSON.stringify(filters))
+  }, [debouncedSearch, typeFilter, dateFrom, dateTo, sortBy])
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('wallet-filters')
+    if (stored) {
+      try {
+        const filters = JSON.parse(stored)
+        if (filters.search) setSearchQuery(filters.search)
+        if (filters.type) setTypeFilter(filters.type)
+        if (filters.dateFrom) setDateFrom(filters.dateFrom)
+        if (filters.dateTo) setDateTo(filters.dateTo)
+        if (filters.sortBy) setSortBy(filters.sortBy)
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }, [])
+
   const walletQuery = useQuery({
     queryKey: ['wallet', user?.id],
     queryFn: () => fetchWallet(user!.id),
@@ -256,8 +381,15 @@ export function WalletPage() {
   })
 
   const historyQuery = useQuery({
-    queryKey: ['wallet-history', user?.id, page],
-    queryFn: () => fetchRewardHistory(user!.id, page),
+    queryKey: ['wallet-history', user?.id, page, debouncedSearch, typeFilter, dateFrom, dateTo, sortBy],
+    queryFn: () =>
+      fetchRewardHistory(user!.id, page, {
+        search: debouncedSearch,
+        type: typeFilter,
+        dateFrom,
+        dateTo,
+        sortBy,
+      }),
     enabled: Boolean(user?.id),
     placeholderData: keepPreviousData,
   })
@@ -322,6 +454,8 @@ export function WalletPage() {
       setMessage('')
       setCustomAmount(String(PRESET_AMOUNTS[1]))
       setSelectedAmount(PRESET_AMOUNTS[1])
+      setRecipientInput('')
+      setShowConfirmDialog(false)
       showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
@@ -329,6 +463,7 @@ export function WalletPage() {
     onError: (error: Error) => {
       showToast(error.message, 'error')
       setInlineError(error.message)
+      setShowConfirmDialog(false)
     },
   })
 
@@ -368,12 +503,100 @@ export function WalletPage() {
   const handleManualKeySave = async () => {
     const key = manualKeyInput.trim()
     if (!isValidStellarKey(key)) {
-      setManualKeyError('Invalid key — must start with G and be 56 characters.')
+      setManualKeyError('Invalid key -- must start with G and be 56 characters.')
       return
     }
     setManualKeyError(null)
     await savePublicKeyMutation.mutateAsync(key)
     setManualKeyInput('')
+  }
+
+  const handleConfirmSend = () => {
+    sendGiftMutation.mutate()
+  }
+
+  const handleCancelSend = () => {
+    setShowConfirmDialog(false)
+  }
+
+  const handleDownloadCSV = async () => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('echo_rewards')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (error || !data) {
+      showToast('Failed to export transactions', 'error')
+      return
+    }
+
+    let filteredData = data
+
+    if (debouncedSearch) {
+      filteredData = filteredData.filter((row) =>
+        row.reason.toLowerCase().includes(debouncedSearch.toLowerCase())
+      )
+    }
+
+    if (typeFilter !== 'all') {
+      if (typeFilter === 'earned') {
+        filteredData = filteredData.filter((row) =>
+          [
+            'daily_mood_log',
+            'daily_log',
+            '7_day_streak_bonus',
+            'seven_day_streak',
+            'streak_bonus',
+            'welcome_bonus',
+          ].includes(row.reason)
+        )
+      } else if (typeFilter === 'sent') {
+        filteredData = filteredData.filter((row) => row.reason === 'gift_sent' && row.amount < 0)
+      } else if (typeFilter === 'received') {
+        filteredData = filteredData.filter((row) => row.reason === 'gift_received' && row.amount > 0)
+      }
+    }
+
+    if (dateFrom) {
+      filteredData = filteredData.filter((row) => row.created_at >= `${dateFrom}T00:00:00.000Z`)
+    }
+
+    if (dateTo) {
+      filteredData = filteredData.filter((row) => row.created_at <= `${dateTo}T23:59:59.999Z`)
+    }
+
+    const csv = [
+      ['Date', 'Type', 'Amount', 'Reason'],
+      ...filteredData.map((row) => [
+        formatDateTime(row.created_at),
+        row.amount >= 0 ? 'Received' : 'Sent',
+        row.amount.toFixed(2),
+        formatRewardReason(row.reason),
+      ]),
+    ]
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `echo-transactions-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setDebouncedSearch('')
+    setTypeFilter('all')
+    setDateFrom('')
+    setDateTo('')
+    setSortBy('date_desc')
+    setPage(1)
   }
 
   if (!user) {
@@ -399,6 +622,16 @@ export function WalletPage() {
     <section className="feature-grid wallet-grid">
       <ConfettiBlast active={showConfetti} />
 
+      {isTestnet ? (
+        <div
+          role="status"
+          className="full-width flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-900"
+        >
+          <span aria-hidden="true">⚠</span>
+          You are on Testnet — ECHO and XLM here have no real-world value.
+        </div>
+      ) : null}
+
       <article className="card balance-card">
         <div className="card-header">
           <div className="flex items-center gap-2"><h2>ECHO Wallet</h2><TestnetBadge /></div>
@@ -422,7 +655,7 @@ export function WalletPage() {
             {publicKey ? (
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <p className="muted" style={{ margin: 0 }}>
-                  Public key: {publicKey.slice(0, 14)}…{publicKey.slice(-4)}
+                  Public key: {publicKey.slice(0, 14)}...{publicKey.slice(-4)}
                 </p>
                 <button type="button" className="secondary" onClick={() => void handleCopyWalletAddress()}>
                   {copiedWalletAddress ? 'Copied' : 'Copy'}
@@ -518,7 +751,7 @@ export function WalletPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span className="chip active">Connected via Freighter</span>
                 <span className="muted" style={{ fontSize: '0.875rem' }}>
-                  {freighterAddress.slice(0, 8)}…{freighterAddress.slice(-4)}
+                  {freighterAddress.slice(0, 8)}...{freighterAddress.slice(-4)}
                 </span>
                 <button
                   type="button"
@@ -544,7 +777,7 @@ export function WalletPage() {
                 onClick={() => void handleFreighterConnect()}
                 disabled={freighterStatus === 'connecting' || savePublicKeyMutation.isPending}
               >
-                {freighterStatus === 'connecting' ? 'Connecting…' : 'Connect Freighter'}
+                {freighterStatus === 'connecting' ? 'Connecting...' : 'Connect Freighter'}
               </button>
             )}
             {freighterStatus === 'error' && freighterError ? (
@@ -557,7 +790,7 @@ export function WalletPage() {
             {walletQuery.data?.record?.public_key && !freighterAddress ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <span className="muted" style={{ fontSize: '0.875rem' }}>
-                  {walletQuery.data.record.public_key.slice(0, 8)}…
+                  {walletQuery.data.record.public_key.slice(0, 8)}...
                   {walletQuery.data.record.public_key.slice(-4)}
                 </span>
                 <button
@@ -570,14 +803,14 @@ export function WalletPage() {
                   }}
                   disabled={removePublicKeyMutation.isPending}
                 >
-                  {removePublicKeyMutation.isPending ? 'Removing…' : 'Remove wallet'}
+                  {removePublicKeyMutation.isPending ? 'Removing...' : 'Remove wallet'}
                 </button>
               </div>
             ) : (
               <>
                 <input
                   type="text"
-                  placeholder="GABCD… (56 characters)"
+                  placeholder="GABCD... (56 characters)"
                   value={manualKeyInput}
                   onChange={(e) => {
                     setManualKeyInput(e.target.value)
@@ -593,7 +826,7 @@ export function WalletPage() {
                   onClick={() => void handleManualKeySave()}
                   disabled={savePublicKeyMutation.isPending || !manualKeyInput.trim()}
                 >
-                  {savePublicKeyMutation.isPending ? 'Saving…' : 'Save address'}
+                  {savePublicKeyMutation.isPending ? 'Saving...' : 'Save address'}
                 </button>
                 {manualKeyError ? <p className="error-text">{manualKeyError}</p> : null}
                 {savePublicKeyMutation.error ? (
@@ -686,14 +919,127 @@ export function WalletPage() {
       </article>
 
       <article className="card full-width">
-        <h2>Transaction History</h2>
+        <div className="card-header">
+          <h2>Transaction History</h2>
+          <button type="button" onClick={() => void handleDownloadCSV()}>
+            Download CSV
+          </button>
+        </div>
+
+        <div style={{ padding: '1rem', background: '#f9fafb', borderRadius: '4px', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <div style={{ flex: '1 1 250px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                Search
+              </label>
+              <input
+                type="text"
+                placeholder="Search by reason..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                From Date
+              </label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                To Date
+              </label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 150px' }}>
+              <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: 500 }}>
+                Sort By
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value as typeof sortBy)
+                  setPage(1)
+                }}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              >
+                <option value="date_desc">Date (newest)</option>
+                <option value="date_asc">Date (oldest)</option>
+                <option value="amount_desc">Amount (high)</option>
+                <option value="amount_asc">Amount (low)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Type:</span>
+            {(['all', 'earned', 'sent', 'received'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                className={typeFilter === type ? 'chip active' : 'chip'}
+                onClick={() => {
+                  setTypeFilter(type)
+                  setPage(1)
+                }}
+                style={{ textTransform: 'capitalize' }}
+              >
+                {type}
+              </button>
+            ))}
+            {(searchQuery || typeFilter !== 'all' || dateFrom || dateTo || sortBy !== 'date_desc') && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--brand)',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  textDecoration: 'underline',
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Date</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => setSortBy(sortBy === 'date_desc' ? 'date_asc' : 'date_desc')}>
+                  Date {sortBy.startsWith('date') && (sortBy === 'date_desc' ? '↓' : '↑')}
+                </th>
                 <th>Reason</th>
-                <th>Amount</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => setSortBy(sortBy === 'amount_desc' ? 'amount_asc' : 'amount_desc')}>
+                  Amount {sortBy.startsWith('amount') && (sortBy === 'amount_desc' ? '↓' : '↑')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -747,7 +1093,11 @@ export function WalletPage() {
 
           {historyQuery.isError ? <p className="error-text">Failed to load transactions.</p> : null}
           {!historyQuery.isLoading && !historyQuery.data?.rows.length ? (
-            <p className="muted">No transactions yet.</p>
+            <p className="muted">
+              {searchQuery || typeFilter !== 'all' || dateFrom || dateTo
+                ? `No transactions match "${searchQuery || 'your filters'}"`
+                : 'No transactions yet.'}
+            </p>
           ) : null}
         </div>
 

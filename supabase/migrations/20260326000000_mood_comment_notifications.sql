@@ -1,0 +1,2 @@
+-- Neutralized: mood_comment_notifications already created in 20260319000000_initial_schema.sql
+-- Kept as placeholder to preserve migration ordering.
