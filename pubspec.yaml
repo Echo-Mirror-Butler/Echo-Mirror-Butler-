@@ -56,6 +56,10 @@ dependencies:
   stellar_flutter_sdk: ^2.0.0
   qr_flutter: ^4.1.0
 
+  # PDF Export
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
   # Video Calls (Agora)
   agora_rtc_engine: ^6.3.0
   wakelock_plus: ^1.2.8

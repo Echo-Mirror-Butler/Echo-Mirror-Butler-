@@ -9,4 +9,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Use sessionStorage when the user has explicitly opted out of persistent sessions.
+// The preference is stored in localStorage so it survives tab close (but not browser restart).
+const rememberMe =
+  typeof localStorage !== 'undefined'
+    ? localStorage.getItem('echo-remember-me') !== 'false'
+    : true
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: rememberMe ? localStorage : sessionStorage,
+  },
+})

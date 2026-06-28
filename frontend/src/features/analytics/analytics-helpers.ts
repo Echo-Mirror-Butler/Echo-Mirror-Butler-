@@ -84,3 +84,30 @@ export function buildHabitFrequency(entries: AnalyticsLogEntry[]): { habit: stri
 export function buildStreakDays(entries: AnalyticsLogEntry[]): Set<string> {
   return new Set(entries.map((e) => e.date.slice(0, 10)))
 }
+
+export type HeatmapRow = { habit: string; counts: Record<number, number> }
+
+export function buildHabitMoodHeatmap(entries: AnalyticsLogEntry[]): HeatmapRow[] {
+  const freq: Record<string, number> = {}
+  for (const e of entries) {
+    for (const h of e.habits ?? []) freq[h] = (freq[h] ?? 0) + 1
+  }
+  const topHabits = Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([h]) => h)
+
+  if (topHabits.length === 0) return []
+
+  const grid: Record<string, Record<number, number>> = {}
+  for (const h of topHabits) grid[h] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+
+  for (const e of entries) {
+    if (e.mood == null) continue
+    for (const h of e.habits ?? []) {
+      if (grid[h]) grid[h][e.mood] = (grid[h][e.mood] ?? 0) + 1
+    }
+  }
+
+  return topHabits.map((h) => ({ habit: h, counts: grid[h] }))
+}
