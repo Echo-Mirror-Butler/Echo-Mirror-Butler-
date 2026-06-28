@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/themes/app_theme.dart';
@@ -22,6 +23,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _keepMeSignedIn = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) {
+        setState(() {
+          _keepMeSignedIn = prefs.getBool('echo_remember_me') ?? true;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -33,6 +47,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       debugPrint('[LoginScreen] Attempt login -> ${_emailController.text}');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('echo_remember_me', _keepMeSignedIn);
       final authNotifier = ref.read(authProvider.notifier);
       final success = await authNotifier.signIn(
         _emailController.text.trim(),
@@ -136,7 +152,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 8),
+                  // Keep me signed in
+                  SwitchListTile(
+                    value: _keepMeSignedIn,
+                    onChanged: (val) async {
+                      setState(() => _keepMeSignedIn = val);
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('echo_remember_me', val);
+                    },
+                    title: Text(
+                      'Keep me signed in',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    activeColor: AppTheme.primaryColor,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: 16),
                   // Login button
                   CustomButton(
                     onPressed: authState.isLoading ? null : _handleLogin,
