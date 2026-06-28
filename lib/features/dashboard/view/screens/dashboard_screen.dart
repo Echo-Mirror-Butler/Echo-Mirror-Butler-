@@ -7,6 +7,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
@@ -23,6 +24,7 @@ import '../widgets/mood_streak_card.dart';
 import '../widgets/mood_trend_chart.dart';
 import '../widgets/echo_balance_card.dart';
 import '../../viewmodel/providers/mood_chart_provider.dart';
+import '../../../socials/viewmodel/providers/follow_provider.dart';
 
 /// Dashboard screen showing insights and predictions
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -92,7 +94,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             final logs = loggingState.value ?? [];
 
             if (logs.length >= 3) {
-              final now = DateTime.now();
+              final timezone = ref.read(timezoneStringProvider);
+              final now = DateFormatter.daysAgo(0, timezone);
               final recentLogs =
                   logs
                       .where(
@@ -188,6 +191,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 8),
                       if (authState.isAuthenticated && authState.user != null)
                         EchoBalanceCard(userId: authState.user!.id),
+                      const SizedBox(height: 8),
+                      _buildFriendsMoodFeed(context, theme),
                       const SizedBox(height: 8),
                       MoodTrendChart(
                         recentLogs: ref.watch(moodChartDataProvider),
@@ -513,5 +518,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         }
       }
     }
+  }
+
+  Widget _buildFriendsMoodFeed(BuildContext context, ThemeData theme) {
+    final friendsAsync = ref.watch(friendMoodLogsProvider);
+    return friendsAsync.when(
+      data: (friends) {
+        if (friends.isEmpty) return const SizedBox.shrink();
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(FontAwesomeIcons.userFriends.data, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    Text('Friends Today', style: theme.textTheme.titleSmall),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: friends.map((friend) {
+                    final moodEmoji = friend.mood != null && friend.mood >= 1 && friend.mood <= 5
+                        ? ['😊', '😌', '😐', '😢', '😡'][friend.mood - 1]
+                        : '❓';
+                    final name = friend.displayName ?? friend.userId.substring(0, 8);
+                    return Chip(
+                      avatar: CircleAvatar(
+                        backgroundColor: AppTheme.primaryColor,
+                        radius: 12,
+                        child: Text(name[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                      label: Text('$name $moodEmoji'),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
   }
 }

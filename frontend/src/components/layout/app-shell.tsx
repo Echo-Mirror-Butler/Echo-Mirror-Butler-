@@ -170,7 +170,7 @@ export function AppShell() {
           </button>
         </div>
 
-        <nav className="shell-nav">
+        <nav className="shell-nav" aria-label="Main navigation">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -178,9 +178,10 @@ export function AppShell() {
               className={({ isActive }) =>
                 ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
               }
+              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' : undefined}
               onClick={() => setIsMobileDrawerOpen(false)}
             >
-              <span className="icon">{item.icon}</span>
+              <span className="icon" aria-hidden="true">{item.icon}</span>
               <span className="label">{item.label}</span>
             </NavLink>
           ))}
@@ -206,7 +207,8 @@ export function AppShell() {
             <button
               type="button"
               className="icon-btn mobile-only"
-              aria-label="Open navigation drawer"
+              aria-label={isMobileDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileDrawerOpen}
               onClick={() => setIsMobileDrawerOpen(true)}
             >
               ☰

@@ -6,6 +6,8 @@ import type { LogEntry, Insight } from "../../lib/types";
 import { formatDate, moodToEmoji } from "../../lib/date";
 import { HabitTrackerWidget } from "./components/habit-tracker-widget";
 
+const MOOD_EMOJIS = ['😞', '😕', '😐', '🙂', '😄'];
+
 async function fetchMoodTrend(userId: string) {
   const today = new Date();
   const lastWeek = new Date();
@@ -108,6 +110,31 @@ export function DashboardPage() {
   const moodTrendQuery = useQuery({
     queryKey: ["dashboard-mood-trend", user?.id],
     queryFn: () => fetchMoodTrend(user!.id),
+    enabled: !!user,
+  });
+
+  // Friends' mood feed
+  const friendsMoodQuery = useQuery({
+    queryKey: ["friends-mood", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase.rpc("get_friends_mood_logs", {
+        p_user_id: user.id,
+        p_days: 1,
+      });
+      if (error) {
+        console.warn("Friends mood feed unavailable:", error.message);
+        return [];
+      }
+      return (data ?? []) as Array<{
+        user_id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        mood: number | null;
+        date: string;
+        has_public_profile: boolean;
+      }>;
+    },
     enabled: !!user,
   });
 
@@ -295,6 +322,40 @@ export function DashboardPage() {
                 Tap to view wallet →
               </p>
             </>
+          )}
+        </div>
+      </article>
+
+      {/* Friends' Mood Feed */}
+      <article className="card">
+        <div className="card-header">
+          <h3>Friends Today</h3>
+        </div>
+        <div className="card-content">
+          {friendsMoodQuery.isLoading && <p className="muted">Loading friends' mood…</p>}
+          {friendsMoodQuery.data && friendsMoodQuery.data.length === 0 && (
+            <p className="muted" style={{ fontSize: '0.85rem' }}>Follow other users from the Global Mirror to see their mood here</p>
+          )}
+          {friendsMoodQuery.data && friendsMoodQuery.data.length > 0 && (
+            <div className="chip-row">
+              {friendsMoodQuery.data.map((friend) => {
+                const moodEmoji = friend.mood != null && friend.mood >= 1 && friend.mood <= 5
+                  ? MOOD_EMOJIS[friend.mood - 1]
+                  : '❓';
+                const name = friend.display_name ?? friend.user_id.slice(0, 8);
+                return (
+                  <div key={friend.user_id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.65rem', borderRadius: '999px', background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+                    {friend.avatar_url ? (
+                      <img src={friend.avatar_url} alt={name} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>{name.charAt(0).toUpperCase()}</span>
+                    )}
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{name}</span>
+                    <span style={{ fontSize: '1.1rem' }}>{moodEmoji}</span>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       </article>

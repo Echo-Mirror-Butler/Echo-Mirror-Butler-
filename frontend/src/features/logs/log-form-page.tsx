@@ -282,29 +282,33 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             {fieldErrors.date && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.date}</p>}
           </label>
 
-          <div>
-            <p className="field-label">Mood</p>
+          <div role="radiogroup" aria-label="Mood selection">
+            <p className="field-label" id="mood-label">Mood</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.4rem', marginTop: '0.45rem' }}>
               {MOOD_EMOJIS.map((emoji, idx) => {
                 const value = idx + 1
+                const moodLabels = ['Very sad, mood 1', 'Sad, mood 2', 'Neutral, mood 3', 'Happy, mood 4', 'Very happy, mood 5']
                 return (
                   <button
                     key={value}
                     type="button"
+                    role="radio"
                     style={{ fontSize: '1.3rem', minHeight: '44px', width: '100%', padding: '0.25rem' }}
                     className={mood === value ? 'chip active' : 'chip'}
                     onClick={() => {
                       setMood((prev) => (prev === value ? null : value))
                       setFieldErrors((prev) => ({ ...prev, mood: undefined }))
                     }}
-                    aria-label={`Mood ${value}`}
+                    aria-label={moodLabels[idx]}
+                    aria-pressed={mood === value}
+                    aria-checked={mood === value}
                   >
                     {emoji}
                   </button>
                 )
               })}
             </div>
-            {fieldErrors.mood && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.mood}</p>}
+            {fieldErrors.mood && <p id="mood-error" className="error-text" style={{ marginTop: '0.25rem' }} role="alert">{fieldErrors.mood}</p>}
           </div>
 
           <div>

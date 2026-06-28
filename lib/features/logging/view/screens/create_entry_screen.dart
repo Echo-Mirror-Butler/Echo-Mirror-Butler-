@@ -5,6 +5,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
@@ -28,11 +29,18 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
 
   DateTime _selectedDate = DateTime.now();
   int? _selectedMood;
+  String _timezone = 'UTC';
   final List<String> _selectedHabits = [];
   bool _isSubmitting = false;
   bool _isListening = false;
   String _voiceTranscription = '';
   bool _shareAnonymously = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timezone = ref.read(timezoneStringProvider);
+  }
 
   @override
   void dispose() {
@@ -46,7 +54,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateFormatter.daysAgo(0, _timezone).add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -168,7 +176,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
           final allLogs = loggingState.value ?? [];
           if (allLogs.length >= 3) {
             // Get recent logs (last 7-14 days)
-            final now = DateTime.now();
+            final now = DateFormatter.daysAgo(0, _timezone);
             final recentLogs =
                 allLogs
                     .where(

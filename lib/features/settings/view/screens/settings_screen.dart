@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/viewmodel/providers/theme_provider.dart';
@@ -9,6 +10,7 @@ import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
+import '../../../socials/viewmodel/providers/follow_provider.dart';
 
 /// Modern settings screen with improved UI/UX
 class SettingsScreen extends ConsumerWidget {
@@ -52,6 +54,18 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           _buildNotificationsCard(context, theme, ref),
+          const SizedBox(height: 24),
+
+          // Privacy Section
+          _buildSectionHeader(
+            context,
+            theme,
+            icon: FontAwesomeIcons.shield.data,
+            title: 'Privacy',
+            subtitle: 'Control your visibility to followers',
+          ),
+          const SizedBox(height: 12),
+          _buildPrivacyCard(context, theme, ref, authState),
           const SizedBox(height: 24),
 
           // Account Section
@@ -163,6 +177,64 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyCard(
+    BuildContext context,
+    ThemeData theme,
+    WidgetRef ref,
+    dynamic authState,
+  ) {
+    final isPublicProfile = ref.watch(isPublicProfileProvider);
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: isPublicProfile.when(
+          data: (isPublic) => Column(
+            children: [
+              _buildModernListTile(
+                context,
+                theme,
+                icon: FontAwesomeIcons.earthAmericas.data,
+                iconColor: Colors.green,
+                title: 'Public Profile',
+                subtitle: isPublic
+                    ? 'Friends can see your habits and notes'
+                    : 'Friends can only see your mood emoji',
+                trailing: Switch(
+                  value: isPublic,
+                  onChanged: (value) async {
+                    if (authState.user != null) {
+                      await Supabase.instance.client
+                          .from('profiles')
+                          .update({'public_profile': value})
+                          .eq('id', authState.user!.id);
+                      ref.invalidate(isPublicProfileProvider);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          loading: () => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(child: ShimmerLoading(width: 24, height: 24)),
+          ),
+          error: (_, __) => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('Could not load privacy settings'),
+          ),
         ),
       ),
     );
