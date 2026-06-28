@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useSearchLogs } from '../../lib/use-search-logs'
-import { useTheme } from '../../lib/use-theme'
+import { useTheme, type Theme } from '../../lib/use-theme'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
 
@@ -55,7 +55,15 @@ export function AppShell() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
-  const { resolvedTheme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
+
+  const themeIcon: Record<Theme, string> = { light: '☀️', dark: '🌙', system: '🖥️' }
+  const themeNext: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' }
+  const themeAriaLabel: Record<Theme, string> = {
+    light: 'Switch to dark mode',
+    dark: 'Switch to system theme',
+    system: 'Switch to light mode',
+  }
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
@@ -162,7 +170,7 @@ export function AppShell() {
           </button>
         </div>
 
-        <nav className="shell-nav">
+        <nav className="shell-nav" aria-label="Main navigation">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -170,9 +178,10 @@ export function AppShell() {
               className={({ isActive }) =>
                 ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
               }
+              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' : undefined}
               onClick={() => setIsMobileDrawerOpen(false)}
             >
-              <span className="icon">{item.icon}</span>
+              <span className="icon" aria-hidden="true">{item.icon}</span>
               <span className="label">{item.label}</span>
             </NavLink>
           ))}
@@ -198,7 +207,8 @@ export function AppShell() {
             <button
               type="button"
               className="icon-btn mobile-only"
-              aria-label="Open navigation drawer"
+              aria-label={isMobileDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileDrawerOpen}
               onClick={() => setIsMobileDrawerOpen(true)}
             >
               ☰
@@ -313,10 +323,11 @@ export function AppShell() {
             <button
               type="button"
               className="icon-btn"
-              aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              aria-label={themeAriaLabel[theme]}
+              title={themeAriaLabel[theme]}
+              onClick={() => setTheme(themeNext[theme])}
             >
-              {resolvedTheme === 'dark' ? '☀️' : '🌙'}
+              {themeIcon[theme]}
             </button>
 
             <div style={{ position: 'relative' }}>

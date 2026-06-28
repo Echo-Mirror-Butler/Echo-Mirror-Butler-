@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   LineChart, Line, BarChart, Bar,
@@ -92,43 +93,146 @@ function buildHabitFrequency(entries: LogEntry[]): { habit: string; count: numbe
     .slice(0, 8)
 }
 
-function buildStreakDays(entries: LogEntry[]): Set<string> {
-  return new Set(entries.map((e) => e.date.slice(0, 10)))
+function buildStreakDays(entries: LogEntry[]): Map<string, number> {
+  const map = new Map<string, number>()
+  for (const e of entries) {
+    if (e.mood != null) {
+      map.set(e.date.slice(0, 10), e.mood)
+    } else {
+      map.set(e.date.slice(0, 10), 0)
+    }
+  }
+  return map
 }
 
-function StreakCalendar({ loggedDays }: { loggedDays: Set<string> }) {
+function StreakCalendar({ daysMap, weekCount: propWeekCount }: { daysMap: Map<string, number>; weekCount?: number }) {
+  const navigate = useNavigate()
+  const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const isMobile = width < 480
+  const weekCount = isMobile ? 8 : (propWeekCount ?? 12)
+
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+  const offsetToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+
+  const totalDays = weekCount * 7
+
   const cells = useMemo(() => {
-    const today = new Date()
-    const out: { dateStr: string; logged: boolean }[] = []
-    for (let i = 83; i >= 0; i--) {
+    const out: { dateStr: string; mood: number; logged: boolean }[] = []
+    for (let i = totalDays - 1; i >= 0; i--) {
       const d = new Date(today)
-      d.setDate(today.getDate() - i)
+      d.setDate(today.getDate() - i - offsetToMonday)
       const dateStr = d.toISOString().slice(0, 10)
-      out.push({ dateStr, logged: loggedDays.has(dateStr) })
+      const mood = daysMap.get(dateStr) ?? 0
+      out.push({ dateStr, mood, logged: mood > 0 })
     }
     return out
-  }, [loggedDays])
+  }, [daysMap, totalDays, offsetToMonday])
+
+  const dayHeaders = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+  function getMoodColor(mood: number, logged: boolean): string {
+    if (!logged) return 'var(--line)'
+    if (mood <= 2) return 'var(--pastel-blue, #a5b4fc)'
+    if (mood === 3) return 'var(--brand)'
+    return 'var(--brand)'
+  }
+
+  function getMoodOpacity(mood: number, logged: boolean): number {
+    if (!logged) return 0.3
+    if (mood <= 2) return 0.55
+    if (mood === 3) return 0.75
+    return 1
+  }
+
+  const brandColor = 'var(--brand)'
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(12, 1fr)',
-        gap: '3px',
-      }}
-    >
-      {cells.map(({ dateStr, logged }) => (
-        <div
-          key={dateStr}
-          title={dateStr}
-          style={{
-            aspectRatio: '1',
-            borderRadius: '3px',
-            background: logged ? 'var(--brand)' : 'var(--line)',
-            opacity: logged ? 1 : 0.5,
-          }}
-        />
-      ))}
+    <div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(7, 1fr)`,
+          gap: '3px',
+          marginBottom: '4px',
+        }}
+      >
+        {dayHeaders.map((day) => (
+          <div
+            key={day}
+            style={{
+              textAlign: 'center',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(7, 1fr)`,
+          gap: '3px',
+        }}
+      >
+        {cells.map(({ dateStr, mood, logged }) => {
+          const formattedDate = new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+          })
+
+          if (logged) {
+            return (
+              <div
+                key={dateStr}
+                role="button"
+                tabIndex={0}
+                aria-label={`View log for ${formattedDate}`}
+                title={dateStr}
+                onClick={() => navigate(`/logs?date=${dateStr}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    navigate(`/logs?date=${dateStr}`)
+                  }
+                }}
+                style={{
+                  aspectRatio: '1',
+                  borderRadius: '3px',
+                  background: getMoodColor(mood, true),
+                  opacity: getMoodOpacity(mood, true),
+                  cursor: 'pointer',
+                  transition: 'opacity 0.15s ease',
+                }}
+              />
+            )
+          }
+
+          return (
+            <div
+              key={dateStr}
+              aria-label={`${formattedDate} — no log`}
+              title={dateStr}
+              style={{
+                aspectRatio: '1',
+                borderRadius: '3px',
+                background: 'var(--line)',
+                opacity: 0.3,
+              }}
+            />
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -208,7 +312,7 @@ export function AnalyticsPage() {
   const bestDays = buildBestDayOfWeek(entries)
   const habitCorr = buildHabitCorrelation(entries)
   const habitFreq = buildHabitFrequency(entries)
-  const loggedDays = buildStreakDays(entries)
+  const daysMap = buildStreakDays(entries)
 
   return (
     <div className="page-wrap animate-stagger" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -317,9 +421,9 @@ export function AnalyticsPage() {
       {/* Streak calendar */}
       <section className="card">
         <h2 style={{ marginTop: 0 }}>Logging Streak — last 12 weeks</h2>
-        <StreakCalendar loggedDays={loggedDays} />
+        <StreakCalendar daysMap={daysMap} />
         <p className="muted" style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
-          {loggedDays.size} day{loggedDays.size !== 1 ? 's' : ''} logged in the past 12 weeks
+          {daysMap.size} day{daysMap.size !== 1 ? 's' : ''} logged
         </p>
       </section>
     </div>

@@ -53,5 +53,15 @@ export type Insight = {
   best_time_of_day?: string | null
   worst_time_of_day?: string | null
   recommendations?: string[]
+  mood_score?: number
+  personal_note?: string
   created_at: string
 }
+
+export type InsightAction = {
+  insight_id: string
+  recommendation_index: number
+  followed: boolean
+  created_at?: string
+}
+

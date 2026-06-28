@@ -1,4 +1,5 @@
 import '../../../logging/data/models/log_entry_model.dart';
+import '../../../../core/utils/date_formatter.dart';
 
 /// Model for mood analytics calculations
 class MoodAnalyticsModel {
@@ -28,10 +29,11 @@ class MoodAnalyticsModel {
   static int computeStreak(
     List<LogEntryModel> entries, {
     DateTime? referenceDate,
+    String timezone = 'UTC',
   }) {
     if (entries.isEmpty) return 0;
 
-    final refDate = referenceDate ?? DateTime.now();
+    final refDate = referenceDate ?? DateFormatter.daysAgo(0, timezone);
     final ref = DateTime(refDate.year, refDate.month, refDate.day);
 
     // Get unique dates with non-null mood, normalized to midnight
@@ -53,7 +55,7 @@ class MoodAnalyticsModel {
   }
 
   /// Create analytics from log entries
-  factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries) {
+  factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries, {String timezone = 'UTC'}) {
     if (entries.isEmpty) {
       return const MoodAnalyticsModel(
         averageMood: 0,
@@ -78,7 +80,7 @@ class MoodAnalyticsModel {
     }
 
     // Calculate trends
-    final now = DateTime.now();
+    final now = DateFormatter.daysAgo(0, timezone);
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
@@ -92,7 +94,7 @@ class MoodAnalyticsModel {
             )
             .toList()
           ..sort((a, b) => a.date.compareTo(b.date));
-    final weeklyTrend = _calculateTrend(weeklyEntries, 7);
+    final weeklyTrend = _calculateTrend(weeklyEntries, 7, timezone: timezone);
 
     // Monthly trend (last 30 days)
     final monthlyEntries =
@@ -104,7 +106,7 @@ class MoodAnalyticsModel {
             )
             .toList()
           ..sort((a, b) => a.date.compareTo(b.date));
-    final monthlyTrend = _calculateTrend(monthlyEntries, 30);
+    final monthlyTrend = _calculateTrend(monthlyEntries, 30, timezone: timezone);
 
     // Calculate weekly and monthly averages
     final weeklyMoods = weeklyEntries
@@ -151,16 +153,17 @@ class MoodAnalyticsModel {
   /// Calculate trend data points for a given period
   static List<MoodDataPoint> _calculateTrend(
     List<MoodEntry> entries,
-    int days,
-  ) {
+    int days, {
+    String timezone = 'UTC',
+  }) {
     final trend = <MoodDataPoint>[];
-    final now = DateTime.now();
+    final today = DateFormatter.daysAgo(0, timezone);
 
     for (int i = days - 1; i >= 0; i--) {
       final date = DateTime(
-        now.year,
-        now.month,
-        now.day,
+        today.year,
+        today.month,
+        today.day,
       ).subtract(Duration(days: i));
       final normalizedDate = DateTime(date.year, date.month, date.day);
 

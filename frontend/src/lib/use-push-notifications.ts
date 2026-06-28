@@ -95,14 +95,24 @@ export function usePushNotifications(userId: string | undefined) {
   const [prefs, setPrefs] = useState<PushPrefs>({ enabled: false, reminderTime: '09:00' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // null = checking, true = available, false = unavailable (HTTP / private browsing)
+  const [swAvailable, setSwAvailable] = useState<boolean | null>(null)
+  const [subscriptionExpired, setSubscriptionExpired] = useState(false)
 
-  // Check current permission state on mount
+  // Check current permission state and SW availability on mount
   useEffect(() => {
     if (!('Notification' in window)) {
       setPermissionState('unsupported')
+      setSwAvailable(false)
       return
     }
     setPermissionState(Notification.permission as PushPermissionState)
+
+    if (!('serviceWorker' in navigator) || !window.isSecureContext) {
+      setSwAvailable(false)
+    } else {
+      setSwAvailable(true)
+    }
   }, [])
 
   // Load saved prefs
@@ -111,12 +121,25 @@ export function usePushNotifications(userId: string | undefined) {
     fetchUserPrefs(userId).then(setPrefs)
   }, [userId])
 
+  // Detect expired subscriptions: DB says enabled but no active SW push subscription
+  useEffect(() => {
+    if (!userId || !prefs.enabled || !('serviceWorker' in navigator)) return
+    navigator.serviceWorker
+      .getRegistration('/sw.js')
+      .then(async (reg) => {
+        if (!reg) { setSubscriptionExpired(true); return }
+        const sub = await reg.pushManager.getSubscription()
+        setSubscriptionExpired(!sub)
+      })
+      .catch(() => {})
+  }, [userId, prefs.enabled])
+
   const subscribe = useCallback(
-    async (reminderTime: string) => {
-      if (!userId) return
+    async (reminderTime: string): Promise<boolean> => {
+      if (!userId) return false
       if (!('Notification' in window) || !('serviceWorker' in navigator)) {
         setPermissionState('unsupported')
-        return
+        return false
       }
 
       setLoading(true)
@@ -129,14 +152,14 @@ export function usePushNotifications(userId: string | undefined) {
 
         if (permission !== 'granted') {
           setError('Notification permission was denied. You can enable it in your browser settings.')
-          return
+          return false
         }
 
         const sw = await getOrRegisterSW()
-        if (!sw) throw new Error('Service worker registration failed.')
+        if (!sw) throw new Error('Service worker could not be registered. Try reloading the page.')
 
         if (!VAPID_PUBLIC_KEY) {
-          throw new Error('VAPID public key not configured (VITE_VAPID_PUBLIC_KEY).')
+          throw new Error('Push notifications are not configured (missing VAPID key).')
         }
 
         const sub = await sw.pushManager.subscribe({
@@ -146,8 +169,12 @@ export function usePushNotifications(userId: string | undefined) {
 
         await saveSubscriptionToSupabase(userId, sub, reminderTime)
         setPrefs({ enabled: true, reminderTime })
+        setSubscriptionExpired(false)
+        return true
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to enable notifications.')
+        const message = err instanceof Error ? err.message : 'Failed to enable notifications.'
+        setError(message)
+        return false
       } finally {
         setLoading(false)
       }
@@ -170,6 +197,7 @@ export function usePushNotifications(userId: string | undefined) {
         }
       }
       setPrefs((prev) => ({ ...prev, enabled: false }))
+      setSubscriptionExpired(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disable notifications.')
     } finally {
@@ -198,5 +226,15 @@ export function usePushNotifications(userId: string | undefined) {
     [userId],
   )
 
-  return { permissionState, prefs, loading, error, subscribe, unsubscribe, updateReminderTime }
+  return {
+    permissionState,
+    prefs,
+    loading,
+    error,
+    swAvailable,
+    subscriptionExpired,
+    subscribe,
+    unsubscribe,
+    updateReminderTime,
+  }
 }

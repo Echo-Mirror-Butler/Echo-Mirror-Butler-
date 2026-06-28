@@ -3,6 +3,16 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../../lib/supabase'
 import '../../landing/landing-page.css'
 
+function getPasswordStrength(password: string): { score: number; label: string } {
+  if (password.length < 8) return { score: 0, label: 'Weak' }
+  const hasLetter = /[a-zA-Z]/.test(password)
+  const hasNumber = /[0-9]/.test(password)
+  const hasSymbol = /[^a-zA-Z0-9]/.test(password)
+  const types = [hasLetter, hasNumber, hasSymbol].filter(Boolean).length
+  if (types >= 2) return { score: 2, label: 'Strong' }
+  return { score: 1, label: 'Fair' }
+}
+
 export function SignupPage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
@@ -87,6 +97,12 @@ export function SignupPage() {
               <label className="lp-auth-label" htmlFor="su-pass">Password</label>
               <input id="su-pass" className="lp-auth-input" type="password" required
                 value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" autoComplete="new-password" />
+              {password.length > 0 && (
+                <div className="ps-bar">
+                  <div className="ps-bar-fill" data-strength={['weak', 'fair', 'strong'][getPasswordStrength(password).score]} style={{ width: `${((getPasswordStrength(password).score + 1) / 3) * 100}%` }} />
+                  <span className="ps-label" data-strength={['weak', 'fair', 'strong'][getPasswordStrength(password).score]}>{getPasswordStrength(password).label}</span>
+                </div>
+              )}
             </div>
 
             {error && <div className="lp-auth-error">{error}</div>}
