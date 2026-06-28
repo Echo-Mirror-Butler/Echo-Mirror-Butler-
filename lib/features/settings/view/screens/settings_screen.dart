@@ -277,15 +277,14 @@ class SettingsScreen extends ConsumerWidget {
                         ref.invalidate(notificationTimeProvider);
                       }
                     },
-                    ),
-                  ],
-                  Divider(
-                    height: 1,
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
                   ),
-                  _buildWeeklyDigestTile(context, theme, ref),
                 ],
-              ),
+                Divider(
+                  height: 1,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                ),
+                _buildWeeklyDigestTile(context, theme, ref),
+              ],
             ),
           ),
           loading: () => Padding(
