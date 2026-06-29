@@ -17,7 +17,8 @@ class DailyLogStatusBanner extends ConsumerWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    final LogEntryModel? todayEntry = entries.cast<LogEntryModel?>().firstWhere(
+    final LogEntryModel? todayEntry =
+        entries.cast<LogEntryModel?>().firstWhere(
       (e) {
         if (e == null) return false;
         final local = e.date.isUtc ? e.date.toLocal() : e.date;
@@ -35,7 +36,10 @@ class DailyLogStatusBanner extends ConsumerWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           child: Row(
             children: [
               const Icon(
@@ -44,7 +48,7 @@ class DailyLogStatusBanner extends ConsumerWidget {
                 size: 22,
               ),
               const SizedBox(width: 10),
-              Text(
+              const Text(
                 '✓ Logged today',
                 style: TextStyle(
                   color: AppTheme.successColor,
