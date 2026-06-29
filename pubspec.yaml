@@ -1,6 +1,6 @@
 name: echomirror
 description: "EchoMirror Butler - A personal growth assistant with daily logging, AI predictions, and automated habit tweaks."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+8
 environment:
@@ -68,6 +68,8 @@ dependencies:
   wakelock_plus: ^1.2.8
   # Icons
   cupertino_icons: ^1.0.8
+  # Deep Linking
+  app_links: ^6.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -84,11 +86,11 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 
 flutter_native_splash:
-  color: '#0c1a2e'
+  color: "#0c1a2e"
   image: assets/splash_logo.png
   android_12:
     image: assets/splash_logo.png
-    color: '#0c1a2e'
+    color: "#0c1a2e"
 
 flutter_launcher_icons:
   android: true
@@ -100,7 +102,7 @@ flutter_launcher_icons:
   image_path: assets/icon/icon.png
   image_path_android: assets/icon/icon.png
   remove_alpha_ios: true
-  adaptive_icon_background: '#0c1a2e'
+  adaptive_icon_background: "#0c1a2e"
   adaptive_icon_foreground: assets/icon/icon_foreground.png
 
 flutter:
