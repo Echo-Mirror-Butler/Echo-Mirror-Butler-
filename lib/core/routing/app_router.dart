@@ -24,7 +24,7 @@ import '../../features/global_mirror/view/screens/wallet_screen.dart';
 import '../../features/profile/view/screens/profile_screen.dart';
 import '../../features/habits/view/screens/habits_screen.dart';
 
-/// Refresh notifier for GoRouter
+/// Refresh notifier for GoRouter.
 class GoRouterRefreshNotifier extends ChangeNotifier {
   GoRouterRefreshNotifier(this.ref) {
     ref.listen(
@@ -32,10 +32,11 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
       (_, _) => notifyListeners(),
     );
   }
+
   final Ref ref;
 }
 
-/// App router configuration with GoRouter
+/// App router configuration with GoRouter.
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = GoRouterRefreshNotifier(ref);
   return GoRouter(
@@ -54,7 +55,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isVerifyEmail = state.matchedLocation == '/verify-email';
       final isAuthRoute = isLoggingIn || isSigningUp;
 
-      // /verify-email is always accessible — no redirect applied
+      // /verify-email is always accessible — no redirect applied.
       if (isVerifyEmail) return null;
 
       bool onboardingCompleted = false;
@@ -66,15 +67,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         onboardingCompleted = false;
       }
 
-      if (!onboardingCompleted && !isOnboarding) {
-        return '/onboarding';
-      }
-      if (onboardingCompleted && isOnboarding) {
-        return '/login';
-      }
-      if (isAuthenticated && isAuthRoute) {
-        return '/dashboard';
-      }
+      if (!onboardingCompleted && !isOnboarding) return '/onboarding';
+      if (onboardingCompleted && isOnboarding) return '/login';
+      if (isAuthenticated && isAuthRoute) return '/dashboard';
       if (!isAuthenticated && !isAuthRoute && !isOnboarding) {
         return '/login';
       }
@@ -170,7 +165,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         name: 'notifications',
-        builder: (context, state) => const MoodCommentNotificationsScreen(),
+        builder: (context, state) =>
+            const MoodCommentNotificationsScreen(),
       ),
       GoRoute(
         path: '/breathing',
@@ -180,7 +176,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/music-recommendations',
         name: 'music-recommendations',
-        builder: (context, state) => const MusicRecommendationsScreen(),
+        builder: (context, state) =>
+            const MusicRecommendationsScreen(),
       ),
       GoRoute(
         path: '/wallet',
@@ -190,8 +187,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/gift/:userId',
         name: 'gift',
-        builder: (context, state) =>
-            GiftScreen(recipientUserId: state.pathParameters['userId']!),
+        builder: (context, state) => GiftScreen(
+          recipientUserId: state.pathParameters['userId']!,
+        ),
       ),
       GoRoute(
         path: '/profile',
