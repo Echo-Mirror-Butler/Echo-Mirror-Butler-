@@ -7,6 +7,7 @@ import { LandingPage } from '../features/landing/LandingPage'
 import { SignupPage } from '../features/auth/pages/SignupPage'
 import { ResetPasswordPage } from '../features/auth/pages/ResetPasswordPage'
 import { UpdatePasswordPage } from '../features/auth/pages/UpdatePasswordPage'
+import { AuthCallbackPage } from '../features/auth/pages/AuthCallbackPage'
 import { ErrorBoundary } from '../components/error-boundary'
 import { RouteErrorBoundary } from '../components/RouteErrorBoundary'
 import { useAuth } from '../lib/auth-context'
@@ -175,6 +176,15 @@ export function AppRouter() {
           element={
             <RouteErrorBoundary routeName="Update Password">
               <UpdatePasswordPage />
+            </RouteErrorBoundary>
+          }
+        />
+
+        <Route
+          path="/auth/callback"
+          element={
+            <RouteErrorBoundary routeName="Auth Callback">
+              <AuthCallbackPage />
             </RouteErrorBoundary>
           }
         />

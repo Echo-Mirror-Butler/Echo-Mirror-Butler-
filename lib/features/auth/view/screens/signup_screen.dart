@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/error_handler.dart';
@@ -155,7 +156,56 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+                  // OAuth buttons
+                  OutlinedButton.icon(
+                    onPressed: (authState.isLoading || _isProcessingSignup)
+                        ? null
+                        : () => ref
+                            .read(authProvider.notifier)
+                            .signInWithOAuth(OAuthProvider.google),
+                    icon: const FaIcon(FontAwesomeIcons.google, size: 18),
+                    label: const Text('Continue with Google'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: (authState.isLoading || _isProcessingSignup)
+                        ? null
+                        : () => ref
+                            .read(authProvider.notifier)
+                            .signInWithOAuth(OAuthProvider.github),
+                    icon: const FaIcon(FontAwesomeIcons.github, size: 18),
+                    label: const Text('Continue with GitHub'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or sign up with email',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   CustomTextField(
                     controller: _nameController,
                     label: 'Name (optional)',
