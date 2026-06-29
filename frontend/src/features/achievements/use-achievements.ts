@@ -1,15 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { ACHIEVEMENTS } from './achievements'
-
-interface UserAchievement {
-  id: string
-  user_id: string
-  achievement_id: string
-  unlocked_at: string
-}
 
 async function fetchUserAchievements(userId: string): Promise<Set<string>> {
   const { data, error } = await supabase

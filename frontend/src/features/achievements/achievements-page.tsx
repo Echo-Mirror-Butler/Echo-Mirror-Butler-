@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
-import { ACHIEVEMENTS, type Achievement } from './achievements'
+import { ACHIEVEMENTS } from './achievements'
 import { formatDate } from '../../lib/date'
 
 interface UserAchievement {

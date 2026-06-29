@@ -1,4 +1,5 @@
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AuthProvider, useAuth } from './auth-context'
 import type { Session, User } from '@supabase/supabase-js'

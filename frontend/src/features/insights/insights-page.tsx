@@ -11,7 +11,7 @@
  * - Skeleton loaders during fetch
  * - Mobile-friendly layout
  */
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -242,7 +242,7 @@ async function generateInsight(userId: string, recentLogs: LogEntry[], previousF
     best_time_of_day: normalized.bestTimeOfDay ?? inferTimeOfDay(normalized.prediction),
     worst_time_of_day: normalized.worstTimeOfDay ?? null,
     recommendations: normalized.recommendations ?? normalized.suggestions,
-    mood_score: normalized.moodScore ?? null,
+    mood_score: normalized.moodScore ?? undefined,
     created_at: createdAt,
   }
 
@@ -283,7 +283,7 @@ function InsightSkeleton() {
   )
 }
 
-function MoodDriversChart({ drivers, prediction }: { drivers: { label: string; percentage: number }[]; prediction?: string }) {
+function MoodDriversChart({ drivers }: { drivers: { label: string; percentage: number }[] }) {
   if (drivers.length === 0) {
     return (
       <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--surface-soft)', border: '1px dashed var(--line)', fontSize: '0.85rem', color: 'var(--muted)', fontStyle: 'italic' }}>
@@ -359,12 +359,10 @@ function TimeOfDayChip({ timeLabel }: { timeLabel: string }) {
 }
 
 function RecommendationCards({
-  insightId,
   recommendations,
   actions,
   onToggle
 }: {
-  insightId: string
   recommendations: string[]
   actions: InsightAction[]
   onToggle: (index: number, followed: boolean) => void
@@ -543,12 +541,10 @@ function PersonalNoteArea({
 function InsightComparisonModal({
   latest,
   previous,
-  actions,
   onClose
 }: {
   latest: Insight
   previous: Insight
-  actions: InsightAction[]
   onClose: () => void
 }) {
   const latestRecs = latest.recommendations?.length ? latest.recommendations : latest.suggestions ?? []
@@ -1059,7 +1055,7 @@ export function InsightsPage() {
               <p className="field-label" style={{ marginBottom: '0.6rem', fontWeight: 600 }}>
                 Mood Drivers
               </p>
-              <MoodDriversChart drivers={moodDrivers} prediction={currentInsight.prediction} />
+              <MoodDriversChart drivers={moodDrivers} />
             </div>
 
             {/* Driver Trends Chart */}
@@ -1087,7 +1083,6 @@ export function InsightsPage() {
                   Recommendations
                 </p>
                 <RecommendationCards
-                  insightId={currentInsight.id}
                   recommendations={recommendations}
                   actions={currentInsightActions}
                   onToggle={(index, followed) => toggleActionMutation.mutate({ insightId: currentInsight.id, index, followed })}
@@ -1235,7 +1230,6 @@ export function InsightsPage() {
                         <div>
                           <p className="field-label" style={{ fontWeight: 600, marginBottom: '0.4rem' }}>Recommendations</p>
                           <RecommendationCards
-                            insightId={insight.id}
                             recommendations={insightRecs}
                             actions={actionsForInsight}
                             onToggle={(index, followed) => toggleActionMutation.mutate({ insightId: insight.id, index, followed })}
@@ -1301,7 +1295,6 @@ export function InsightsPage() {
                     {insightRecs.length > 0 && (
                       <div style={{ margin: '0.25rem 0' }}>
                         <RecommendationCards
-                          insightId={insight.id}
                           recommendations={insightRecs}
                           actions={actionsForInsight}
                           onToggle={(index, followed) => toggleActionMutation.mutate({ insightId: insight.id, index, followed })}
@@ -1340,7 +1333,6 @@ export function InsightsPage() {
         <InsightComparisonModal
           latest={history[0]}
           previous={history[1]}
-          actions={actionsQuery.data ?? []}
           onClose={() => setCompareOpen(false)}
         />
       )}

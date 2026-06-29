@@ -10,8 +10,7 @@
  * - Toast notifications for success/error feedback
  * - Leaderboard privacy toggle
  */
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { useTheme } from '../../lib/use-theme'
@@ -520,9 +519,8 @@ function PasswordChangeSection() {
 type ExportFormat = 'json' | 'csv'
 
 export function SettingsPage() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { user, session, signOut } = useAuth()
+  const { user, session } = useAuth()
   const { theme, setTheme } = useTheme()
 
   const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, timezone: 'UTC', leaderboard_anonymous: false })
