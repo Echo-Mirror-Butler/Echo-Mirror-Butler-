@@ -23,6 +23,9 @@ import '../widgets/mood_streak_card.dart';
 import '../widgets/mood_trend_chart.dart';
 import '../widgets/echo_balance_card.dart';
 import '../../viewmodel/providers/mood_chart_provider.dart';
+import '../../viewmodel/providers/has_logged_today_provider.dart';
+import '../widgets/quick_check_in_widget.dart';
+import '../widgets/daily_log_status_banner.dart';
 
 /// Dashboard screen showing insights and predictions
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -64,6 +67,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
     final streakState = ref.watch(streakProvider);
+    final hasLoggedToday = ref.watch(hasLoggedTodayProvider);
     final theme = Theme.of(context);
 
     if (authState.isAuthenticated && authState.user != null) {
@@ -143,7 +147,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           dashboardState.when(
             data: (insights) {
               if (insights.isEmpty) {
-                return _buildEmptyState(context, theme, ref);
+                return _buildEmptyState(context, theme, ref, hasLoggedToday);
               }
 
               _checkMilestones(insights);
@@ -182,6 +186,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (hasLoggedToday)
+                        const DailyLogStatusBanner()
+                      else
+                        const QuickCheckInWidget(),
+                      const SizedBox(height: 8),
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
                       MoodStreakCard(streak: streakState.currentStreak),
@@ -329,6 +338,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     BuildContext context,
     ThemeData theme,
     WidgetRef ref,
+    bool hasLoggedToday,
   ) {
     return Center(
       child: SingleChildScrollView(
@@ -337,6 +347,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              if (hasLoggedToday)
+                const DailyLogStatusBanner()
+              else
+                const QuickCheckInWidget(),
+              const SizedBox(height: 8),
               Container(
                 width: 120,
                 height: 120,
