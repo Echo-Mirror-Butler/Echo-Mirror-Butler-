@@ -5,6 +5,7 @@ import { AppRouter } from './app/router'
 import { validateEnv } from './lib/env-validation'
 import { initializeGlobalErrorHandler } from './lib/global-error-handler'
 import './styles.css'
+import './error-ui.css'
 
 validateEnv()
 initializeGlobalErrorHandler()

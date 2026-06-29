@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const rawUrl = import.meta.env.VITE_SUPABASE_URL
+const rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env.local file.'
-  )
-}
+// Ensure we have a syntactically valid URL to prevent Supabase SDK initialization crash
+const isValidUrl = typeof rawUrl === 'string' && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))
+
+const supabaseUrl = isValidUrl ? rawUrl : 'https://placeholder-project.supabase.co'
+const supabaseAnonKey = typeof rawKey === 'string' && rawKey && rawKey !== 'your-supabase-anon-key-here' ? rawKey : 'placeholder-anon-key'
 
 // Use sessionStorage when the user has explicitly opted out of persistent sessions.
 // The preference is stored in localStorage so it survives tab close (but not browser restart).
