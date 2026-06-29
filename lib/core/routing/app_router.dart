@@ -12,6 +12,7 @@ import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
 import '../../features/logging/view/screens/create_entry_screen.dart';
 import '../../features/logging/view/screens/entry_detail_screen.dart';
 import '../../features/logging/data/models/log_entry_model.dart';
+import '../../features/logging/data/models/quick_check_in_data.dart';
 import '../../features/onboarding/view/screens/onboarding_screen.dart';
 import '../../features/onboarding/viewmodel/providers/onboarding_provider.dart';
 import '../../features/dashboard/view/screens/main_navigation_screen.dart';
@@ -137,7 +138,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/logging/create',
         name: 'create-entry',
-        builder: (context, state) => const CreateEntryScreen(),
+        builder: (context, state) {
+          final prefill = state.extra as QuickCheckInData?;
+          return CreateEntryScreen(prefill: prefill);
+        },
       ),
       GoRoute(
         path: '/logging/detail/:id',

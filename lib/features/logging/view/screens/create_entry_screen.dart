@@ -9,13 +9,16 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../data/models/log_entry_model.dart';
+import '../../data/models/quick_check_in_data.dart';
 import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/voice_input_button.dart';
 import '../../../global_mirror/viewmodel/providers/global_mirror_provider.dart';
 
 /// Screen for creating a new log entry
 class CreateEntryScreen extends ConsumerStatefulWidget {
-  const CreateEntryScreen({super.key});
+  const CreateEntryScreen({super.key, this.prefill});
+
+  final QuickCheckInData? prefill;
 
   @override
   ConsumerState<CreateEntryScreen> createState() => _CreateEntryScreenState();
@@ -33,6 +36,17 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
   bool _isListening = false;
   String _voiceTranscription = '';
   bool _shareAnonymously = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prefill != null) {
+      _selectedMood = widget.prefill!.mood;
+      if (widget.prefill!.note != null && widget.prefill!.note!.isNotEmpty) {
+        _notesController.text = widget.prefill!.note!;
+      }
+    }
+  }
 
   @override
   void dispose() {
