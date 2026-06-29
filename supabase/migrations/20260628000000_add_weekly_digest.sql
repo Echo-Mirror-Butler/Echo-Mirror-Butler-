@@ -1,0 +1,42 @@
+-- ============================================================
+-- Weekly mood summary email digest (opt-in)
+-- Adds weekly_digest toggle to profiles
+-- Schedules send-weekly-digest edge function via pg_cron
+-- ============================================================
+
+-- Add weekly_digest column to profiles (opt-in, default off)
+alter table public.profiles
+  add column if not exists weekly_digest boolean not null default false;
+
+-- pg_cron schedule for the send-weekly-digest edge function.
+-- Runs every Sunday at 09:00 UTC.
+-- Requires net extension (built-in) and service role key set as a custom DB param.
+--
+-- Deploy manually after setting app.settings.supa_url and app.settings.service_key:
+--
+--   select cron.schedule(
+--     'send-weekly-digest',
+--     '0 9 * * 0',
+--     $$
+--     select net.http_post(
+--       url := current_setting('app.settings.supa_url') || '/functions/v1/send-weekly-digest',
+--       headers := jsonb_build_object(
+--         'Content-Type', 'application/json',
+--         'Authorization', 'Bearer ' || current_setting('app.settings.service_key')
+--       )
+--     )
+--     $$
+--   );
+--
+-- Alternatively, use the Supabase Dashboard → SQL Editor to run:
+--
+--   select cron.schedule(
+--     'send-weekly-digest',
+--     '0 9 * * 0',
+--     $$
+--     select net.http_post(
+--       url := 'https://<project>.supabase.co/functions/v1/send-weekly-digest',
+--       headers := '{"Content-Type": "application/json", "Authorization": "Bearer <service_role_key>"}'::jsonb
+--     )
+--     $$
+--   );

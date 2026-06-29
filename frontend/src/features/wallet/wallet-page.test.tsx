@@ -7,7 +7,7 @@ import { ToastProvider } from '../../lib/use-toast'
 import { stellarConfig } from '../../lib/stellar-config'
 import { WalletPage } from './wallet-page'
 
-let mockFreighterInstalled = false
+let mockIsAppConnected = false
 let mockRequestAccessResult: { address: string; error: { message?: string } | null } = {
   address: '',
   error: null,
@@ -50,14 +50,10 @@ vi.mock('../../lib/supabase', () => ({
 }))
 
 vi.mock('@stellar/freighter-api', () => ({
+  isConnected: vi.fn(() => Promise.resolve({ isAppConnected: mockIsAppConnected })),
   requestAccess: vi.fn(() => Promise.resolve(mockRequestAccessResult)),
   getNetwork: vi.fn(() => Promise.resolve(mockGetNetworkResult)),
 }))
-
-Object.defineProperty(window, 'freighter', {
-  get: () => (mockFreighterInstalled ? {} : undefined),
-  configurable: true,
-})
 
 function createMockChain(data: unknown = null, error: unknown = null) {
   const chain = {
@@ -100,7 +96,7 @@ describe('WalletPage', () => {
     mockInvoke.mockClear()
     mockRpc.mockClear()
     mockRpc.mockResolvedValue({ data: null, error: null })
-    mockFreighterInstalled = false
+    mockIsAppConnected = false
     mockRequestAccessResult = { address: '', error: null }
     mockGetNetworkResult = {
       network: 'TESTNET',
@@ -137,7 +133,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = false
+    mockIsAppConnected = false
 
     const user = userEvent.setup()
     renderWalletPage()
@@ -162,7 +158,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = true
+    mockIsAppConnected = true
     mockRequestAccessResult = {
       address: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
       error: null,
@@ -185,6 +181,46 @@ describe('WalletPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Connected via Freighter')).toBeInTheDocument()
     })
+
+    expect(walletChain.upsert).toHaveBeenCalledWith(
+      { user_id: 'test-user-id', public_key: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD' },
+      { onConflict: 'user_id' },
+    )
+  })
+
+  test('disconnects by clearing the stored wallet key', async () => {
+    const walletChain = createMockChain({
+      id: 'wallet-1',
+      user_id: 'test-user-id',
+      public_key: null,
+      balance: 0,
+    })
+    mockFrom.mockReturnValue(walletChain)
+    mockIsAppConnected = true
+    mockRequestAccessResult = {
+      address: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
+      error: null,
+    }
+
+    const user = userEvent.setup()
+    renderWalletPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Connect Freighter')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('Connect Freighter'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Connected via Freighter')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('Disconnect'))
+
+    expect(walletChain.upsert).toHaveBeenLastCalledWith(
+      { user_id: 'test-user-id', public_key: null },
+      { onConflict: 'user_id' },
+    )
   })
 
   test('shows an error when the user rejects the Freighter connection request', async () => {
@@ -195,7 +231,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = true
+    mockIsAppConnected = true
     mockRequestAccessResult = {
       address: '',
       error: { message: 'User declined access' },
@@ -223,7 +259,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = true
+    mockIsAppConnected = true
     mockRequestAccessResult = {
       address: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
       error: null,

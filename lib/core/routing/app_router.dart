@@ -14,6 +14,7 @@ import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
 import '../../features/logging/view/screens/create_entry_screen.dart';
 import '../../features/logging/view/screens/entry_detail_screen.dart';
 import '../../features/logging/data/models/log_entry_model.dart';
+import '../../features/logging/data/models/quick_check_in_data.dart';
 import '../../features/onboarding/view/screens/onboarding_screen.dart';
 import '../../features/onboarding/viewmodel/providers/onboarding_provider.dart';
 import '../../features/dashboard/view/screens/main_navigation_screen.dart';
@@ -25,7 +26,7 @@ import '../../features/global_mirror/view/screens/wallet_screen.dart';
 import '../../features/profile/view/screens/profile_screen.dart';
 import '../../features/habits/view/screens/habits_screen.dart';
 
-/// Refresh notifier for GoRouter
+/// Refresh notifier for GoRouter.
 class GoRouterRefreshNotifier extends ChangeNotifier {
   GoRouterRefreshNotifier(this.ref) {
     ref.listen(
@@ -33,10 +34,11 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
       (_, _) => notifyListeners(),
     );
   }
+
   final Ref ref;
 }
 
-/// App router configuration with GoRouter
+/// App router configuration with GoRouter.
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = GoRouterRefreshNotifier(ref);
   return GoRouter(
@@ -68,15 +70,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         onboardingCompleted = false;
       }
 
-      if (!onboardingCompleted && !isOnboarding) {
-        return '/onboarding';
-      }
-      if (onboardingCompleted && isOnboarding) {
-        return '/login';
-      }
-      if (isAuthenticated && isAuthRoute) {
-        return '/dashboard';
-      }
+      if (!onboardingCompleted && !isOnboarding) return '/onboarding';
+      if (onboardingCompleted && isOnboarding) return '/login';
+      if (isAuthenticated && isAuthRoute) return '/dashboard';
       if (!isAuthenticated && !isAuthRoute && !isOnboarding) {
         return '/login';
       }
@@ -145,7 +141,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/logging/create',
         name: 'create-entry',
-        builder: (context, state) => const CreateEntryScreen(),
+        builder: (context, state) {
+          final prefill = state.extra as QuickCheckInData?;
+          return CreateEntryScreen(prefill: prefill);
+        },
       ),
       GoRoute(
         path: '/logging/detail/:id',
@@ -179,7 +178,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/notifications',
         name: 'notifications',
-        builder: (context, state) => const MoodCommentNotificationsScreen(),
+        builder: (context, state) =>
+            const MoodCommentNotificationsScreen(),
       ),
       GoRoute(
         path: '/breathing',
@@ -189,7 +189,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/music-recommendations',
         name: 'music-recommendations',
-        builder: (context, state) => const MusicRecommendationsScreen(),
+        builder: (context, state) =>
+            const MusicRecommendationsScreen(),
       ),
       GoRoute(
         path: '/wallet',
@@ -199,8 +200,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/gift/:userId',
         name: 'gift',
-        builder: (context, state) =>
-            GiftScreen(recipientUserId: state.pathParameters['userId']!),
+        builder: (context, state) => GiftScreen(
+          recipientUserId: state.pathParameters['userId']!,
+        ),
       ),
       GoRoute(
         path: '/profile',
