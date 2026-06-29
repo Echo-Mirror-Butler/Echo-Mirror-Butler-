@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
@@ -191,6 +191,17 @@ class DashboardRepository {
       }
 
       final result = response.data;
+      if (result is! Map) {
+        return [];
+      }
+
+      final prediction = result['prediction'] as String? ?? '';
+      final calmingMessage = result['calmingMessage'] as String? ?? '';
+      final now = _now();
+      final insights = <InsightModel>[];
+      if (prediction.trim().isNotEmpty) {
+        insights.add(InsightModel(
+          id: 'prediction-\${now.millisecondsSinceEpoch}',
       if (result is! Map<String, dynamic>) {
         debugPrint(
           '[DashboardRepository] getPredictions: unexpected response type',
@@ -213,6 +224,9 @@ class DashboardRepository {
           createdAt: now,
         ));
       }
+      if (calmingMessage.trim().isNotEmpty) {
+        insights.add(InsightModel(
+          id: 'calming-\${now.millisecondsSinceEpoch}',
 
       final suggestions = result['suggestions'];
       if (suggestions is List) {
@@ -356,3 +370,5 @@ class DashboardRepository {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }
+
+
