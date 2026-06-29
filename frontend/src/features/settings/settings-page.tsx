@@ -8,6 +8,7 @@
  * - Inline password change form with strength meter
  * - Data export with progress indicator
  * - Toast notifications for success/error feedback
+ * - Leaderboard privacy toggle
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -25,6 +26,7 @@ type Profile = {
   display_name: string | null
   avatar_url: string | null
   timezone: string
+  leaderboard_anonymous?: boolean
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -89,18 +91,19 @@ function passwordStrength(pw: string): { score: number; label: string; color: st
 async function fetchProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('display_name, avatar_url, timezone')
+    .select('display_name, avatar_url, timezone, leaderboard_anonymous')
     .eq('id', userId)
     .single()
 
   if (error || !data) {
-    return { display_name: null, avatar_url: null, timezone: 'UTC' }
+    return { display_name: null, avatar_url: null, timezone: 'UTC', leaderboard_anonymous: false }
   }
 
   return {
     display_name: (data as Record<string, unknown>).display_name as string | null,
     avatar_url: (data as Record<string, unknown>).avatar_url as string | null,
     timezone: ((data as Record<string, unknown>).timezone as string) ?? 'UTC',
+    leaderboard_anonymous: ((data as Record<string, unknown>).leaderboard_anonymous as boolean) ?? false,
   }
 }
 
@@ -522,7 +525,7 @@ export function SettingsPage() {
   const { user, session, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
 
-  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, timezone: 'UTC' })
+  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, timezone: 'UTC', leaderboard_anonymous: false })
   const [profileLoading, setProfileLoading] = useState(true)
   const [displayName, setDisplayName] = useState('')
   const [timezone, setTimezone] = useState('')
@@ -1060,6 +1063,44 @@ export function SettingsPage() {
         </div>
       </article>
 
+      {/* ── Leaderboard Privacy Section ── */}
+      <article className="card">
+        <div className="card-header">
+          <h3>🏆 Leaderboard</h3>
+        </div>
+        <div className="card-content">
+          <div className="flex items-center justify-between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <p className="font-medium text-gray-900 dark:text-gray-100" style={{ fontWeight: 500, margin: 0 }}>Show me on leaderboard</p>
+              <p className="text-sm text-gray-500" style={{ fontSize: '0.875rem', color: 'var(--muted)', margin: '4px 0 0 0' }}>Display your name on the weekly leaderboard</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!profile.leaderboard_anonymous}
+                onChange={async (e) => {
+                  const isAnonymous = !e.target.checked;
+                  try {
+                    const { error } = await supabase
+                      .from('profiles')
+                      .update({ leaderboard_anonymous: isAnonymous })
+                      .eq('id', user.id);
+                    if (error) throw error;
+                    setProfile((prev) => ({ ...prev, leaderboard_anonymous: isAnonymous }));
+                    showToast('Leaderboard visibility updated', 'success');
+                  } catch (err) {
+                    showToast('Failed to update leaderboard visibility', 'error');
+                  }
+                }}
+                className="sr-only peer"
+                style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" style={{ width: '2.75rem', height: '1.5rem', background: profile.leaderboard_anonymous ? 'var(--line)' : 'var(--brand)', borderRadius: '9999px', transition: 'background 0.2s' }}></div>
+            </label>
+          </div>
+        </div>
+      </article>
+
       {/* ── Data Export Section ── */}
       <article className="card">
         <div className="card-header">
@@ -1178,4 +1219,4 @@ export function SettingsPage() {
       `}</style>
     </section>
   )
-}
+} 
