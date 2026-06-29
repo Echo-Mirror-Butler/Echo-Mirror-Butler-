@@ -44,6 +44,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final success = await authNotifier.signInWithGoogle();
+    if (mounted && !success) {
+      final error = ref.read(authProvider).error;
+      ErrorHandler.showError(context, error ?? AppStrings.errorAuth);
+    }
+  }
+
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       debugPrint('[LoginScreen] Attempt login -> ${_emailController.text}');
@@ -176,6 +185,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     isLoading: authState.isLoading,
                     icon: FontAwesomeIcons.rightToBracket.data,
                   ),
+                  const SizedBox(height: 16),
+                  // Divider
+                  Row(children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('or', style: theme.textTheme.bodySmall),
+                    ),
+                    const Expanded(child: Divider()),
+                  ]),
+                  const SizedBox(height: 16),
+                  // Google sign-in button
+                  OutlinedButton.icon(
+                    onPressed: authState.isLoading ? null : _handleGoogleSignIn,
+                    icon: const _GoogleLogo(),
+                    label: const Text('Continue with Google'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   // Forgot password link
                   Align(
@@ -208,4 +238,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+}
+
+class _GoogleLogo extends StatelessWidget {
+  const _GoogleLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: CustomPaint(painter: _GoogleLogoPainter()),
+    );
+  }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width;
+    // Blue arc (right)
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, s, s),
+      -0.52, 3.14, false,
+      Paint()..color = const Color(0xFF4285F4)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+    );
+    // Red arc (top-left)
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, s, s),
+      -2.62, 1.57, false,
+      Paint()..color = const Color(0xFFEA4335)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+    );
+    // Yellow arc (bottom-left)
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, s, s),
+      2.09, 0.87, false,
+      Paint()..color = const Color(0xFFFBBC05)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+    );
+    // Green arc (bottom)
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, s, s),
+      2.62, 0.52, false,
+      Paint()..color = const Color(0xFF34A853)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+    );
+    // Horizontal bar
+    canvas.drawRect(
+      Rect.fromLTWH(s * 0.5, s * 0.38, s * 0.45, s * 0.18),
+      Paint()..color = const Color(0xFF4285F4),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
