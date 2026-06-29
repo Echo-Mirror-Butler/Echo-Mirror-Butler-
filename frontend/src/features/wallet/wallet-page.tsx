@@ -1,6 +1,7 @@
 ﻿import { FormEvent, useState } from 'react'
 import { FormEvent, useEffect, useState } from 'react'
 ﻿import { FormEvent, useEffect, useState } from 'react'
+﻿import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
@@ -261,12 +262,26 @@ function isValidStellarKey(key: string): boolean {
   return key.length === 56 && key.startsWith('G')
 }
 
-function isFreighterInstalled(): boolean {
-  return typeof window !== 'undefined' && Boolean((window as unknown as { freighter?: boolean }).freighter)
+function buildWalletQrUrl(publicKey: string, size = 256): string {
+  const params = new URLSearchParams({
+    size: ${size}x,
+    data: publicKey,
+  })
+  return https://api.qrserver.com/v1/create-qr-code/?
+}
+
+async function isFreighterInstalled(): Promise<boolean> {
+  try {
+    const { isConnected } = await import('@stellar/freighter-api')
+    const { isAppConnected } = await isConnected()
+    return Boolean(isAppConnected)
+  } catch {
+    return false
+  }
 }
 
 async function requestFreighterAccess(): Promise<string> {
-  if (!isFreighterInstalled()) {
+  if (!(await isFreighterInstalled())) {
     throw new Error('FREIGHTER_NOT_INSTALLED')
   }
   const { requestAccess, getNetwork } = await import('@stellar/freighter-api')
@@ -321,6 +336,7 @@ export function WalletPage() {
   const { showToast } = useToast()
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
+  const receiveCardRef = useRef<HTMLDivElement | null>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -334,7 +350,7 @@ export function WalletPage() {
   const [manualKeyInput, setManualKeyInput] = useState('')
   const [manualKeyError, setManualKeyError] = useState<string | null>(null)
   const [freighterStatus, setFreighterStatus] = useState<
-    'idle' | 'connecting' | 'not_installed' | 'error'
+    'idle' | 'connecting' | 'connected' | 'not_installed' | 'error'
   >('idle')
   const [freighterError, setFreighterError] = useState<string | null>(null)
   const [freighterAddress, setFreighterAddress] = useState<string | null>(null)
@@ -475,9 +491,58 @@ export function WalletPage() {
     try {
       await navigator.clipboard.writeText(publicKey)
       setCopiedWalletAddress(true)
+      showToast('Copied!', 'success')
       window.setTimeout(() => setCopiedWalletAddress(false), 1800)
     } catch {
       setInlineError('Could not copy wallet address.')
+      showToast('Could not copy wallet address.', 'error')
+    }
+  }
+
+  const handleDownloadQr = async () => {
+    if (!publicKey || !receiveCardRef.current) {
+      return
+    }
+
+    try {
+      const { toPng } = await import('html-to-image')
+      const dataUrl = await toPng(receiveCardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+      })
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = echo-wallet-.png
+      link.click()
+      showToast('QR downloaded.', 'success')
+    } catch {
+      showToast('Could not download QR code.', 'error')
+    }
+  }
+
+  const handleShareWalletAddress = async () => {
+    if (!publicKey) {
+      return
+    }
+
+    const shareText = Send ECHO to this Stellar address: + String.fromCharCode(10) + publicKey
+    const shareUrl = window.location.href
+
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share({
+          title: 'Receive ECHO',
+          text: shareText,
+          url: shareUrl,
+        })
+        return
+      }
+
+      await navigator.clipboard.writeText(${shareText} + String.fromCharCode(10) + shareUrl)
+      showToast('Copied to clipboard', 'success')
+    } catch {
+      showToast('Could not share wallet address.', 'error')
     }
   }
 
@@ -487,7 +552,7 @@ export function WalletPage() {
     try {
       const address = await requestFreighterAccess()
       setFreighterAddress(address)
-      setFreighterStatus('idle')
+      setFreighterStatus('connected')
       await savePublicKeyMutation.mutateAsync(address)
     } catch (err) {
       const msg = (err as Error).message ?? ''
@@ -497,6 +562,19 @@ export function WalletPage() {
         setFreighterStatus('error')
         setFreighterError(msg || 'Connection failed')
       }
+    }
+  }
+
+  const handleFreighterDisconnect = async () => {
+    setFreighterError(null)
+    try {
+      await removePublicKeyMutation.mutateAsync()
+      setFreighterAddress(null)
+      setFreighterStatus('idle')
+    } catch (err) {
+      const msg = (err as Error).message ?? ''
+      setFreighterStatus('error')
+      setFreighterError(msg || 'Could not disconnect wallet')
     }
   }
 
@@ -653,14 +731,9 @@ export function WalletPage() {
             <p className="balance-number">{walletQuery.data.balance.toFixed(2)} ECHO</p>
             <p className="muted">Public key: {walletQuery.data.record?.public_key.slice(0, 14)}â€¦</p>
             {publicKey ? (
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <p className="muted" style={{ margin: 0 }}>
-                  Public key: {publicKey.slice(0, 14)}...{publicKey.slice(-4)}
-                </p>
-                <button type="button" className="secondary" onClick={() => void handleCopyWalletAddress()}>
-                  {copiedWalletAddress ? 'Copied' : 'Copy'}
-                </button>
-              </div>
+              <p className="muted" style={{ margin: 0 }}>
+                Public key: {publicKey.slice(0, 14)}...{publicKey.slice(-4)}
+              </p>
             ) : (
               <p className="muted">Wallet row exists, but no Stellar public key is connected yet.</p>
             )}
@@ -681,6 +754,72 @@ export function WalletPage() {
           </div>
         )}
       </article>
+
+      {publicKey ? (
+        <article className="card">
+          <div className="card-header">
+            <h2>Receive ECHO</h2>
+          </div>
+
+          <div
+            ref={receiveCardRef}
+            style={{
+              display: 'grid',
+              gap: '1rem',
+              justifyItems: 'center',
+              padding: '1rem',
+              borderRadius: '1rem',
+              background: '#f8fafc',
+            }}
+          >
+            <img
+              src={buildWalletQrUrl(publicKey)}
+              alt="QR code for wallet address"
+              width={220}
+              height={220}
+              style={{
+                width: 'min(100%, 220px)',
+                height: 'auto',
+                borderRadius: '0.75rem',
+                background: '#ffffff',
+                padding: '0.75rem',
+                border: '1px solid #e5e7eb',
+              }}
+            />
+            <p className="muted" style={{ margin: 0, textAlign: 'center' }}>
+              Scan this code or copy the full Stellar public key below to receive ECHO.
+            </p>
+            <code
+              style={{
+                width: '100%',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+                userSelect: 'all',
+                borderRadius: '0.75rem',
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
+                padding: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: 1.5,
+              }}
+            >
+              {publicKey}
+            </code>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+            <button type="button" className="secondary" onClick={() => void handleCopyWalletAddress()}>
+              {copiedWalletAddress ? 'Copied!' : 'Copy address'}
+            </button>
+            <button type="button" className="secondary" onClick={() => void handleDownloadQr()}>
+              Download QR
+            </button>
+            <button type="button" className="secondary" onClick={() => void handleShareWalletAddress()}>
+              Share address
+            </button>
+          </div>
+        </article>
+      ) : null}
 
       {publicKey ? (
         <article className="card">
@@ -756,12 +895,10 @@ export function WalletPage() {
                 <button
                   type="button"
                   className="secondary"
-                  onClick={() => {
-                    setFreighterAddress(null)
-                    setFreighterStatus('idle')
-                  }}
+                  onClick={() => void handleFreighterDisconnect()}
+                  disabled={removePublicKeyMutation.isPending}
                 >
-                  Disconnect
+                  {removePublicKeyMutation.isPending ? 'Disconnecting...' : 'Disconnect'}
                 </button>
               </div>
             ) : freighterStatus === 'not_installed' ? (
@@ -1124,5 +1261,6 @@ export function WalletPage() {
     </section>
   )
 }
+
 
 

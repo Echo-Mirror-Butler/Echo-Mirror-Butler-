@@ -30,9 +30,10 @@ const navItems = [
   { icon: '✨', to: '/insights', label: 'AI Insights' },
   { icon: '📊', to: '/analytics', label: 'Analytics' },
   { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
+  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
   { icon: '💎', to: '/wallet', label: 'Wallet' },
   { icon: '⚙️', to: '/settings', label: 'Settings' },
-]
+];
 
 async function getUnreadNotificationsCount(userId: string): Promise<number> {
   const { count, error } = await supabase

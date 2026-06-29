@@ -8,6 +8,7 @@
  * - Inline password change form with strength meter
  * - Data export with progress indicator
  * - Toast notifications for success/error feedback
+ * - Leaderboard privacy toggle
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -17,6 +18,7 @@ import { useTheme } from '../../lib/use-theme'
 import { useToast } from '../../lib/use-toast'
 import { supabase } from '../../lib/supabase'
 import { NotificationPrefs } from '../notifications/notification-prefs'
+import { jsPDF } from 'jspdf'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -24,6 +26,7 @@ type Profile = {
   display_name: string | null
   avatar_url: string | null
   timezone: string
+  leaderboard_anonymous?: boolean
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -88,18 +91,19 @@ function passwordStrength(pw: string): { score: number; label: string; color: st
 async function fetchProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('display_name, avatar_url, timezone')
+    .select('display_name, avatar_url, timezone, leaderboard_anonymous')
     .eq('id', userId)
     .single()
 
   if (error || !data) {
-    return { display_name: null, avatar_url: null, timezone: 'UTC' }
+    return { display_name: null, avatar_url: null, timezone: 'UTC', leaderboard_anonymous: false }
   }
 
   return {
     display_name: (data as Record<string, unknown>).display_name as string | null,
     avatar_url: (data as Record<string, unknown>).avatar_url as string | null,
     timezone: ((data as Record<string, unknown>).timezone as string) ?? 'UTC',
+    leaderboard_anonymous: ((data as Record<string, unknown>).leaderboard_anonymous as boolean) ?? false,
   }
 }
 
@@ -521,7 +525,7 @@ export function SettingsPage() {
   const { user, session, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
 
-  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, timezone: 'UTC' })
+  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, timezone: 'UTC', leaderboard_anonymous: false })
   const [profileLoading, setProfileLoading] = useState(true)
   const [displayName, setDisplayName] = useState('')
   const [timezone, setTimezone] = useState('')
@@ -609,6 +613,231 @@ export function SettingsPage() {
       showToast('Export downloaded', 'success')
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Export failed', 'error')
+    } finally {
+      setExportLoading(false)
+      setExportProgress(null)
+    }
+  }
+
+  const handleExportPDF = async () => {
+    setExportError(null)
+    setExportLoading(true)
+    setExportProgress('Building your PDF… fetching entries')
+
+    try {
+      const { data: entries, error: entriesErr } = await supabase
+        .from('log_entries')
+        .select('date, mood, habits, notes')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(300)
+      if (entriesErr) throw entriesErr
+
+      setExportProgress('Building your PDF… fetching insights')
+      const { data: insights, error: insightsErr } = await supabase
+        .from('insights')
+        .select('prediction, suggestions, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3)
+      if (insightsErr) throw insightsErr
+
+      setExportProgress('Building your PDF… finishing')
+
+      const MOOD_EMOJI: Record<number, string> = { 1: '😢', 2: '😕', 3: '😐', 4: '🙂', 5: '😄' }
+      const safeEntries = entries ?? []
+      const safeInsights = insights ?? []
+
+      const totalEntries = safeEntries.length
+      const avgMood =
+        totalEntries > 0
+          ? (
+              safeEntries.filter((e) => e.mood != null).reduce((s, e) => s + (e.mood ?? 0), 0) /
+              safeEntries.filter((e) => e.mood != null).length
+            ).toFixed(2)
+          : 'N/A'
+      const dateRange =
+        totalEntries > 0
+          ? `${safeEntries[safeEntries.length - 1].date} → ${safeEntries[0].date}`
+          : 'No entries'
+
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+      const W = doc.internal.pageSize.getWidth()
+      const H = doc.internal.pageSize.getHeight()
+      const margin = 48
+      const contentW = W - margin * 2
+      const BRAND = [20, 99, 255] as const
+      const FOOTER_TEXT = 'Generated locally by EchoMirror — your data never left your device'
+
+      const addFooter = () => {
+        doc.setFontSize(8)
+        doc.setTextColor(120, 130, 145)
+        doc.text(FOOTER_TEXT, W / 2, H - 20, { align: 'center' })
+      }
+
+      // ── Cover page ──────────────────────────────────────────
+      doc.setFillColor(...BRAND)
+      doc.rect(0, 0, W, 6, 'F')
+
+      doc.setFontSize(28)
+      doc.setTextColor(...BRAND)
+      doc.setFont('helvetica', 'bold')
+      doc.text('EchoMirror', margin, 80)
+
+      doc.setFontSize(16)
+      doc.setTextColor(30, 40, 55)
+      doc.setFont('helvetica', 'normal')
+      doc.text('Mood Journal Export', margin, 108)
+
+      doc.setDrawColor(210, 220, 235)
+      doc.line(margin, 122, W - margin, 122)
+
+      const coverFields = [
+        ['Email', user.email ?? ''],
+        ['Date range', dateRange],
+        ['Total entries', String(totalEntries)],
+        ['Average mood', avgMood],
+      ]
+      let y = 152
+      for (const [label, value] of coverFields) {
+        doc.setFontSize(10)
+        doc.setTextColor(90, 100, 115)
+        doc.setFont('helvetica', 'bold')
+        doc.text(label, margin, y)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(30, 40, 55)
+        doc.text(value, margin + 120, y)
+        y += 24
+      }
+
+      addFooter()
+
+      // ── Mood distribution page ──────────────────────────────
+      doc.addPage()
+      doc.setFillColor(...BRAND)
+      doc.rect(0, 0, W, 6, 'F')
+
+      doc.setFontSize(16)
+      doc.setTextColor(...BRAND)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Mood Distribution', margin, 50)
+
+      const moodCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+      for (const e of safeEntries) {
+        if (e.mood != null) moodCounts[e.mood] = (moodCounts[e.mood] ?? 0) + 1
+      }
+      const maxCount = Math.max(...Object.values(moodCounts), 1)
+      const barMaxW = contentW - 60
+      y = 80
+      const emojiMap: Record<number, string> = { 1: '1 Terrible', 2: '2 Bad', 3: '3 Okay', 4: '4 Good', 5: '5 Great' }
+      for (let score = 1; score <= 5; score++) {
+        const count = moodCounts[score]
+        const barW = (count / maxCount) * barMaxW
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(30, 40, 55)
+        doc.text(emojiMap[score], margin, y + 10)
+        doc.setFillColor(...BRAND)
+        if (barW > 0) doc.rect(margin + 68, y - 2, barW, 14, 'F')
+        doc.setTextColor(80, 90, 105)
+        doc.text(String(count), margin + 68 + barW + 6, y + 10)
+        y += 28
+      }
+
+      addFooter()
+
+      // ── Entries pages (10 per page) ─────────────────────────
+      const PAGE_SIZE = 10
+      const pages = Math.ceil(safeEntries.length / PAGE_SIZE)
+      for (let p = 0; p < pages; p++) {
+        doc.addPage()
+        doc.setFillColor(...BRAND)
+        doc.rect(0, 0, W, 6, 'F')
+
+        doc.setFontSize(14)
+        doc.setTextColor(...BRAND)
+        doc.setFont('helvetica', 'bold')
+        doc.text(`Mood Entries (${p + 1}/${pages})`, margin, 46)
+
+        y = 72
+        const slice = safeEntries.slice(p * PAGE_SIZE, (p + 1) * PAGE_SIZE)
+        for (const entry of slice) {
+          if (y > H - 80) break
+          const emoji = entry.mood != null ? (MOOD_EMOJI[entry.mood] ?? String(entry.mood)) : '—'
+          doc.setFontSize(10)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(30, 40, 55)
+          doc.text(`${entry.date}  ${emoji}`, margin, y)
+
+          if (Array.isArray(entry.habits) && entry.habits.length > 0) {
+            doc.setFont('helvetica', 'normal')
+            doc.setFontSize(9)
+            doc.setTextColor(70, 90, 115)
+            const habitsLine = entry.habits.join(', ')
+            const wrapped = doc.splitTextToSize(habitsLine, contentW)
+            doc.text(wrapped, margin, y + 13)
+            y += 13 * wrapped.length
+          }
+
+          if (entry.notes) {
+            doc.setFont('helvetica', 'italic')
+            doc.setFontSize(9)
+            doc.setTextColor(90, 100, 115)
+            const noteLines = doc.splitTextToSize(entry.notes, contentW)
+            doc.text(noteLines, margin, y + 13)
+            y += 13 * noteLines.length
+          }
+
+          doc.setDrawColor(220, 228, 240)
+          doc.line(margin, y + 16, W - margin, y + 16)
+          y += 28
+        }
+
+        addFooter()
+      }
+
+      // ── AI Insights page ────────────────────────────────────
+      if (safeInsights.length > 0) {
+        doc.addPage()
+        doc.setFillColor(...BRAND)
+        doc.rect(0, 0, W, 6, 'F')
+
+        doc.setFontSize(14)
+        doc.setTextColor(...BRAND)
+        doc.setFont('helvetica', 'bold')
+        doc.text('AI Insights', margin, 46)
+
+        y = 72
+        for (const insight of safeInsights) {
+          if (y > H - 80) break
+          doc.setFontSize(10)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(30, 40, 55)
+          const predLines = doc.splitTextToSize(insight.prediction ?? '', contentW)
+          doc.text(predLines, margin, y)
+          y += 14 * predLines.length + 4
+
+          if (Array.isArray(insight.suggestions)) {
+            doc.setFont('helvetica', 'normal')
+            doc.setFontSize(9)
+            doc.setTextColor(70, 90, 115)
+            for (const s of insight.suggestions.slice(0, 3)) {
+              const sLines = doc.splitTextToSize(`• ${s}`, contentW - 12)
+              doc.text(sLines, margin + 8, y)
+              y += 13 * sLines.length
+            }
+          }
+
+          y += 16
+        }
+
+        addFooter()
+      }
+
+      doc.save('echomirror-journal.pdf')
+      showToast('PDF downloaded', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'PDF export failed', 'error')
     } finally {
       setExportLoading(false)
       setExportProgress(null)
@@ -834,6 +1063,44 @@ export function SettingsPage() {
         </div>
       </article>
 
+      {/* ── Leaderboard Privacy Section ── */}
+      <article className="card">
+        <div className="card-header">
+          <h3>🏆 Leaderboard</h3>
+        </div>
+        <div className="card-content">
+          <div className="flex items-center justify-between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <p className="font-medium text-gray-900 dark:text-gray-100" style={{ fontWeight: 500, margin: 0 }}>Show me on leaderboard</p>
+              <p className="text-sm text-gray-500" style={{ fontSize: '0.875rem', color: 'var(--muted)', margin: '4px 0 0 0' }}>Display your name on the weekly leaderboard</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!profile.leaderboard_anonymous}
+                onChange={async (e) => {
+                  const isAnonymous = !e.target.checked;
+                  try {
+                    const { error } = await supabase
+                      .from('profiles')
+                      .update({ leaderboard_anonymous: isAnonymous })
+                      .eq('id', user.id);
+                    if (error) throw error;
+                    setProfile((prev) => ({ ...prev, leaderboard_anonymous: isAnonymous }));
+                    showToast('Leaderboard visibility updated', 'success');
+                  } catch (err) {
+                    showToast('Failed to update leaderboard visibility', 'error');
+                  }
+                }}
+                className="sr-only peer"
+                style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" style={{ width: '2.75rem', height: '1.5rem', background: profile.leaderboard_anonymous ? 'var(--line)' : 'var(--brand)', borderRadius: '9999px', transition: 'background 0.2s' }}></div>
+            </label>
+          </div>
+        </div>
+      </article>
+
       {/* ── Data Export Section ── */}
       <article className="card">
         <div className="card-header">
@@ -854,9 +1121,19 @@ export function SettingsPage() {
               </button>
             ))}
           </div>
-          <button type="button" onClick={() => void handleExport()} disabled={exportLoading}>
-            {exportLoading ? exportProgress ?? 'Exporting…' : 'Export my data'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => void handleExport()} disabled={exportLoading}>
+              {exportLoading ? exportProgress ?? 'Exporting…' : 'Export my data'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleExportPDF()}
+              disabled={exportLoading}
+              style={{ background: 'transparent', color: 'var(--brand)', border: '1.5px solid var(--brand)' }}
+            >
+              {exportLoading ? exportProgress ?? 'Building PDF…' : 'Export as PDF'}
+            </button>
+          </div>
           {exportError && <p className="error-text">{exportError}</p>}
         </div>
       </article>
@@ -942,4 +1219,4 @@ export function SettingsPage() {
       `}</style>
     </section>
   )
-}
+} 

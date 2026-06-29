@@ -7,7 +7,7 @@ import { ToastProvider } from '../../lib/use-toast'
 import { stellarConfig } from '../../lib/stellar-config'
 import { WalletPage } from './wallet-page'
 
-let mockFreighterInstalled = false
+let mockIsAppConnected = false
 let mockRequestAccessResult: { address: string; error: { message?: string } | null } = {
   address: '',
   error: null,
@@ -50,14 +50,10 @@ vi.mock('../../lib/supabase', () => ({
 }))
 
 vi.mock('@stellar/freighter-api', () => ({
+  isConnected: vi.fn(() => Promise.resolve({ isAppConnected: mockIsAppConnected })),
   requestAccess: vi.fn(() => Promise.resolve(mockRequestAccessResult)),
   getNetwork: vi.fn(() => Promise.resolve(mockGetNetworkResult)),
 }))
-
-Object.defineProperty(window, 'freighter', {
-  get: () => (mockFreighterInstalled ? {} : undefined),
-  configurable: true,
-})
 
 function createMockChain(data: unknown = null, error: unknown = null) {
   const chain = {
@@ -100,7 +96,7 @@ describe('WalletPage', () => {
     mockInvoke.mockClear()
     mockRpc.mockClear()
     mockRpc.mockResolvedValue({ data: null, error: null })
-    mockFreighterInstalled = false
+    mockIsAppConnected = false
     mockRequestAccessResult = { address: '', error: null }
     mockGetNetworkResult = {
       network: 'TESTNET',
@@ -137,7 +133,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = false
+    mockIsAppConnected = false
 
     const user = userEvent.setup()
     renderWalletPage()
@@ -162,7 +158,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = true
+    mockIsAppConnected = true
     mockRequestAccessResult = {
       address: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
       error: null,
@@ -185,6 +181,46 @@ describe('WalletPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Connected via Freighter')).toBeInTheDocument()
     })
+
+    expect(walletChain.upsert).toHaveBeenCalledWith(
+      { user_id: 'test-user-id', public_key: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD' },
+      { onConflict: 'user_id' },
+    )
+  })
+
+  test('disconnects by clearing the stored wallet key', async () => {
+    const walletChain = createMockChain({
+      id: 'wallet-1',
+      user_id: 'test-user-id',
+      public_key: null,
+      balance: 0,
+    })
+    mockFrom.mockReturnValue(walletChain)
+    mockIsAppConnected = true
+    mockRequestAccessResult = {
+      address: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
+      error: null,
+    }
+
+    const user = userEvent.setup()
+    renderWalletPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Connect Freighter')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('Connect Freighter'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Connected via Freighter')).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByText('Disconnect'))
+
+    expect(walletChain.upsert).toHaveBeenLastCalledWith(
+      { user_id: 'test-user-id', public_key: null },
+      { onConflict: 'user_id' },
+    )
   })
 
   test('shows an error when the user rejects the Freighter connection request', async () => {
@@ -195,7 +231,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = true
+    mockIsAppConnected = true
     mockRequestAccessResult = {
       address: '',
       error: { message: 'User declined access' },
@@ -223,7 +259,7 @@ describe('WalletPage', () => {
       balance: 0,
     })
     mockFrom.mockReturnValue(walletChain)
-    mockFreighterInstalled = true
+    mockIsAppConnected = true
     mockRequestAccessResult = {
       address: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
       error: null,
@@ -615,6 +651,39 @@ describe('WalletPage', () => {
     })
   })
 
+  test('renders the receive section with a QR code and the full wallet address', async () => {
+    const walletChain = createMockChain({
+      id: 'wallet-1',
+      user_id: 'test-user-id',
+      public_key: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
+      balance: 50,
+    })
+
+    const historyChain = createMockChain()
+    historyChain.range = vi.fn(() => historyChain)
+    historyChain.maybeSingle = vi.fn(() => Promise.resolve({ data: [], count: 0, error: null }))
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'user_wallets') {
+        return walletChain
+      }
+      if (table === 'echo_rewards') {
+        return historyChain
+      }
+      return createMockChain(null)
+    })
+
+    renderWalletPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Receive ECHO')).toBeInTheDocument()
+      expect(screen.getByAltText('QR code for wallet address')).toBeInTheDocument()
+      expect(
+        screen.getByText('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD'),
+      ).toBeInTheDocument()
+    })
+  })
+
   test('copy wallet address button works correctly', async () => {
     const walletChain = createMockChain({
       id: 'wallet-1',
@@ -654,14 +723,63 @@ describe('WalletPage', () => {
       expect(screen.getByText('50.00 ECHO')).toBeInTheDocument()
     })
 
-    const copyButtons = screen.getAllByRole('button', { name: /Copy/i })
-    await user.click(copyButtons[0])
+    const copyButton = screen.getByRole('button', { name: /Copy address/i })
+    await user.click(copyButton)
 
     await waitFor(() => {
       expect(writeTextMock).toHaveBeenCalledWith(
         'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
       )
-      expect(screen.getByText('Copied')).toBeInTheDocument()
+      expect(screen.getByText('Copied!')).toBeInTheDocument()
+    })
+  })
+
+  test('share address falls back to copying text when Web Share API is unavailable', async () => {
+    const walletChain = createMockChain({
+      id: 'wallet-1',
+      user_id: 'test-user-id',
+      public_key: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
+      balance: 50,
+    })
+
+    const historyChain = createMockChain()
+    historyChain.range = vi.fn(() => historyChain)
+    historyChain.maybeSingle = vi.fn(() => Promise.resolve({ data: [], count: 0, error: null }))
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'user_wallets') {
+        return walletChain
+      }
+      if (table === 'echo_rewards') {
+        return historyChain
+      }
+      return createMockChain(null)
+    })
+
+    const user = userEvent.setup()
+    const writeTextMock = vi.fn(() => Promise.resolve())
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    })
+    Object.defineProperty(navigator, 'share', {
+      value: undefined,
+      configurable: true,
+    })
+
+    renderWalletPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Share address/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /Share address/i }))
+
+    await waitFor(() => {
+      expect(writeTextMock).toHaveBeenCalledWith(
+        expect.stringContaining('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD'),
+      )
     })
   })
 })
+

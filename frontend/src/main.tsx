@@ -9,6 +9,7 @@ import './styles.css'
 validateEnv()
 import { initializeGlobalErrorHandler } from './lib/global-error-handler'
 import './styles.css'
+import './error-ui.css'
 
 validateEnv()
 initializeGlobalErrorHandler()
