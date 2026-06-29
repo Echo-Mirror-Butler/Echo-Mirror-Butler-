@@ -8,6 +8,7 @@ import '../../../global_mirror/view/screens/globe_screen.dart';
 import '../../../socials/view/screens/socials_screen.dart';
 import '../../../logging/view/screens/logging_screen.dart';
 import '../../../settings/view/screens/settings_screen.dart';
+import '../../../leaderboard/view/screens/leaderboard_screen.dart';
 import 'dashboard_screen.dart';
 
 /// Main navigation screen with tabs
@@ -27,6 +28,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     DashboardScreen(),
     GlobeScreen(),
     SocialsScreen(),
+    LeaderboardScreen(),
     LoggingScreen(),
     SettingsScreen(),
   ];
@@ -113,17 +115,24 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.book.data,
-                  label: 'Log',
+                  icon: FontAwesomeIcons.trophy.data,
+                  label: 'Leaderboard',
                   index: 3,
                   isSelected: _selectedIndex == 3,
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.gear.data,
-                  label: 'Settings',
+                  icon: FontAwesomeIcons.book.data,
+                  label: 'Log',
                   index: 4,
                   isSelected: _selectedIndex == 4,
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: FontAwesomeIcons.gear.data,
+                  label: 'Settings',
+                  index: 5,
+                  isSelected: _selectedIndex == 5,
                 ),
               ],
             ),

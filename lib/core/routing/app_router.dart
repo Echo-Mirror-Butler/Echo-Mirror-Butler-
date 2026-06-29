@@ -25,6 +25,7 @@ import '../../features/global_mirror/view/screens/gift_screen.dart';
 import '../../features/global_mirror/view/screens/wallet_screen.dart';
 import '../../features/profile/view/screens/profile_screen.dart';
 import '../../features/habits/view/screens/habits_screen.dart';
+import '../../features/leaderboard/view/screens/leaderboard_screen.dart';
 
 /// Refresh notifier for GoRouter.
 class GoRouterRefreshNotifier extends ChangeNotifier {
@@ -213,6 +214,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/habits',
         name: 'habits',
         builder: (context, state) => const HabitsScreen(),
+      ),
+      GoRoute(
+        path: '/leaderboard',
+        name: 'leaderboard',
+        builder: (context, state) => const LeaderboardScreen(),
       ),
     ],
   );

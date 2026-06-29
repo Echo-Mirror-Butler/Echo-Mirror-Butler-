@@ -15,8 +15,84 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
 
 /// Modern settings screen with improved UI/UX
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _leaderboardAnonymous = false;
+  bool _loadingPrivacy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrivacySetting();
+  }
+
+  Future<void> _loadPrivacySetting() async {
+    setState(() => _loadingPrivacy = true);
+    try {
+      final authState = ref.read(authProvider);
+      final userId = authState.user?.id;
+      if (userId == null) return;
+
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('profiles')
+          .select('leaderboard_anonymous')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (response != null && mounted) {
+        setState(() {
+          _leaderboardAnonymous = response['leaderboard_anonymous'] as bool? ?? false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[SettingsScreen] Failed to load privacy setting: $e');
+    } finally {
+      if (mounted) setState(() => _loadingPrivacy = false);
+    }
+  }
+
+  Future<void> _togglePrivacy(bool value) async {
+    setState(() => _loadingPrivacy = true);
+    try {
+      final authState = ref.read(authProvider);
+      final userId = authState.user?.id;
+      if (userId == null) return;
+
+      final supabase = Supabase.instance.client;
+      await supabase
+          .from('profiles')
+          .update({'leaderboard_anonymous': value})
+          .eq('id', userId);
+
+      if (mounted) {
+        setState(() => _leaderboardAnonymous = value);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(value 
+                ? 'You are now anonymous on the leaderboard' 
+                : 'Your name will be shown on the leaderboard'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[SettingsScreen] Failed to update privacy setting: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update privacy setting')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingPrivacy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -477,6 +553,30 @@ class SettingsScreen extends ConsumerWidget {
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               onTap: () => context.push('/habits'),
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            ),
+            _buildModernListTile(
+              context,
+              theme,
+              icon: FontAwesomeIcons.trophy.data,
+              iconColor: AppTheme.primaryColor,
+              title: 'Show me on Leaderboard',
+              subtitle: _leaderboardAnonymous 
+                  ? 'You are anonymous on the leaderboard' 
+                  : 'Your name is visible on the leaderboard',
+              trailing: _loadingPrivacy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Switch(
+                      value: !_leaderboardAnonymous,
+                      onChanged: _togglePrivacy,
+                    ),
             ),
             Divider(
               height: 1,
