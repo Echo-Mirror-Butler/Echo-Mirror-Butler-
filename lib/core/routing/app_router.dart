@@ -6,7 +6,9 @@ import '../../features/auth/view/screens/signup_screen.dart';
 import '../../features/auth/view/screens/forgot_password_screen.dart';
 import '../../features/auth/view/screens/reset_password_screen.dart';
 import '../../features/auth/view/screens/verify_email_screen.dart';
+import '../../features/auth/view/verify_email_confirmed_screen.dart';
 import '../../features/settings/view/screens/change_password_screen.dart';
+import '../../features/settings/view/screens/security_screen.dart';
 import '../../features/auth/viewmodel/providers/auth_provider.dart';
 import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
 import '../../features/logging/view/screens/create_entry_screen.dart';
@@ -53,10 +55,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
       final isVerifyEmail = state.matchedLocation == '/verify-email';
+      final isVerifyEmailConfirmed = state.matchedLocation == '/verify-email-confirmed';
       final isAuthRoute = isLoggingIn || isSigningUp;
 
-      // /verify-email is always accessible — no redirect applied.
-      if (isVerifyEmail) return null;
+      // /verify-email and /verify-email-confirmed are always accessible
+      if (isVerifyEmail || isVerifyEmailConfirmed) return null;
 
       bool onboardingCompleted = false;
       try {
@@ -98,6 +101,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final email = state.uri.queryParameters['email'] ?? '';
           return VerifyEmailScreen(email: email);
         },
+      ),
+      GoRoute(
+        path: '/verify-email-confirmed',
+        name: 'verify-email-confirmed',
+        builder: (context, state) => const VerifyEmailConfirmedScreen(),
       ),
       GoRoute(
         path: '/forgot-password',
@@ -161,6 +169,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/change-password',
         name: 'change-password',
         builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: '/settings/security',
+        name: 'security',
+        builder: (context, state) => const SecurityScreen(),
       ),
       GoRoute(
         path: '/notifications',

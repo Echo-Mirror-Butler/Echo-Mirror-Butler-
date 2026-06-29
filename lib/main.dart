@@ -5,6 +5,8 @@ import 'core/themes/app_theme.dart';
 import 'core/viewmodel/providers/theme_provider.dart';
 import 'core/viewmodel/providers/notification_provider.dart';
 import 'core/services/supabase_client_service.dart';
+import 'core/services/deep_link_service.dart';
+import 'package:go_router/go_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,13 +25,29 @@ class EchoMirrorApp extends ConsumerStatefulWidget {
 }
 
 class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
+  final _deepLinkService = DeepLinkService();
+
   @override
   void initState() {
     super.initState();
     // Initialize notifications on app start
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationInitProvider.future);
+      
+      // Initialize deep link handling
+      final router = ref.read(routerProvider);
+      _deepLinkService.initialize(
+        onNavigate: (route) {
+          router.go(route);
+        },
+      );
     });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    super.dispose();
   }
 
   @override

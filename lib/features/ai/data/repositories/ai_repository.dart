@@ -148,6 +148,21 @@ class AiRepository {
         'generate-insight',
         body: {'recentLogs': logPayloads},
       );
+      
+      // Handle rate limit response
+      if (response.status == 429) {
+        final data = response.data;
+        final retryAfter = data is Map ? data['retryAfter'] as int? : null;
+        throw Exception('Rate limit: 1 insight per 24 hours${retryAfter != null ? ". Try again in ${(retryAfter / 3600).ceil()} hours." : ""}');
+      }
+      
+      // Handle other error responses
+      if (response.status != null && response.status! >= 400) {
+        final data = response.data;
+        final errorMsg = data is Map ? data['error'] as String? : null;
+        throw Exception(errorMsg ?? 'Failed to generate insight');
+      }
+      
       final result = response.data;
 
       // Validate that we got real data from Gemini (not empty or null)

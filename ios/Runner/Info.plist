@@ -62,5 +62,22 @@
 	<string>EchoMirror needs camera access to record mood videos that you can share anonymously with the global community.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>EchoMirror needs photo library access to let you choose videos to share with the community.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.echomirror.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>echomirror</string>
+			</array>
+		</dict>
+	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:echomirrorbutler.vercel.app</string>
+	</array>
 </dict>
 </plist>

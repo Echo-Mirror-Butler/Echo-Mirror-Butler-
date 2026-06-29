@@ -485,6 +485,26 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
+              icon: FontAwesomeIcons.shield.data,
+              iconColor: Colors.green,
+              title: 'Security',
+              subtitle: 'Manage sessions and two-factor authentication',
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
+                size: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+              onTap: () {
+                context.push('/settings/security');
+              },
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            ),
+            _buildModernListTile(
+              context,
+              theme,
               icon: FontAwesomeIcons.key.data,
               iconColor: Colors.purple,
               title: 'Change Password',
