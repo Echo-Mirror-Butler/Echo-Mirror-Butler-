@@ -111,3 +111,63 @@ export function buildHabitMoodHeatmap(entries: AnalyticsLogEntry[]): HeatmapRow[
 
   return topHabits.map((h) => ({ habit: h, counts: grid[h] }))
 }
+
+export type HabitStreak = {
+  habit: string
+  currentStreak: number
+  longestStreak: number
+  lastLoggedDate: string | null
+}
+
+export function buildHabitStreaks(entries: AnalyticsLogEntry[]): HabitStreak[] {
+  const habitDates: Record<string, Set<string>> = {}
+
+  for (const e of entries) {
+    for (const h of e.habits ?? []) {
+      if (!habitDates[h]) habitDates[h] = new Set()
+      habitDates[h].add(e.date)
+    }
+  }
+
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().slice(0, 10)
+  const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10)
+
+  const streaks = Object.entries(habitDates).map(([habit, dates]) => {
+    const sortedDates = Array.from(dates).sort()
+    let longestStreak = 0
+    let currentStreak = 0
+    let tempStreak = 1
+
+    for (let i = 1; i < sortedDates.length; i++) {
+      const currDate = new Date(sortedDates[i])
+      const prevDate = new Date(sortedDates[i - 1])
+      const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / 86400000)
+
+      if (diffDays === 1) {
+        tempStreak += 1
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak)
+        tempStreak = 1
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak)
+
+    const lastLoggedDate = sortedDates[sortedDates.length - 1]
+    if (lastLoggedDate === todayStr || lastLoggedDate === yesterdayStr) {
+      currentStreak = tempStreak
+    } else {
+      currentStreak = 0
+    }
+
+    return {
+      habit,
+      currentStreak,
+      longestStreak,
+      lastLoggedDate: lastLoggedDate || null,
+    }
+  })
+
+  return streaks.sort((a, b) => b.currentStreak - a.currentStreak || b.longestStreak - a.longestStreak)
+}
