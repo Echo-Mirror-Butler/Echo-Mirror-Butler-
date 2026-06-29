@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { LogEntry } from '../../lib/types'
@@ -38,6 +39,7 @@ export function LogDetailPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [shareToast, setShareToast] = useState(false)
 
   const entryQuery = useQuery({
     queryKey: ['log-entry', id],
@@ -65,6 +67,42 @@ export function LogDetailPage() {
       navigate('/logs')
     },
   })
+
+  const handleDuplicate = () => {
+    if (!entry) return
+    const params = new URLSearchParams()
+    params.set('mood', String(entry.mood ?? ''))
+    if (entry.habits.length > 0) params.set('habits', entry.habits.join(','))
+    if (entry.notes) params.set('notes', entry.notes)
+    navigate(`/logs/new?${params.toString()}`)
+  }
+
+  const handleShare = async () => {
+    if (!entry) return
+    const emoji = moodToEmoji(entry.mood)
+    const text = `Mood: ${emoji} ${entry.mood}/5${entry.habits.length > 0 ? ` · Habits: ${entry.habits.join(', ')}` : ''}`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `My mood today: ${emoji}`,
+          text,
+          url: window.location.href,
+        })
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(`${text}\n${window.location.href}`)
+        setShareToast(true)
+        setTimeout(() => setShareToast(false), 2000)
+      } catch {
+        // Clipboard not available
+      }
+    }
+  }
 
   if (!user) return null
 
@@ -112,10 +150,16 @@ export function LogDetailPage() {
               day: 'numeric',
             }).format(new Date(entry.date))}
           </h2>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <Link to={`/logs/${id}/edit`}>
               <button type="button">Edit</button>
             </Link>
+            <button type="button" onClick={handleDuplicate}>
+              Duplicate
+            </button>
+            <button type="button" onClick={handleShare}>
+              {shareToast ? 'Copied!' : 'Share'}
+            </button>
             <button
               type="button"
               className="danger"
