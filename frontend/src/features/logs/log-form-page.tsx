@@ -6,6 +6,8 @@ import { useAuth } from '../../lib/auth-context'
 import { useToast } from '../../lib/use-toast'
 import type { LogEntry } from '../../lib/types'
 import { toDateInputValue } from '../../lib/date'
+import { useAchievements } from '../achievements/use-achievements'
+import { achievementCheckers } from '../achievements/achievement-checks'
 
 type LogFormMode = 'create' | 'edit'
 
@@ -63,6 +65,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
   const { id } = useParams()
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const { checkAndUnlockAchievement } = useAchievements()
   const [searchParams] = useSearchParams()
 
   const initialDate = searchParams.get('date') ?? toDateInputValue(new Date())
@@ -189,6 +192,11 @@ export function LogFormPage({ mode }: LogFormPageProps) {
         queryClient.invalidateQueries({ queryKey: ['logs', user?.id] }),
         queryClient.invalidateQueries({ queryKey: ['log-entry', id] }),
       ])
+      if (user && mode === 'create') {
+        await checkAndUnlockAchievement('first_log', () => achievementCheckers.first_log(user.id))
+        await checkAndUnlockAchievement('week_warrior', () => achievementCheckers.week_warrior(user.id))
+        await checkAndUnlockAchievement('habit_hero', () => achievementCheckers.habit_hero(user.id))
+      }
       showToast(mode === 'create' ? 'Mood logged! +1 ECHO earned 🎉' : 'Changes saved', 'success')
       navigate('/logs')
     },

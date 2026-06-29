@@ -7,6 +7,8 @@ import { useSearchLogs } from '../../lib/use-search-logs'
 import { useTheme, type Theme } from '../../lib/use-theme'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
+import { useAchievements } from '../../features/achievements/use-achievements'
+import { AchievementModal } from '../../features/achievements/achievement-modal'
 
 type UserProfile = { display_name: string | null; avatar_url: string | null }
 
@@ -30,7 +32,8 @@ const navItems = [
   { icon: '✨', to: '/insights', label: 'AI Insights' },
   { icon: '📊', to: '/analytics', label: 'Analytics' },
   { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
-  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
+  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' },
+  { icon: '🎖️', to: '/achievements', label: 'Achievements' },
   { icon: '💎', to: '/wallet', label: 'Wallet' },
   { icon: '⚙️', to: '/settings', label: 'Settings' },
 ];
@@ -57,6 +60,8 @@ export function AppShell() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
   const { theme, setTheme } = useTheme()
+  const { newlyUnlocked, dismissModal, unlockedIds } = useAchievements()
+  const unlockedCount = unlockedIds.size
 
   const themeIcon: Record<Theme, string> = { light: '☀️', dark: '🌙', system: '🖥️' }
   const themeNext: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' }
@@ -150,6 +155,7 @@ export function AppShell() {
 
   return (
     <div className="shell-root">
+      <AchievementModal achievementId={newlyUnlocked} onClose={dismissModal} />
       <aside
         className={[
           'shell-sidebar',
@@ -183,6 +189,9 @@ export function AppShell() {
             >
               <span className="icon">{item.icon}</span>
               <span className="label">{item.label}</span>
+              {item.to === '/achievements' && unlockedCount > 0 ? (
+                <span className="badge">{unlockedCount}</span>
+              ) : null}
             </NavLink>
           ))}
         </nav>

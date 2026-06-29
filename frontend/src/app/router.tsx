@@ -46,6 +46,9 @@ const LeaderboardPage = lazy(() =>
 const OnboardingPage = lazy(() =>
   import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
 )
+const AchievementsPage = lazy(() =>
+  import('../features/achievements/achievements-page').then((m) => ({ default: m.AchievementsPage })),
+)
 const NotFoundPage = lazy(() => import('../features/shared/not-found-page'))
 
 function PageSkeleton() {
@@ -270,6 +273,10 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/achievements"
+            element={
+              <RouteErrorBoundary routeName="Achievements">
+                <AchievementsPage />
             path="/leaderboard"
             element={
               <RouteErrorBoundary routeName="Leaderboard">

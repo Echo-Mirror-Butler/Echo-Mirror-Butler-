@@ -26,6 +26,8 @@ import type { RealtimeChannel, REALTIME_SUBSCRIBE_STATES } from '@supabase/supab
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { MoodPinCommentsPanel } from '../../components/mood-pin-comments-panel'
+import { useAchievements } from '../achievements/use-achievements'
+import { achievementCheckers } from '../achievements/achievement-checks'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -593,6 +595,7 @@ function MoodTicker({ events }: { events: MoodLogEvent[] }) {
 
 export function GlobalMirrorPage() {
   const { user } = useAuth()
+  const { checkAndUnlockAchievement } = useAchievements()
   const qc = useQueryClient()
   const pinChannelRef = useRef<RealtimeChannel | null>(null)
   const logChannelRef = useRef<RealtimeChannel | null>(null)
@@ -701,6 +704,7 @@ export function GlobalMirrorPage() {
       async (pos) => {
         try {
           await insertPin(user.id, pos.coords.latitude, pos.coords.longitude, selectedSentiment)
+          await checkAndUnlockAchievement('global_citizen', () => achievementCheckers.global_citizen(user.id))
           setGeoStatus('done')
           scheduleMapInvalidate()
           setTimeout(() => setGeoStatus('idle'), 2000)
