@@ -279,6 +279,11 @@ class SettingsScreen extends ConsumerWidget {
                     },
                   ),
                 ],
+                Divider(
+                  height: 1,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                ),
+                _buildWeeklyDigestTile(context, theme, ref),
               ],
             ),
           ),
@@ -332,6 +337,57 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeeklyDigestTile(
+    BuildContext context,
+    ThemeData theme,
+    WidgetRef ref,
+  ) {
+    final weeklyDigest = ref.watch(weeklyDigestProvider);
+    final weeklyDigestNotifier = ref.watch(weeklyDigestNotifierProvider);
+
+    return weeklyDigest.when(
+      data: (enabled) => _buildModernListTile(
+        context,
+        theme,
+        icon: FontAwesomeIcons.envelope.data,
+        iconColor: Colors.purple,
+        title: 'Weekly Digest Email',
+        subtitle: enabled ? 'Weekly summary is on' : 'Get a weekly mood recap',
+        trailing: Switch(
+          value: enabled,
+          onChanged: (value) async {
+            await weeklyDigestNotifier.setEnabled(value);
+          },
+        ),
+      ),
+      loading: () => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: ShimmerLoading(width: 24, height: 24),
+      ),
+      error: (_, _) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Row(
+          children: [
+            Icon(
+              FontAwesomeIcons.triangleExclamation.data,
+              color: theme.colorScheme.error,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Error loading digest preference',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
