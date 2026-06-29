@@ -9,6 +9,8 @@ import { formatDateTime } from '../../lib/date'
 import { TestnetBadge } from '../../components/TestnetBadge'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
 import { isTestnet, stellarConfig } from '../../lib/stellar-config'
+import { useAchievements } from '../achievements/use-achievements'
+import { achievementCheckers } from '../achievements/achievement-checks'
 
 const WALLET_PAGE_SIZE = 20
 const PRESET_AMOUNTS = [5, 10, 25, 50]
@@ -322,6 +324,7 @@ export function WalletPage() {
   const [message, setMessage] = useState('')
   const [inlineError, setInlineError] = useState<string | null>(null)
   const { showToast } = useToast()
+  const { checkAndUnlockAchievement } = useAchievements()
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -462,6 +465,10 @@ export function WalletPage() {
       showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
+      
+      if (user) {
+        await checkAndUnlockAchievement('echo_gifter', () => achievementCheckers.echo_gifter(user.id))
+      }
     },
     onError: (error: Error) => {
       showToast(error.message, 'error')

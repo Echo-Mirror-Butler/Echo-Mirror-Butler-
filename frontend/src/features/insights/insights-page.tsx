@@ -20,6 +20,8 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { Insight, LogEntry, InsightAction } from '../../lib/types'
 import { formatDateTime, getCountdownLabel } from '../../lib/date'
+import { useAchievements } from '../achievements/use-achievements'
+import { achievementCheckers } from '../achievements/achievement-checks'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -827,6 +829,7 @@ function DriverTrendsChart({ insights }: { insights: Insight[] }) {
 export function InsightsPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
+  const { checkAndUnlockAchievement } = useAchievements()
   const [expandedInsightId, setExpandedInsightId] = useState<string | null>(null)
   const [envelopeOpened, setEnvelopeOpened] = useState(false)
   const [historyLimit, setHistoryLimit] = useState(10)
@@ -917,6 +920,10 @@ export function InsightsPage() {
       setExpandedInsightId(created.id)
       await queryClient.invalidateQueries({ queryKey: ['insight-history', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['insight-actions', user?.id] })
+      
+      if (user) {
+        await checkAndUnlockAchievement('insight_seeker', () => achievementCheckers.insight_seeker(user.id))
+      }
     },
   })
 
