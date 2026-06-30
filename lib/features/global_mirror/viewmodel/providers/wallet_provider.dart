@@ -25,6 +25,7 @@ class WalletState {
     this.publicKey,
     this.balance = 0.0,
     this.xlmBalance = 0.0,
+    this.echoBalance = 0.0,
     this.history = const [],
     this.isLoading = false,
     this.isFunding = false,
@@ -32,12 +33,16 @@ class WalletState {
     this.error,
     this.fundingError,
     this.funded = false,
+    this.lastUpdated,
+    this.stellarError,
+    this.isFunding = false,
   });
 
   final bool exists;
   final String? publicKey;
   final double balance;
   final double xlmBalance;
+  final double echoBalance;
   final List<WalletReward> history;
   final bool isLoading;
 
@@ -52,6 +57,9 @@ class WalletState {
 
   /// True when Horizon reports a positive XLM balance for this account.
   final bool funded;
+  final DateTime? lastUpdated;
+  final String? stellarError;
+  final bool isFunding;
 
   bool get hasStreakBonus {
     return history.any(
@@ -61,11 +69,15 @@ class WalletState {
     );
   }
 
+  bool get isUnfunded => stellarError != null;
+  bool get isStellarUnreachable => stellarError != null;
+
   WalletState copyWith({
     bool? exists,
     String? publicKey,
     double? balance,
     double? xlmBalance,
+    double? echoBalance,
     List<WalletReward>? history,
     bool? isLoading,
     bool? isFunding,
@@ -73,6 +85,9 @@ class WalletState {
     String? error,
     String? fundingError,
     bool? funded,
+    DateTime? lastUpdated,
+    String? stellarError,
+    bool? isFunding,
     bool clearError = false,
     bool clearFundingError = false,
   }) {
@@ -81,6 +96,7 @@ class WalletState {
       publicKey: publicKey ?? this.publicKey,
       balance: balance ?? this.balance,
       xlmBalance: xlmBalance ?? this.xlmBalance,
+      echoBalance: echoBalance ?? this.echoBalance,
       history: history ?? this.history,
       isLoading: isLoading ?? this.isLoading,
       isFunding: isFunding ?? this.isFunding,
@@ -89,11 +105,16 @@ class WalletState {
       error: clearError ? null : error ?? this.error,
       fundingError: clearFundingError ? null : fundingError ?? this.fundingError,
       funded: funded ?? this.funded,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+      stellarError: stellarError ?? this.stellarError,
+      isFunding: isFunding ?? this.isFunding,
     );
   }
 }
 
 class WalletNotifier extends StateNotifier<WalletState> {
+  Timer? _refreshTimer;
+
   WalletNotifier() : super(const WalletState()) {
     loadWallet();
     // Only auto-refresh the live balances on testnet, where activation
@@ -117,6 +138,19 @@ class WalletNotifier extends StateNotifier<WalletState> {
     _liveBalanceTimer?.cancel();
     _liveBalanceTimer = null;
     super.dispose();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _fetchLiveBalances();
+    });
   }
 
   Future<void> loadWallet() async {
@@ -167,6 +201,13 @@ class WalletNotifier extends StateNotifier<WalletState> {
         exists: true,
         publicKey: wallet['public_key'] as String?,
         balance: balance,
+      final publicKey = wallet['public_key'] as String?;
+
+      state = WalletState(
+        exists: true,
+        publicKey: publicKey,
+        balance:
+            double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0,
         history: history,
         isLoading: false,
         // Treat a wallet that already has ECHO balance as likely funded —
@@ -179,11 +220,70 @@ class WalletNotifier extends StateNotifier<WalletState> {
       // Pull live balances right after the wallet hydrates so the UI can
       // show XLM and the funded/unfunded state without an extra tap.
       unawaited(refreshLiveBalances());
+      if (publicKey != null) {
+        _fetchLiveBalances();
+      }
+      _startAutoRefresh();
     } catch (e) {
       debugPrint('[WalletNotifier] loadWallet error: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Unable to load your wallet.',
+      );
+    }
+  }
+
+  Future<void> _fetchLiveBalances() async {
+    final publicKey = state.publicKey;
+    if (publicKey == null) return;
+
+    try {
+      final balances =
+          await StellarService.getLiveBalances(publicKey);
+      if (balances == null) {
+        state = state.copyWith(
+          stellarError: 'Activate your wallet — send any XLM to fund it',
+          lastUpdated: DateTime.now(),
+        );
+        return;
+      }
+      state = state.copyWith(
+        xlmBalance: balances['xlm'] ?? 0.0,
+        echoBalance: balances['echo'] ?? 0.0,
+        stellarError: null,
+        lastUpdated: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('[WalletNotifier] Live balance fetch error: $e');
+      state = state.copyWith(
+        stellarError: 'Could not reach Stellar network',
+        lastUpdated: DateTime.now(),
+      );
+    }
+  }
+
+  Future<void> fundWithFriendbot() async {
+    final publicKey = state.publicKey;
+    if (publicKey == null) return;
+
+    state = state.copyWith(isFunding: true);
+
+    try {
+      final success = await StellarService.fundViaFriendbot(publicKey);
+      if (success) {
+        await Future.delayed(const Duration(seconds: 5));
+        await _fetchLiveBalances();
+        state = state.copyWith(isFunding: false, stellarError: null);
+      } else {
+        state = state.copyWith(
+          isFunding: false,
+          stellarError: 'Friendbot funding failed. Try again.',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isFunding: false,
+        stellarError: 'Funding failed. Please retry.',
       );
     }
   }

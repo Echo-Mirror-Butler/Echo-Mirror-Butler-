@@ -323,7 +323,7 @@ export function LandingPage() {
       {/* ── Nav ── */}
       <nav className={`lp-nav ${isOverDarkSection ? 'lp-nav--dark' : 'lp-nav--light'}`}>
         <div className="lp-nav-logo">
-          <img src="/app-icon.png" alt="EchoMirror" className="lp-nav-icon" />
+          <img src="/app-icon.png" alt="EchoMirror" className="lp-nav-icon" width="32" height="32" />
           <span className="lp-nav-wordmark">EchoMirror</span>
         </div>
         <div className="lp-nav-links">
@@ -398,7 +398,7 @@ export function LandingPage() {
 
           <div className="lp-hero-mockup">
             <div className="lp-hero-mockup-glow" />
-            <img src="/phone-mockup.png" alt="EchoMirror app" className="lp-phone-img" />
+            <img src="/phone-mockup.png" alt="EchoMirror app" className="lp-phone-img" width="280" height="560" />
             <div className="lp-float-chip lp-float-chip--1">
               <span className="lp-float-pip" style={{ background: '#0a8a5b' }} />
               Feeling calm today

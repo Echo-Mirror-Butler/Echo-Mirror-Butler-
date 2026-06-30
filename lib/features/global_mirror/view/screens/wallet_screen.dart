@@ -489,25 +489,31 @@ class WalletScreen extends ConsumerWidget {
             ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: walletState.isLoading
-            ? _buildLoading(theme)
-            : walletState.error != null
-                ? _ErrorState(
-                    message: walletState.error!,
-                    onRetry: walletNotifier.loadWallet,
-                  )
-                : !walletState.exists
-                    ? _buildEmptyState(context, walletNotifier)
-                    : _buildWalletContent(
-                        context,
-                        theme,
-                        walletState,
-                        walletNotifier,
-                        ref,
+      body: walletState.isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : walletState.error != null
+              ? _ErrorState(
+                  message: walletState.error!,
+                  onRetry: walletNotifier.loadWallet,
+                )
+              : !walletState.exists
+                  ? _buildEmptyState(context, walletNotifier)
+                  : RefreshIndicator(
+                      onRefresh: () => walletNotifier.loadWallet(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: _buildWalletContent(
+                          context,
+                          theme,
+                          walletState,
+                          walletNotifier,
+                          ref,
+                        ),
                       ),
-      ),
+                    ),
     );
   }
 
@@ -581,6 +587,86 @@ class WalletScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildStellarError(
+    ThemeData theme,
+    WalletState walletState,
+    WalletNotifier walletNotifier,
+  ) {
+    final isUnfunded = walletState.xlmBalance == 0 && walletState.echoBalance == 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isUnfunded
+                ? Colors.amber.shade100
+                : Colors.red.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            isUnfunded
+                ? 'Activate your wallet — send any XLM to fund it'
+                : (walletState.stellarError ?? 'Could not reach Stellar network'),
+            style: TextStyle(
+              fontSize: 13,
+              color: isUnfunded ? Colors.brown : Colors.red.shade800,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: walletState.isFunding
+              ? null
+              : () => walletNotifier.fundWithFriendbot(),
+          icon: walletState.isFunding
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.attach_money, size: 18),
+          label: Text(walletState.isFunding
+              ? 'Funding...'
+              : 'Fund with Friendbot'),
+          style: FilledButton.styleFrom(
+            backgroundColor: isUnfunded ? Colors.amber.shade700 : Colors.red.shade600,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => _copyToClipboard(
+            context,
+            walletState.publicKey!,
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.white),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Text('Copy address'),
+        ),
+      ],
+    );
+  }
+
+  String _formatLastUpdated(DateTime lastUpdated) {
+    final diff = DateTime.now().difference(lastUpdated);
+    if (diff.inSeconds < 5) return 'just now';
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    return '${diff.inHours}h ago';
+  }
+
   Widget _buildWalletContent(
     BuildContext context,
     ThemeData theme,
@@ -589,6 +675,7 @@ class WalletScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -608,6 +695,147 @@ class WalletScreen extends ConsumerWidget {
               onSend: () => _showSendEchoSheet(context, ref),
               onCopy: () =>
                   _copyToClipboard(context, walletState.publicKey!),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'ECHO Balance',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (walletState.lastUpdated != null)
+                      Text(
+                        _formatLastUpdated(walletState.lastUpdated!),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ECHO',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${walletState.echoBalance.toStringAsFixed(1)} ECHO',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'XLM',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${walletState.xlmBalance.toStringAsFixed(2)} XLM',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (walletState.hasStreakBonus) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'Streak bonus active',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: Colors.white),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                if (walletState.stellarError != null)
+                  _buildStellarError(theme, walletState, walletNotifier)
+                else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () =>
+                              _showSendEchoSheet(context, ref),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Send ECHO'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _copyToClipboard(
+                            context,
+                            walletState.publicKey!,
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.white),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Copy address'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           const SizedBox(height: 24),
           Container(
