@@ -191,17 +191,6 @@ class DashboardRepository {
       }
 
       final result = response.data;
-      if (result is! Map) {
-        return [];
-      }
-
-      final prediction = result['prediction'] as String? ?? '';
-      final calmingMessage = result['calmingMessage'] as String? ?? '';
-      final now = _now();
-      final insights = <InsightModel>[];
-      if (prediction.trim().isNotEmpty) {
-        insights.add(InsightModel(
-          id: 'prediction-\${now.millisecondsSinceEpoch}',
       if (result is! Map<String, dynamic>) {
         debugPrint(
           '[DashboardRepository] getPredictions: unexpected response type',
@@ -223,26 +212,6 @@ class DashboardRepository {
           type: InsightType.prediction,
           createdAt: now,
         ));
-      }
-      if (calmingMessage.trim().isNotEmpty) {
-        insights.add(InsightModel(
-          id: 'calming-\${now.millisecondsSinceEpoch}',
-
-      final suggestions = result['suggestions'];
-      if (suggestions is List) {
-        for (var i = 0; i < suggestions.length; i++) {
-          final text = suggestions[i]?.toString().trim() ?? '';
-          if (text.isEmpty) continue;
-          insights.add(InsightModel(
-            id: 'suggestion-$i-${now.millisecondsSinceEpoch}',
-            userId: userId,
-            title: 'Suggestion',
-            description: text,
-            date: now,
-            type: InsightType.general,
-            createdAt: now,
-          ));
-        }
       }
 
       final futureLetter = (result['futureLetter'] as String? ?? '').trim();
