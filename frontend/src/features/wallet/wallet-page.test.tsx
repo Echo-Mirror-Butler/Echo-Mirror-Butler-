@@ -651,6 +651,39 @@ describe('WalletPage', () => {
     })
   })
 
+  test('renders the receive section with a QR code and the full wallet address', async () => {
+    const walletChain = createMockChain({
+      id: 'wallet-1',
+      user_id: 'test-user-id',
+      public_key: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
+      balance: 50,
+    })
+
+    const historyChain = createMockChain()
+    historyChain.range = vi.fn(() => historyChain)
+    historyChain.maybeSingle = vi.fn(() => Promise.resolve({ data: [], count: 0, error: null }))
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'user_wallets') {
+        return walletChain
+      }
+      if (table === 'echo_rewards') {
+        return historyChain
+      }
+      return createMockChain(null)
+    })
+
+    renderWalletPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Receive ECHO')).toBeInTheDocument()
+      expect(screen.getByAltText('QR code for wallet address')).toBeInTheDocument()
+      expect(
+        screen.getByText('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD'),
+      ).toBeInTheDocument()
+    })
+  })
+
   test('copy wallet address button works correctly', async () => {
     const walletChain = createMockChain({
       id: 'wallet-1',
@@ -690,14 +723,63 @@ describe('WalletPage', () => {
       expect(screen.getByText('50.00 ECHO')).toBeInTheDocument()
     })
 
-    const copyButtons = screen.getAllByRole('button', { name: /Copy/i })
-    await user.click(copyButtons[0])
+    const copyButton = screen.getByRole('button', { name: /Copy address/i })
+    await user.click(copyButton)
 
     await waitFor(() => {
       expect(writeTextMock).toHaveBeenCalledWith(
         'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
       )
-      expect(screen.getByText('Copied')).toBeInTheDocument()
+      expect(screen.getByText('Copied!')).toBeInTheDocument()
+    })
+  })
+
+  test('share address falls back to copying text when Web Share API is unavailable', async () => {
+    const walletChain = createMockChain({
+      id: 'wallet-1',
+      user_id: 'test-user-id',
+      public_key: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD',
+      balance: 50,
+    })
+
+    const historyChain = createMockChain()
+    historyChain.range = vi.fn(() => historyChain)
+    historyChain.maybeSingle = vi.fn(() => Promise.resolve({ data: [], count: 0, error: null }))
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'user_wallets') {
+        return walletChain
+      }
+      if (table === 'echo_rewards') {
+        return historyChain
+      }
+      return createMockChain(null)
+    })
+
+    const user = userEvent.setup()
+    const writeTextMock = vi.fn(() => Promise.resolve())
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    })
+    Object.defineProperty(navigator, 'share', {
+      value: undefined,
+      configurable: true,
+    })
+
+    renderWalletPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Share address/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /Share address/i }))
+
+    await waitFor(() => {
+      expect(writeTextMock).toHaveBeenCalledWith(
+        expect.stringContaining('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD'),
+      )
     })
   })
 })
+
