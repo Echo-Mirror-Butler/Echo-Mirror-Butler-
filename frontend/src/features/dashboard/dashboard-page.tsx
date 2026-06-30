@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth-context";
@@ -6,6 +7,7 @@ import type { LogEntry, Insight } from "../../lib/types";
 import { formatDate, moodToEmoji } from "../../lib/date";
 import { HabitTrackerWidget } from "./components/habit-tracker-widget";
 import { QuickCheckInWidget } from "./components/QuickCheckInWidget";
+import { predictTomorrowMood, type AnalyticsLogEntry } from "../analytics/analytics-helpers";
 
 async function fetchMoodTrend(userId: string) {
   const today = new Date();
@@ -112,6 +114,72 @@ export function DashboardPage() {
     enabled: !!user,
   });
 
+  // Mood prediction query
+  const predictionQuery = useQuery({
+    queryKey: ["dashboard-prediction", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      const { data, error } = await supabase
+        .from("log_entries")
+        .select("id, date, mood, habits, notes, user_id, created_at, updated_at")
+        .eq("user_id", user.id)
+        .gte("date", sixtyDaysAgo.toISOString())
+        .order("date", { ascending: true });
+      if (error) throw error;
+      const entries = (data ?? []).map((e) => ({
+        ...e,
+        habits: Array.isArray(e.habits) ? e.habits : [],
+      })) as AnalyticsLogEntry[];
+      if (entries.length < 14) return null;
+      return predictTomorrowMood(entries);
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 60 * 12,
+  });
+
+  // Streak freeze query
+  const freezeQuery = useQuery({
+    queryKey: ["streak-freeze", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+      const { data, error } = await supabase
+        .from("streak_freezes")
+        .select("id, used_on_date")
+        .eq("user_id", user.id)
+        .in("used_on_date", [today, tomorrow])
+        .maybeSingle();
+      if (error) throw error;
+      return data as { id: string; used_on_date: string } | null;
+    },
+    enabled: !!user,
+  });
+
+  const queryClient = useQueryClient();
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
+
+  const purchaseFreezeMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+      const { error } = await supabase.from("streak_freezes").insert({
+        user_id: user.id,
+        used_on_date: tomorrow,
+        echo_cost: 5,
+        created_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["streak-freeze", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-echo", user?.id] });
+      setShowFreezeModal(false);
+    },
+  });
+
   const echoQuery = useQuery({
     queryKey: ["dashboard-echo", user?.id],
     queryFn: async () => {
@@ -215,6 +283,19 @@ export function DashboardPage() {
       <article className="card">
         <div className="card-header">
           <h3>Streak</h3>
+          {freezeQuery.data && (
+            <span
+              className="chip"
+              style={{
+                fontSize: "0.7rem",
+                background: "var(--brand)",
+                color: "#fff",
+                border: "none",
+              }}
+            >
+              ❄️ Streak protected
+            </span>
+          )}
         </div>
         <div className="card-content">
           {streakQuery.isLoading ? (
@@ -228,6 +309,24 @@ export function DashboardPage() {
             <div className="streak-count">
               <p className="muted">Current streak</p>
               <h2 style={{ margin: "0.25rem 0 0" }}>🔥 {currentStreak}-day streak</h2>
+              {currentStreak >= 3 && !freezeQuery.data && echoQuery.data && (echoQuery.data as { balance: number; earnedToday: number }).balance >= 10 && (
+                <button
+                  type="button"
+                  onClick={() => setShowFreezeModal(true)}
+                  style={{
+                    marginTop: "0.75rem",
+                    background: "none",
+                    border: "1px solid var(--brand)",
+                    color: "var(--brand)",
+                    borderRadius: "8px",
+                    padding: "0.35rem 0.75rem",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  ❄️ Protect my streak (5 ECHO)
+                </button>
+              )}
             </div>
           ) : (
             <div className="streak-count">
@@ -239,6 +338,105 @@ export function DashboardPage() {
           )}
         </div>
       </article>
+
+      {/* Freeze confirmation modal */}
+      {showFreezeModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.5)",
+          }}
+          onClick={() => setShowFreezeModal(false)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: "380px", width: "90%", margin: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="card-header">
+              <h3>Protect your streak</h3>
+            </div>
+            <div className="card-content">
+              <p style={{ marginBottom: "1rem", lineHeight: 1.6 }}>
+                Spend <strong>5 ECHO</strong> to freeze tomorrow's streak? You'll
+                keep your streak even if you don't log.
+              </p>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setShowFreezeModal(false)}
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => purchaseFreezeMutation.mutate()}
+                  disabled={purchaseFreezeMutation.isPending}
+                  style={{ flex: 1 }}
+                >
+                  {purchaseFreezeMutation.isPending ? "Freezing..." : "❄️ Freeze it"}
+                </button>
+              </div>
+              {purchaseFreezeMutation.isError && (
+                <p style={{ color: "var(--danger)", marginTop: "0.75rem", fontSize: "0.85rem" }}>
+                  Failed to freeze streak. Please try again.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tomorrow's Forecast Card */}
+      {predictionQuery.data && (
+        <article className="card">
+          <div className="card-header">
+            <h3>Tomorrow's forecast</h3>
+          </div>
+          <div className="card-content">
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <span style={{ fontSize: "2rem" }}>
+                {moodToEmoji(Math.round(predictionQuery.data.predicted))}
+              </span>
+              <div>
+                <h2 style={{ margin: 0 }}>
+                  {predictionQuery.data.predicted.toFixed(1)} / 5
+                </h2>
+                <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.8rem" }}>
+                  {predictionQuery.data.reason}
+                </p>
+              </div>
+            </div>
+            <div style={{ marginTop: "0.5rem" }}>
+              <span
+                className="chip"
+                style={{
+                  fontSize: "0.7rem",
+                  padding: "0.15rem 0.5rem",
+                  background:
+                    predictionQuery.data.confidence === "high"
+                      ? "var(--success)"
+                      : predictionQuery.data.confidence === "medium"
+                        ? "var(--warning)"
+                        : "var(--muted)",
+                  color: "#fff",
+                  border: "none",
+                }}
+              >
+                {predictionQuery.data.confidence} confidence
+              </span>
+            </div>
+          </div>
+        </article>
+      )}
 
       {/* ECHO Balance Card */}
       <article
