@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildHabitStreaks, type AnalyticsLogEntry } from './analytics-helpers'
+import { buildHabitStreaks, predictTomorrowMood, type AnalyticsLogEntry } from './analytics-helpers'
 
 describe('buildHabitStreaks', () => {
   it('calculates current and longest streaks correctly', () => {
@@ -146,5 +146,101 @@ describe('buildHabitStreaks', () => {
     const result = buildHabitStreaks(entries)
     expect(result[0].currentStreak).toBe(0)
     expect(result[0].longestStreak).toBe(2)
+  })
+})
+
+describe('predictTomorrowMood', () => {
+  it('returns null for empty entries', () => {
+    expect(predictTomorrowMood([])).toBeNull()
+  })
+
+  it('returns low confidence with single sample', () => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const sampleDate = new Date(tomorrow)
+    sampleDate.setDate(sampleDate.getDate() - 7)
+
+    // Need to adjust so they share the same weekday as tomorrow
+    while (sampleDate.getDay() !== tomorrow.getDay()) {
+      sampleDate.setDate(sampleDate.getDate() + 1)
+    }
+
+    const entries: AnalyticsLogEntry[] = [
+      {
+        id: '1',
+        date: sampleDate.toISOString().slice(0, 10),
+        mood: 4,
+        habits: ['Exercise'],
+        notes: '',
+        user_id: 'user1',
+        created_at: '',
+        updated_at: '',
+      },
+    ]
+
+    const result = predictTomorrowMood(entries)
+    expect(result).not.toBeNull()
+    expect(result!.confidence).toBe('low')
+    expect(result!.predicted).toBeGreaterThanOrEqual(1)
+    expect(result!.predicted).toBeLessThanOrEqual(5)
+  })
+
+  it('returns medium confidence with 4-7 samples', () => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    const entries: AnalyticsLogEntry[] = []
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(tomorrow)
+      d.setDate(d.getDate() - (i + 1) * 7)
+      const dateStr = d.toISOString().slice(0, 10)
+      entries.push({
+        id: `${i}`,
+        date: dateStr,
+        mood: 3 + (i % 3),
+        habits: [],
+        notes: '',
+        user_id: 'user1',
+        created_at: '',
+        updated_at: '',
+      })
+    }
+
+    const result = predictTomorrowMood(entries)
+    expect(result).not.toBeNull()
+    expect(result!.confidence).toBe('medium')
+  })
+
+  it('returns high confidence with 8+ samples', () => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    const entries: AnalyticsLogEntry[] = []
+    for (let i = 0; i < 9; i++) {
+      const d = new Date(tomorrow)
+      d.setDate(d.getDate() - (i + 1) * 7)
+      const dateStr = d.toISOString().slice(0, 10)
+      entries.push({
+        id: `${i}`,
+        date: dateStr,
+        mood: 4,
+        habits: [],
+        notes: '',
+        user_id: 'user1',
+        created_at: '',
+        updated_at: '',
+      })
+    }
+
+    const result = predictTomorrowMood(entries)
+    expect(result).not.toBeNull()
+    expect(result!.confidence).toBe('high')
+    expect(result!.reason).toContain('tend to feel')
   })
 })

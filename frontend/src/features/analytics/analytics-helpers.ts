@@ -8,6 +8,57 @@ export type AnalyticsLogEntry = Omit<LogEntry, 'habits'> & {
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+export type MoodPrediction = {
+  predicted: number
+  confidence: 'low' | 'medium' | 'high'
+  reason: string
+}
+
+export function predictTomorrowMood(entries: AnalyticsLogEntry[]): MoodPrediction | null {
+  if (entries.length === 0) return null
+
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowWeekday = tomorrow.getDay()
+
+  const weekdayEntries = entries.filter((e) => {
+    const d = new Date(e.date)
+    return d.getDay() === tomorrowWeekday && e.mood != null
+  })
+
+  const weekdayMoods = weekdayEntries.map((e) => e.mood as number)
+  if (weekdayMoods.length === 0) return null
+
+  const weekdayAvg = weekdayMoods.reduce((a, b) => a + b, 0) / weekdayMoods.length
+
+  let prediction = weekdayAvg
+
+  const sorted = [...entries]
+    .filter((e) => e.mood != null)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  const recentEntries = sorted.slice(-3).map((e) => e.mood as number)
+  if (recentEntries.length >= 3) {
+    const trend = recentEntries[2] - recentEntries[0]
+    if (trend > 0) prediction += 0.1
+    else if (trend < 0) prediction -= 0.1
+  }
+
+  prediction = Math.max(1, Math.min(5, prediction))
+  prediction = Math.round(prediction * 10) / 10
+
+  let confidence: 'low' | 'medium' | 'high' = 'low'
+  if (weekdayMoods.length >= 8) confidence = 'high'
+  else if (weekdayMoods.length >= 4) confidence = 'medium'
+
+  const dayNames = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
+  const reason = `You tend to feel around ${prediction.toFixed(1)} on ${dayNames[tomorrowWeekday]}`
+
+  return { predicted: prediction, confidence, reason }
+}
+
 export async function fetchEntries(userId: string, range: number): Promise<AnalyticsLogEntry[]> {
   const { data, error } = await supabase
     .from('log_entries')
