@@ -163,4 +163,47 @@ class StellarService {
       return 0.0;
     }
   }
+
+  /// Fetches live balances (XLM and ECHO) from Stellar Horizon.
+  /// Returns a map with 'xlm' and 'echo' keys, or null if the account
+  /// is not found on the network.
+  static Future<Map<String, double>?> getLiveBalances(
+    String publicKey, {
+    String? issuerPublicKey,
+    StellarSDK? sdk,
+  }) async {
+    final issuer = issuerPublicKey ?? StellarConfig.issuerPublicKey;
+    try {
+      final account = await (sdk ?? _sdk).accounts.account(publicKey);
+      double xlmBalance = 0.0;
+      double echoBalance = 0.0;
+      for (final balance in account.balances) {
+        if (balance.assetType == 'native') {
+          xlmBalance = double.tryParse(balance.balance) ?? 0.0;
+        } else if (balance.assetCode == EchoToken.code &&
+            balance.assetIssuer == issuer) {
+          echoBalance = double.tryParse(balance.balance) ?? 0.0;
+        }
+      }
+      return {'xlm': xlmBalance, 'echo': echoBalance};
+    } catch (e) {
+      debugPrint('[StellarService] Live balance check error: $e');
+      return null;
+    }
+  }
+
+  /// Funds a testnet account via Stellar Friendbot.
+  /// Returns true if funding succeeded.
+  static Future<bool> fundViaFriendbot(
+    String publicKey, {
+    http_client.Client? httpClient,
+  }) async {
+    try {
+      await _fundViaFriendbot(publicKey, httpClient: httpClient);
+      return true;
+    } catch (e) {
+      debugPrint('[StellarService] Friendbot funding error: $e');
+      return false;
+    }
+  }
 }
