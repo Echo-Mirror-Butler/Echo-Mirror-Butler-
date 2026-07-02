@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -107,6 +108,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;
+    }
+  }
+
+  /// Sign in with OAuth provider (google or github)
+  Future<void> signInWithOAuth(OAuthProvider provider) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repository.signInWithOAuth(provider);
+      // Session is established via deep link redirect; router handles navigation
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 

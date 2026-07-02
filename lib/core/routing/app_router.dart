@@ -56,10 +56,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isSigningUp = state.matchedLocation == '/signup';
       final isVerifyEmail = state.matchedLocation == '/verify-email';
       final isVerifyEmailConfirmed = state.matchedLocation == '/verify-email-confirmed';
+      final isAuthCallback = state.matchedLocation == '/auth/callback';
       final isAuthRoute = isLoggingIn || isSigningUp;
 
-      // /verify-email and /verify-email-confirmed are always accessible
-      if (isVerifyEmail || isVerifyEmailConfirmed) return null;
+      // /verify-email, /verify-email-confirmed, and /auth/callback are always accessible
+      if (isVerifyEmail || isVerifyEmailConfirmed || isAuthCallback) return null;
 
       bool onboardingCompleted = false;
       try {
@@ -101,6 +102,25 @@ final routerProvider = Provider<GoRouter>((ref) {
           final email = state.uri.queryParameters['email'] ?? '';
           return VerifyEmailScreen(email: email);
         },
+      ),
+      GoRoute(
+        path: '/auth/callback',
+        name: 'auth-callback',
+        redirect: (context, state) async {
+          // After OAuth redirect, check auth and route accordingly
+          await ref.read(authProvider.notifier).checkAuthStatus();
+          final authState = ref.read(authProvider);
+          if (!authState.isAuthenticated) return '/login';
+          // New OAuth users don't have onboarding_completed set
+          bool onboardingDone = false;
+          try {
+            onboardingDone = await ref.read(onboardingCompletedProvider.future);
+          } catch (_) {}
+          return onboardingDone ? '/dashboard' : '/onboarding';
+        },
+        builder: (context, state) => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
       ),
       GoRoute(
         path: '/verify-email-confirmed',

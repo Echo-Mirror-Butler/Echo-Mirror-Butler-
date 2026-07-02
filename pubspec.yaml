@@ -70,6 +70,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   # Deep Linking
   app_links: ^6.3.2
+  # OAuth
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

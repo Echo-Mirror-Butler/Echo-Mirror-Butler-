@@ -80,6 +80,21 @@ class AuthRepository {
     return accountRequestId;
   }
 
+  /// Sign in with OAuth provider (google or github)
+  /// Opens the browser for the OAuth flow; Supabase handles the redirect.
+  Future<void> signInWithOAuth(OAuthProvider provider) async {
+    try {
+      debugPrint('[AuthRepository] signInWithOAuth -> $provider');
+      await _client.auth.signInWithOAuth(
+        provider,
+        redirectTo: 'io.supabase.echomirror://login-callback/',
+      );
+    } catch (e) {
+      debugPrint('[AuthRepository] signInWithOAuth error -> $e');
+      throw Exception('OAuth sign-in failed: ${e.toString()}');
+    }
+  }
+
   /// Sign out current user
   Future<void> signOut() async {
     try {

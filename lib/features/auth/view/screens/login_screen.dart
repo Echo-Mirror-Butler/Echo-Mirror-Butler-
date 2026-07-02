@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show OAuthProvider;
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../../core/themes/app_theme.dart';
@@ -200,11 +201,75 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  // OAuth divider
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'or continue with',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Google OAuth button
+                  _OAuthButton(
+                    label: 'Continue with Google',
+                    icon: FontAwesomeIcons.google,
+                    onPressed: authState.isLoading
+                        ? null
+                        : () => ref
+                            .read(authProvider.notifier)
+                            .signInWithOAuth(OAuthProvider.google),
+                  ),
+                  const SizedBox(height: 8),
+                  // GitHub OAuth button
+                  _OAuthButton(
+                    label: 'Continue with GitHub',
+                    icon: FontAwesomeIcons.github,
+                    onPressed: authState.isLoading
+                        ? null
+                        : () => ref
+                            .read(authProvider.notifier)
+                            .signInWithOAuth(OAuthProvider.github),
+                  ),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _OAuthButton extends StatelessWidget {
+  const _OAuthButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: FaIcon(icon, size: 18),
+      label: Text(label),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

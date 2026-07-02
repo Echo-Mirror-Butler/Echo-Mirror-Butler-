@@ -1399,6 +1399,42 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
 .lp-auth-divider span { flex: 1; height: 1px; background: var(--lp-border); }
 .lp-auth-divider em { font-size: 0.7rem; font-style: normal; color: var(--lp-ink-30); letter-spacing: 0.06em; }
 
+/* ── OAuth buttons ───────────────────────────────────────────── */
+.lp-oauth-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 0.25rem;
+}
+
+.lp-oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-canvas, #fff);
+  color: var(--lp-ink, #0c1a2e);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.lp-oauth-btn:hover:not(:disabled) {
+  background: var(--lp-surface, #f5f5f5);
+  border-color: var(--lp-ink-30, #aaa);
+  transform: translateY(-1px);
+}
+
+.lp-oauth-btn:active:not(:disabled) { transform: translateY(0); }
+.lp-oauth-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.lp-oauth-btn svg { flex-shrink: 0; }
+
 /* ── Health Awareness section ───────────────────────────────── */
 .lp-awareness-section {
   background: var(--lp-white);
