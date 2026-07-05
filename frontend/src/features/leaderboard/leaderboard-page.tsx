@@ -32,6 +32,7 @@ export function LeaderboardPage() {
       const processed = (data || []).map((entry: LeaderboardEntry) => ({
         ...entry,
         display_name: entry.leaderboard_anonymous ? 'Anonymous' : entry.display_name || 'User',
+        avatar_url: entry.leaderboard_anonymous ? null : entry.avatar_url,
       }));
 
       setEntries(processed);
