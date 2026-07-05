@@ -203,7 +203,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: const Text('Continue with Google'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -261,25 +263,37 @@ class _GoogleLogoPainter extends CustomPainter {
     canvas.drawArc(
       Rect.fromLTWH(0, 0, s, s),
       -0.52, 3.14, false,
-      Paint()..color = const Color(0xFF4285F4)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+      Paint()
+        ..color = const Color(0xFF4285F4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = s * 0.18,
     );
     // Red arc (top-left)
     canvas.drawArc(
       Rect.fromLTWH(0, 0, s, s),
       -2.62, 1.57, false,
-      Paint()..color = const Color(0xFFEA4335)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+      Paint()
+        ..color = const Color(0xFFEA4335)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = s * 0.18,
     );
     // Yellow arc (bottom-left)
     canvas.drawArc(
       Rect.fromLTWH(0, 0, s, s),
       2.09, 0.87, false,
-      Paint()..color = const Color(0xFFFBBC05)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+      Paint()
+        ..color = const Color(0xFFFBBC05)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = s * 0.18,
     );
     // Green arc (bottom)
     canvas.drawArc(
       Rect.fromLTWH(0, 0, s, s),
       2.62, 0.52, false,
-      Paint()..color = const Color(0xFF34A853)..style = PaintingStyle.stroke..strokeWidth = s * 0.18,
+      Paint()
+        ..color = const Color(0xFF34A853)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = s * 0.18,
     );
     // Horizontal bar
     canvas.drawRect(

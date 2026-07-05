@@ -6,9 +6,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Repository for authentication operations backed by Supabase
 class AuthRepository {
   final SupabaseClient? _injectedClient;
+  final GoogleSignIn? _injectedGoogleSignIn;
 
-  AuthRepository({SupabaseClient? supabaseClient})
-    : _injectedClient = supabaseClient {
+  AuthRepository({
+    SupabaseClient? supabaseClient,
+    GoogleSignIn? googleSignIn,
+  }) : _injectedClient = supabaseClient,
+       _injectedGoogleSignIn = googleSignIn {
     debugPrint('[AuthRepository] Initialized');
   }
 
@@ -212,10 +216,11 @@ class AuthRepository {
     try {
       debugPrint('[AuthRepository] signInWithGoogle');
       const webClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
-      final googleSignIn = GoogleSignIn(
-        serverClientId: webClientId.isNotEmpty ? webClientId : null,
-        scopes: ['email'],
-      );
+      final googleSignIn = _injectedGoogleSignIn ??
+          GoogleSignIn(
+            serverClientId: webClientId.isNotEmpty ? webClientId : null,
+            scopes: ['email'],
+          );
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) throw Exception('Google sign-in cancelled');
       final googleAuth = await googleUser.authentication;

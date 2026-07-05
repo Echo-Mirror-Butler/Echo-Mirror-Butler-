@@ -47,7 +47,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final prefs = await SharedPreferences.getInstance();
       final keepMeSignedIn = prefs.getBool('echo_remember_me') ?? true;
       if (!keepMeSignedIn) {
-        debugPrint('[AuthNotifier] echo_remember_me=false — clearing session on cold start');
+        debugPrint(
+          '[AuthNotifier] echo_remember_me=false — clearing session on cold start',
+        );
         try {
           await _repository.signOut();
         } catch (_) {
@@ -185,7 +187,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final userId = await _repository.signInWithGoogle();
       final userData = await _repository.getCurrentUser();
       state = state.copyWith(
-        user: userData != null ? UserModel.fromJson(userData) : UserModel(id: userId, email: '', createdAt: DateTime.now()),
+        user: userData != null
+            ? UserModel.fromJson(userData)
+            : UserModel(id: userId, email: '', createdAt: DateTime.now()),
         isLoading: false,
       );
       return true;
