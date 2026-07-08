@@ -2515,3 +2515,34 @@ a.lp-mobile-menu-link {
 
   :root:not([data-theme='light']) .lp-auth-input { background: var(--lp-canvas); }
 }
+
+/* ── OAuth buttons ────────────────────────────────────────── */
+.lp-oauth-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.lp-oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid var(--lp-border, rgba(20,99,255,0.15));
+  border-radius: 10px;
+  background: var(--lp-canvas, #fff);
+  color: var(--lp-ink, #0c1a2e);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.lp-oauth-btn:hover {
+  background: var(--lp-ink-10, rgba(12,26,46,0.05));
+  border-color: rgba(20,99,255,0.3);
+  box-shadow: 0 2px 8px rgba(12,26,46,0.07);
+}
