@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
@@ -356,3 +356,5 @@ class DashboardRepository {
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 }
+
+

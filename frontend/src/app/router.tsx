@@ -7,6 +7,7 @@ import { LandingPage } from '../features/landing/LandingPage'
 import { SignupPage } from '../features/auth/pages/SignupPage'
 import { ResetPasswordPage } from '../features/auth/pages/ResetPasswordPage'
 import { UpdatePasswordPage } from '../features/auth/pages/UpdatePasswordPage'
+import { AuthCallbackPage } from '../features/auth/pages/AuthCallbackPage'
 import { ErrorBoundary } from '../components/error-boundary'
 import { RouteErrorBoundary } from '../components/RouteErrorBoundary'
 import { useAuth } from '../lib/auth-context'
@@ -39,6 +40,9 @@ const GlobalMirrorPage = lazy(() =>
 )
 const SettingsPage = lazy(() =>
   import('../features/settings/settings-page').then((m) => ({ default: m.SettingsPage })),
+)
+const LeaderboardPage = lazy(() =>
+  import('../features/leaderboard/leaderboard-page').then((m) => ({ default: m.LeaderboardPage })),
 )
 const OnboardingPage = lazy(() =>
   import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
@@ -160,6 +164,14 @@ export function AppRouter() {
           }
         />
         <Route
+          path="/auth/callback"
+          element={
+            <RouteErrorBoundary routeName="Auth Callback">
+              <AuthCallbackPage />
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
           path="/reset-password"
           element={
             <RouteErrorBoundary routeName="Reset Password">
@@ -263,6 +275,14 @@ export function AppRouter() {
             element={
               <RouteErrorBoundary routeName="Settings">
                 <SettingsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <RouteErrorBoundary routeName="Leaderboard">
+                <LeaderboardPage />
               </RouteErrorBoundary>
             }
           />

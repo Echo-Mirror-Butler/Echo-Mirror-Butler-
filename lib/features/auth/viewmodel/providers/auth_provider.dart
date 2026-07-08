@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -42,6 +43,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _isCheckingAuth = true;
     state = state.copyWith(isLoading: true);
     try {
+      // If the user opted out of persistent sessions, clear session on cold start.
+      final prefs = await SharedPreferences.getInstance();
+      final keepMeSignedIn = prefs.getBool('echo_remember_me') ?? true;
+      if (!keepMeSignedIn) {
+        debugPrint(
+          '[AuthNotifier] echo_remember_me=false — clearing session on cold start',
+        );
+        try {
+          await _repository.signOut();
+        } catch (_) {
+          // No session to clear — safe to ignore
+        }
+        state = const AuthState();
+        return;
+      }
+
       final isAuth = await _repository.isAuthenticated();
       debugPrint('[AuthNotifier] Auth check result: $isAuth');
 
@@ -157,6 +174,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       state = state.copyWith(isLoading: false);
       return success;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
+
+  /// Sign in with Google
+  Future<bool> signInWithGoogle() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final userId = await _repository.signInWithGoogle();
+      final userData = await _repository.getCurrentUser();
+      state = state.copyWith(
+        user: userData != null
+            ? UserModel.fromJson(userData)
+            : UserModel(id: userId, email: '', createdAt: DateTime.now()),
+        isLoading: false,
+      );
+      return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
       return false;

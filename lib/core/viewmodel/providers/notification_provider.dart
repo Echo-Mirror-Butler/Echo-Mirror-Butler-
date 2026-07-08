@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/notification_service.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../features/logging/viewmodel/providers/logging_provider.dart';
@@ -79,3 +80,46 @@ final dailyLogCheckProvider = FutureProvider<void>((ref) async {
   final service = ref.watch(notificationServiceProvider);
   await _checkDailyLog(ref, service);
 });
+
+// ─────────────────────────────────────────────────────────────
+// Weekly Digest preference
+// ─────────────────────────────────────────────────────────────
+
+/// Reads the weekly_digest opt-in flag from the user's profile.
+final weeklyDigestProvider = FutureProvider<bool>((ref) async {
+  final client = Supabase.instance.client;
+  final user = client.auth.currentUser;
+  if (user == null) return false;
+
+  final res = await client
+      .from('profiles')
+      .select('weekly_digest')
+      .eq('id', user.id)
+      .maybeSingle();
+
+  return (res?['weekly_digest'] as bool?) ?? false;
+});
+
+/// Toggles the weekly_digest preference and invalidates the provider.
+final weeklyDigestNotifierProvider = Provider<WeeklyDigestNotifier>((ref) {
+  return WeeklyDigestNotifier(ref);
+});
+
+class WeeklyDigestNotifier {
+  final Ref _ref;
+
+  WeeklyDigestNotifier(this._ref);
+
+  Future<void> setEnabled(bool value) async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return;
+
+    await client.from('profiles').upsert({
+      'id': user.id,
+      'weekly_digest': value,
+    });
+
+    _ref.invalidate(weeklyDigestProvider);
+  }
+}

@@ -7,6 +7,7 @@ import {
 } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
+import { HabitMoodHeatmap } from './components/HabitMoodHeatmap'
 
 type LogEntry = {
   id: string
@@ -399,6 +400,17 @@ export function AnalyticsPage() {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Habit × Mood heatmap (requires ≥14 entries) */}
+      {entries.length >= 14 && (
+        <section className="card">
+          <h2 style={{ marginTop: 0 }}>Habit × Mood Heatmap</h2>
+          <p className="muted" style={{ marginTop: 0, marginBottom: '1rem', fontSize: '0.85rem' }}>
+            How often each habit was logged on days with a given mood score.
+          </p>
+          <HabitMoodHeatmap entries={entries} />
         </section>
       )}
 

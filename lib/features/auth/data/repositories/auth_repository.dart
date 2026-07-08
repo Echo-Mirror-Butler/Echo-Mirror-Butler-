@@ -1,13 +1,18 @@
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for authentication operations backed by Supabase
 class AuthRepository {
   final SupabaseClient? _injectedClient;
+  final GoogleSignIn? _injectedGoogleSignIn;
 
-  AuthRepository({SupabaseClient? supabaseClient})
-    : _injectedClient = supabaseClient {
+  AuthRepository({
+    SupabaseClient? supabaseClient,
+    GoogleSignIn? googleSignIn,
+  }) : _injectedClient = supabaseClient,
+       _injectedGoogleSignIn = googleSignIn {
     debugPrint('[AuthRepository] Initialized');
   }
 
@@ -203,6 +208,43 @@ class AuthRepository {
     } catch (e) {
       debugPrint('[AuthRepository] resetPassword error -> $e');
       throw Exception('Password reset failed: ${e.toString()}');
+    }
+  }
+
+  /// Sign in with Google via google_sign_in + Supabase signInWithIdToken
+  Future<String> signInWithGoogle() async {
+    try {
+      debugPrint('[AuthRepository] signInWithGoogle');
+      const webClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+      final googleSignIn = _injectedGoogleSignIn ??
+          GoogleSignIn(
+            serverClientId: webClientId.isNotEmpty ? webClientId : null,
+            scopes: ['email'],
+          );
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) throw Exception('Google sign-in cancelled');
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) throw Exception('No ID token from Google');
+
+      final response = await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: googleAuth.accessToken,
+      );
+
+      final user = response.user;
+      if (user == null) throw Exception('Supabase sign-in failed');
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', user.email ?? '');
+      await prefs.setString('user_id', user.id);
+
+      debugPrint('[AuthRepository] signInWithGoogle success -> ${user.id}');
+      return user.id;
+    } catch (e) {
+      debugPrint('[AuthRepository] signInWithGoogle error -> $e');
+      throw Exception('Google sign-in failed: ${e.toString()}');
     }
   }
 }
