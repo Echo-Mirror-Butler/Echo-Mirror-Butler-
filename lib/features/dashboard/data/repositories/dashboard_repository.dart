@@ -214,6 +214,23 @@ class DashboardRepository {
         ));
       }
 
+      final suggestions = result['suggestions'];
+      if (suggestions is List) {
+        for (var i = 0; i < suggestions.length; i++) {
+          final text = suggestions[i]?.toString().trim() ?? '';
+          if (text.isEmpty) continue;
+          insights.add(InsightModel(
+            id: 'suggestion-$i-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Suggestion',
+            description: text,
+            date: now,
+            type: InsightType.general,
+            createdAt: now,
+          ));
+        }
+      }
+
       final futureLetter = (result['futureLetter'] as String? ?? '').trim();
       if (futureLetter.isNotEmpty) {
         insights.add(InsightModel(

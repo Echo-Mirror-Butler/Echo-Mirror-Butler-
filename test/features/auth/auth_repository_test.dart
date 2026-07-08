@@ -1,5 +1,6 @@
 import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,13 +15,24 @@ class MockUserResponse extends Mock implements UserResponse {}
 
 class MockUser extends Mock implements User {}
 
+class MockGoogleSignIn extends Mock implements GoogleSignIn {}
+
+class MockGoogleSignInAccount extends Mock implements GoogleSignInAccount {}
+
+class MockGoogleSignInAuthentication extends Mock
+    implements GoogleSignInAuthentication {}
+
 void main() {
   late MockSupabaseClient mockSupabase;
   late MockGoTrueClient mockAuth;
   late MockUser mockUser;
+  late MockGoogleSignIn mockGoogleSignIn;
+  late MockGoogleSignInAccount mockGoogleAccount;
+  late MockGoogleSignInAuthentication mockGoogleAuth;
 
   setUpAll(() {
     registerFallbackValue(UserAttributes());
+    registerFallbackValue(OAuthProvider.google);
   });
 
   setUp(() async {
@@ -28,6 +40,9 @@ void main() {
     mockSupabase = MockSupabaseClient();
     mockAuth = MockGoTrueClient();
     mockUser = MockUser();
+    mockGoogleSignIn = MockGoogleSignIn();
+    mockGoogleAccount = MockGoogleSignInAccount();
+    mockGoogleAuth = MockGoogleSignInAuthentication();
     when(() => mockSupabase.auth).thenReturn(mockAuth);
     when(() => mockUser.id).thenReturn('123e4567-e89b-12d3-a456-426614174000');
   });
@@ -364,5 +379,164 @@ void main() {
         expect(ok, isFalse);
       },
     );
+  });
+
+  group('signInWithGoogle', () {
+    test('returns user id on successful Google sign-in', () async {
+      when(
+        () => mockGoogleSignIn.signIn(),
+      ).thenAnswer((_) async => mockGoogleAccount);
+      when(
+        () => mockGoogleAccount.authentication,
+      ).thenAnswer((_) async => mockGoogleAuth);
+      when(() => mockGoogleAuth.idToken).thenReturn('google-id-token');
+      when(() => mockGoogleAuth.accessToken).thenReturn('google-access-token');
+
+      final mockResponse = MockAuthResponse();
+      when(() => mockResponse.user).thenReturn(mockUser);
+      when(() => mockUser.email).thenReturn('google@example.com');
+      when(
+        () => mockAuth.signInWithIdToken(
+          provider: any(named: 'provider'),
+          idToken: any(named: 'idToken'),
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      final repo = AuthRepository(
+        supabaseClient: mockSupabase,
+        googleSignIn: mockGoogleSignIn,
+      );
+      final userId = await repo.signInWithGoogle();
+
+      expect(userId, '123e4567-e89b-12d3-a456-426614174000');
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('user_email'), 'google@example.com');
+      expect(
+        prefs.getString('user_id'),
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
+    });
+
+    test('throws when Google sign-in is cancelled (returns null)', () async {
+      when(
+        () => mockGoogleSignIn.signIn(),
+      ).thenAnswer((_) async => null);
+
+      final repo = AuthRepository(
+        supabaseClient: mockSupabase,
+        googleSignIn: mockGoogleSignIn,
+      );
+
+      expect(
+        () => repo.signInWithGoogle(),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Google sign-in failed'),
+          ),
+        ),
+      );
+    });
+
+    test('throws when Google returns no id token', () async {
+      when(
+        () => mockGoogleSignIn.signIn(),
+      ).thenAnswer((_) async => mockGoogleAccount);
+      when(
+        () => mockGoogleAccount.authentication,
+      ).thenAnswer((_) async => mockGoogleAuth);
+      when(() => mockGoogleAuth.idToken).thenReturn(null);
+      when(() => mockGoogleAuth.accessToken).thenReturn(null);
+
+      final repo = AuthRepository(
+        supabaseClient: mockSupabase,
+        googleSignIn: mockGoogleSignIn,
+      );
+
+      expect(
+        () => repo.signInWithGoogle(),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Google sign-in failed'),
+          ),
+        ),
+      );
+    });
+
+    test('throws when Supabase signInWithIdToken returns no user', () async {
+      when(
+        () => mockGoogleSignIn.signIn(),
+      ).thenAnswer((_) async => mockGoogleAccount);
+      when(
+        () => mockGoogleAccount.authentication,
+      ).thenAnswer((_) async => mockGoogleAuth);
+      when(() => mockGoogleAuth.idToken).thenReturn('google-id-token');
+      when(() => mockGoogleAuth.accessToken).thenReturn('google-access-token');
+
+      final mockResponse = MockAuthResponse();
+      when(() => mockResponse.user).thenReturn(null);
+      when(
+        () => mockAuth.signInWithIdToken(
+          provider: any(named: 'provider'),
+          idToken: any(named: 'idToken'),
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      final repo = AuthRepository(
+        supabaseClient: mockSupabase,
+        googleSignIn: mockGoogleSignIn,
+      );
+
+      expect(
+        () => repo.signInWithGoogle(),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Google sign-in failed'),
+          ),
+        ),
+      );
+    });
+
+    test('throws when Supabase signInWithIdToken raises an error', () async {
+      when(
+        () => mockGoogleSignIn.signIn(),
+      ).thenAnswer((_) async => mockGoogleAccount);
+      when(
+        () => mockGoogleAccount.authentication,
+      ).thenAnswer((_) async => mockGoogleAuth);
+      when(() => mockGoogleAuth.idToken).thenReturn('google-id-token');
+      when(() => mockGoogleAuth.accessToken).thenReturn('google-access-token');
+      when(
+        () => mockAuth.signInWithIdToken(
+          provider: any(named: 'provider'),
+          idToken: any(named: 'idToken'),
+          accessToken: any(named: 'accessToken'),
+        ),
+      ).thenThrow(AuthException('OAuth token rejected'));
+
+      final repo = AuthRepository(
+        supabaseClient: mockSupabase,
+        googleSignIn: mockGoogleSignIn,
+      );
+
+      expect(
+        () => repo.signInWithGoogle(),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Google sign-in failed'),
+          ),
+        ),
+      );
+    });
   });
 }
