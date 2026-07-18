@@ -142,52 +142,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       body: Stack(
         children: [
-          dashboardState.when(
-            data: (insights) {
-              if (insights.isEmpty) {
-                return _buildEmptyState(
-                  context,
-                  theme,
-                  ref,
-                  hasLoggedToday,
-                );
+          RefreshIndicator(
+            color: AppTheme.primaryColor,
+            onRefresh: () async {
+              if (authState.isAuthenticated && authState.user != null) {
+                ref.invalidate(dashboardProvider);
+                ref.invalidate(streakProvider);
+                ref.invalidate(echoBalanceProvider);
+                ref.invalidate(moodChartDataProvider);
+                ref.invalidate(dailyLogCheckProvider);
+
+                await ref.read(dashboardProvider.notifier).loadInsights(
+                      userId: authState.user!.id,
+                      forceReload: true,
+                    );
               }
+            },
+            child: dashboardState.when(
+              data: (insights) {
+                if (insights.isEmpty) {
+                  return _buildEmptyState(
+                    context,
+                    theme,
+                    ref,
+                    hasLoggedToday,
+                  );
+                }
 
-              _checkMilestones(insights);
+                _checkMilestones(insights);
 
-              final predictions = insights
-                  .where((i) => i.type == InsightType.prediction)
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date));
+                final predictions = insights
+                    .where((i) => i.type == InsightType.prediction)
+                    .toList()
+                  ..sort((a, b) => b.date.compareTo(a.date));
 
-              final habits = insights
-                  .where((i) => i.type == InsightType.habit)
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date));
+                final habits = insights
+                    .where((i) => i.type == InsightType.habit)
+                    .toList()
+                  ..sort((a, b) => b.date.compareTo(a.date));
 
-              final moods = insights
-                  .where((i) => i.type == InsightType.mood)
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date));
+                final moods = insights
+                    .where((i) => i.type == InsightType.mood)
+                    .toList()
+                  ..sort((a, b) => b.date.compareTo(a.date));
 
-              final general = insights
-                  .where((i) => i.type == InsightType.general)
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date));
+                final general = insights
+                    .where((i) => i.type == InsightType.general)
+                    .toList()
+                  ..sort((a, b) => b.date.compareTo(a.date));
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  if (authState.isAuthenticated &&
-                      authState.user != null) {
-                    await ref
-                        .read(dashboardProvider.notifier)
-                        .loadInsights(
-                          userId: authState.user!.id,
-                          forceReload: true,
-                        );
-                  }
-                },
-                child: SingleChildScrollView(
+                return SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,14 +250,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 16),
                     ],
                   ),
+                );
+              },
+              loading: () => const Center(
+                child: ShimmerLoading(width: 40, height: 40),
+              ),
+              error: (error, stack) => SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: Center(
+                    child: NoConnectionWidget(
+                      onRetry: () => ref.refresh(dashboardProvider),
+                    ),
+                  ),
                 ),
-              );
-            },
-            loading: () => const Center(
-              child: ShimmerLoading(width: 40, height: 40),
-            ),
-            error: (error, stack) => NoConnectionWidget(
-              onRetry: () => ref.refresh(dashboardProvider),
+              ),
             ),
           ),
           Align(
@@ -358,6 +370,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   ) {
     return Center(
       child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
