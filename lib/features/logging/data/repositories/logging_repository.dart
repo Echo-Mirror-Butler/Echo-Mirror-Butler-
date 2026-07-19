@@ -1,7 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/supabase_client_service.dart';
 import '../models/log_entry_model.dart';
+
+/// Thrown when the server-side mood log rate limit (max 10 logs per user per
+/// hour, enforced by a Postgres trigger on `log_entries`) is exceeded.
+class MoodLogRateLimitException implements Exception {
+  MoodLogRateLimitException(this.retryAfterSeconds);
+
+  final int retryAfterSeconds;
+
+  @override
+  String toString() =>
+      'rate_limit_exceeded: retry after $retryAfterSeconds seconds';
+}
 
 /// Repository for logging operations
 /// Handles all Supabase table queries for daily logging
@@ -30,6 +44,21 @@ class LoggingRepository {
     return '$year-$month-$day';
   }
 
+  /// Parses the `{"error":"rate_limit_exceeded","retry_after_seconds":N}`
+  /// payload the `enforce_mood_log_rate_limit` trigger sends as the
+  /// PostgrestException message, defaulting to 3600s if it can't be parsed.
+  int _parseRetryAfterSeconds(String message) {
+    try {
+      final decoded = jsonDecode(message);
+      if (decoded is Map && decoded['retry_after_seconds'] is int) {
+        return decoded['retry_after_seconds'] as int;
+      }
+    } catch (_) {
+      // Fall through to default below.
+    }
+    return 3600;
+  }
+
   /// Create a new log entry
   Future<LogEntryModel> createLogEntry(LogEntryModel entry) async {
     try {
@@ -48,6 +77,16 @@ class LoggingRepository {
 
       debugPrint('[LoggingRepository] createLogEntry success');
       return LogEntryModel.fromJson(result);
+    } on PostgrestException catch (e) {
+      if (e.code == 'PT429') {
+        final retryAfter = _parseRetryAfterSeconds(e.message);
+        debugPrint(
+          '[LoggingRepository] createLogEntry rate limited, retryAfterSeconds=$retryAfter',
+        );
+        throw MoodLogRateLimitException(retryAfter);
+      }
+      debugPrint('[LoggingRepository] createLogEntry error -> $e');
+      throw Exception('Failed to create log entry: ${e.toString()}');
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] createLogEntry error -> $e');
       debugPrint(
