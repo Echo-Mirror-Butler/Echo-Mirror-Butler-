@@ -59,9 +59,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         onRefresh: _refreshLeaderboard,
         color: AppTheme.primaryColor,
         child: leaderboardState.isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
+            ? const Center(child: CircularProgressIndicator())
             : leaderboardState.error != null
                 ? _buildErrorView(theme, leaderboardState.error!)
                 : _buildLeaderboardView(theme, leaderboardState, authState),

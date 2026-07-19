@@ -252,9 +252,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 );
               },
-              loading: () => const Center(
-                child: ShimmerLoading(width: 40, height: 40),
-              ),
+              loading: () =>
+                  const Center(child: ShimmerLoading(width: 40, height: 40)),
               error: (error, stack) => SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: SizedBox(

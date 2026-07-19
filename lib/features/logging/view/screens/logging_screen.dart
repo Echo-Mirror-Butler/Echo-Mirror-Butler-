@@ -58,9 +58,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         onRefresh: () async {
           ref.invalidate(loggingProvider);
           if (userId != null && userId.isNotEmpty) {
-            await ref
-                .read(loggingProvider.notifier)
-                .loadLogEntries(userId: userId);
+            await ref.read(loggingProvider.notifier).loadLogEntries(
+                  userId: userId,
+                );
           }
         },
         child: loggingState.when(
