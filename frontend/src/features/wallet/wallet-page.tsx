@@ -1,6 +1,3 @@
-﻿import { FormEvent, useState } from 'react'
-import { FormEvent, useEffect, useState } from 'react'
-﻿import { FormEvent, useEffect, useState } from 'react'
 ﻿import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -10,7 +7,6 @@ import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
 import { TestnetBadge } from '../../components/TestnetBadge'
-import { txExplorerUrl } from '../../lib/stellar-config'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
 import { isTestnet, stellarConfig } from '../../lib/stellar-config'
 
@@ -264,17 +260,17 @@ function isValidStellarKey(key: string): boolean {
 
 function buildWalletQrUrl(publicKey: string, size = 256): string {
   const params = new URLSearchParams({
-    size: ${size}x,
+    size: `${size}x${size}`,
     data: publicKey,
   })
-  return https://api.qrserver.com/v1/create-qr-code/?
+  return `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`
 }
 
 async function isFreighterInstalled(): Promise<boolean> {
   try {
     const { isConnected } = await import('@stellar/freighter-api')
-    const { isAppConnected } = await isConnected()
-    return Boolean(isAppConnected)
+    const { isConnected: connected } = await isConnected()
+    return Boolean(connected)
   } catch {
     return false
   }
@@ -337,7 +333,6 @@ export function WalletPage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
   const receiveCardRef = useRef<HTMLDivElement | null>(null)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -471,7 +466,6 @@ export function WalletPage() {
       setCustomAmount(String(PRESET_AMOUNTS[1]))
       setSelectedAmount(PRESET_AMOUNTS[1])
       setRecipientInput('')
-      setShowConfirmDialog(false)
       showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
@@ -479,7 +473,6 @@ export function WalletPage() {
     onError: (error: Error) => {
       showToast(error.message, 'error')
       setInlineError(error.message)
-      setShowConfirmDialog(false)
     },
   })
 
@@ -513,7 +506,7 @@ export function WalletPage() {
       })
       const link = document.createElement('a')
       link.href = dataUrl
-      link.download = echo-wallet-.png
+      link.download = `echo-wallet-${new Date().toISOString().slice(0, 10)}.png`
       link.click()
       showToast('QR downloaded.', 'success')
     } catch {
@@ -526,7 +519,7 @@ export function WalletPage() {
       return
     }
 
-    const shareText = Send ECHO to this Stellar address: + String.fromCharCode(10) + publicKey
+    const shareText = 'Send ECHO to this Stellar address:' + String.fromCharCode(10) + publicKey
     const shareUrl = window.location.href
 
     try {
@@ -539,7 +532,7 @@ export function WalletPage() {
         return
       }
 
-      await navigator.clipboard.writeText(${shareText} + String.fromCharCode(10) + shareUrl)
+      await navigator.clipboard.writeText(shareText + String.fromCharCode(10) + shareUrl)
       showToast('Copied to clipboard', 'success')
     } catch {
       showToast('Could not share wallet address.', 'error')
@@ -587,14 +580,6 @@ export function WalletPage() {
     setManualKeyError(null)
     await savePublicKeyMutation.mutateAsync(key)
     setManualKeyInput('')
-  }
-
-  const handleConfirmSend = () => {
-    sendGiftMutation.mutate()
-  }
-
-  const handleCancelSend = () => {
-    setShowConfirmDialog(false)
   }
 
   const handleDownloadCSV = async () => {
@@ -729,7 +714,7 @@ export function WalletPage() {
         ) : walletQuery.data?.exists ? (
           <>
             <p className="balance-number">{walletQuery.data.balance.toFixed(2)} ECHO</p>
-            <p className="muted">Public key: {walletQuery.data.record?.public_key.slice(0, 14)}â€¦</p>
+            <p className="muted">Public key: {walletQuery.data.record?.public_key?.slice(0, 14)}â€¦</p>
             {publicKey ? (
               <p className="muted" style={{ margin: 0 }}>
                 Public key: {publicKey.slice(0, 14)}...{publicKey.slice(-4)}
@@ -1180,32 +1165,6 @@ export function WalletPage() {
               </tr>
             </thead>
             <tbody>
-              {(historyQuery.data?.rows ?? []).map((row) => {
-                const isSent = row.sender_user_id === user.id
-                const counterparty = isSent ? row.recipient_user_id : row.sender_user_id
-                
-                return (
-                  <tr key={row.id}>
-                    <td>{formatDateTime(row.created_at)}</td>
-                    <td>{isSent ? 'sent' : 'received'}</td>
-                    <td className={isSent ? 'amount-minus' : 'amount-plus'}>
-                      {isSent ? '-' : '+'}
-                      {row.echo_amount.toFixed(2)}
-                    </td>
-                    <td>{counterparty.slice(0, 10)}â€¦</td>
-                    <td>{row.status}</td>
-                    <td>
-                      {row.stellar_tx_hash ? (
-                        <a
-                          href={txExplorerUrl(row.stellar_tx_hash!)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {row.stellar_tx_hash.slice(0, 8)}â€¦
-                        </a>
-                      ) : (
-                        'â€”'
-                      )}
               {historyQuery.isLoading ? (
                 Array.from({ length: 3 }).map((_, index) => (
                   <tr key={`reward-skeleton-${index}`}>
