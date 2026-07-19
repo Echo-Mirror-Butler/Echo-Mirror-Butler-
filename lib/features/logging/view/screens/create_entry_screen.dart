@@ -372,38 +372,43 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                             final moodValue = index + 1;
                             final isSelected =
                                 _selectedMood == moodValue;
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedMood = isSelected
-                                      ? null
-                                      : moodValue;
-                                });
-                              },
-                              child: Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppTheme.accentColor
-                                          .withValues(alpha: 0.2)
-                                      : theme.colorScheme.surface,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
+                            return Semantics(
+                              button: true,
+                              selected: isSelected,
+                              label: 'Mood $moodValue of 5',
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedMood = isSelected
+                                        ? null
+                                        : moodValue;
+                                  });
+                                },
+                                child: Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
                                     color: isSelected
                                         ? AppTheme.accentColor
-                                        : theme.colorScheme.outline
-                                            .withValues(alpha: 0.3),
-                                    width: isSelected ? 2 : 1,
+                                            .withValues(alpha: 0.2)
+                                        : theme.colorScheme.surface,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppTheme.accentColor
+                                          : theme.colorScheme.outline
+                                              .withValues(alpha: 0.3),
+                                      width: isSelected ? 2 : 1,
+                                    ),
                                   ),
-                                ),
-                                child: Icon(
-                                  _getMoodIcon(moodValue),
-                                  size: 28,
-                                  color: isSelected
-                                      ? AppTheme.accentColor
-                                      : theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
+                                  child: Icon(
+                                    _getMoodIcon(moodValue),
+                                    size: 28,
+                                    color: isSelected
+                                        ? AppTheme.accentColor
+                                        : theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.6),
+                                  ),
                                 ),
                               ),
                             );
