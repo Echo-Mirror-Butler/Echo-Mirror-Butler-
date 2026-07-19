@@ -297,7 +297,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 
   Widget _buildRankBadge(int rank) {
     final theme = Theme.of(context);
-    
+
     if (rank == 1) {
       return Container(
         width: 40,
@@ -317,12 +317,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             ),
           ],
         ),
-        child: const Center(
-          child: Text(
-            '🥇',
-            style: TextStyle(fontSize: 20),
-          ),
-        ),
+        child: const Center(child: Text('🥇', style: TextStyle(fontSize: 20))),
       );
     } else if (rank == 2) {
       return Container(
@@ -336,12 +331,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           ),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Center(
-          child: Text(
-            '🥈',
-            style: TextStyle(fontSize: 20),
-          ),
-        ),
+        child: const Center(child: Text('🥈', style: TextStyle(fontSize: 20))),
       );
     } else if (rank == 3) {
       return Container(
@@ -355,12 +345,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           ),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Center(
-          child: Text(
-            '🥉',
-            style: TextStyle(fontSize: 20),
-          ),
-        ),
+        child: const Center(child: Text('🥉', style: TextStyle(fontSize: 20))),
       );
     } else {
       return Container(
