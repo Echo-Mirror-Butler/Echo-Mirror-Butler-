@@ -32,7 +32,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     ref.invalidate(leaderboardProvider);
     final authState = ref.read(authProvider);
     final userId = authState.user?.id;
-    await ref.read(leaderboardProvider.notifier).loadLeaderboard(userId: userId);
+    await ref.read(leaderboardProvider.notifier).loadLeaderboard(
+          userId: userId,
+        );
   }
 
   @override
@@ -142,13 +144,17 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         Icon(
                           FontAwesomeIcons.trophy.data,
                           size: 64,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'No one has earned ECHO this week yet.',
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),
