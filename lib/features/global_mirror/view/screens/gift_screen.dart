@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/gift_transaction_model.dart';
 import '../../viewmodel/providers/gift_provider.dart';
@@ -63,6 +64,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   }
 
   Future<void> _handleSend() async {
+    Haptics.impactMedium();
     final currentBalance = ref.read(giftProvider).echoBalance;
 
     if (_selectedAmount <= 0) {

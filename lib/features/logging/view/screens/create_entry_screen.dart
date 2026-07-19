@@ -5,6 +5,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/haptics.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
@@ -102,7 +103,10 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      Haptics.error();
+      return;
+    }
 
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) {
@@ -144,6 +148,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
 
       if (mounted) {
         if (success) {
+          Haptics.impactLight();
           ErrorHandler.showSuccess(context, 'Entry created successfully!');
 
           // Share mood anonymously if opted in.
@@ -374,6 +379,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                 _selectedMood == moodValue;
                             return GestureDetector(
                               onTap: () {
+                                Haptics.selection();
                                 setState(() {
                                   _selectedMood = isSelected
                                       ? null
