@@ -61,8 +61,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         child: leaderboardState.isLoading
             ? const Center(child: CircularProgressIndicator())
             : leaderboardState.error != null
-                ? _buildErrorView(theme, leaderboardState.error!)
-                : _buildLeaderboardView(theme, leaderboardState, authState),
+            ? _buildErrorView(theme, leaderboardState.error!)
+            : _buildLeaderboardView(theme, leaderboardState, authState),
       ),
     );
   }
