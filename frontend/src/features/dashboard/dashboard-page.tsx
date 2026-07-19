@@ -7,6 +7,7 @@ import type { LogEntry, Insight } from "../../lib/types";
 import { formatDate, moodToEmoji } from "../../lib/date";
 import { HabitTrackerWidget } from "./components/habit-tracker-widget";
 import { QuickCheckInWidget } from "./components/QuickCheckInWidget";
+import { shareStreakCard } from "./streak-card-canvas";
 import { predictTomorrowMood, type AnalyticsLogEntry } from "../analytics/analytics-helpers";
 
 async function fetchMoodTrend(userId: string) {
@@ -160,6 +161,7 @@ export function DashboardPage() {
 
   const queryClient = useQueryClient();
   const [showFreezeModal, setShowFreezeModal] = useState(false);
+  const [isSharingStreak, setIsSharingStreak] = useState(false);
 
   const purchaseFreezeMutation = useMutation({
     mutationFn: async () => {
@@ -228,6 +230,18 @@ export function DashboardPage() {
   }
 
   const echoData = echoQuery.data ?? { balance: 0, earnedToday: 0 };
+
+  const handleShareStreak = async () => {
+    if (isSharingStreak || currentStreak <= 0) return;
+    setIsSharingStreak(true);
+    try {
+      await shareStreakCard({ streak: currentStreak });
+    } catch (error) {
+      console.error("Failed to share streak card", error);
+    } finally {
+      setIsSharingStreak(false);
+    }
+  };
 
   return (
     <section className="feature-grid">
@@ -309,24 +323,42 @@ export function DashboardPage() {
             <div className="streak-count">
               <p className="muted">Current streak</p>
               <h2 style={{ margin: "0.25rem 0 0" }}>🔥 {currentStreak}-day streak</h2>
-              {currentStreak >= 3 && !freezeQuery.data && echoQuery.data && (echoQuery.data as { balance: number; earnedToday: number }).balance >= 10 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
                 <button
                   type="button"
-                  onClick={() => setShowFreezeModal(true)}
+                  onClick={handleShareStreak}
+                  disabled={isSharingStreak}
                   style={{
-                    marginTop: "0.75rem",
-                    background: "none",
+                    background: "var(--brand)",
                     border: "1px solid var(--brand)",
-                    color: "var(--brand)",
+                    color: "#fff",
                     borderRadius: "8px",
                     padding: "0.35rem 0.75rem",
                     fontSize: "0.8rem",
-                    cursor: "pointer",
+                    cursor: isSharingStreak ? "default" : "pointer",
+                    opacity: isSharingStreak ? 0.7 : 1,
                   }}
                 >
-                  ❄️ Protect my streak (5 ECHO)
+                  {isSharingStreak ? "Preparing…" : "↗ Share streak"}
                 </button>
-              )}
+                {currentStreak >= 3 && !freezeQuery.data && echoQuery.data && (echoQuery.data as { balance: number; earnedToday: number }).balance >= 10 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFreezeModal(true)}
+                    style={{
+                      background: "none",
+                      border: "1px solid var(--brand)",
+                      color: "var(--brand)",
+                      borderRadius: "8px",
+                      padding: "0.35rem 0.75rem",
+                      fontSize: "0.8rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ❄️ Protect my streak (5 ECHO)
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="streak-count">
