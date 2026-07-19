@@ -32,9 +32,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     ref.invalidate(leaderboardProvider);
     final authState = ref.read(authProvider);
     final userId = authState.user?.id;
-    await ref.read(leaderboardProvider.notifier).loadLeaderboard(
-          userId: userId,
-        );
+    await ref
+        .read(leaderboardProvider.notifier)
+        .loadLeaderboard(userId: userId);
   }
 
   @override
@@ -47,10 +47,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       appBar: AppBar(
         title: Text(
           '🏆 Weekly Leaderboard',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -282,7 +279,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                       'ECHO',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
                   ],

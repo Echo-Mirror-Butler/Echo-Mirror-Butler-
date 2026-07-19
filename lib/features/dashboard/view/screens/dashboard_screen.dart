@@ -96,14 +96,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             if (logs.length >= 3) {
               final now = DateTime.now();
-              final recentLogs = logs
-                  .where(
-                    (log) => log.date.isAfter(
-                      now.subtract(const Duration(days: 14)),
-                    ),
-                  )
-                  .toList()
-                ..sort((a, b) => b.date.compareTo(a.date));
+              final recentLogs =
+                  logs
+                      .where(
+                        (log) => log.date.isAfter(
+                          now.subtract(const Duration(days: 14)),
+                        ),
+                      )
+                      .toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
 
               if (recentLogs.length >= 3) {
                 if (!mounted) return;
@@ -161,35 +162,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: dashboardState.when(
               data: (insights) {
                 if (insights.isEmpty) {
-                  return _buildEmptyState(
-                    context,
-                    theme,
-                    ref,
-                    hasLoggedToday,
-                  );
+                  return _buildEmptyState(context, theme, ref, hasLoggedToday);
                 }
 
                 _checkMilestones(insights);
 
-                final predictions = insights
-                    .where((i) => i.type == InsightType.prediction)
-                    .toList()
-                  ..sort((a, b) => b.date.compareTo(a.date));
+                final predictions =
+                    insights
+                        .where((i) => i.type == InsightType.prediction)
+                        .toList()
+                      ..sort((a, b) => b.date.compareTo(a.date));
 
-                final habits = insights
-                    .where((i) => i.type == InsightType.habit)
-                    .toList()
-                  ..sort((a, b) => b.date.compareTo(a.date));
+                final habits =
+                    insights.where((i) => i.type == InsightType.habit).toList()
+                      ..sort((a, b) => b.date.compareTo(a.date));
 
-                final moods = insights
-                    .where((i) => i.type == InsightType.mood)
-                    .toList()
-                  ..sort((a, b) => b.date.compareTo(a.date));
+                final moods =
+                    insights.where((i) => i.type == InsightType.mood).toList()
+                      ..sort((a, b) => b.date.compareTo(a.date));
 
-                final general = insights
-                    .where((i) => i.type == InsightType.general)
-                    .toList()
-                  ..sort((a, b) => b.date.compareTo(a.date));
+                final general =
+                    insights
+                        .where((i) => i.type == InsightType.general)
+                        .toList()
+                      ..sort((a, b) => b.date.compareTo(a.date));
 
                 return SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -203,12 +199,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 8),
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
-                      MoodStreakCard(
-                        streak: streakState.currentStreak,
-                      ),
+                      MoodStreakCard(streak: streakState.currentStreak),
                       const SizedBox(height: 8),
-                      if (authState.isAuthenticated &&
-                          authState.user != null)
+                      if (authState.isAuthenticated && authState.user != null)
                         EchoBalanceCard(userId: authState.user!.id),
                       const SizedBox(height: 8),
                       MoodTrendChart(
@@ -437,16 +430,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.secondaryColor,
-                    ],
+                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor
-                          .withValues(alpha: 0.4),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -530,8 +519,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final currentEntries = ref.read(loggingProvider).value ?? [];
 
         final matchingEntry = currentEntries.firstWhere((entry) {
-          final localDate =
-              entry.date.isUtc ? entry.date.toLocal() : entry.date;
+          final localDate = entry.date.isUtc
+              ? entry.date.toLocal()
+              : entry.date;
           final entryDate = DateTime(
             localDate.year,
             localDate.month,
