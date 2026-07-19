@@ -54,10 +54,14 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         ],
       ),
       body: RefreshIndicator(
+        color: AppTheme.primaryColor,
         onRefresh: () async {
-          await ref
-              .read(loggingProvider.notifier)
-              .loadLogEntries(userId: userId);
+          ref.invalidate(loggingProvider);
+          if (userId != null && userId.isNotEmpty) {
+            await ref
+                .read(loggingProvider.notifier)
+                .loadLogEntries(userId: userId);
+          }
         },
         child: loggingState.when(
           data: (entries) {
@@ -150,12 +154,20 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
           },
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
-          error: (error, stack) => NoConnectionWidget(
-            message:
-                'We could not load your daily logs. '
-                'This can happen when Supabase tables are missing. '
-                'Run migrations and try again.',
-            onRetry: () => _retryLoadEntries(userId),
+          error: (error, stack) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Center(
+                child: NoConnectionWidget(
+                  message:
+                      'We could not load your daily logs. '
+                      'This can happen when Supabase tables are missing. '
+                      'Run migrations and try again.',
+                  onRetry: () => _retryLoadEntries(userId),
+                ),
+              ),
+            ),
           ),
         ),
       ),

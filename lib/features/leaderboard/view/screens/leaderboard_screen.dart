@@ -29,9 +29,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   }
 
   Future<void> _refreshLeaderboard() async {
+    ref.invalidate(leaderboardProvider);
     final authState = ref.read(authProvider);
     final userId = authState.user?.id;
-    await ref.read(leaderboardProvider.notifier).refresh(userId: userId);
+    await ref
+        .read(leaderboardProvider.notifier)
+        .loadLeaderboard(userId: userId);
   }
 
   @override
@@ -44,10 +47,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       appBar: AppBar(
         title: Text(
           '🏆 Weekly Leaderboard',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -56,19 +56,20 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         onRefresh: _refreshLeaderboard,
         color: AppTheme.primaryColor,
         child: leaderboardState.isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
+            ? const Center(child: CircularProgressIndicator())
             : leaderboardState.error != null
-                ? _buildErrorView(theme, leaderboardState.error!)
-                : _buildLeaderboardView(theme, leaderboardState, authState),
+            ? _buildErrorView(theme, leaderboardState.error!)
+            : _buildLeaderboardView(theme, leaderboardState, authState),
       ),
     );
   }
 
   Widget _buildErrorView(ThemeData theme, String error) {
-    return Center(
-      child: Padding(
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        alignment: Alignment.center,
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -126,8 +127,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         // Leaderboard list
         Expanded(
           child: state.entries.isEmpty
-              ? Center(
-                  child: Padding(
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Container(
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    alignment: Alignment.center,
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -135,13 +139,17 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                         Icon(
                           FontAwesomeIcons.trophy.data,
                           size: 64,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'No one has earned ECHO this week yet.',
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -151,6 +159,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: state.entries.length,
                   itemBuilder: (context, index) {
                     final entry = state.entries[index];
@@ -270,7 +279,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                       'ECHO',
                       style: GoogleFonts.poppins(
                         fontSize: 11,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
                   ],
@@ -285,7 +296,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
 
   Widget _buildRankBadge(int rank) {
     final theme = Theme.of(context);
-    
+
     if (rank == 1) {
       return Container(
         width: 40,
@@ -305,12 +316,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             ),
           ],
         ),
-        child: const Center(
-          child: Text(
-            '🥇',
-            style: TextStyle(fontSize: 20),
-          ),
-        ),
+        child: const Center(child: Text('🥇', style: TextStyle(fontSize: 20))),
       );
     } else if (rank == 2) {
       return Container(
@@ -324,12 +330,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           ),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Center(
-          child: Text(
-            '🥈',
-            style: TextStyle(fontSize: 20),
-          ),
-        ),
+        child: const Center(child: Text('🥈', style: TextStyle(fontSize: 20))),
       );
     } else if (rank == 3) {
       return Container(
@@ -343,12 +344,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
           ),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Center(
-          child: Text(
-            '🥉',
-            style: TextStyle(fontSize: 20),
-          ),
-        ),
+        child: const Center(child: Text('🥉', style: TextStyle(fontSize: 20))),
       );
     } else {
       return Container(

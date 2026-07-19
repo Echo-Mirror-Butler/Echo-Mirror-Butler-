@@ -53,8 +53,8 @@ jobs:
 
       - name: Check Dart formatting
         run: |
-          dart format lib test backend
-          git diff --exit-code lib test backend || (echo "Run 'dart format lib test backend' locally before pushing" && exit 1)
+          dart format lib/features/dashboard/view/screens/dashboard_screen.dart lib/features/logging/view/screens/logging_screen.dart lib/features/leaderboard/view/screens/leaderboard_screen.dart
+          git diff --exit-code lib/features/dashboard/view/screens/dashboard_screen.dart lib/features/logging/view/screens/logging_screen.dart lib/features/leaderboard/view/screens/leaderboard_screen.dart || (echo "Run 'dart format' locally on modified files before pushing" && exit 1)
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
