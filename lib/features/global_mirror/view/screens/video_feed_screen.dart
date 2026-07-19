@@ -76,7 +76,9 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     final hasFeedError = state.error != null && state.error!.isNotEmpty;
 
     return Scaffold(
-      body: Stack(
+      body: RefreshIndicator(
+        onRefresh: _refreshVideos,
+        child: Stack(
         children: [
           // Video feed
           isInitialFeedLoading
@@ -270,6 +272,10 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _refreshVideos() async {
+    await ref.read(globalMirrorProvider.notifier).loadVideoFeed(refresh: true);
   }
 }
 

@@ -179,7 +179,11 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
           ),
         ],
       ),
-      body: moodPinsAsync.when(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.refresh(moodPinsStreamProvider);
+        },
+        child: moodPinsAsync.when(
         data: (pins) {
           final isMobile = defaultTargetPlatform == TargetPlatform.iOS || 
                            defaultTargetPlatform == TargetPlatform.android;
@@ -316,6 +320,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
         error: (error, stack) => NoConnectionWidget(
           onRetry: () => ref.refresh(moodPinsStreamProvider),
         ),
+      ),
       ),
     );
   }
