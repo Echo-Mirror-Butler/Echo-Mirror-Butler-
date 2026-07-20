@@ -47,6 +47,14 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     super.dispose();
   }
 
+  Future<void> _triggerHaptic(Future<void> Function() feedback) async {
+    try {
+      await feedback();
+    } catch (_) {
+      // Haptic feedback is best-effort and may be unavailable on some devices.
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -65,11 +73,15 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   Future<void> _handleSend() async {
     final currentBalance = ref.read(giftProvider).echoBalance;
 
+    await _triggerHaptic(HapticFeedback.mediumImpact);
+
     if (_selectedAmount <= 0) {
+      await _triggerHaptic(HapticFeedback.vibrate);
       _showError('Amount must be greater than 0');
       return;
     }
     if (_selectedAmount > currentBalance) {
+      await _triggerHaptic(HapticFeedback.vibrate);
       _showError('Insufficient ECHO balance');
       return;
     }
@@ -85,6 +97,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         );
 
     if (success && mounted) {
+      await _triggerHaptic(HapticFeedback.lightImpact);
       _confettiController.play();
       _showSuccess('Gift sent successfully!');
       await Future.delayed(const Duration(seconds: 3));
@@ -104,6 +117,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       if (nextError != null &&
           nextError.isNotEmpty &&
           nextError != previousError) {
+        _triggerHaptic(HapticFeedback.vibrate);
         _showError(nextError);
       }
     });
