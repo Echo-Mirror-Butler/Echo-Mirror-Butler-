@@ -10,6 +10,297 @@ import { QuickCheckInWidget } from "./components/QuickCheckInWidget";
 import { shareStreakCard } from "./streak-card-canvas";
 import { predictTomorrowMood, type AnalyticsLogEntry } from "../analytics/analytics-helpers";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Weekly Digest Card
+// ─────────────────────────────────────────────────────────────────────────────
+
+type WeeklyDigestData = {
+  avgMood: number;
+  trendArrow: "up" | "down" | "flat";
+  highestDay: { date: string; mood: number } | null;
+  lowestDay: { date: string; mood: number } | null;
+  topTags: string[];
+  aiReflection: string | null;
+  daysLogged: number;
+};
+
+async function fetchWeeklyDigestData(userId: string): Promise<WeeklyDigestData | null> {
+  // Get last 7 days of logs
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const { data: thisWeek } = await supabase
+    .from("log_entries")
+    .select("date, mood, habits, notes")
+    .eq("user_id", userId)
+    .gte("date", sevenDaysAgo.toISOString())
+    .order("date", { ascending: true });
+
+  if (!thisWeek || thisWeek.length < 3) return null;
+
+  // Get previous week for trend
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const { data: prevWeek } = await supabase
+    .from("log_entries")
+    .select("mood")
+    .eq("user_id", userId)
+    .gte("date", fourteenDaysAgo.toISOString())
+    .lt("date", sevenDaysAgo.toISOString());
+
+  // Compute avg mood
+  const moodValues = thisWeek.filter((l) => l.mood != null).map((l) => l.mood as number);
+  const avgMood = moodValues.reduce((a, b) => a + b, 0) / moodValues.length;
+
+  const prevMoodValues = (prevWeek ?? []).filter((l) => l.mood != null).map((l) => l.mood as number);
+  const prevAvg = prevMoodValues.length > 0
+    ? prevMoodValues.reduce((a, b) => a + b, 0) / prevMoodValues.length
+    : null;
+
+  const trendArrow: "up" | "down" | "flat" =
+    prevAvg === null ? "flat"
+    : avgMood - prevAvg > 0.2 ? "up"
+    : avgMood - prevAvg < -0.2 ? "down"
+    : "flat";
+
+  // Highest / lowest days
+  const sorted = [...thisWeek]
+    .filter((l) => l.mood != null)
+    .sort((a, b) => (b.mood as number) - (a.mood as number));
+  const highestDay = sorted.length > 0 ? { date: sorted[0].date, mood: sorted[0].mood as number } : null;
+  const lowestDay = sorted.length > 0 ? { date: sorted[sorted.length - 1].date, mood: sorted[sorted.length - 1].mood as number } : null;
+
+  // Top habits / tags
+  const habitCounts = new Map<string, number>();
+  for (const log of thisWeek) {
+    for (const h of (log.habits as string[]) ?? []) {
+      habitCounts.set(h, (habitCounts.get(h) ?? 0) + 1);
+    }
+  }
+  const topTags = [...habitCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name]) => name);
+
+  // AI reflection (latest insight)
+  const { data: insights } = await supabase
+    .from("ai_insights")
+    .select("prediction")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const aiReflection =
+    insights && insights.length > 0
+      ? (insights[0] as { prediction: string }).prediction.slice(0, 160) +
+        (insights[0].prediction.length > 160 ? "…" : "")
+      : null;
+
+  return {
+    avgMood: Math.round(avgMood * 10) / 10,
+    trendArrow,
+    highestDay,
+    lowestDay,
+    topTags,
+    aiReflection,
+    daysLogged: thisWeek.length,
+  };
+}
+
+function WeeklyDigestCard({
+  userId,
+  onDismiss,
+}: {
+  userId: string;
+  onDismiss: () => void;
+}) {
+  const digestQuery = useQuery({
+    queryKey: ["weekly-digest", userId],
+    queryFn: () => fetchWeeklyDigestData(userId),
+    staleTime: 1000 * 60 * 30,
+  });
+
+  if (digestQuery.isLoading) {
+    return (
+      <article className="card" style={{ gridColumn: "1 / -1" }}>
+        <div className="card-header">
+          <h3>📊 Your Week in Review</h3>
+        </div>
+        <div className="card-content">
+          <div className="skeleton-line" style={{ maxWidth: "80%" }} />
+          <div className="skeleton-line" style={{ maxWidth: "60%", marginTop: "0.5rem" }} />
+        </div>
+      </article>
+    );
+  }
+
+  if (digestQuery.isError || !digestQuery.data) return null;
+
+  const { avgMood, trendArrow, highestDay, lowestDay, topTags, aiReflection, daysLogged } =
+    digestQuery.data;
+
+  const trendSymbol = trendArrow === "up" ? "↑" : trendArrow === "down" ? "↓" : "→";
+  const trendColor =
+    trendArrow === "up" ? "var(--success)" : trendArrow === "down" ? "var(--danger)" : "var(--muted)";
+
+  return (
+    <article
+      className="card"
+      style={{ gridColumn: "1 / -1", borderLeft: "4px solid var(--brand)" }}
+      aria-label="Weekly mood digest"
+    >
+      {/* Header */}
+      <div className="card-header" style={{ alignItems: "flex-start" }}>
+        <div>
+          <h3 style={{ margin: 0 }}>📊 Your Week in Review</h3>
+          <p className="muted" style={{ margin: "0.2rem 0 0", fontSize: "0.8rem" }}>
+            {daysLogged} day{daysLogged !== 1 ? "s" : ""} logged this week
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-label="Dismiss weekly digest"
+          onClick={onDismiss}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--muted)",
+            fontSize: "1.1rem",
+            lineHeight: 1,
+            padding: "0.2rem 0.4rem",
+            borderRadius: "4px",
+          }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Stats row */}
+      <div
+        className="card-content"
+        style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem" }}
+      >
+        {/* Avg mood */}
+        <div
+          style={{
+            background: "var(--surface-2, rgba(99,102,241,0.06))",
+            borderRadius: "10px",
+            padding: "0.85rem 1rem",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "1.8rem", lineHeight: 1 }}>{moodToEmoji(Math.round(avgMood))}</div>
+          <div style={{ fontWeight: 700, fontSize: "1.4rem", color: "var(--brand)", margin: "0.2rem 0 0" }}>
+            {avgMood}
+          </div>
+          <div className="muted" style={{ fontSize: "0.7rem" }}>
+            Avg mood{" "}
+            <span style={{ color: trendColor, fontWeight: 700 }}>{trendSymbol}</span>
+          </div>
+        </div>
+
+        {/* Best day */}
+        {highestDay && (
+          <div
+            style={{
+              background: "rgba(16,185,129,0.07)",
+              borderRadius: "10px",
+              padding: "0.85rem 1rem",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "1.8rem", lineHeight: 1 }}>{moodToEmoji(highestDay.mood)}</div>
+            <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--success)", margin: "0.2rem 0 0" }}>
+              Best day
+            </div>
+            <div className="muted" style={{ fontSize: "0.7rem" }}>
+              {formatDate(highestDay.date)}
+            </div>
+          </div>
+        )}
+
+        {/* Toughest day */}
+        {lowestDay && lowestDay.date !== highestDay?.date && (
+          <div
+            style={{
+              background: "rgba(239,68,68,0.06)",
+              borderRadius: "10px",
+              padding: "0.85rem 1rem",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "1.8rem", lineHeight: 1 }}>{moodToEmoji(lowestDay.mood)}</div>
+            <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--danger)", margin: "0.2rem 0 0" }}>
+              Toughest day
+            </div>
+            <div className="muted" style={{ fontSize: "0.7rem" }}>
+              {formatDate(lowestDay.date)}
+            </div>
+          </div>
+        )}
+
+        {/* Days logged */}
+        <div
+          style={{
+            background: "rgba(139,92,246,0.07)",
+            borderRadius: "10px",
+            padding: "0.85rem 1rem",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "1.8rem", lineHeight: 1 }}>📅</div>
+          <div style={{ fontWeight: 700, fontSize: "1.4rem", color: "#8B5CF6", margin: "0.2rem 0 0" }}>
+            {daysLogged}/7
+          </div>
+          <div className="muted" style={{ fontSize: "0.7rem" }}>Days logged</div>
+        </div>
+      </div>
+
+      {/* Top habits */}
+      {topTags.length > 0 && (
+        <div style={{ padding: "0 1.25rem 0.75rem" }}>
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "0 0 0.4rem", fontWeight: 600 }}>
+            TOP HABITS
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+            {topTags.map((tag) => (
+              <span
+                key={tag}
+                className="chip"
+                style={{ fontSize: "0.75rem", padding: "0.2rem 0.6rem" }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI reflection */}
+      {aiReflection && (
+        <div
+          style={{
+            margin: "0 1.25rem 1rem",
+            padding: "0.75rem 1rem",
+            background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.06))",
+            borderRadius: "10px",
+            borderLeft: "3px solid var(--brand)",
+          }}
+        >
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "0 0 0.3rem", fontWeight: 600 }}>
+            💡 AI REFLECTION
+          </p>
+          <p style={{ fontSize: "0.85rem", lineHeight: 1.55, margin: 0, color: "var(--text)" }}>
+            {aiReflection}
+          </p>
+        </div>
+      )}
+    </article>
+  );
+}
+
 async function fetchMoodTrend(userId: string) {
   const today = new Date();
   const lastWeek = new Date();
@@ -163,6 +454,25 @@ export function DashboardPage() {
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [isSharingStreak, setIsSharingStreak] = useState(false);
 
+  // Weekly digest card dismissal — persisted in sessionStorage so it resets each session
+  const DIGEST_DISMISS_KEY = "weekly-digest-dismissed";
+  const [digestDismissed, setDigestDismissed] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(DIGEST_DISMISS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissDigest = () => {
+    try {
+      sessionStorage.setItem(DIGEST_DISMISS_KEY, "1");
+    } catch {
+      // ignore
+    }
+    setDigestDismissed(true);
+  };
+
   const purchaseFreezeMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Not authenticated");
@@ -249,6 +559,11 @@ export function DashboardPage() {
       <div style={{ gridColumn: '1 / -1' }}>
         <QuickCheckInWidget />
       </div>
+
+      {/* Weekly Mood Digest Card — shown on Mondays, dismissible, requires ≥3 logs */}
+      {!digestDismissed && (
+        <WeeklyDigestCard userId={user.id} onDismiss={handleDismissDigest} />
+      )}
 
       {/* Mood Summary Card - spans 2 columns */}
       <article className="card">

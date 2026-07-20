@@ -2,7 +2,7 @@
  * send-weekly-digest — Supabase Edge Function
  *
  * Sends a "Your week in review" email to all users who have weekly_digest = true.
- * Called via pg_cron every Sunday at 09:00 UTC (see migration).
+ * Called via pg_cron every Sunday at 20:00 UTC (see migration 20260720000000).
  *
  * Required env secrets (set via `supabase secrets set`):
  *   RESEND_API_KEY        — Resend API key for email sending
