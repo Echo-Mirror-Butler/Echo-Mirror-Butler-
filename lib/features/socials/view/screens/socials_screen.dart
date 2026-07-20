@@ -7,6 +7,8 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
+import '../../../global_mirror/view/screens/mood_comment_notifications_screen.dart';
+import '../../../global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../widgets/stories_bar.dart';
 import '../widgets/start_session_button.dart';
@@ -28,8 +30,6 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load active sessions and start auto-refresh only when Socials
-    // tab is active
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final currentIndex = ref.read(mainTabIndexProvider);
@@ -37,17 +37,6 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
         final notifier = ref.read(socialsProvider.notifier);
         notifier.loadActiveSessions();
         notifier.startAutoRefresh();
-      }
-    });
-
-    // React to tab index changes to start/stop auto-refresh
-    ref.listen<int>(mainTabIndexProvider, (previous, next) {
-      final notifier = ref.read(socialsProvider.notifier);
-      if (next == 2) {
-        notifier.loadActiveSessions();
-        notifier.startAutoRefresh();
-      } else {
-        notifier.stopAutoRefresh();
       }
     });
   }
@@ -72,6 +61,16 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
     final theme = Theme.of(context);
     final socialsState = ref.watch(socialsProvider);
 
+    ref.listen<int>(mainTabIndexProvider, (previous, next) {
+      final notifier = ref.read(socialsProvider.notifier);
+      if (next == 2) {
+        notifier.loadActiveSessions();
+        notifier.startAutoRefresh();
+      } else {
+        notifier.stopAutoRefresh();
+      }
+    });
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
@@ -86,12 +85,55 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           ),
         ),
         actions: [
-          IconButton(
-            icon: const FaIcon(FontAwesomeIcons.bell),
-            onPressed: () {
-              // TODO: Show notifications
+          Consumer(
+            builder: (context, ref, child) {
+              final unreadCount = ref
+                  .watch(moodCommentNotificationProvider.notifier)
+                  .unreadCount;
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(FontAwesomeIcons.bell.data),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const MoodCommentNotificationsScreen(),
+                        ),
+                      );
+                    },
+                    color: theme.colorScheme.onSurface,
+                    tooltip: 'Mood comment notifications',
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 9 ? '9+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
             },
-            color: theme.colorScheme.onSurface,
           ),
         ],
       ),
@@ -112,6 +154,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                     child: StoriesBar(
                       liveSessions: socialsState.activeSessions,
                       stories: socialsState.stories,
+                      isLoading: socialsState.isLoading,
                       onSessionTap: (session) async {
                         await Navigator.push(
                           context,
@@ -235,11 +278,11 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
             child: Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: FaIcon(
-                FontAwesomeIcons.video,
+              child: Icon(
+                FontAwesomeIcons.video.data,
                 size: 64,
                 color: AppTheme.primaryColor,
               ),
@@ -264,7 +307,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               'Start a session to connect with others',
               style: GoogleFonts.poppins(
                 fontSize: 16,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -324,13 +367,13 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
               // Avatar
               CircleAvatar(
                 radius: 28,
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                 backgroundImage: session.hostAvatarUrl != null
                     ? NetworkImage(session.hostAvatarUrl!)
                     : null,
                 child: session.hostAvatarUrl == null
-                    ? FaIcon(
-                        FontAwesomeIcons.user,
+                    ? Icon(
+                        FontAwesomeIcons.user.data,
                         color: AppTheme.primaryColor,
                         size: 20,
                       )
@@ -353,17 +396,21 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        FaIcon(
-                          FontAwesomeIcons.user,
+                        Icon(
+                          FontAwesomeIcons.user.data,
                           size: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${session.participantCount} participants',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                           ),
                         ),
                       ],
@@ -384,8 +431,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(
-                      FontAwesomeIcons.video,
+                    Icon(
+                      FontAwesomeIcons.video.data,
                       color: Colors.white,
                       size: 14,
                     ),
@@ -451,11 +498,11 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: AppTheme.secondaryColor.withOpacity(0.1),
-              child: FaIcon(
+              backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
+              child: Icon(
                 session.isVoiceOnly as bool
-                    ? FontAwesomeIcons.phone
-                    : FontAwesomeIcons.video,
+                    ? FontAwesomeIcons.phone.data
+                    : FontAwesomeIcons.video.data,
                 color: AppTheme.secondaryColor,
                 size: 20,
               ),
@@ -476,8 +523,8 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const FaIcon(
-                        FontAwesomeIcons.clock,
+                      Icon(
+                        FontAwesomeIcons.clock.data,
                         size: 12,
                         color: AppTheme.secondaryColor,
                       ),
@@ -486,7 +533,9 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                         formattedTime,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
@@ -497,7 +546,7 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withOpacity(0.1),
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppTheme.secondaryColor),
               ),
@@ -658,7 +707,7 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withOpacity(0.2),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -694,22 +743,26 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: !_isVoiceOnly
-                          ? AppTheme.primaryColor.withOpacity(0.1)
+                          ? AppTheme.primaryColor.withValues(alpha: 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: !_isVoiceOnly
                             ? AppTheme.primaryColor
-                            : theme.colorScheme.onSurface.withOpacity(0.2),
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.2,
+                              ),
                       ),
                     ),
                     child: Column(
                       children: [
-                        FaIcon(
-                          FontAwesomeIcons.video,
+                        Icon(
+                          FontAwesomeIcons.video.data,
                           color: !_isVoiceOnly
                               ? AppTheme.primaryColor
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -721,7 +774,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                                 : FontWeight.normal,
                             color: !_isVoiceOnly
                                 ? AppTheme.primaryColor
-                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                         ),
                       ],
@@ -737,22 +792,26 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: _isVoiceOnly
-                          ? AppTheme.primaryColor.withOpacity(0.1)
+                          ? AppTheme.primaryColor.withValues(alpha: 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _isVoiceOnly
                             ? AppTheme.primaryColor
-                            : theme.colorScheme.onSurface.withOpacity(0.2),
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.2,
+                              ),
                       ),
                     ),
                     child: Column(
                       children: [
-                        FaIcon(
-                          FontAwesomeIcons.phone,
+                        Icon(
+                          FontAwesomeIcons.phone.data,
                           color: _isVoiceOnly
                               ? AppTheme.primaryColor
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                              : theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -764,7 +823,9 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                                 : FontWeight.normal,
                             color: _isVoiceOnly
                                 ? AppTheme.primaryColor
-                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                                : theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                         ),
                       ],
@@ -804,14 +865,14 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.primaryColor),
                 ),
                 child: Row(
                   children: [
-                    const FaIcon(
-                      FontAwesomeIcons.clock,
+                    Icon(
+                      FontAwesomeIcons.clock.data,
                       color: AppTheme.primaryColor,
                       size: 16,
                     ),
@@ -828,8 +889,8 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
                       ),
                     ),
                     const Spacer(),
-                    const FaIcon(
-                      FontAwesomeIcons.penToSquare,
+                    Icon(
+                      FontAwesomeIcons.penToSquare.data,
                       color: AppTheme.primaryColor,
                       size: 14,
                     ),

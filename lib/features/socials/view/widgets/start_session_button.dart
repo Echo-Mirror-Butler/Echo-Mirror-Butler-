@@ -23,14 +23,14 @@ class StartSessionButton extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 AppTheme.primaryColor,
-                AppTheme.primaryColor.withOpacity(0.8),
+                AppTheme.primaryColor.withValues(alpha: 0.8),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.4),
+                color: AppTheme.primaryColor.withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
                 spreadRadius: 0,
@@ -38,7 +38,11 @@ class StartSessionButton extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: FaIcon(FontAwesomeIcons.plus, color: Colors.white, size: 32),
+            child: Icon(
+              FontAwesomeIcons.plus.data,
+              color: Colors.white,
+              size: 32,
+            ),
           ),
         ),
       ),

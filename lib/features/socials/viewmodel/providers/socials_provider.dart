@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:echomirror_server_client/echomirror_server_client.dart';
+import '../../data/models/scheduled_session_model.dart';
 import '../../data/models/video_session_model.dart';
 import '../../data/models/story_model.dart';
 import '../../data/repositories/socials_repository.dart';
@@ -34,13 +34,14 @@ class SocialsState {
     List<ScheduledSession>? scheduledSessions,
     bool? isLoading,
     String? error,
+    bool clearError = false,
   }) {
     return SocialsState(
       activeSessions: activeSessions ?? this.activeSessions,
       stories: stories ?? this.stories,
       scheduledSessions: scheduledSessions ?? this.scheduledSessions,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: clearError ? null : error ?? this.error,
     );
   }
 }
@@ -81,27 +82,83 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
   /// Load active sessions and stories
   Future<void> loadActiveSessions({bool silent = false}) async {
     if (!silent) {
-      state = state.copyWith(isLoading: true, error: null);
+      state = state.copyWith(isLoading: true, clearError: true);
     }
-    try {
-      final sessions = await _repository.getActiveSessions();
-      final stories = await _repository.getActiveStories();
-      final scheduled = await _repository.getUpcomingScheduledSessions();
-      state = state.copyWith(
-        activeSessions: sessions,
-        stories: stories,
-        scheduledSessions: scheduled,
-        isLoading: false,
-      );
 
-      // Notify about new active sessions
-      if (sessions.isNotEmpty) {
-        _notifyAboutActiveSessions(sessions);
-      }
-    } catch (e) {
-      debugPrint('[SocialsNotifier] Error loading sessions: $e');
+    final sessionsFuture = _loadSection<List<VideoSessionModel>>(
+      'active sessions',
+      _repository.getActiveSessions,
+    );
+    final storiesFuture = _loadSection<List<StoryModel>>(
+      'stories',
+      _repository.getActiveStories,
+    );
+    final scheduledFuture = _loadSection<List<ScheduledSession>>(
+      'scheduled sessions',
+      _repository.getUpcomingScheduledSessions,
+    );
+
+    final sessionsResult = await sessionsFuture;
+    final storiesResult = await storiesFuture;
+    final scheduledResult = await scheduledFuture;
+    final results = [sessionsResult, storiesResult, scheduledResult];
+    final failedResults = results.where((result) => !result.isSuccess).toList();
+    final allFailed = failedResults.length == results.length;
+
+    if (allFailed) {
       if (!silent) {
-        state = state.copyWith(isLoading: false, error: e.toString());
+        state = state.copyWith(
+          isLoading: false,
+          error:
+              'Unable to load socials right now. Please check your connection and try again.',
+        );
+      }
+      return;
+    }
+
+    if (failedResults.isNotEmpty) {
+      debugPrint(
+        '[SocialsNotifier] Partial socials load failure: '
+        '${failedResults.map((result) => result.label).join(', ')}',
+      );
+    }
+
+    final sessions = sessionsResult.value;
+    state = state.copyWith(
+      activeSessions: sessions ?? state.activeSessions,
+      stories: storiesResult.value ?? state.stories,
+      scheduledSessions: scheduledResult.value ?? state.scheduledSessions,
+      isLoading: false,
+      clearError: true,
+    );
+
+    // Notify about new active sessions
+    if (sessions != null && sessions.isNotEmpty) {
+      _notifyAboutActiveSessions(sessions);
+    }
+  }
+
+  Future<_SectionLoadResult<T>> _loadSection<T>(
+    String label,
+    Future<T> Function() load,
+  ) async {
+    try {
+      return _SectionLoadResult.success(label, await load());
+    } catch (e) {
+      debugPrint('[SocialsNotifier] Error loading $label: $e');
+      return _SectionLoadResult.failure(label, e);
+    }
+  }
+
+  /// Load stories only
+  Future<void> loadStories({bool silent = false}) async {
+    try {
+      final stories = await _repository.getActiveStories();
+      state = state.copyWith(stories: stories, clearError: true);
+    } catch (e) {
+      debugPrint('[SocialsNotifier] Error loading stories: $e');
+      if (!silent) {
+        state = state.copyWith(error: e.toString());
       }
     }
   }
@@ -132,16 +189,6 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
         .map((s) => '${s.id}-${s.createdAt.millisecondsSinceEpoch}')
         .toSet();
     _notifiedSessions.removeWhere((key) => !activeSessionKeys.contains(key));
-  }
-
-  /// Load stories only
-  Future<void> loadStories({bool silent = false}) async {
-    try {
-      final stories = await _repository.getActiveStories();
-      state = state.copyWith(stories: stories);
-    } catch (e) {
-      debugPrint('[SocialsNotifier] Error loading stories: $e');
-    }
   }
 
   /// Create a new session
@@ -209,6 +256,17 @@ class SocialsNotifier extends StateNotifier<SocialsState> {
       state = state.copyWith(error: e.toString());
     }
   }
+
+  /// End a session (host only - marks session as inactive)
+  Future<void> endSession(String sessionId) async {
+    try {
+      await _repository.endSession(sessionId);
+      await loadActiveSessions();
+    } catch (e) {
+      debugPrint('[SocialsNotifier] Error ending session: $e');
+      state = state.copyWith(error: e.toString());
+    }
+  }
 }
 
 /// Socials provider
@@ -217,3 +275,21 @@ final socialsProvider = StateNotifierProvider<SocialsNotifier, SocialsState>((
 ) {
   return SocialsNotifier(ref.read(socialsRepositoryProvider));
 });
+
+class _SectionLoadResult<T> {
+  const _SectionLoadResult._({required this.label, this.value, this.error});
+
+  factory _SectionLoadResult.success(String label, T value) {
+    return _SectionLoadResult._(label: label, value: value);
+  }
+
+  factory _SectionLoadResult.failure(String label, Object error) {
+    return _SectionLoadResult._(label: label, error: error);
+  }
+
+  final String label;
+  final T? value;
+  final Object? error;
+
+  bool get isSuccess => error == null;
+}

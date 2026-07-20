@@ -53,6 +53,46 @@ supabase migration new my_migration_name
 supabase db diff
 ```
 
+If you are using a hosted Supabase project (not local Docker), apply pending migrations with:
+
+```bash
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
+
+### Troubleshooting Missing Tables (PGRST205)
+
+If the app logs errors such as `Could not find the table 'public.log_entries' in the schema cache`, your connected Supabase project is missing one or more migrations.
+
+1. Ensure the project is linked (`supabase link --project-ref ...`)
+2. Push migrations (`supabase db push`)
+3. Verify these tables exist in the Supabase SQL editor:
+   - `public.log_entries`
+   - `public.mood_comment_notifications`
+   - `public.video_sessions`
+   - `public.stories`
+   - `public.scheduled_sessions`
+   - `public.user_wallets`
+   - `public.gift_transactions`
+
+After migrations are applied, restart the Flutter app and retry the affected screen.
+
+## Access Model
+
+The Supabase schema uses Row Level Security on every application table.
+
+- `log_entries`, `stories`, and `mood_comment_notifications` are owner-scoped by `user_id`.
+- `video_sessions` and `scheduled_sessions` are owner-scoped by `host_id`.
+- `mood_pins` and `video_posts` are publicly readable feeds.
+- `mood_pin_comments` are publicly readable, but inserts require an authenticated user whose `user_id` matches `auth.uid()`.
+
+For a clean local verification run, start Supabase first and then reset the database:
+
+```bash
+supabase start
+supabase db reset
+```
+
 ## Stopping
 
 ```bash
@@ -70,3 +110,37 @@ cp supabase/.env.example supabase/.env
 # Set secrets for local dev
 supabase secrets set --env-file supabase/.env
 ```
+
+## New User Wallet Function
+
+The `create-stellar-wallet` Edge Function creates a Stellar wallet when a new auth user is inserted.
+
+Location:
+
+```text
+supabase/functions/create-stellar-wallet/index.ts
+```
+
+Behavior:
+
+- Generates a new Stellar keypair
+- Funds it with Friendbot on testnet
+- Skips Friendbot on mainnet
+- Establishes an ECHO trustline
+- Encrypts the secret key with `WALLET_ENCRYPTION_KEY`
+- Inserts the wallet into `public.user_wallets` using the service role client
+
+Local testing:
+
+```bash
+supabase functions serve create-stellar-wallet --env-file supabase/.env --no-verify-jwt
+```
+
+Database webhook:
+
+1. Table: `auth.users`
+2. Event: `INSERT`
+3. Method: `POST`
+4. URL: `{SUPABASE_URL}/functions/v1/create-stellar-wallet`
+
+The webhook should point to the function endpoint in the Supabase Dashboard. Use `supabase/.env.example` as the template for the new secrets required by this function.

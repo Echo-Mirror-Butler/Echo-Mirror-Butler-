@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/view/screens/login_screen.dart';
 import '../../features/auth/view/screens/signup_screen.dart';
-import '../../features/auth/view/screens/verification_screen.dart';
 import '../../features/auth/view/screens/forgot_password_screen.dart';
 import '../../features/auth/view/screens/reset_password_screen.dart';
+import '../../features/auth/view/screens/verify_email_screen.dart';
 import '../../features/settings/view/screens/change_password_screen.dart';
 import '../../features/auth/viewmodel/providers/auth_provider.dart';
 import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
@@ -19,6 +19,7 @@ import '../../features/global_mirror/view/screens/mood_comment_notifications_scr
 import '../../features/ai/view/screens/breathing_exercise_screen.dart';
 import '../../features/ai/view/screens/music_recommendations_screen.dart';
 import '../../features/global_mirror/view/screens/gift_screen.dart';
+import '../../features/global_mirror/view/screens/wallet_screen.dart';
 
 /// Refresh notifier for GoRouter
 class GoRouterRefreshNotifier extends ChangeNotifier {
@@ -28,66 +29,52 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
       (_, _) => notifyListeners(),
     );
   }
-
   final Ref ref;
 }
 
 /// App router configuration with GoRouter
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = GoRouterRefreshNotifier(ref);
-
   return GoRouter(
     initialLocation: '/onboarding',
     refreshListenable: notifier,
     redirect: (context, state) async {
-      // Wait for auth check to complete if it's still loading
       final authState = ref.read(authProvider);
       if (authState.isLoading) {
-        // Wait for auth check to complete
         await ref.read(authProvider.notifier).checkAuthStatus();
       }
-
       final updatedAuthState = ref.read(authProvider);
       final isAuthenticated = updatedAuthState.isAuthenticated;
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
-      final isVerifying = state.matchedLocation == '/verify';
-      final isAuthRoute = isLoggingIn || isSigningUp || isVerifying;
+      final isVerifyEmail = state.matchedLocation == '/verify-email';
+      final isAuthRoute = isLoggingIn || isSigningUp;
 
-      // Check if onboarding is completed
-      // Use try-catch to handle any errors gracefully
+      // /verify-email is always accessible — no redirect applied
+      if (isVerifyEmail) return null;
+
       bool onboardingCompleted = false;
       try {
         onboardingCompleted = await ref.read(
           onboardingCompletedProvider.future,
         );
       } catch (e) {
-        // If there's an error reading, assume not completed to be safe
         onboardingCompleted = false;
       }
 
-      // If onboarding not completed and not on onboarding screen, redirect to onboarding
       if (!onboardingCompleted && !isOnboarding) {
         return '/onboarding';
       }
-
-      // If onboarding completed and on onboarding screen, redirect to login
       if (onboardingCompleted && isOnboarding) {
         return '/login';
       }
-
-      // If authenticated and on auth pages, redirect to dashboard
       if (isAuthenticated && isAuthRoute) {
         return '/dashboard';
       }
-
-      // If not authenticated and trying to access protected route
       if (!isAuthenticated && !isAuthRoute && !isOnboarding) {
         return '/login';
       }
-
-      // Allow navigation between auth screens when not authenticated
       return null;
     },
     routes: [
@@ -107,16 +94,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SignupScreen(),
       ),
       GoRoute(
-        path: '/verify',
-        name: 'verify',
+        path: '/verify-email',
+        name: 'verify-email',
         builder: (context, state) {
-          final queryParams = state.uri.queryParameters;
-          return VerificationScreen(
-            email: queryParams['email'] ?? '',
-            accountRequestId: queryParams['accountRequestId'] ?? '',
-            password: queryParams['password'] ?? '',
-            name: queryParams['name'],
-          );
+          final email = state.uri.queryParameters['email'] ?? '';
+          return VerifyEmailScreen(email: email);
         },
       ),
       GoRoute(
@@ -159,10 +141,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/logging/detail/:id',
         name: 'entry-detail',
         builder: (context, state) {
-          // Get entry from extra parameter passed during navigation
           final entry = state.extra as LogEntryModel?;
           if (entry == null) {
-            // If no extra data, we'll handle it in the screen
             return Scaffold(
               appBar: AppBar(title: const Text('Entry Detail')),
               body: const Center(child: Text('Entry not found')),
@@ -179,10 +159,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/change-password',
         name: 'change-password',
-        builder: (context, state) {
-          // Import needed
-          return const ChangePasswordScreen();
-        },
+        builder: (context, state) => const ChangePasswordScreen(),
       ),
       GoRoute(
         path: '/notifications',
@@ -200,11 +177,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MusicRecommendationsScreen(),
       ),
       GoRoute(
+        path: '/wallet',
+        name: 'wallet',
+        builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
         path: '/gift/:userId',
         name: 'gift',
-        builder: (context, state) => GiftScreen(
-          recipientUserId: int.parse(state.pathParameters['userId']!),
-        ),
+        builder: (context, state) =>
+            GiftScreen(recipientUserId: state.pathParameters['userId']!),
       ),
     ],
   );

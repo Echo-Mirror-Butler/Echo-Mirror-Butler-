@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
+import '../../../auth/viewmodel/providers/auth_provider.dart';
 import 'gift_button_widget.dart';
 
 /// Dialog for viewing and adding comments on a mood pin
@@ -27,12 +29,52 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
   bool _isSubmitting = false;
   String? _clusterEncouragement;
   bool _isLoadingEncouragement = false;
+  bool? _isFollowing;
 
   @override
   void initState() {
     super.initState();
     _loadComments();
     _loadClusterEncouragement();
+    _checkFollowing();
+  }
+
+  Future<void> _checkFollowing() async {
+    final pinUserId = widget.pin.userId;
+    if (pinUserId == null) return;
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.user?.id;
+    if (currentUserId == null || currentUserId == pinUserId) return;
+    final response = await Supabase.instance.client
+        .from('user_follows')
+        .select('id')
+        .eq('follower_id', currentUserId)
+        .eq('following_id', pinUserId)
+        .maybeSingle();
+    if (mounted) {
+      setState(() => _isFollowing = response != null);
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    final pinUserId = widget.pin.userId;
+    if (pinUserId == null) return;
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.user?.id;
+    if (currentUserId == null || currentUserId == pinUserId) return;
+    if (_isFollowing == true) {
+      await Supabase.instance.client
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', currentUserId)
+          .eq('following_id', pinUserId);
+      setState(() => _isFollowing = false);
+    } else {
+      await Supabase.instance.client
+          .from('user_follows')
+          .insert({'follower_id': currentUserId, 'following_id': pinUserId});
+      setState(() => _isFollowing = true);
+    }
   }
 
   Future<void> _loadClusterEncouragement() async {
@@ -104,7 +146,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
           _loadComments(); // Reload comments
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Comment sent! 💙'),
+              content: Text('Comment sent! ðŸ’™'),
               duration: Duration(seconds: 2),
               backgroundColor: Colors.green,
             ),
@@ -189,7 +231,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: sentimentColor.withOpacity(0.1),
+                color: sentimentColor.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -222,7 +264,9 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                           'Send a message of support',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         ),
                       ],
@@ -233,8 +277,19 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                       recipientUserId: widget.pin.userId!,
                       compact: true,
                     ),
+                  if (_isFollowing != null && widget.pin.userId != null)
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: Icon(
+                      _isFollowing!
+                          ? FontAwesomeIcons.solidUser
+                          : FontAwesomeIcons.userPlus,
+                      size: 18,
+                    ),
+                    onPressed: _toggleFollow,
+                    tooltip: _isFollowing! ? 'Unfollow' : 'Follow',
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -248,17 +303,17 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      FontAwesomeIcons.heart,
+                      FontAwesomeIcons.heart.data,
                       color: AppTheme.primaryColor,
                       size: 20,
                     ),
@@ -301,10 +356,10 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              FontAwesomeIcons.heart,
+                              FontAwesomeIcons.heart.data,
                               size: 48,
-                              color: theme.colorScheme.onSurface.withOpacity(
-                                0.3,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.3,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -312,8 +367,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               'No comments yet',
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.6,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
                                 ),
                               ),
                             ),
@@ -322,8 +377,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               'Be the first to send support!',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.5,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
                                 ),
                               ),
                             ),
@@ -343,7 +398,9 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                             color: theme.colorScheme.surface,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: theme.colorScheme.outline.withOpacity(0.2),
+                              color: theme.colorScheme.outline.withValues(
+                                alpha: 0.2,
+                              ),
                             ),
                           ),
                           child: Column(
@@ -352,7 +409,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               Row(
                                 children: [
                                   Icon(
-                                    FontAwesomeIcons.heart,
+                                    FontAwesomeIcons.heart.data,
                                     size: 14,
                                     color: AppTheme.primaryColor,
                                   ),
@@ -373,8 +430,9 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                                 _getTimeAgo(comment.timestamp),
                                 style: GoogleFonts.poppins(
                                   fontSize: 11,
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.5),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.5,
+                                  ),
                                 ),
                               ),
                             ],
@@ -391,7 +449,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                 color: theme.colorScheme.surface,
                 border: Border(
                   top: BorderSide(
-                    color: theme.colorScheme.outline.withOpacity(0.2),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
                   ),
                 ),
               ),
@@ -408,12 +466,16 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                             'Send support... (e.g., "How are you?", "You\'re not alone")',
                         hintStyle: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withOpacity(0.3),
+                            color: theme.colorScheme.outline.withValues(
+                              alpha: 0.3,
+                            ),
                           ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
@@ -439,8 +501,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               baseColor: Colors.white70,
                               highlightColor: Colors.white,
                             )
-                          : const Icon(
-                              FontAwesomeIcons.paperPlane,
+                          : Icon(
+                              FontAwesomeIcons.paperPlane.data,
                               color: Colors.white,
                               size: 18,
                             ),

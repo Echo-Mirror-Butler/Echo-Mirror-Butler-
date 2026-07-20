@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../data/models/video_session_model.dart';
 import '../../data/models/story_model.dart';
@@ -13,6 +14,7 @@ class StoriesBar extends StatefulWidget {
   final Function(VideoSessionModel)? onSessionTap;
   final Function(StoryModel)? onStoryTap;
   final VoidCallback? onAddStory;
+  final bool isLoading;
 
   const StoriesBar({
     super.key,
@@ -21,6 +23,7 @@ class StoriesBar extends StatefulWidget {
     this.onSessionTap,
     this.onStoryTap,
     this.onAddStory,
+    this.isLoading = false,
   });
 
   @override
@@ -28,27 +31,76 @@ class StoriesBar extends StatefulWidget {
 }
 
 class _StoriesBarState extends State<StoriesBar>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
+    );
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pulseController.dispose();
     super.dispose();
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncPulseAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant StoriesBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncPulseAnimation();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _syncPulseAnimation();
+  }
+
+  void _syncPulseAnimation() {
+    if (!mounted) return;
+
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    final isAppVisible =
+        lifecycleState == null ||
+        lifecycleState == AppLifecycleState.resumed ||
+        lifecycleState == AppLifecycleState.inactive;
+    final shouldAnimate =
+        widget.liveSessions.isNotEmpty &&
+        TickerMode.valuesOf(context).enabled &&
+        isAppVisible;
+
+    if (shouldAnimate) {
+      if (!_pulseController.isAnimating) {
+        _pulseController.repeat(reverse: true);
+      }
+      return;
+    }
+
+    if (_pulseController.isAnimating) {
+      _pulseController.stop();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (widget.isLoading && widget.stories.isEmpty) {
+      return _buildLoadingSkeleton(theme);
+    }
+
     final allItems = <_StoryItem>[];
 
     // Add "Your Story" button
@@ -100,6 +152,46 @@ class _StoriesBarState extends State<StoriesBar>
           final item = allItems[index];
           return _buildStoryItem(context, theme, item, index);
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      height: 120,
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      child: Shimmer.fromColors(
+        baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+        highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 5,
+          itemBuilder: (context, index) {
+            return Container(
+              width: 80,
+              margin: const EdgeInsets.only(right: 12),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 52,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[900] : Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -160,7 +252,7 @@ class _StoriesBarState extends State<StoriesBar>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: theme.colorScheme.onSurface.withOpacity(0.3),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -189,12 +281,14 @@ class _StoriesBarState extends State<StoriesBar>
             : LinearGradient(
                 colors: [
                   AppTheme.primaryColor,
-                  AppTheme.primaryColor.withOpacity(0.6),
+                  AppTheme.primaryColor.withValues(alpha: 0.6),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-        color: hasViewed ? theme.colorScheme.onSurface.withOpacity(0.2) : null,
+        color: hasViewed
+            ? theme.colorScheme.onSurface.withValues(alpha: 0.2)
+            : null,
       ),
       child: Container(
         margin: const EdgeInsets.all(3),
@@ -236,14 +330,14 @@ class _StoriesBarState extends State<StoriesBar>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [Colors.red, Colors.red.withOpacity(0.6)],
+              colors: [Colors.red, Colors.red.withValues(alpha: 0.6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.red.withOpacity(
-                  0.3 + (_pulseController.value * 0.3),
+                color: Colors.red.withValues(
+                  alpha: 0.3 + (_pulseController.value * 0.3),
                 ),
                 blurRadius: 10 + (_pulseController.value * 10),
                 spreadRadius: 2 + (_pulseController.value * 2),
@@ -264,10 +358,10 @@ class _StoriesBarState extends State<StoriesBar>
             ),
             child: session.hostAvatarUrl == null
                 ? Center(
-                    child: FaIcon(
+                    child: Icon(
                       session.isVoiceOnly
-                          ? FontAwesomeIcons.phone
-                          : FontAwesomeIcons.video,
+                          ? FontAwesomeIcons.phone.data
+                          : FontAwesomeIcons.video.data,
                       color: Colors.red,
                       size: 24,
                     ),

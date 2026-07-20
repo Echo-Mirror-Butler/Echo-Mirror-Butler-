@@ -21,14 +21,14 @@ class MoodCommentNotificationModel {
   factory MoodCommentNotificationModel.fromJson(Map<String, dynamic> json) {
     return MoodCommentNotificationModel(
       id: json['id']?.toString() ?? '',
-      moodPinId: json['moodPinId']?.toString() ?? '',
-      commentId: json['commentId']?.toString() ?? '',
-      commentText: json['commentText'] ?? '',
+      moodPinId: (json['moodPinId'] ?? json['mood_pin_id'])?.toString() ?? '',
+      commentId: (json['commentId'] ?? json['comment_id'])?.toString() ?? '',
+      commentText: (json['commentText'] ?? json['comment_text']) ?? '',
       sentiment: json['sentiment'] ?? 'neutral',
-      timestamp: json['timestamp'] != null
-          ? DateTime.parse(json['timestamp'])
+      timestamp: (json['timestamp'] ?? json['created_at']) != null
+          ? DateTime.parse((json['timestamp'] ?? json['created_at']) as String)
           : DateTime.now(),
-      isRead: json['isRead'] ?? false,
+      isRead: (json['isRead'] ?? json['is_read']) as bool? ?? false,
     );
   }
 

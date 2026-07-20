@@ -1,159 +1,192 @@
 import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
-import 'package:echomirror_server_client/echomirror_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
-    as auth_core;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MockClient extends Mock implements Client {}
+class MockSupabaseClient extends Mock implements SupabaseClient {}
 
-class MockEmailIdp extends Mock implements EndpointEmailIdp {}
+class MockGoTrueClient extends Mock implements GoTrueClient {}
 
-class MockAuthSuccess extends Mock implements auth_core.AuthSuccess {}
+class MockAuthResponse extends Mock implements AuthResponse {}
 
-// ignore: deprecated_member_use
-class TestAuthKeyManager implements AuthenticationKeyManager {
-  String? _key;
-  @override
-  Future<String?> get() async => _key;
-  @override
-  Future<void> put(String key) async {
-    _key = key;
-  }
+class MockUserResponse extends Mock implements UserResponse {}
 
-  @override
-  Future<void> remove() async {
-    _key = null;
-  }
-
-  @override
-  Future<String?> getHeaderValue() async {
-    final k = await get();
-    if (k == null) return null;
-    return 'Bearer $k';
-  }
-
-  @override
-  Future<String?> toHeaderValue(String? key) async {
-    if (key != null) {
-      var t = key;
-      if (t.startsWith('Bearer ')) {
-        t = t.substring(7);
-      }
-      await put(t);
-      return t;
-    }
-    return await get();
-  }
-
-  @override
-  Future<String?> get authHeaderValue async {
-    final k = await get();
-    if (k == null) return null;
-    return 'Bearer $k';
-  }
-}
-
-class TestPasswordResetApi {
-  final bool requestResult;
-  final bool resetResult;
-  TestPasswordResetApi({this.requestResult = true, this.resetResult = true});
-  Future<bool> requestPasswordReset(String email) async => requestResult;
-  Future<bool> resetPassword(
-    String email,
-    String token,
-    String newPassword,
-  ) async => resetResult;
-}
+class MockUser extends Mock implements User {}
 
 void main() {
+  late MockSupabaseClient mockSupabase;
+  late MockGoTrueClient mockAuth;
+  late MockUser mockUser;
+
+  setUpAll(() {
+    registerFallbackValue(UserAttributes());
+  });
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    mockSupabase = MockSupabaseClient();
+    mockAuth = MockGoTrueClient();
+    mockUser = MockUser();
+    when(() => mockSupabase.auth).thenReturn(mockAuth);
+    when(() => mockUser.id).thenReturn('123e4567-e89b-12d3-a456-426614174000');
   });
 
   group('AuthRepository', () {
-    late MockClient client;
-    late MockEmailIdp emailIdp;
-    late TestAuthKeyManager keyManager;
-
-    setUp(() {
-      client = MockClient();
-      emailIdp = MockEmailIdp();
-      keyManager = TestAuthKeyManager();
-      // ignore: deprecated_member_use
-      when(() => client.authenticationKeyManager).thenReturn(keyManager);
-      when(() => client.emailIdp).thenReturn(emailIdp);
-    });
-
     test('signIn returns user on valid credentials', () async {
-      final authSuccess = MockAuthSuccess();
-      final userUuid = UuidValue.fromString(
-        '123e4567-e89b-12d3-a456-426614174000',
-      );
-      when(() => authSuccess.token).thenReturn('jwt_token_abc');
-      when(() => authSuccess.authUserId).thenReturn(userUuid);
+      final mockResponse = MockAuthResponse();
+      when(() => mockResponse.user).thenReturn(mockUser);
       when(
-        () => emailIdp.login(
+        () => mockAuth.signInWithPassword(
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
-      ).thenAnswer((_) async => authSuccess);
+      ).thenAnswer((_) async => mockResponse);
 
-      final repo = AuthRepository(client: client);
+      final repo = AuthRepository(supabaseClient: mockSupabase);
       final userId = await repo.signIn('user@example.com', 'password123');
 
-      expect(userId, userUuid.uuid);
-      expect(await keyManager.get(), 'jwt_token_abc');
+      expect(userId, '123e4567-e89b-12d3-a456-426614174000');
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString('user_email'), 'user@example.com');
-      expect(prefs.getString('user_id'), userUuid.uuid);
+      expect(
+        prefs.getString('user_id'),
+        '123e4567-e89b-12d3-a456-426614174000',
+      );
     });
 
     test('signIn throws on wrong password', () async {
       when(
-        () => emailIdp.login(
+        () => mockAuth.signInWithPassword(
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
       ).thenThrow(Exception('invalid credentials'));
-      final repo = AuthRepository(client: client);
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
       expect(
         () => repo.signIn('user@example.com', 'wrong'),
         throwsA(isA<Exception>()),
       );
     });
 
-    test('signUp returns userId on valid input', () async {
-      final reqId = UuidValue.fromString(
-        '123e4567-e89b-12d3-a456-426614174111',
-      );
+    test('signIn throws when Supabase returns no user', () async {
+      final mockResponse = MockAuthResponse();
+      when(() => mockResponse.user).thenReturn(null);
       when(
-        () => emailIdp.startRegistration(email: any(named: 'email')),
-      ).thenAnswer((_) async => reqId);
-      final repo = AuthRepository(client: client);
+        () => mockAuth.signInWithPassword(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+
+      expect(
+        () => repo.signIn('user@example.com', 'password123'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('no user returned'),
+          ),
+        ),
+      );
+    });
+
+    test('signUp returns userId on valid input', () async {
+      final mockResponse = MockAuthResponse();
+      when(() => mockResponse.user).thenReturn(mockUser);
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
       final id = await repo.signUp('user@example.com', 'pass', 'User');
-      expect(id, reqId.uuid);
+      expect(id, '123e4567-e89b-12d3-a456-426614174000');
+    });
+
+    test('signUp throws on duplicate email', () async {
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenThrow(AuthException('User already registered'));
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+
+      expect(
+        () => repo.signUp('user@example.com', 'pass', 'User'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Sign up failed'),
+          ),
+        ),
+      );
+    });
+
+    test('signUp throws when Supabase returns no user', () async {
+      final mockResponse = MockAuthResponse();
+      when(() => mockResponse.user).thenReturn(null);
+      when(
+        () => mockAuth.signUp(
+          email: any(named: 'email'),
+          password: any(named: 'password'),
+          data: any(named: 'data'),
+        ),
+      ).thenAnswer((_) async => mockResponse);
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+
+      expect(
+        () => repo.signUp('user@example.com', 'pass', 'User'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('no user returned'),
+          ),
+        ),
+      );
     });
 
     test('requestPasswordReset returns true', () async {
-      final resetApi = TestPasswordResetApi(requestResult: true);
       when(
-        // ignore: deprecated_member_use
-        () => client.noSuchMethod(Invocation.getter(#passwordReset)),
-      ).thenReturn(resetApi);
-      final repo = AuthRepository(client: client);
+        () => mockAuth.resetPasswordForEmail(any()),
+      ).thenAnswer((_) async {});
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
       final ok = await repo.requestPasswordReset('user@example.com');
       expect(ok, isTrue);
     });
 
-    test('resetPassword returns true with valid token', () async {
-      final resetApi = TestPasswordResetApi(resetResult: true);
+    test('requestPasswordReset returns false on Supabase error', () async {
       when(
-        // ignore: deprecated_member_use
-        () => client.noSuchMethod(Invocation.getter(#passwordReset)),
-      ).thenReturn(resetApi);
-      final repo = AuthRepository(client: client);
+        () => mockAuth.resetPasswordForEmail(any()),
+      ).thenThrow(AuthException('Rate limit exceeded'));
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+      final ok = await repo.requestPasswordReset('user@example.com');
+
+      expect(ok, isFalse);
+    });
+
+    test('resetPassword returns true with valid token', () async {
+      final mockResponse = MockUserResponse();
+      when(() => mockResponse.user).thenReturn(mockUser);
+      when(
+        () => mockAuth.updateUser(any()),
+      ).thenAnswer((_) async => mockResponse);
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
       final ok = await repo.resetPassword(
         'user@example.com',
         'valid',
@@ -162,18 +195,174 @@ void main() {
       expect(ok, isTrue);
     });
 
+    test(
+      'resetPassword returns false when update user returns no user',
+      () async {
+        final mockResponse = MockUserResponse();
+        when(() => mockResponse.user).thenReturn(null);
+        when(
+          () => mockAuth.updateUser(any()),
+        ).thenAnswer((_) async => mockResponse);
+
+        final repo = AuthRepository(supabaseClient: mockSupabase);
+        final ok = await repo.resetPassword(
+          'user@example.com',
+          'valid',
+          'newpass',
+        );
+
+        expect(ok, isFalse);
+      },
+    );
+
+    test('resetPassword throws when update user fails', () async {
+      when(
+        () => mockAuth.updateUser(any()),
+      ).thenThrow(AuthException('Reset link expired'));
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+
+      expect(
+        () => repo.resetPassword('user@example.com', 'expired', 'newpass'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Password reset failed'),
+          ),
+        ),
+      );
+    });
+
     test('signOut clears stored credentials', () async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', 'user@example.com');
       await prefs.setString('user_id', 'abc123');
-      await keyManager.put('jwt_token_xyz');
 
-      final repo = AuthRepository(client: client);
+      when(() => mockAuth.signOut()).thenAnswer((_) async {});
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
       await repo.signOut();
 
-      expect(await keyManager.get(), isNull);
       expect(prefs.getString('user_email'), isNull);
       expect(prefs.getString('user_id'), isNull);
     });
+
+    test('signOut calls Supabase signOut', () async {
+      when(() => mockAuth.signOut()).thenAnswer((_) async {});
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+      await repo.signOut();
+
+      verify(() => mockAuth.signOut()).called(1);
+    });
+
+    test(
+      'changePassword returns true when re-auth and update succeed',
+      () async {
+        final mockAuthResponse = MockAuthResponse();
+        final mockUserResponse = MockUserResponse();
+
+        when(() => mockUser.email).thenReturn('user@example.com');
+        when(() => mockAuth.currentUser).thenReturn(mockUser);
+        when(() => mockAuthResponse.user).thenReturn(mockUser);
+        when(() => mockUserResponse.user).thenReturn(mockUser);
+        when(
+          () => mockAuth.signInWithPassword(
+            email: 'user@example.com',
+            password: 'current-password',
+          ),
+        ).thenAnswer((_) async => mockAuthResponse);
+        when(
+          () => mockAuth.updateUser(any()),
+        ).thenAnswer((_) async => mockUserResponse);
+
+        final repo = AuthRepository(supabaseClient: mockSupabase);
+        final ok = await repo.changePassword(
+          'current-password',
+          'new-password',
+        );
+
+        expect(ok, isTrue);
+        verify(
+          () => mockAuth.signInWithPassword(
+            email: 'user@example.com',
+            password: 'current-password',
+          ),
+        ).called(1);
+        verify(() => mockAuth.updateUser(any())).called(1);
+      },
+    );
+
+    test('changePassword throws when current user email is missing', () async {
+      when(() => mockAuth.currentUser).thenReturn(null);
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+
+      expect(
+        () => repo.changePassword('current-password', 'new-password'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('User email not found'),
+          ),
+        ),
+      );
+    });
+
+    test('changePassword throws when current password is incorrect', () async {
+      when(() => mockUser.email).thenReturn('user@example.com');
+      when(() => mockAuth.currentUser).thenReturn(mockUser);
+      when(
+        () => mockAuth.signInWithPassword(
+          email: 'user@example.com',
+          password: 'wrong-password',
+        ),
+      ).thenThrow(AuthException('Invalid login credentials'));
+
+      final repo = AuthRepository(supabaseClient: mockSupabase);
+
+      expect(
+        () => repo.changePassword('wrong-password', 'new-password'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Current password is incorrect'),
+          ),
+        ),
+      );
+    });
+
+    test(
+      'changePassword returns false when update user returns no user',
+      () async {
+        final mockAuthResponse = MockAuthResponse();
+        final mockUserResponse = MockUserResponse();
+
+        when(() => mockUser.email).thenReturn('user@example.com');
+        when(() => mockAuth.currentUser).thenReturn(mockUser);
+        when(() => mockAuthResponse.user).thenReturn(mockUser);
+        when(() => mockUserResponse.user).thenReturn(null);
+        when(
+          () => mockAuth.signInWithPassword(
+            email: 'user@example.com',
+            password: 'current-password',
+          ),
+        ).thenAnswer((_) async => mockAuthResponse);
+        when(
+          () => mockAuth.updateUser(any()),
+        ).thenAnswer((_) async => mockUserResponse);
+
+        final repo = AuthRepository(supabaseClient: mockSupabase);
+        final ok = await repo.changePassword(
+          'current-password',
+          'new-password',
+        );
+
+        expect(ok, isFalse);
+      },
+    );
   });
 }

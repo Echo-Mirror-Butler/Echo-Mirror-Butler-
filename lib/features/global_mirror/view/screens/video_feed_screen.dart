@@ -30,13 +30,10 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Load initial videos
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_hasLoadedInitial) {
-        _loadVideos();
-        _hasLoadedInitial = true;
-      }
-    });
+    if (!_hasLoadedInitial) {
+      _loadVideos();
+      _hasLoadedInitial = true;
+    }
   }
 
   @override
@@ -75,12 +72,18 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(globalMirrorProvider);
     final videos = state.videoFeed;
+    final isInitialFeedLoading = state.isLoadingVideoFeed && videos.isEmpty;
+    final hasFeedError = state.error != null && state.error!.isNotEmpty;
 
     return Scaffold(
       body: Stack(
         children: [
           // Video feed
-          videos.isEmpty
+          isInitialFeedLoading
+              ? const _VideoFeedLoadingState()
+              : hasFeedError && videos.isEmpty
+              ? _buildErrorState(state.error!)
+              : videos.isEmpty
               ? _buildEmptyState()
               : PageView.builder(
                   controller: _pageController,
@@ -113,7 +116,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
               child: FloatingActionButton.extended(
                 onPressed: _showRecorder,
                 backgroundColor: AppTheme.primaryColor,
-                icon: const FaIcon(FontAwesomeIcons.video, color: Colors.white),
+                icon: Icon(FontAwesomeIcons.video.data, color: Colors.white),
                 label: Text(
                   'Share',
                   style: GoogleFonts.poppins(
@@ -140,7 +143,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
                     decoration: BoxDecoration(
                       color: index == _currentPage
                           ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -154,11 +157,16 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
 
   Widget _buildEmptyState() {
     return Center(
+      key: const Key('video-feed-empty-state'),
       child: FadeIn(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(FontAwesomeIcons.video, size: 64, color: Colors.grey[400]),
+            Icon(
+              FontAwesomeIcons.video.data,
+              size: 64,
+              color: Colors.grey[400],
+            ),
             const SizedBox(height: 24),
             Text(
               'No Videos Yet',
@@ -187,7 +195,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              icon: const FaIcon(FontAwesomeIcons.video),
+              icon: Icon(FontAwesomeIcons.video.data),
               label: Text(
                 'Record Video',
                 style: GoogleFonts.poppins(
@@ -198,6 +206,156 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String errorMessage) {
+    return Center(
+      key: const Key('video-feed-error-state'),
+      child: FadeIn(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                FontAwesomeIcons.triangleExclamation.data,
+                size: 56,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Could not load videos',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                errorMessage,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => ref
+                    .read(globalMirrorProvider.notifier)
+                    .loadVideoFeed(refresh: true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                icon: Icon(FontAwesomeIcons.rotateRight.data, size: 16),
+                label: Text(
+                  'Try Again',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoFeedLoadingState extends StatelessWidget {
+  const _VideoFeedLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+
+    return ListView.builder(
+      key: const Key('video-feed-loading-state'),
+      padding: EdgeInsets.zero,
+      itemCount: 3,
+      itemBuilder: (context, index) {
+        return _VideoFeedShimmerCard(height: screenHeight);
+      },
+    );
+  }
+}
+
+class _VideoFeedShimmerCard extends StatelessWidget {
+  const _VideoFeedShimmerCard({required this.height});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      color: Colors.black,
+      padding: const EdgeInsets.fromLTRB(16, 56, 16, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Align(
+            alignment: Alignment.topRight,
+            child: ShimmerLoading(
+              key: Key('video-feed-shimmer-indicator'),
+              width: 8,
+              height: 24,
+              shape: ShimmerShape.rectangle,
+              baseColor: Colors.white24,
+              highlightColor: Colors.white38,
+              radius: 4,
+            ),
+          ),
+          const Spacer(),
+          const Align(
+            child: ShimmerLoading(
+              width: 140,
+              height: 140,
+              shape: ShimmerShape.rectangle,
+              baseColor: Colors.white12,
+              highlightColor: Colors.white24,
+              radius: 20,
+            ),
+          ),
+          const Spacer(),
+          const ShimmerLoading(
+            width: 112,
+            height: 36,
+            shape: ShimmerShape.rectangle,
+            baseColor: Colors.white24,
+            highlightColor: Colors.white38,
+            radius: 20,
+          ),
+          const SizedBox(height: 14),
+          const ShimmerLoading(
+            width: 96,
+            height: 14,
+            shape: ShimmerShape.rectangle,
+            baseColor: Colors.white24,
+            highlightColor: Colors.white38,
+            radius: 6,
+          ),
+          const SizedBox(height: 8),
+          const ShimmerLoading(
+            width: 148,
+            height: 12,
+            shape: ShimmerShape.rectangle,
+            baseColor: Colors.white12,
+            highlightColor: Colors.white24,
+            radius: 6,
+          ),
+        ],
       ),
     );
   }
@@ -218,6 +376,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   File? _localVideoFile;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -282,9 +441,6 @@ class _VideoReelItemState extends State<VideoReelItem> {
             _controller!.play();
           }
         }
-        debugPrint(
-          '[VideoReelItem] Video initialized successfully from local file',
-        );
       } else {
         throw Exception('Failed to download video: ${response.statusCode}');
       }
@@ -293,14 +449,23 @@ class _VideoReelItemState extends State<VideoReelItem> {
       if (mounted) {
         setState(() {
           _isInitialized = false;
+          _hasError = true;
         });
       }
     }
   }
 
+  Future<void> _disposeController() async {
+    if (_controller != null) {
+      final oldController = _controller!;
+      _controller = null;
+      await oldController.dispose();
+    }
+  }
+
   @override
   void dispose() {
-    _controller?.dispose();
+    _disposeController();
     // Clean up local video file after a delay (in case video is still playing)
     if (_localVideoFile != null && _localVideoFile!.existsSync()) {
       Future.delayed(const Duration(seconds: 5), () {
@@ -350,8 +515,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const FaIcon(
-                                FontAwesomeIcons.triangleExclamation,
+                              Icon(
+                                FontAwesomeIcons.triangleExclamation.data,
                                 color: Colors.white70,
                                 size: 48,
                               ),
@@ -386,28 +551,10 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 child: VideoPlayer(_controller!),
               ),
             )
+          else if (_hasError)
+            _buildVideoErrorState()
           else
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const ShimmerLoading(
-                    width: 40,
-                    height: 40,
-                    baseColor: Colors.white24,
-                    highlightColor: Colors.white70,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading video...',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildVideoLoadingState(),
 
           // Video info overlay
           Positioned(
@@ -451,7 +598,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
                   Text(
                     'Expires in ${_getTimeRemaining(widget.video.expiresAt)}',
                     style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 10,
                     ),
                   ),
@@ -486,11 +633,11 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
-                  child: const FaIcon(
-                    FontAwesomeIcons.play,
+                  child: Icon(
+                    FontAwesomeIcons.play.data,
                     color: Colors.white,
                     size: 40,
                   ),
@@ -509,14 +656,14 @@ class _VideoReelItemState extends State<VideoReelItem> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(
-                      FontAwesomeIcons.image,
+                    Icon(
+                      FontAwesomeIcons.image.data,
                       color: Colors.white,
                       size: 14,
                     ),
@@ -550,5 +697,64 @@ class _VideoReelItemState extends State<VideoReelItem> {
     if (diff.inHours > 0) return '${diff.inHours}h';
     if (diff.inMinutes > 0) return '${diff.inMinutes}m';
     return 'soon';
+  }
+
+  Widget _buildVideoLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const ShimmerLoading(
+            width: 40,
+            height: 40,
+            baseColor: Colors.white24,
+            highlightColor: Colors.white70,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Loading video...',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            FontAwesomeIcons.circleExclamation.data,
+            color: Colors.white70,
+            size: 48,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Error loading video',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                _hasError = false;
+                _initializeVideo();
+              });
+            },
+            icon: Icon(FontAwesomeIcons.rotateRight.data, size: 14),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

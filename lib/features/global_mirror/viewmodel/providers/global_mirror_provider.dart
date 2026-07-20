@@ -48,6 +48,7 @@ class GlobalMirrorState {
   final List<VideoPostModel> videoFeed;
   final int currentVideoPage;
   final bool isLoadingMore;
+  final bool isLoadingVideoFeed;
 
   GlobalMirrorState({
     this.isSharing = false,
@@ -56,6 +57,7 @@ class GlobalMirrorState {
     this.videoFeed = const [],
     this.currentVideoPage = 0,
     this.isLoadingMore = false,
+    this.isLoadingVideoFeed = false,
   });
 
   GlobalMirrorState copyWith({
@@ -65,6 +67,7 @@ class GlobalMirrorState {
     List<VideoPostModel>? videoFeed,
     int? currentVideoPage,
     bool? isLoadingMore,
+    bool? isLoadingVideoFeed,
   }) {
     return GlobalMirrorState(
       isSharing: isSharing ?? this.isSharing,
@@ -74,6 +77,7 @@ class GlobalMirrorState {
       videoFeed: videoFeed ?? this.videoFeed,
       currentVideoPage: currentVideoPage ?? this.currentVideoPage,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isLoadingVideoFeed: isLoadingVideoFeed ?? this.isLoadingVideoFeed,
     );
   }
 }
@@ -237,6 +241,8 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
         '[GlobalMirrorProvider] Loading video feed (refresh: $refresh)',
       );
 
+      state = state.copyWith(isLoadingVideoFeed: true, error: null);
+
       if (refresh) {
         state = state.copyWith(currentVideoPage: 0, videoFeed: [], error: null);
       }
@@ -251,11 +257,12 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       state = state.copyWith(
         videoFeed: refresh ? videos : [...state.videoFeed, ...videos],
         currentVideoPage: refresh ? 1 : state.currentVideoPage + 1,
+        isLoadingVideoFeed: false,
       );
     } catch (e, stackTrace) {
       debugPrint('[GlobalMirrorProvider] Error loading video feed: $e');
       debugPrint('[GlobalMirrorProvider] Stack trace: $stackTrace');
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: e.toString(), isLoadingVideoFeed: false);
     }
   }
 
@@ -325,7 +332,7 @@ class GlobalMirrorNotifier extends StateNotifier<GlobalMirrorState> {
       debugPrint(
         '[GlobalMirrorNotifier] Error generating cluster encouragement: $e',
       );
-      return 'Others nearby are feeling similar—many found short walks or deep breathing helped today.';
+      return 'Others nearby are feeling similarâ€”many found short walks or deep breathing helped today.';
     }
   }
 }

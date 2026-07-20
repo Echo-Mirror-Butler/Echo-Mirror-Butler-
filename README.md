@@ -6,13 +6,17 @@
 
 *Track your mood, compete with friends, gift Stellar crypto during live sessions, and grow together*
 
+### 🌐 [echomirrorbutler.vercel.app](https://echomirrorbutler.vercel.app)
+
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.10+-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![Serverpod](https://img.shields.io/badge/Serverpod-3.0+-FF6B6B?logo=serverpod&logoColor=white)](https://serverpod.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 [![Stellar](https://img.shields.io/badge/Stellar-Blockchain-7C3AED?logo=stellar&logoColor=white)](https://stellar.org)
 [![Agora](https://img.shields.io/badge/Agora-Video%20Calls-099DFD?logo=agora&logoColor=white)](https://www.agora.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Coverage](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-/branch/development/graph/badge.svg)](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-)
+[![Flutter CI](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-/actions/workflows/ci.yml)
 
 </div>
 
@@ -66,7 +70,8 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **Pattern Detection**: AI analyzes mood trends, habit consistency, and note themes
 
 ### 🔐 Authentication & Security
-- **Secure Login**: Email/password authentication via Serverpod
+- **Secure Login**: Email/password authentication via Supabase Auth
+- **User Sessions**: Persistent sessions managed by Supabase
 - **User Sessions**: Persistent sessions with JWT tokens
 - **Protected Routes**: Route guards ensure authenticated access
 
@@ -83,12 +88,13 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **FL Chart** - Data visualization
 - **Table Calendar** - Calendar widget
 
-### Backend (Serverpod)
-- **Serverpod** 3.0+ - Dart server framework
-- **PostgreSQL** - Database
-- **Redis** - Caching
-- **JWT** - Authentication
-- **Google Generative AI** - Gemini AI integration
+### Backend (Supabase + Node.js)
+- **Supabase** - Backend as a Service (PostgreSQL + Auth + Storage + Edge Functions)
+- **PostgreSQL** - Database (managed by Supabase)
+- **Supabase Auth** - Authentication with JWT
+- **Supabase Edge Functions** - Serverless functions for AI and custom logic
+- **Node.js 20+** - Custom server routes (Stellar integration)
+- **Google Generative AI** - Gemini AI integration via Edge Functions
 - **Resend** - Email delivery
 
 ### Blockchain (Stellar)
@@ -105,16 +111,18 @@ We believe wellness is better together. EchoMirror Butler helps you:
 
 ## 📸 Screenshots
 
-> *Screenshots coming soon!*
+### Landing Page
+![Landing Page](assets/screenshots/landing.png)
 
-### Planned Screenshots:
-- 📱 Login Screen
-- 📅 Daily Logging Interface
-- 📊 Dashboard with AI Insights
-- 💌 Future Letter Card
-- 🔮 Prediction Card
-- 💡 Suggestions List
-- 📈 Mood Analytics
+### Features
+![Features Section](assets/screenshots/features.png)
+
+![ECHO Wallet & Habit Logs](assets/screenshots/features2.png)
+
+### Authentication
+![Sign In](assets/screenshots/login.png)
+
+![Create Account](assets/screenshots/signup.png)
 
 ---
 
@@ -122,64 +130,100 @@ We believe wellness is better together. EchoMirror Butler helps you:
 
 ### Prerequisites
 
-- **Flutter SDK** 3.10 or higher
-- **Dart SDK** 3.10 or higher
-- **Serverpod CLI** installed
-- **Docker** (for local database)
-- **PostgreSQL** (via Docker)
-- **Redis** (via Docker)
+- **Flutter SDK** 3.10 or higher ([install guide](https://docs.flutter.dev/get-started/install))
+- **Dart SDK** 3.10 or higher (bundled with Flutter)
+- **Xcode** 15+ (for iOS builds on macOS)
+- **CocoaPods** (for iOS plugins — install via `brew install cocoapods`)
+- **A Supabase project** (free tier works — [supabase.com](https://supabase.com))
+- **Node.js 20+** (only needed if working on Edge Functions)
 
-### Installation
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd echomirror
-   ```
+### 1. Clone & install dependencies
 
-2. **Install Flutter dependencies**
-   ```bash
-   flutter pub get
-   ```
+```bash
+git clone https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-.git
+cd Echo-Mirror-Butler-
 
-3. **Set up Serverpod server**
-   ```bash
-   cd ../echomirror_server/echomirror_server_server
-   dart pub get
-   ```
+# Install FVM
+dart pub global activate fvm
 
-4. **Start the database**
-   ```bash
-   docker compose up --build --detach
-   ```
+# Use the pinned version
+fvm install
+fvm flutter --version # should show 3.41.7
 
-5. **Apply database migrations**
-   ```bash
-   dart run bin/main.dart --apply-migrations
-   ```
+# Run all dart commands via fvm
+fvm flutter pub get
+```
 
-6. **Start the server**
-   ```bash
-   dart run bin/main.dart
-   ```
+---
 
-7. **Run the Flutter app**
-   ```bash
-   cd ../../echomirror
-   flutter run
-   ```
+### 2. Set up your Supabase project
 
-### Configuration
+1. Go to [supabase.com](https://supabase.com) and create a free project (or ask the project lead to be added to the existing one).
+2. In your Supabase dashboard, navigate to **Project Settings → API**.
+3. Copy two values:
+   - **Project URL** — looks like `https://xxxxxxxxxxxx.supabase.co`
+   - **anon / public key** — a long JWT string
 
-1. **Update Server URL** (if needed)
-   - Edit `lib/core/constants/api_constants.dart`
-   - Default: `http://localhost:8080` (local)
-   - Production: Your Serverpod Cloud URL
+> **Never commit these values to git.** They are passed at runtime via `--dart-define`.
 
-2. **Add Gemini API Key** (Optional - for AI features)
-   - Go to Serverpod Cloud dashboard
-   - Add secret: `GEMINI_API_KEY`
-   - App works without it (uses mock data)
+---
+
+### 3. Store your credentials locally
+
+Add the following to your `~/.zshrc` (or `~/.bashrc` on Linux):
+
+```bash
+export SUPABASE_URL="https://your-project-id.supabase.co"
+export SUPABASE_ANON_KEY="your-anon-key-here"
+```
+
+Then reload your shell:
+
+```bash
+source ~/.zshrc
+```
+
+---
+
+### 4. Run the app
+
+**Terminal:**
+```bash
+fvm flutter run -d "iPhone 16 Pro" \
+  --dart-define=SUPABASE_URL=$SUPABASE_URL \
+  --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+```
+
+**VS Code (recommended):**
+
+A `.vscode/launch.json` is already set up. It reads `SUPABASE_URL` and `SUPABASE_ANON_KEY` from your environment automatically. Just press **F5** after step 3.
+
+> **iOS note:** If you see a CocoaPods warning on first run, run `pod install --project-directory=ios` then try again.
+
+---
+
+### 5. Optional: AI features (Gemini)
+
+AI insights require a Google Gemini API key set as a Supabase Edge Function secret. Without it the app falls back to mock data — everything else works normally.
+
+```bash
+supabase secrets set GEMINI_API_KEY=your_gemini_key
+```
+
+---
+
+### 6. Optional: Stellar testnet gifting
+
+The gifting feature runs against the Stellar testnet — no real funds involved. No extra setup is needed to use it; wallet creation and testnet funding happen automatically in-app.
+
+If you are working on the **backend/server** routes, copy the example env file and fill in your testnet keypairs:
+
+```bash
+cp backend/.env.example backend/.env
+# edit backend/.env with your STELLAR_ISSUER_* and STELLAR_DISTRIBUTOR_* keys
+```
 
 ---
 
@@ -274,7 +318,7 @@ All development and testing is done against the **Stellar Testnet**, so no real 
 - **Stellar SDK for Flutter** — Handles keypair generation, transaction building, and submission
 - **Horizon API** — Queries account balances, transaction history, and network status
 - **XDR Encoding** — Transactions are encoded and signed client-side before submission
-- **Serverpod Backend** — The `GiftEndpoint` on the server coordinates gift records and maps Stellar transactions to user accounts
+- **Supabase Backend** — Edge Functions coordinate gift records and map Stellar transactions to user accounts
 
 ---
 
@@ -299,11 +343,11 @@ EchoMirror Butler uses **Google Gemini AI** to generate personalized insights:
 ### Privacy & Offline Mode
 
 - **Works Offline**: App functions fully without API key (uses mock data)
-- **Secure**: API key stored in Serverpod Cloud secrets
+- **Secure**: API key stored as a secret in Supabase
 - **Private**: Your data never leaves your server
 - **Graceful Fallback**: Errors never break the app
 
-For AI setup instructions, refer to your Serverpod Cloud dashboard to add the `GEMINI_API_KEY` secret.
+For AI setup instructions, refer to your Supabase dashboard or use `supabase secrets set` to add the `GEMINI_API_KEY` secret.
 
 ---
 
@@ -312,30 +356,26 @@ For AI setup instructions, refer to your Serverpod Cloud dashboard to add the `G
 ### Running Tests
 
 ```bash
-flutter test
+fvm flutter test
 ```
 
 ### Code Analysis
 
 ```bash
-flutter analyze
+fvm flutter analyze
 ```
 
 ### Format Code
 
 ```bash
-flutter format .
+fvm dart format lib test backend
 ```
 
 ### Generate Code
 
 ```bash
 # For Riverpod code generation
-flutter pub run build_runner build
-
-# For Serverpod code generation
-cd ../echomirror_server/echomirror_server_server
-serverpod generate
+fvm flutter pub run build_runner build
 ```
 
 ---
@@ -375,7 +415,7 @@ EchoMirror Butler is designed with these principles:
 ## 🛣️ Roadmap
 
 ### Current Features ✅
-- [x] User authentication (email/password via Serverpod)
+- [x] User authentication (email/password via Supabase Auth)
 - [x] Daily logging (mood, habits, notes)
 - [x] AI-powered insights and predictions (Google Gemini)
 - [x] Real-time video sessions (Agora)
@@ -384,9 +424,9 @@ EchoMirror Butler is designed with these principles:
 - [x] Mood analytics and dashboard
 - [x] Change password flow
 - [x] CI pipeline with formatting, analysis, and tests
+- [x] In-call Stellar gifting during video sessions
 
 ### Planned Features 🚧
-- [ ] Live in-call Stellar gifting during video sessions
 - [ ] Competitions and stress-relief games
 - [ ] Leaderboards and social challenges
 - [ ] Stellar mainnet support
@@ -398,21 +438,7 @@ EchoMirror Butler is designed with these principles:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow the existing code style
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-- Follow MVVM architecture pattern
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) guide before opening a PR — it covers branching strategy, PR checklist, commit format, code style, and local Supabase setup.
 
 ---
 
@@ -425,7 +451,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **Flutter Team** - Amazing framework
-- **Serverpod** - Powerful backend solution
+- **Supabase** - Powerful Backend-as-a-Service
 - **Stellar Development Foundation** - Blockchain infrastructure
 - **Agora** - Real-time video SDK
 - **Google Gemini** - AI capabilities
@@ -435,20 +461,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/echomirror/issues)
+- **Issues**: [GitHub Issues](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-/issues)
 - **Questions**: Open a discussion on GitHub
 
 ---
 
 ## ⭐ Show Your Support
 
-If you find EchoMirror Butler helpful, please give it a ⭐ on GitHub!
+If you find EchoMirror Butler helpful, please **[give it a ⭐ on GitHub](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-)** — it helps more contributors discover the project and directly supports our ranking in the Stellar Wave program!
 
 ---
 
 <div align="center">
 
-**Built with ❤️ using Flutter, Serverpod & Stellar**
+**Built with ❤️ using Flutter, Supabase & Stellar**
 
 *Wellness is better together — gift, compete, reflect, and grow.*
 

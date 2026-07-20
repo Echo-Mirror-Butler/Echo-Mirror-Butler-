@@ -93,7 +93,7 @@ class MoodAnalyticsScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                FontAwesomeIcons.triangleExclamation,
+                FontAwesomeIcons.triangleExclamation.data,
                 size: 64,
                 color: AppTheme.errorColor,
               ),
@@ -135,14 +135,14 @@ class MoodAnalyticsScreen extends ConsumerWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.accentColor.withOpacity(0.3),
+                      color: AppTheme.accentColor.withValues(alpha: 0.3),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  FontAwesomeIcons.chartLine,
+                child: Icon(
+                  FontAwesomeIcons.chartLine.data,
                   size: 56,
                   color: Colors.white,
                 ),
@@ -161,7 +161,7 @@ class MoodAnalyticsScreen extends ConsumerWidget {
               Text(
                 'Start logging your daily mood to see analytics, trends, and insights.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.6,
                   fontSize: 15,
                 ),

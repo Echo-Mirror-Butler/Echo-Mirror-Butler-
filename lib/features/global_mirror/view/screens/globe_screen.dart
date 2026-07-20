@@ -96,7 +96,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
               return Stack(
                 children: [
                   IconButton(
-                    icon: const FaIcon(FontAwesomeIcons.heart),
+                    icon: Icon(FontAwesomeIcons.heart.data),
                     onPressed: () {
                       context.push('/notifications');
                     },
@@ -133,10 +133,10 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
           ),
           // Toggle between 3D and 2D
           IconButton(
-            icon: FaIcon(
+            icon: Icon(
               _use3DGlobe && !_has3DError
-                  ? FontAwesomeIcons.map
-                  : FontAwesomeIcons.globe,
+                  ? FontAwesomeIcons.map.data
+                  : FontAwesomeIcons.globe.data,
             ),
             onPressed: () {
               setState(() {
@@ -149,7 +149,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                 : 'Switch to 3D Globe',
           ),
           IconButton(
-            icon: const FaIcon(FontAwesomeIcons.circleInfo),
+            icon: Icon(FontAwesomeIcons.circleInfo.data),
             onPressed: _showPrivacyInfo,
             tooltip: 'Privacy Info',
           ),
@@ -183,11 +183,11 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(0.9),
+                      color: theme.colorScheme.surface.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),
@@ -326,11 +326,11 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.9),
+        color: theme.colorScheme.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             spreadRadius: 2,
           ),

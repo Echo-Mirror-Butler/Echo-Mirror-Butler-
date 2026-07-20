@@ -27,6 +27,9 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       _hasLoaded = false;
     }
 
+    // Prevent concurrent calls while a fetch is already in-flight
+    if (state.isLoading) return;
+
     // If no userId, return empty list instead of staying in loading state
     if (_currentUserId == null || _currentUserId!.isEmpty) {
       state = const AsyncValue.data([]);
@@ -44,11 +47,11 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
         '[LoggingNotifier] Loading log entries for userId: $_currentUserId',
       );
       final entries = await _repository.getLogEntries(_currentUserId!);
-      debugPrint('[LoggingNotifier] ✅ Loaded ${entries.length} log entries');
+      debugPrint('[LoggingNotifier] âœ… Loaded ${entries.length} log entries');
       _hasLoaded = true;
       state = AsyncValue.data(entries);
     } catch (e, stackTrace) {
-      debugPrint('[LoggingNotifier] ❌ Error loading log entries: $e');
+      debugPrint('[LoggingNotifier] âŒ Error loading log entries: $e');
       debugPrint('[LoggingNotifier] Stack trace: $stackTrace');
       _hasLoaded = false;
       state = AsyncValue.error(e, stackTrace);
@@ -62,9 +65,13 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       final currentData = state.value ?? [];
       state = AsyncValue.data([...currentData, created]);
 
-      // Cancel no-log-today notification since user has logged
-      final notificationService = NotificationService();
-      await notificationService.cancelNoLogTodayNotification();
+      // Wrap notification call so platform plugin failures (e.g. MissingPluginException
+      // in unit tests) do not fail the entire log entry creation.
+      try {
+        await NotificationService().cancelNoLogTodayNotification();
+      } catch (_) {
+        // Ignore notification errors (e.g., in unit tests where plugins are unavailable)
+      }
 
       return true;
     } catch (e) {

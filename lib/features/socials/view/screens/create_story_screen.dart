@@ -198,7 +198,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -208,12 +208,12 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildActionButton(
-                  icon: FontAwesomeIcons.images,
+                  icon: FontAwesomeIcons.images.data,
                   label: 'Gallery',
                   onTap: _pickImages,
                 ),
                 _buildActionButton(
-                  icon: FontAwesomeIcons.camera,
+                  icon: FontAwesomeIcons.camera.data,
                   label: 'Camera',
                   onTap: _pickImageFromCamera,
                 ),
@@ -231,9 +231,9 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            FontAwesomeIcons.images,
+            FontAwesomeIcons.images.data,
             size: 64,
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
@@ -287,7 +287,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 16),
+                  child: Icon(Icons.close, color: Colors.white, size: 16),
                 ),
               ),
             ),
@@ -307,14 +307,14 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: AppTheme.primaryColor),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(icon, color: AppTheme.primaryColor, size: 20),
+            Icon(icon, color: AppTheme.primaryColor, size: 20),
             const SizedBox(width: 8),
             Text(
               label,

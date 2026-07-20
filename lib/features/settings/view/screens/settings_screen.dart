@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/viewmodel/providers/theme_provider.dart';
@@ -9,6 +10,7 @@ import '../../../../core/viewmodel/providers/notification_provider.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
+import '../../../socials/viewmodel/providers/follow_provider.dart';
 
 /// Modern settings screen with improved UI/UX
 class SettingsScreen extends ConsumerWidget {
@@ -34,7 +36,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.palette,
+            icon: FontAwesomeIcons.palette.data,
             title: 'Appearance',
             subtitle: 'Customize your app experience',
           ),
@@ -46,7 +48,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.bell,
+            icon: FontAwesomeIcons.bell.data,
             title: 'Reminders',
             subtitle: 'Stay on track with daily reflections',
           ),
@@ -54,11 +56,23 @@ class SettingsScreen extends ConsumerWidget {
           _buildNotificationsCard(context, theme, ref),
           const SizedBox(height: 24),
 
+          // Privacy Section
+          _buildSectionHeader(
+            context,
+            theme,
+            icon: FontAwesomeIcons.shield.data,
+            title: 'Privacy',
+            subtitle: 'Control your visibility to followers',
+          ),
+          const SizedBox(height: 12),
+          _buildPrivacyCard(context, theme, ref, authState),
+          const SizedBox(height: 24),
+
           // Account Section
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.user,
+            icon: FontAwesomeIcons.user.data,
             title: 'Account',
             subtitle: 'Manage your account settings',
           ),
@@ -81,10 +95,10 @@ class SettingsScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: FaIcon(icon, color: AppTheme.primaryColor, size: 20),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -96,7 +110,7 @@ class SettingsScreen extends ConsumerWidget {
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -118,7 +132,7 @@ class SettingsScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -129,7 +143,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.moon,
+              icon: FontAwesomeIcons.moon.data,
               iconColor: Colors.indigo,
               title: 'Dark Mode',
               subtitle: 'Switch to dark theme',
@@ -144,12 +158,12 @@ class SettingsScreen extends ConsumerWidget {
             ),
             Divider(
               height: 1,
-              color: theme.colorScheme.outline.withOpacity(0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
             ),
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.circleHalfStroke,
+              icon: FontAwesomeIcons.circleHalfStroke.data,
               iconColor: Colors.blue,
               title: 'System Theme',
               subtitle: 'Follow system appearance',
@@ -163,6 +177,64 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyCard(
+    BuildContext context,
+    ThemeData theme,
+    WidgetRef ref,
+    dynamic authState,
+  ) {
+    final isPublicProfile = ref.watch(isPublicProfileProvider);
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: isPublicProfile.when(
+          data: (isPublic) => Column(
+            children: [
+              _buildModernListTile(
+                context,
+                theme,
+                icon: FontAwesomeIcons.earthAmericas.data,
+                iconColor: Colors.green,
+                title: 'Public Profile',
+                subtitle: isPublic
+                    ? 'Friends can see your habits and notes'
+                    : 'Friends can only see your mood emoji',
+                trailing: Switch(
+                  value: isPublic,
+                  onChanged: (value) async {
+                    if (authState.user != null) {
+                      await Supabase.instance.client
+                          .from('profiles')
+                          .update({'public_profile': value})
+                          .eq('id', authState.user!.id);
+                      ref.invalidate(isPublicProfileProvider);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          loading: () => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(child: ShimmerLoading(width: 24, height: 24)),
+          ),
+          error: (_, __) => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('Could not load privacy settings'),
+          ),
         ),
       ),
     );
@@ -182,7 +254,7 @@ class SettingsScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -195,7 +267,7 @@ class SettingsScreen extends ConsumerWidget {
                 _buildModernListTile(
                   context,
                   theme,
-                  icon: FontAwesomeIcons.bell,
+                  icon: FontAwesomeIcons.bell.data,
                   iconColor: Colors.orange,
                   title: 'Daily Reflection Reminder',
                   subtitle: enabled
@@ -219,20 +291,20 @@ class SettingsScreen extends ConsumerWidget {
                 if (enabled) ...[
                   Divider(
                     height: 1,
-                    color: theme.colorScheme.outline.withOpacity(0.1),
+                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
                   ),
                   _buildModernListTile(
                     context,
                     theme,
-                    icon: FontAwesomeIcons.clock,
+                    icon: FontAwesomeIcons.clock.data,
                     iconColor: Colors.teal,
                     title: 'Reminder Time',
                     subtitle:
                         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                    trailing: FaIcon(
-                      FontAwesomeIcons.chevronRight,
+                    trailing: Icon(
+                      FontAwesomeIcons.chevronRight.data,
                       size: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     ),
                     onTap: () async {
                       final TimeOfDay? picked = await showTimePicker(
@@ -270,12 +342,12 @@ class SettingsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Center(child: ShimmerLoading(width: 24, height: 24)),
           ),
-          error: (_, __) => Padding(
+          error: (_, _) => Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                FaIcon(
-                  FontAwesomeIcons.triangleExclamation,
+                Icon(
+                  FontAwesomeIcons.triangleExclamation.data,
                   color: theme.colorScheme.error,
                   size: 20,
                 ),
@@ -296,12 +368,12 @@ class SettingsScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(20),
           child: Center(child: ShimmerLoading(width: 24, height: 24)),
         ),
-        error: (_, __) => Padding(
+        error: (_, _) => Padding(
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              FaIcon(
-                FontAwesomeIcons.triangleExclamation,
+              Icon(
+                FontAwesomeIcons.triangleExclamation.data,
                 color: theme.colorScheme.error,
                 size: 20,
               ),
@@ -333,7 +405,7 @@ class SettingsScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: theme.colorScheme.outline.withOpacity(0.1),
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -344,26 +416,26 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.coins,
+              icon: FontAwesomeIcons.coins.data,
               iconColor: AppTheme.primaryColor,
               title: 'ECHO Balance',
               subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
-              onTap: () => context.push('/gift/0'),
+              onTap: () => context.push('/gift/${authState.user?.id ?? ''}'),
             ),
             Divider(
               height: 1,
-              color: theme.colorScheme.outline.withOpacity(0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
             ),
             if (authState.user != null)
               _buildModernListTile(
                 context,
                 theme,
-                icon: FontAwesomeIcons.envelope,
+                icon: FontAwesomeIcons.envelope.data,
                 iconColor: Colors.blue,
                 title: 'Email',
                 subtitle: authState.user!.email,
@@ -372,19 +444,19 @@ class SettingsScreen extends ConsumerWidget {
             if (authState.user != null)
               Divider(
                 height: 1,
-                color: theme.colorScheme.outline.withOpacity(0.1),
+                color: theme.colorScheme.outline.withValues(alpha: 0.1),
               ),
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.key,
+              icon: FontAwesomeIcons.key.data,
               iconColor: Colors.purple,
               title: 'Change Password',
               subtitle: 'Update your account password',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
-                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
               onTap: () {
                 context.push('/settings/change-password');
@@ -392,12 +464,12 @@ class SettingsScreen extends ConsumerWidget {
             ),
             Divider(
               height: 1,
-              color: theme.colorScheme.outline.withOpacity(0.1),
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
             ),
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.rightFromBracket,
+              icon: FontAwesomeIcons.rightFromBracket.data,
               iconColor: Colors.red,
               title: AppStrings.logout,
               subtitle: 'Sign out of your account',
@@ -434,10 +506,10 @@ class SettingsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: FaIcon(icon, color: iconColor, size: 18),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -449,7 +521,9 @@ class SettingsScreen extends ConsumerWidget {
                     Text(
                       subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                       ),
                     ),
                   ],

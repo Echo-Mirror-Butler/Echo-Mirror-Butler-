@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "EchoMirror (iOS Simulator)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
+        "--dart-define=SUPABASE_ANON_KEY=${env:SUPABASE_ANON_KEY}"
+      ]
+    },
+    {
+      "name": "EchoMirror (Android)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--dart-define=SUPABASE_URL=${env:SUPABASE_URL}",
+        "--dart-define=SUPABASE_ANON_KEY=${env:SUPABASE_ANON_KEY}"
+      ]
+    }
+  ]
+}

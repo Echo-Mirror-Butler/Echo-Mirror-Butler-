@@ -15,7 +15,7 @@ import '../../viewmodel/providers/gift_provider.dart';
 class GiftScreen extends ConsumerStatefulWidget {
   const GiftScreen({super.key, required this.recipientUserId});
 
-  final int recipientUserId;
+  final String recipientUserId;
 
   @override
   ConsumerState<GiftScreen> createState() => _GiftScreenState();
@@ -56,6 +56,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
+  }
+
   Future<void> _handleSend() async {
     final currentBalance = ref.read(giftProvider).echoBalance;
 
@@ -80,6 +86,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
 
     if (success && mounted) {
       _confettiController.play();
+      _showSuccess('Gift sent successfully!');
       await Future.delayed(const Duration(seconds: 3));
       if (mounted) context.pop();
     }
@@ -89,13 +96,24 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final giftState = ref.watch(giftProvider);
+    final isActionLoading = giftState.isSending || giftState.isLoading;
+
+    ref.listen<GiftState>(giftProvider, (previous, next) {
+      final previousError = previous?.error;
+      final nextError = next.error;
+      if (nextError != null &&
+          nextError.isNotEmpty &&
+          nextError != previousError) {
+        _showError(nextError);
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Send ECHO Gift'),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
       ),
@@ -107,7 +125,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ECHO balance
-                _buildBalanceCard(theme, giftState.echoBalance),
+                _buildBalanceCard(
+                  theme,
+                  giftState.echoBalance,
+                  giftState.balanceError,
+                ),
                 const SizedBox(height: 28),
 
                 // Amount picker
@@ -148,11 +170,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                 // Send button
                 FilledButton.icon(
                   onPressed:
-                      giftState.isSending ||
+                      isActionLoading ||
+                          widget.recipientUserId.trim().isEmpty ||
                           _selectedAmount > giftState.echoBalance
                       ? null
                       : _handleSend,
-                  icon: giftState.isSending
+                  icon: isActionLoading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
@@ -161,9 +184,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(FontAwesomeIcons.gift),
+                      : Icon(FontAwesomeIcons.gift.data),
                   label: Text(
-                    giftState.isSending
+                    isActionLoading
                         ? 'Sending...'
                         : 'Send ${_selectedAmount.toStringAsFixed(0)} ECHO',
                   ),
@@ -206,7 +229,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                 const SizedBox(height: 16),
 
                 // Gift History List
-                giftState.history.isEmpty
+                giftState.historyError != null
+                    ? _buildHistoryErrorState(theme, giftState.historyError!)
+                    : giftState.history.isEmpty
                     ? _buildEmptyState(theme)
                     : _buildHistoryList(theme, giftState.history),
               ],
@@ -233,7 +258,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 
-  Widget _buildBalanceCard(ThemeData theme, double balance) {
+  Widget _buildBalanceCard(
+    ThemeData theme,
+    double balance,
+    String? balanceError,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -246,26 +275,39 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       ),
       child: Row(
         children: [
-          const Icon(FontAwesomeIcons.coins, color: Colors.white, size: 32),
+          Icon(FontAwesomeIcons.coins.data, color: Colors.white, size: 32),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Your ECHO Balance',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white70,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your ECHO Balance',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white70,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${balance.toStringAsFixed(0)} ECHO',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                const SizedBox(height: 4),
+                Text(
+                  balanceError == null
+                      ? '${balance.toStringAsFixed(0)} ECHO'
+                      : '-- ECHO',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                if (balanceError != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    balanceError,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -295,7 +337,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         // Custom amount
         ActionChip(
           label: const Text('Custom'),
-          avatar: const Icon(Icons.edit, size: 16),
+          avatar: Icon(Icons.edit, size: 16),
           onPressed: _showCustomAmountDialog,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -323,7 +365,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
             ],
             decoration: InputDecoration(
-              labelText: 'ECHO amount (0.1–1000)',
+              labelText: 'ECHO amount (0.1â€“1000)',
               suffixText: 'ECHO',
               errorText: errorText,
             ),
@@ -364,18 +406,18 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
         children: [
           Icon(
-            FontAwesomeIcons.gift,
+            FontAwesomeIcons.gift.data,
             size: 40,
-            color: theme.colorScheme.outline.withOpacity(0.5),
+            color: theme.colorScheme.outline.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -398,6 +440,39 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     );
   }
 
+  Widget _buildHistoryErrorState(ThemeData theme, String message) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.errorContainer.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.error.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, size: 36, color: theme.colorScheme.error),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => ref.read(giftProvider.notifier).loadHistory(),
+            icon: Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHistoryList(
     ThemeData theme,
     List<GiftTransactionModel> history,
@@ -411,9 +486,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final tx = history[index];
-        // Handle ID mismatch (String vs int) by comparing as strings
-        final isSent =
-            tx.senderUserId.toString() == currentUserId || tx.senderUserId == 0;
+        final isSent = tx.senderUserId == currentUserId;
 
         final otherId = isSent ? tx.recipientUserId : tx.senderUserId;
         final name = isSent && tx.recipientUserId == widget.recipientUserId
@@ -426,7 +499,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -439,12 +512,12 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             ),
             leading: CircleAvatar(
               backgroundColor: isSent
-                  ? AppTheme.primaryColor.withOpacity(0.1)
-                  : Colors.green.withOpacity(0.1),
+                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                  : Colors.green.withValues(alpha: 0.1),
               child: Icon(
                 isSent
-                    ? FontAwesomeIcons.gift
-                    : FontAwesomeIcons.handHoldingHeart,
+                    ? FontAwesomeIcons.gift.data
+                    : FontAwesomeIcons.handHoldingHeart.data,
                 size: 16,
                 color: isSent ? AppTheme.primaryColor : Colors.green,
               ),
@@ -534,9 +607,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

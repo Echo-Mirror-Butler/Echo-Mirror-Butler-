@@ -3,6 +3,7 @@ table: echo_wallets
 fields:
   userId: int
   balance: double
+  stellarPublicKey: String?
 indexes:
   echo_wallet_user_idx:
     fields: userId

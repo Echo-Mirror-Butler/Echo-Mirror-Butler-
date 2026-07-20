@@ -13,43 +13,52 @@ import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/logging_calendar.dart';
 
 /// Daily logging screen
-class LoggingScreen extends ConsumerWidget {
+class LoggingScreen extends ConsumerStatefulWidget {
   const LoggingScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LoggingScreen> createState() => _LoggingScreenState();
+}
+
+class _LoggingScreenState extends ConsumerState<LoggingScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = ref.read(authProvider);
+      final userId = authState.user?.id;
+      if (userId != null && userId.isNotEmpty) {
+        ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final loggingState = ref.watch(loggingProvider);
     final authState = ref.watch(authProvider);
+    final userId = authState.user?.id;
     final theme = Theme.of(context);
-
-    // Load log entries when we have a user ID (only once)
-    if (authState.isAuthenticated && authState.user != null) {
-      final userId = authState.user!.id;
-      // Use addPostFrameCallback to avoid calling during build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (userId.isNotEmpty) {
-          ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
-        }
-      });
-    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Logging'),
         actions: [
           IconButton(
-            icon: const Icon(FontAwesomeIcons.calendar),
+            icon: Icon(FontAwesomeIcons.calendar.data),
             onPressed: () {
               final entries = loggingState.value ?? <LogEntryModel>[];
-              _showCalendar(context, ref, entries);
+              _showCalendar(context, entries);
             },
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref
-            .read(loggingProvider.notifier)
-            .loadLogEntries(userId: ref.read(authProvider).user?.id),
+        onRefresh: () async {
+          await ref
+              .read(loggingProvider.notifier)
+              .loadLogEntries(userId: userId);
+        },
         child: loggingState.when(
           data: (entries) {
             if (entries.isEmpty) {
@@ -63,9 +72,11 @@ class LoggingScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            FontAwesomeIcons.book,
+                            FontAwesomeIcons.book.data,
                             size: 64,
-                            color: theme.colorScheme.primary.withOpacity(0.5),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -100,7 +111,9 @@ class LoggingScreen extends ConsumerWidget {
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                        backgroundColor: AppTheme.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
                         child: Icon(
                           _getMoodIcon(entry.mood),
                           color: AppTheme.primaryColor,
@@ -117,9 +130,11 @@ class LoggingScreen extends ConsumerWidget {
                         style: theme.textTheme.bodySmall,
                       ),
                       trailing: Icon(
-                        FontAwesomeIcons.chevronRight,
+                        FontAwesomeIcons.chevronRight.data,
                         size: 16,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       onTap: () {
                         context.push(
@@ -135,15 +150,20 @@ class LoggingScreen extends ConsumerWidget {
           },
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
-          error: (error, stack) =>
-              NoConnectionWidget(onRetry: () => ref.refresh(loggingProvider)),
+          error: (error, stack) => NoConnectionWidget(
+            message:
+                'We could not load your daily logs. '
+                'This can happen when Supabase tables are missing. '
+                'Run migrations and try again.',
+            onRetry: () => _retryLoadEntries(userId),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           context.push('/logging/create');
         },
-        icon: const Icon(FontAwesomeIcons.plus),
+        icon: Icon(FontAwesomeIcons.plus.data),
         label: const Text('New Entry'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
@@ -151,31 +171,32 @@ class LoggingScreen extends ConsumerWidget {
     );
   }
 
+  void _retryLoadEntries(String? userId) {
+    if (userId == null || userId.isEmpty) return;
+    ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
+  }
+
   IconData _getMoodIcon(int? mood) {
     if (mood == null) {
-      return FontAwesomeIcons.smile;
+      return FontAwesomeIcons.faceSmile.data;
     }
     switch (mood) {
       case 1:
-        return FontAwesomeIcons.faceFrown;
+        return FontAwesomeIcons.faceFrown.data;
       case 2:
-        return FontAwesomeIcons.faceMeh;
+        return FontAwesomeIcons.faceMeh.data;
       case 3:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
       case 4:
-        return FontAwesomeIcons.faceSmileBeam;
+        return FontAwesomeIcons.faceSmileBeam.data;
       case 5:
-        return FontAwesomeIcons.faceGrinStars;
+        return FontAwesomeIcons.faceGrinStars.data;
       default:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
     }
   }
 
-  void _showCalendar(
-    BuildContext context,
-    WidgetRef ref,
-    List<LogEntryModel> entries,
-  ) {
+  void _showCalendar(BuildContext context, List<LogEntryModel> entries) {
     showDialog(
       context: context,
       builder: (context) => LoggingCalendar(

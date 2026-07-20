@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
 /// Beautiful mood trend chart widget
 class MoodTrendChart extends StatelessWidget {
   final List<LogEntryModel> recentLogs;
   final int daysToShow;
+  final String timezone;
 
   const MoodTrendChart({
     super.key,
     required this.recentLogs,
     this.daysToShow = 30,
+    this.timezone = 'UTC',
   });
 
   @override
@@ -38,7 +42,7 @@ class MoodTrendChart extends StatelessWidget {
 
     return Card(
       elevation: 4,
-      shadowColor: AppTheme.primaryColor.withOpacity(0.15),
+      shadowColor: AppTheme.primaryColor.withValues(alpha: 0.15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
@@ -49,7 +53,7 @@ class MoodTrendChart extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               theme.colorScheme.surface,
-              AppTheme.primaryColor.withOpacity(0.02),
+              AppTheme.primaryColor.withValues(alpha: 0.02),
             ],
           ),
         ),
@@ -70,8 +74,8 @@ class MoodTrendChart extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    FontAwesomeIcons.chartLine,
+                  child: Icon(
+                    FontAwesomeIcons.chartLine.data,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -105,7 +109,7 @@ class MoodTrendChart extends StatelessWidget {
   }
 
   List<ChartDataPoint> _prepareChartData(List<LogEntryModel> logs) {
-    final now = DateTime.now();
+    final now = DateFormatter.daysAgo(0, timezone);
     final startDate = now.subtract(Duration(days: daysToShow));
     final dataPoints = <ChartDataPoint>[];
 
@@ -116,12 +120,12 @@ class MoodTrendChart extends StatelessWidget {
       logMap[logDate] = log;
     }
 
-    // Generate data points for the last N days
+    final today = DateFormatter.daysAgo(0, timezone);
     for (int i = daysToShow - 1; i >= 0; i--) {
       final date = DateTime(
-        now.year,
-        now.month,
-        now.day,
+        today.year,
+        today.month,
+        today.day,
       ).subtract(Duration(days: i));
       final normalizedDate = DateTime(date.year, date.month, date.day);
 
@@ -166,7 +170,7 @@ class MoodTrendChart extends StatelessWidget {
         horizontalInterval: 1,
         getDrawingHorizontalLine: (value) {
           return FlLine(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             strokeWidth: 1,
             dashArray: [5, 5],
           );
@@ -192,7 +196,7 @@ class MoodTrendChart extends StatelessWidget {
                     DateFormatter.formatDateShort(date),
                     style: GoogleFonts.poppins(
                       fontSize: 10,
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                 );
@@ -212,7 +216,7 @@ class MoodTrendChart extends StatelessWidget {
                   value.toInt().toString(),
                   style: GoogleFonts.poppins(
                     fontSize: 11,
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     fontWeight: FontWeight.w600,
                   ),
                 );
@@ -225,7 +229,7 @@ class MoodTrendChart extends StatelessWidget {
       borderData: FlBorderData(
         show: true,
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.2),
+          color: AppTheme.primaryColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -248,8 +252,8 @@ class MoodTrendChart extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                AppTheme.primaryColor.withOpacity(0.3),
-                AppTheme.secondaryColor.withOpacity(0.1),
+                AppTheme.primaryColor.withValues(alpha: 0.3),
+                AppTheme.secondaryColor.withValues(alpha: 0.1),
                 Colors.transparent,
               ],
               stops: const [0.0, 0.5, 1.0],
@@ -319,7 +323,7 @@ class MoodTrendChart extends StatelessWidget {
           'Mood Trend (Last $daysToShow days)',
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -329,7 +333,7 @@ class MoodTrendChart extends StatelessWidget {
   Widget _buildEmptyState(BuildContext context, ThemeData theme) {
     return Card(
       elevation: 4,
-      shadowColor: AppTheme.primaryColor.withOpacity(0.15),
+      shadowColor: AppTheme.primaryColor.withValues(alpha: 0.15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
@@ -341,23 +345,23 @@ class MoodTrendChart extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               theme.colorScheme.surface,
-              AppTheme.primaryColor.withOpacity(0.02),
+              AppTheme.primaryColor.withValues(alpha: 0.02),
             ],
           ),
         ),
         child: Column(
           children: [
             Icon(
-              FontAwesomeIcons.chartLine,
+              FontAwesomeIcons.chartLine.data,
               size: 48,
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'Log more days to see your growth trend',
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
