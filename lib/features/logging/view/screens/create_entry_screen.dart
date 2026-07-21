@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
@@ -101,11 +102,23 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
     });
   }
 
+  Future<void> _triggerHaptic(Future<void> Function() feedback) async {
+    try {
+      await feedback();
+    } catch (_) {
+      // Haptic feedback is best-effort and may be unavailable on some devices.
+    }
+  }
+
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      await _triggerHaptic(HapticFeedback.vibrate);
+      return;
+    }
 
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) {
+      await _triggerHaptic(HapticFeedback.vibrate);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -144,6 +157,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
 
       if (mounted) {
         if (success) {
+          await _triggerHaptic(HapticFeedback.lightImpact);
           ErrorHandler.showSuccess(context, 'Entry created successfully!');
 
           // Share mood anonymously if opted in.
@@ -213,10 +227,12 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
           final errorMessage = loggingState.hasError
               ? ErrorHandler.getErrorMessage(loggingState.error!)
               : 'Failed to create entry. Please try again.';
+          await _triggerHaptic(HapticFeedback.vibrate);
           ErrorHandler.showError(context, errorMessage);
         }
       }
     } catch (e) {
+      await _triggerHaptic(HapticFeedback.vibrate);
       if (mounted) {
         ErrorHandler.showError(
           context,
@@ -378,6 +394,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               label: 'Mood $moodValue of 5',
                               child: GestureDetector(
                                 onTap: () {
+                                  _triggerHaptic(
+                                    HapticFeedback.selectionClick,
+                                  );
                                   setState(() {
                                     _selectedMood = isSelected
                                         ? null
