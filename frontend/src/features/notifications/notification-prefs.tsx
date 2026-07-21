@@ -6,8 +6,11 @@
  * - Configure reminder time
  * - Three permission states: granted / denied / default
  * - Subscription expiry detection with renewal flow
+ * - Weekly digest email opt-in toggle (issue #570)
  */
 import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../../lib/supabase'
 import { usePushNotifications } from '../../lib/use-push-notifications'
 import { useToast } from '../../lib/use-toast'
 
@@ -31,6 +34,125 @@ function formatNextReminder(reminderTime: string): string {
   if (!isToday) next.setDate(next.getDate() + 1)
   const label = isToday ? 'Today' : 'Tomorrow'
   return `${label} at ${next.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+}
+
+// ─────────────────────────────────────────────────────────────
+// Weekly Digest Email opt-in toggle (issue #570)
+// ─────────────────────────────────────────────────────────────
+
+function WeeklyDigestToggle({ userId }: { userId: string }) {
+  const queryClient = useQueryClient()
+  const { showToast } = useToast()
+
+  const { data: enabled = false, isLoading } = useQuery({
+    queryKey: ['weekly-digest-pref', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('weekly_digest')
+        .eq('id', userId)
+        .maybeSingle()
+      if (error) throw error
+      return (data as { weekly_digest?: boolean } | null)?.weekly_digest ?? false
+    },
+  })
+
+  const mutation = useMutation({
+    mutationFn: async (value: boolean) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ weekly_digest: value })
+        .eq('id', userId)
+      if (error) throw error
+      return value
+    },
+    onSuccess: (value) => {
+      queryClient.setQueryData(['weekly-digest-pref', userId], value)
+      showToast(
+        value
+          ? "You'll receive a weekly mood summary every Sunday evening"
+          : 'Weekly digest emails turned off',
+        value ? 'success' : 'info',
+      )
+    },
+    onError: () => {
+      showToast('Failed to update weekly digest preference', 'error')
+    },
+  })
+
+  return (
+    <article className="card" style={{ marginTop: '1rem' }}>
+      <div className="card-header">
+        <h3>Weekly Mood Report</h3>
+      </div>
+      <div className="card-content form-stack">
+        <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+          Receive a weekly email every Sunday evening with your avg mood score, trend, top habits,
+          and an AI reflection. Off by default.
+        </p>
+
+        {/* Toggle row */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+          }}
+        >
+          <span style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+            {enabled ? '📬 Weekly digest enabled' : '📭 Weekly digest disabled'}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={() => mutation.mutate(!enabled)}
+            disabled={isLoading || mutation.isPending}
+            style={{
+              position: 'relative',
+              width: 44,
+              height: 24,
+              borderRadius: 999,
+              border: 'none',
+              background: enabled ? 'var(--brand)' : 'var(--line)',
+              cursor: isLoading || mutation.isPending ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+              flexShrink: 0,
+              opacity: isLoading || mutation.isPending ? 0.6 : 1,
+            }}
+            aria-label={enabled ? 'Disable weekly digest email' : 'Enable weekly digest email'}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: enabled ? 23 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: '#fff',
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}
+            />
+          </button>
+        </div>
+
+        {enabled && (
+          <p className="muted" style={{ fontSize: '0.8rem', margin: 0 }}>
+            📅 Next digest: Sunday at 20:00 UTC
+          </p>
+        )}
+
+        {mutation.isError && (
+          <p role="alert" className="error-text" style={{ fontSize: '0.82rem' }}>
+            Failed to update preference. Please try again.
+          </p>
+        )}
+      </div>
+    </article>
+  )
 }
 
 export function NotificationPrefs({ userId }: Props) {
@@ -87,6 +209,7 @@ export function NotificationPrefs({ userId }: Props) {
   }
 
   return (
+    <>
     <article className="card">
       <div className="card-header">
         <h3>Daily Mood Reminders</h3>
@@ -297,5 +420,7 @@ export function NotificationPrefs({ userId }: Props) {
         )}
       </div>
     </article>
+    <WeeklyDigestToggle userId={userId} />
+    </>
   )
 }
