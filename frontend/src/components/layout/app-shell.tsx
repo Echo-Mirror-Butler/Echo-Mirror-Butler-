@@ -7,6 +7,8 @@ import { useSearchLogs } from '../../lib/use-search-logs'
 import { useTheme, type Theme } from '../../lib/use-theme'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
+import { useGlobalShortcut } from '../../hooks/use-global-shortcut'
+import { MoodLogModal } from '../mood-log-modal'
 
 type UserProfile = { display_name: string | null; avatar_url: string | null }
 
@@ -56,7 +58,12 @@ export function AppShell() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
+  const [isMoodModalOpen, setIsMoodModalOpen] = useState(false)
   const { theme, setTheme } = useTheme()
+
+  useGlobalShortcut('k', () => {
+    setIsMoodModalOpen(true)
+  })
 
   const themeIcon: Record<Theme, string> = { light: '☀️', dark: '🌙', system: '🖥️' }
   const themeNext: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' }
@@ -149,7 +156,8 @@ export function AppShell() {
   }
 
   return (
-    <div className="shell-root">
+    <div className="shell-root" aria-keyshortcuts="k">
+      <MoodLogModal isOpen={isMoodModalOpen} onClose={() => setIsMoodModalOpen(false)} />
       <aside
         className={[
           'shell-sidebar',
@@ -186,6 +194,13 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
+
+        {!isCollapsed && (
+          <div style={{ padding: '0 1rem', marginTop: 'auto', marginBottom: '1rem', color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+            <kbd style={{ background: 'var(--bg-card)', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border)' }}>K</kbd>
+            <span style={{ marginLeft: '0.5rem' }}>— log mood</span>
+          </div>
+        )}
 
         <div className="shell-sidebar-footer">
           <span className="email-text">{user?.email ?? 'Signed in user'}</span>
