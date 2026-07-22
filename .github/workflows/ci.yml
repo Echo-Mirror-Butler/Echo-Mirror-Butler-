@@ -99,6 +99,35 @@ jobs:
 
           echo "Coverage $COVERAGE% meets minimum threshold of ${THRESHOLD}%"
 
+  flutter-pkg-ci:
+    name: Flutter Pkg · Format · Analyze · Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/flutter
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check Dart formatting
+        run: |
+          dart format lib test
+          git diff --exit-code lib test || (echo "Run 'dart format' locally in packages/flutter on modified files before pushing" && exit 1)
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
+
   playwright-e2e:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest

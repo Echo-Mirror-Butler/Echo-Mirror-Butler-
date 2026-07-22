@@ -64,4 +64,6 @@ build/
 .flutter-plugins-dependencies
 *.iml
 *.lock
+!pubspec.lock
+!**/pubspec.lock
 node_modules/
