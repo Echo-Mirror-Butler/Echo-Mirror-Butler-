@@ -26,6 +26,7 @@ import type { RealtimeChannel, REALTIME_SUBSCRIBE_STATES } from '@supabase/supab
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { MoodPinCommentsPanel } from '../../components/mood-pin-comments-panel'
+import { unlockAchievement } from '../achievements/use-achievements'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -701,6 +702,8 @@ export function GlobalMirrorPage() {
       async (pos) => {
         try {
           await insertPin(user.id, pos.coords.latitude, pos.coords.longitude, selectedSentiment)
+          // Pins are anonymous, so this achievement is unlocked at drop time.
+          void unlockAchievement('global_citizen')
           setGeoStatus('done')
           scheduleMapInvalidate()
           setTimeout(() => setGeoStatus('idle'), 2000)
