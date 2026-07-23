@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
+import GitHubService from '../services/github';
 
 const router = Router();
+const githubService = new GitHubService();
 
 // Supabase webhook handler
 router.post('/supabase', async (req: Request, res: Response): Promise<void> => {
@@ -78,6 +80,48 @@ router.post('/agora', async (req: Request, res: Response) => {
     res.status(200).json({ received: true });
   } catch (error) {
     console.error('Error processing Agora webhook:', error);
+    res.status(500).json({
+      error: 'Failed to process webhook',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// GitHub webhook handler for issue events
+router.post('/github', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const signature = req.header('x-hub-signature-256');
+    
+    if (!signature) {
+      res.status(400).json({
+        error: 'Missing GitHub webhook signature'
+      });
+      return;
+    }
+
+    const eventType = req.header('x-github-event');
+    
+    if (eventType === 'issues' || eventType === 'issue_comment') {
+      const action = req.body.action;
+      const issue = req.body.issue;
+
+      console.log('Received GitHub issue webhook:', {
+        action,
+        issue_number: issue?.number,
+        title: issue?.title
+      });
+
+      if (issue && (action === 'opened' || action === 'edited' || action === 'closed' || action === 'reopened')) {
+        await githubService.syncIssue(issue);
+      }
+
+      res.status(200).json({ received: true });
+    } else {
+      console.log(`Received GitHub webhook event: ${eventType} (not processed)`);
+      res.status(200).json({ received: true, note: 'Event type not processed' });
+    }
+  } catch (error) {
+    console.error('Error processing GitHub webhook:', error);
     res.status(500).json({
       error: 'Failed to process webhook',
       message: error instanceof Error ? error.message : 'Unknown error'
