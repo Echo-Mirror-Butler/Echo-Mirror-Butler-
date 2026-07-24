@@ -917,6 +917,7 @@ export function InsightsPage() {
       setExpandedInsightId(created.id)
       await queryClient.invalidateQueries({ queryKey: ['insight-history', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['insight-actions', user?.id] })
+      await queryClient.invalidateQueries({ queryKey: ['achievement-progress', user?.id] })
     },
   })
 

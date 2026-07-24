@@ -7,6 +7,8 @@ import { useSearchLogs } from '../../lib/use-search-logs'
 import { useTheme, type Theme } from '../../lib/use-theme'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
+import { AchievementsWatcher } from '../../features/achievements/achievements-watcher'
+import { useUnlockedAchievements } from '../../features/achievements/use-achievements'
 import { useGlobalShortcut } from '../../hooks/use-global-shortcut'
 import { MoodLogModal } from '../mood-log-modal'
 
@@ -33,6 +35,7 @@ const navItems = [
   { icon: '📊', to: '/analytics', label: 'Analytics' },
   { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
   { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
+  { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
   { icon: '💎', to: '/wallet', label: 'Wallet' },
   { icon: '⚙️', to: '/settings', label: 'Settings' },
 ];
@@ -94,6 +97,9 @@ export function AppShell() {
     enabled: Boolean(user?.id),
     staleTime: 5 * 60 * 1000,
   })
+
+  const unlockedAchievementsQuery = useUnlockedAchievements(user?.id)
+  const achievementCount = Object.keys(unlockedAchievementsQuery.data ?? {}).length
 
   const avatarText = useMemo(() => {
     const name = profileQuery.data?.display_name ?? user?.email ?? ''
@@ -158,6 +164,7 @@ export function AppShell() {
   return (
     <div className="shell-root" aria-keyshortcuts="k">
       <MoodLogModal isOpen={isMoodModalOpen} onClose={() => setIsMoodModalOpen(false)} />
+      <AchievementsWatcher />
       <aside
         className={[
           'shell-sidebar',
@@ -190,7 +197,11 @@ export function AppShell() {
               onClick={() => setIsMobileDrawerOpen(false)}
             >
               <span className="icon">{item.icon}</span>
-              <span className="label">{item.label}</span>
+              <span className="label">
+                {item.to === '/achievements' && achievementCount > 0
+                  ? `${item.label} (${achievementCount})`
+                  : item.label}
+              </span>
             </NavLink>
           ))}
         </nav>

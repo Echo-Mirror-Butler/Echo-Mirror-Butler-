@@ -193,6 +193,7 @@ export function LogEntryForm({ mode, id, initialDate, onSuccess, onCancel, onExi
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['logs', user?.id] }),
         queryClient.invalidateQueries({ queryKey: ['log-entry', id] }),
+        queryClient.invalidateQueries({ queryKey: ['achievement-progress', user?.id] }),
       ])
       showToast(mode === 'create' ? 'Mood logged! +1 ECHO earned 🎉' : 'Changes saved', 'success')
       if (onSuccess) onSuccess(mode)

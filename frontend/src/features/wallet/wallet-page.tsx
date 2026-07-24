@@ -475,6 +475,7 @@ export function WalletPage() {
       showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
+      await queryClient.invalidateQueries({ queryKey: ['achievement-progress', user?.id] })
     },
     onError: (error: Error) => {
       showToast(error.message, 'error')

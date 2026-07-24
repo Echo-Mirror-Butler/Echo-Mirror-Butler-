@@ -44,6 +44,9 @@ const SettingsPage = lazy(() =>
 const LeaderboardPage = lazy(() =>
   import('../features/leaderboard/leaderboard-page').then((m) => ({ default: m.LeaderboardPage })),
 )
+const AchievementsPage = lazy(() =>
+  import('../features/achievements/achievements-page').then((m) => ({ default: m.AchievementsPage })),
+)
 const OnboardingPage = lazy(() =>
   import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
 )
@@ -283,6 +286,14 @@ export function AppRouter() {
             element={
               <RouteErrorBoundary routeName="Leaderboard">
                 <LeaderboardPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/achievements"
+            element={
+              <RouteErrorBoundary routeName="Achievements">
+                <AchievementsPage />
               </RouteErrorBoundary>
             }
           />
