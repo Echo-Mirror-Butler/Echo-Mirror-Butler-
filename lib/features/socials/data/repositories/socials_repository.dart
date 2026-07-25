@@ -516,4 +516,55 @@ class SocialsRepository {
       return false;
     }
   }
+
+  /// Block a user via RPC function.
+  Future<bool> blockUser(String blockedUserId) async {
+    _ensureSupabaseConfigured();
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase.rpc(
+        'block_user',
+        params: {'p_blocked_id': blockedUserId},
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[SocialsRepository] blockUser error -> $e');
+      return false;
+    }
+  }
+
+  /// Unblock a user via RPC function.
+  Future<bool> unblockUser(String blockedUserId) async {
+    _ensureSupabaseConfigured();
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase.rpc(
+        'unblock_user',
+        params: {'p_blocked_id': blockedUserId},
+      );
+      return true;
+    } catch (e) {
+      debugPrint('[SocialsRepository] unblockUser error -> $e');
+      return false;
+    }
+  }
+
+  /// Get list of blocked users.
+  Future<List<String>> getBlockedUsers() async {
+    _ensureSupabaseConfigured();
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('user_blocks')
+          .select('blocked_id')
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((e) => (e as Map)['blocked_id'].toString())
+          .toList();
+    } catch (e) {
+      debugPrint('[SocialsRepository] getBlockedUsers error -> $e');
+      return [];
+    }
+  }
 }
