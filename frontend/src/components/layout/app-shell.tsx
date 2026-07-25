@@ -33,6 +33,7 @@ const navItems = [
   { icon: '📝', to: '/logs', label: 'Logs' },
   { icon: '✨', to: '/insights', label: 'AI Insights' },
   { icon: '📊', to: '/analytics', label: 'Analytics' },
+  { icon: '🎞️', to: '/recap', label: 'Recap' },
   { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
   { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
   { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
