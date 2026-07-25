@@ -26,6 +26,7 @@ import '../../features/global_mirror/view/screens/wallet_screen.dart';
 import '../../features/profile/view/screens/profile_screen.dart';
 import '../../features/habits/view/screens/habits_screen.dart';
 import '../../features/leaderboard/view/screens/leaderboard_screen.dart';
+import '../services/deep_link_service.dart';
 
 /// Refresh notifier for GoRouter.
 class GoRouterRefreshNotifier extends ChangeNotifier {
@@ -73,7 +74,14 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!onboardingCompleted && !isOnboarding) return '/onboarding';
       if (onboardingCompleted && isOnboarding) return '/login';
-      if (isAuthenticated && isAuthRoute) return '/dashboard';
+      if (isAuthenticated && isAuthRoute) {
+        // Check for pending deep link before defaulting to dashboard
+        final pendingRoute = await DeepLinkService().consumePendingRoute();
+        if (pendingRoute != null && pendingRoute != '/login' && pendingRoute != '/') {
+          return pendingRoute;
+        }
+        return '/dashboard';
+      }
       if (!isAuthenticated && !isAuthRoute && !isOnboarding) {
         return '/login';
       }
