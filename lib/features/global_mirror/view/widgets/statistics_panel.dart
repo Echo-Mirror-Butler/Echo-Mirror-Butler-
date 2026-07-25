@@ -59,24 +59,62 @@ class StatisticsPanel extends StatelessWidget {
 
   String _getMostActiveRegion() {
     if (pins.isEmpty) return 'No activity';
-    
-    // Simple region detection based on latitude
+
     final regions = <String, int>{};
     for (final pin in pins) {
-      final region = _getRegionFromLat(pin.gridLat);
+      final region = _getRegionFromLatLon(pin.gridLat, pin.gridLon);
       regions[region] = (regions[region] ?? 0) + 1;
     }
-    
+
     final mostActive = regions.entries.reduce((a, b) => a.value > b.value ? a : b);
     return mostActive.key;
   }
 
-  String _getRegionFromLat(double lat) {
-    if (lat > 60) return 'Northern Europe';
-    if (lat > 35) return 'Europe/North America';
-    if (lat > 0) return 'Tropics';
-    if (lat > -35) return 'Southern Hemisphere';
-    return 'Antarctica Region';
+  String _getRegionFromLatLon(double lat, double lon) {
+    if (lat > 71) return 'Arctic';
+    if (lat > 60) {
+      if (lon < -30) return 'Northern America / Greenland';
+      if (lon < 45) return 'Northern Europe';
+      return 'Northern Asia';
+    }
+    if (lat > 35) {
+      if (lon < -100) return 'Western North America';
+      if (lon < -30) return 'Eastern North America';
+      if (lon < 45) return 'Europe';
+      if (lon < 100) return 'Central Asia';
+      return 'East Asia';
+    }
+    if (lat > 23.5) {
+      if (lon < -100) return 'Mexico / Central America';
+      if (lon < -30) return 'North Atlantic / Caribbean';
+      if (lon < 35) return 'North Africa / Middle East';
+      if (lon < 80) return 'South Asia';
+      return 'Southeast Asia';
+    }
+    if (lat > 0) {
+      if (lon < -80) return 'Northern South America';
+      if (lon < -30) return 'Brazil / Eastern South America';
+      if (lon < 20) return 'West Africa';
+      if (lon < 60) return 'East Africa';
+      if (lon < 120) return 'Southeast Asia / Indonesia';
+      return 'Oceania / Pacific';
+    }
+    if (lat > -23.5) {
+      if (lon < -80) return 'Southern Tropical South America';
+      if (lon < -30) return 'Southern Brazil / Atlantic';
+      if (lon < 20) return 'Central Africa';
+      if (lon < 60) return 'Southern Africa';
+      if (lon < 140) return 'Australia / Oceania';
+      return 'South Pacific';
+    }
+    if (lat > -35) {
+      if (lon < -70) return 'Southern South America';
+      if (lon < 20) return 'Southern Africa';
+      if (lon < 140) return 'Southern Australia';
+      return 'New Zealand / South Pacific';
+    }
+    if (lat > -60) return 'Subantarctic';
+    return 'Antarctica';
   }
 
   int _getLiveUsersCount() {

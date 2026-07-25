@@ -17,6 +17,7 @@ import '../../data/models/insight_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
 import '../../viewmodel/providers/streak_provider.dart';
 import '../../viewmodel/providers/echo_balance_provider.dart';
+import '../../viewmodel/providers/streak_freeze_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
 import '../widgets/mood_streak_card.dart';
@@ -61,6 +62,125 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
+  bool _shouldShowFreezeButton() {
+    final streakState = ref.read(streakProvider);
+    final freezeState = ref.read(streakFreezeProvider);
+    final echoState = ref.read(echoBalanceProvider);
+
+    if (streakState.currentStreak < 3) return false;
+    if (freezeState.hasActiveFreeze) return false;
+    if (echoState.balance < 5) return false;
+    return true;
+  }
+
+  Future<void> _handleFreezePurchase(String userId) async {
+    final success = await ref.read(streakFreezeProvider.notifier).purchaseFreeze(userId);
+    if (mounted) {
+      if (success) {
+        ref.read(echoBalanceProvider.notifier).loadBalance(userId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('\u2744\uFE0F Streak frozen for tomorrow!'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        Navigator.of(context).pop();
+      } else {
+        final error = ref.read(streakFreezeProvider).purchaseError;
+        if (error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error)),
+          );
+        }
+      }
+    }
+  }
+
+  void _showFreezeConfirmation(WidgetRef ref, authState) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return _buildFreezeDialog(dialogContext, ref, authState);
+      },
+    );
+  }
+
+  Widget _buildFreezeDialog(
+    BuildContext dialogContext,
+    WidgetRef ref,
+    authState,
+  ) {
+    final freezeState = ref.watch(streakFreezeProvider);
+    final echoState = ref.watch(echoBalanceProvider);
+    final theme = Theme.of(dialogContext);
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Text('\u2744\uFE0F', style: TextStyle(fontSize: 28)),
+          const SizedBox(width: 8),
+          Text(
+            'Protect your streak',
+            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Spend 5 ECHO to freeze tomorrow\'s streak? You\'ll keep your streak even if you don\'t log.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Your balance: ${echoState.balance.toStringAsFixed(0)} ECHO',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: echoState.balance >= 5 ? AppTheme.successColor : Colors.red,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (echoState.balance < 5) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Insufficient ECHO balance. You need at least 5 ECHO.',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.red),
+            ),
+          ],
+          if (freezeState.purchaseError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              freezeState.purchaseError!,
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.red),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.icon(
+          onPressed: echoState.balance < 5 || freezeState.isPurchasing
+              ? null
+              : () => _handleFreezePurchase(authState.user?.id ?? ''),
+          icon: freezeState.isPurchasing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('\u2744\uFE0F', style: TextStyle(fontSize: 16)),
+          label: Text(freezeState.isPurchasing ? 'Freezing...' : 'Freeze it'),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardProvider);
@@ -87,6 +207,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ref.read(streakProvider.notifier).loadStreak(userId);
 
           ref.read(echoBalanceProvider.notifier).loadBalance(userId);
+
+          ref.read(streakFreezeProvider.notifier).loadFreezeStatus(userId);
 
           Future.delayed(const Duration(milliseconds: 500), () {
             if (!mounted) return;
@@ -150,6 +272,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ref.invalidate(dashboardProvider);
                 ref.invalidate(streakProvider);
                 ref.invalidate(echoBalanceProvider);
+                ref.invalidate(streakFreezeProvider);
                 ref.invalidate(moodChartDataProvider);
                 ref.invalidate(dailyLogCheckProvider);
 
@@ -199,7 +322,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 8),
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
-                      MoodStreakCard(streak: streakState.currentStreak),
+                      MoodStreakCard(
+                        streak: streakState.currentStreak,
+                        showFreezeButton: _shouldShowFreezeButton(),
+                        onFreezeTap: () => _showFreezeConfirmation(ref, authState),
+                      ),
+                      const MoodStreakFreezeBadge(),
                       const SizedBox(height: 8),
                       if (authState.isAuthenticated && authState.user != null)
                         EchoBalanceCard(userId: authState.user!.id),
