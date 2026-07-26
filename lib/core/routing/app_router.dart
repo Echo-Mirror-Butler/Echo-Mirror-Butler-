@@ -20,6 +20,7 @@ import '../../features/ai/view/screens/breathing_exercise_screen.dart';
 import '../../features/ai/view/screens/music_recommendations_screen.dart';
 import '../../features/global_mirror/view/screens/gift_screen.dart';
 import '../../features/global_mirror/view/screens/wallet_screen.dart';
+import '../../features/leaderboard/view/screens/leaderboard_screen.dart';
 
 /// Refresh notifier for GoRouter
 class GoRouterRefreshNotifier extends ChangeNotifier {
@@ -186,6 +187,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'gift',
         builder: (context, state) =>
             GiftScreen(recipientUserId: state.pathParameters['userId']!),
+      ),
+      GoRoute(
+        path: '/leaderboard',
+        name: 'leaderboard',
+        builder: (context, state) => const LeaderboardScreen(),
       ),
     ],
   );

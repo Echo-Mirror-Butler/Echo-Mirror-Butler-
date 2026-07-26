@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState, useRef, useId } from 'react'
+import { useMemo, useState, useEffect, useRef, useId } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
-import { useSearchLogs } from '../../lib/use-search-logs'
+import { useUnifiedSearch } from '../../lib/use-unified-search'
 import { useTheme, type Theme } from '../../lib/use-theme'
-import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
 
 type UserProfile = { display_name: string | null; avatar_url: string | null }
@@ -31,6 +30,8 @@ const navItems = [
   { icon: '📊', to: '/analytics', label: 'Analytics' },
   { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
   { icon: '💎', to: '/wallet', label: 'Wallet' },
+  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' },
+  { icon: '🔗', to: '/invite', label: 'Invite' },
   { icon: '⚙️', to: '/settings', label: 'Settings' },
 ]
 
@@ -40,13 +41,11 @@ async function getUnreadNotificationsCount(userId: string): Promise<number> {
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('is_read', false)
-
-  if (error) {
-    return 0
-  }
-
+  if (error) return 0
   return count ?? 0
 }
+
+const SECTION_LABELS: Record<string, string> = { log: 'Logs', insight: 'Insights', person: 'People' }
 
 export function AppShell() {
   const navigate = useNavigate()
@@ -65,12 +64,11 @@ export function AppShell() {
     system: 'Switch to light mode',
   }
 
-  // Search state
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [selectedResultIdx, setSelectedResultIdx] = useState(-1)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const { results: searchResults, isLoading: searchLoading } = useSearchLogs(user?.id, searchQuery)
+  const { grouped: searchGroups, results: flatResults, isLoading: searchLoading } = useUnifiedSearch(user?.id, searchQuery)
   const searchListboxId = useId()
 
   const unreadNotificationsQuery = useQuery({
@@ -93,40 +91,30 @@ export function AppShell() {
   }, [profileQuery.data?.display_name, user?.email])
 
   useEffect(() => {
-    if (!isMobileDrawerOpen) {
-      return
-    }
-
+    if (!isMobileDrawerOpen) return
     const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsMobileDrawerOpen(false)
-      }
+      if (event.key === 'Escape') setIsMobileDrawerOpen(false)
     }
-
     window.addEventListener('keydown', onEscape)
     return () => window.removeEventListener('keydown', onEscape)
   }, [isMobileDrawerOpen])
 
-  // Handle keyboard navigation in search
   useEffect(() => {
     const handleSearchKeyDown = (event: KeyboardEvent) => {
-      if (!isSearchOpen || searchResults.length === 0) {
-        if (event.key === 'Escape') {
-          setIsSearchOpen(false)
-        }
+      if (!isSearchOpen || flatResults.length === 0) {
+        if (event.key === 'Escape') setIsSearchOpen(false)
         return
       }
-
       if (event.key === 'ArrowDown') {
         event.preventDefault()
-        setSelectedResultIdx((prev) => (prev + 1) % searchResults.length)
+        setSelectedResultIdx((prev) => (prev + 1) % flatResults.length)
       } else if (event.key === 'ArrowUp') {
         event.preventDefault()
-        setSelectedResultIdx((prev) => (prev - 1 + searchResults.length) % searchResults.length)
+        setSelectedResultIdx((prev) => (prev - 1 + flatResults.length) % flatResults.length)
       } else if (event.key === 'Enter' && selectedResultIdx >= 0) {
         event.preventDefault()
-        const result = searchResults[selectedResultIdx]
-        navigate(`/logs/${result.id}/edit`)
+        const result = flatResults[selectedResultIdx]
+        navigate(result.link)
         setSearchQuery('')
         setIsSearchOpen(false)
         setSelectedResultIdx(-1)
@@ -135,12 +123,11 @@ export function AppShell() {
         setSelectedResultIdx(-1)
       }
     }
-
     if (searchInputRef.current === document.activeElement) {
       document.addEventListener('keydown', handleSearchKeyDown)
       return () => document.removeEventListener('keydown', handleSearchKeyDown)
     }
-  }, [isSearchOpen, selectedResultIdx, searchResults, navigate])
+  }, [isSearchOpen, selectedResultIdx, flatResults, navigate])
 
   const onSignOut = async () => {
     await signOut()
@@ -149,233 +136,128 @@ export function AppShell() {
 
   return (
     <div className="shell-root">
-      <aside
-        className={[
-          'shell-sidebar',
-          isCollapsed ? 'collapsed' : '',
-          isMobileDrawerOpen ? 'open' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
+      <aside className={['shell-sidebar', isCollapsed ? 'collapsed' : '', isMobileDrawerOpen ? 'open' : ''].filter(Boolean).join(' ')}>
         <div className="shell-sidebar-header">
           <h1>EchoMirror</h1>
-          <button
-            type="button"
-            className="icon-btn desktop-only"
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            onClick={() => setIsCollapsed((prev) => !prev)}
-          >
-            {isCollapsed ? '⟩' : '⟨'}
+          <button type="button" className="icon-btn desktop-only" aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => setIsCollapsed((prev) => !prev)}>
+            {isCollapsed ? '\u27E9' : '\u27E8'}
           </button>
         </div>
-
         <nav className="shell-nav" aria-label="Main navigation">
           {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
-              }
-              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' : undefined}
-              onClick={() => setIsMobileDrawerOpen(false)}
-            >
+            <NavLink key={item.to} to={item.to} className={({ isActive }) => ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')} onClick={() => setIsMobileDrawerOpen(false)}>
               <span className="icon" aria-hidden="true">{item.icon}</span>
               <span className="label">{item.label}</span>
             </NavLink>
           ))}
         </nav>
-
         <div className="shell-sidebar-footer">
           <span className="email-text">{user?.email ?? 'Signed in user'}</span>
         </div>
       </aside>
 
       {isMobileDrawerOpen ? (
-        <button
-          className="shell-drawer-overlay"
-          type="button"
-          aria-label="Close navigation drawer"
-          onClick={() => setIsMobileDrawerOpen(false)}
-        />
+        <button className="shell-drawer-overlay" type="button" aria-label="Close navigation drawer" onClick={() => setIsMobileDrawerOpen(false)} />
       ) : null}
 
       <section className="shell-main">
         <header className="shell-topbar">
           <div className="shell-topbar-left">
-            <button
-              type="button"
-              className="icon-btn mobile-only"
-              aria-label={isMobileDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-expanded={isMobileDrawerOpen}
-              onClick={() => setIsMobileDrawerOpen(true)}
-            >
-              ☰
+            <button type="button" className="icon-btn mobile-only" aria-label={isMobileDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={isMobileDrawerOpen} onClick={() => setIsMobileDrawerOpen(true)}>
+              \u2630
             </button>
             <span className="shell-logo-text">EchoMirror</span>
           </div>
 
           <div className="shell-search" style={{ position: 'relative' }}>
             <div style={{ position: 'relative', width: '100%' }}>
-              <span
-                style={{
-                  position: 'absolute',
-                  left: '0.65rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '0.85rem',
-                  color: 'var(--muted)',
-                  pointerEvents: 'none',
-                }}
-                aria-hidden="true"
-              >
-                🔍
+              <span style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: 'var(--muted)', pointerEvents: 'none' }} aria-hidden="true">
+                \uD83D\uDD0D
               </span>
               <input
                 ref={searchInputRef}
                 id="search-logs-input"
                 type="text"
                 role="combobox"
-                aria-expanded={isSearchOpen && searchResults.length > 0}
+                aria-expanded={isSearchOpen && flatResults.length > 0}
                 aria-controls={searchListboxId}
                 aria-activedescendant={selectedResultIdx >= 0 ? `search-result-${selectedResultIdx}` : undefined}
                 aria-autocomplete="list"
                 aria-haspopup="listbox"
-                aria-label="Search logs by notes, date, or mood score"
-                placeholder="Search logs…"
+                aria-label="Search logs, insights, and people"
+                placeholder="Search\u2026"
                 value={searchQuery}
                 style={{ paddingLeft: '2rem' }}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setIsSearchOpen(true)
-                  setSelectedResultIdx(-1)
-                }}
+                onChange={(e) => { setSearchQuery(e.target.value); setIsSearchOpen(true); setSelectedResultIdx(-1) }}
                 onFocus={() => searchQuery && setIsSearchOpen(true)}
                 autoComplete="off"
               />
             </div>
             {isSearchOpen && (
-              <div
-                id={searchListboxId}
-                role="listbox"
-                className="search-dropdown"
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  zIndex: 1000,
-                }}
-              >
+              <div id={searchListboxId} role="listbox" className="search-dropdown" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 1000 }}>
                 {searchLoading ? (
-                  <div className="search-empty">Searching…</div>
-                ) : searchResults.length === 0 && searchQuery ? (
-                  <div className="search-empty">No logs matched</div>
+                  <div className="search-empty">Searching\u2026</div>
+                ) : flatResults.length === 0 && searchQuery ? (
+                  <div className="search-empty">No results found</div>
                 ) : (
                   <div className="search-results">
-                    {searchResults.map((result, idx) => (
-                      <button
-                        key={result.id}
-                        id={`search-result-${idx}`}
-                        role="option"
-                        type="button"
-                        aria-selected={selectedResultIdx === idx}
-                        className={`search-result ${selectedResultIdx === idx ? 'focused' : ''}`}
-                        onClick={() => {
-                          navigate(`/logs/${result.id}/edit`)
-                          setSearchQuery('')
-                          setIsSearchOpen(false)
-                          setSelectedResultIdx(-1)
-                        }}
-                      >
-                        <span className="result-date">{formatDate(result.date)}</span>
-                        <span className="result-mood">{moodToEmoji(result.mood)}</span>
-                        <span className="result-notes">{result.notes ? result.notes.substring(0, 60) : 'No notes'}</span>
-                      </button>
+                    {searchGroups.map((group) => (
+                      <div key={group.type}>
+                        <div style={{ padding: '0.3rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          {group.label}
+                        </div>
+                        {group.items.map((result) => {
+                          const globalIdx = flatResults.indexOf(result)
+                          return (
+                            <button
+                              key={`${result.type}-${result.id}`}
+                              id={`search-result-${globalIdx}`}
+                              role="option"
+                              type="button"
+                              aria-selected={selectedResultIdx === globalIdx}
+                              className={`search-result ${selectedResultIdx === globalIdx ? 'focused' : ''}`}
+                              onClick={() => { navigate(result.link); setSearchQuery(''); setIsSearchOpen(false); setSelectedResultIdx(-1) }}
+                            >
+                              <span className="result-notes" style={{ fontWeight: 500 }}>{result.title}</span>
+                              <span className="result-date">{result.subtitle}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
             )}
           </div>
+
           {isSearchOpen && (
-            <button
-              type="button"
-              className="search-overlay"
-              onClick={() => {
-                setIsSearchOpen(false)
-                setSelectedResultIdx(-1)
-              }}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 999,
-              }}
-              aria-hidden="true"
-            />
+            <button type="button" className="search-overlay" onClick={() => { setIsSearchOpen(false); setSelectedResultIdx(-1) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }} aria-hidden="true" />
           )}
 
           <div className="shell-topbar-actions">
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label={themeAriaLabel[theme]}
-              title={themeAriaLabel[theme]}
-              onClick={() => setTheme(themeNext[theme])}
-            >
+            <button type="button" className="icon-btn" aria-label={themeAriaLabel[theme]} title={themeAriaLabel[theme]} onClick={() => setTheme(themeNext[theme])}>
               {themeIcon[theme]}
             </button>
-
             <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                className="icon-btn notification-btn"
-                aria-label="Notifications"
-                aria-expanded={isNotificationPanelOpen}
-                onClick={() => setIsNotificationPanelOpen((prev) => !prev)}
-              >
-                🔔
-                {(unreadNotificationsQuery.data ?? 0) > 0 ? (
-                  <span className="badge">{unreadNotificationsQuery.data}</span>
-                ) : null}
+              <button type="button" className="icon-btn notification-btn" aria-label="Notifications" aria-expanded={isNotificationPanelOpen} onClick={() => setIsNotificationPanelOpen((prev) => !prev)}>
+                \uD83D\uDD14
+                {(unreadNotificationsQuery.data ?? 0) > 0 ? <span className="badge">{unreadNotificationsQuery.data}</span> : null}
               </button>
-              <NotificationDrawer
-                isOpen={isNotificationPanelOpen}
-                onClose={() => setIsNotificationPanelOpen(false)}
-              />
+              <NotificationDrawer isOpen={isNotificationPanelOpen} onClose={() => setIsNotificationPanelOpen(false)} />
             </div>
-
             <div className="avatar-menu-wrap">
-              <button
-                type="button"
-                className="avatar-btn"
-                onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                aria-expanded={isUserMenuOpen}
-                aria-label="User menu"
-              >
+              <button type="button" className="avatar-btn" onClick={() => setIsUserMenuOpen((prev) => !prev)} aria-expanded={isUserMenuOpen} aria-label="User menu">
                 {profileQuery.data?.avatar_url ? (
-                  <img
-                    src={profileQuery.data.avatar_url}
-                    alt={profileQuery.data.display_name ?? user?.email ?? 'Avatar'}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
-                  />
+                  <img src={profileQuery.data.avatar_url} alt={profileQuery.data.display_name ?? user?.email ?? 'Avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                 ) : (
                   <span>{avatarText}</span>
                 )}
               </button>
-
               {isUserMenuOpen ? (
                 <div className="avatar-menu">
-                  <button type="button" onClick={() => navigate('/settings')}>
-                    Profile
-                  </button>
-                  <button type="button" onClick={() => void onSignOut()}>
-                    Sign out
-                  </button>
+                  <button type="button" onClick={() => navigate('/settings')}>Profile</button>
+                  <button type="button" onClick={() => void onSignOut()}>Sign out</button>
                 </div>
               ) : null}
             </div>
