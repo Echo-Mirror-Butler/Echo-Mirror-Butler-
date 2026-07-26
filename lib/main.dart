@@ -6,10 +6,15 @@ import 'core/viewmodel/providers/theme_provider.dart';
 import 'core/viewmodel/providers/notification_provider.dart';
 import 'core/services/supabase_client_service.dart';
 import 'core/services/deep_link_service.dart';
+import 'core/services/sentry_service.dart';
 import 'package:go_router/go_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Sentry before anything else so it captures bootstrap errors
+  const environment = String.fromEnvironment('APP_ENV', defaultValue: 'development');
+  await SentryService.init(environment: environment);
 
   // Initialize Supabase client service before app start.
   await SupabaseClientService.instance.ensureInitialized();
@@ -41,6 +46,12 @@ class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
           router.go(route);
         },
       );
+
+      // Set Sentry user ID if available
+      final user = ref.read(authStateProvider);
+      if (user != null) {
+        SentryService.setUserId(user.id);
+      }
     });
   }
 
