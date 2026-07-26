@@ -75,6 +75,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  generate: true
   # Assets
   assets:
     - assets/lottie/

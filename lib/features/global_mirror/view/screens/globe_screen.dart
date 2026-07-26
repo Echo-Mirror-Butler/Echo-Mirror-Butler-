@@ -15,6 +15,7 @@ import '../widgets/globe_3d_widget.dart';
 import '../widgets/mood_pin_widget.dart';
 import '../widgets/mood_pin_comment_dialog.dart';
 import '../../viewmodel/providers/mood_comment_notification_provider.dart';
+import '../widgets/touch_gesture_hint.dart';
 import 'package:go_router/go_router.dart';
 
 /// Globe screen showing anonymous mood pins on a 3D world globe
@@ -30,6 +31,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
   // Default to 2D map on iOS until WebView is properly registered after rebuild
   bool _use3DGlobe = defaultTargetPlatform != TargetPlatform.iOS;
   bool _has3DError = false;
+  bool _showTouchHint = false;
 
   @override
   void initState() {
@@ -38,8 +40,16 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(globalMirrorProvider.notifier).checkLocationPermission();
+        _checkTouchHint();
       }
     });
+  }
+
+  Future<void> _checkTouchHint() async {
+    final seen = await TouchGestureHint.hasBeenSeen();
+    if (mounted && !seen) {
+      setState(() => _showTouchHint = true);
+    }
   }
 
   @override
@@ -174,6 +184,14 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
               else
                 // 2D Map (default on iOS until rebuild, or fallback)
                 _build2DMap(pins, theme),
+
+              // Touch gesture hint (shown once)
+              if (_showTouchHint)
+                TouchGestureHint(
+                  onDismiss: () {
+                    setState(() => _showTouchHint = false);
+                  },
+                ),
 
               // Stats overlay
               Positioned(
