@@ -36,9 +36,9 @@ CREATE POLICY "Users can read referrals they are part of"
   ON referrals FOR SELECT
   USING (auth.uid() = referrer_id OR auth.uid() = referred_id);
 
-CREATE POLICY "System can insert referrals"
+CREATE POLICY "Authenticated users can insert referrals"
   ON referrals FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (auth.role() = 'authenticated');
 
 CREATE POLICY "System can update referrals"
   ON referrals FOR UPDATE
@@ -117,11 +117,12 @@ $$;
 
 -- RPC: get referral stats for a user
 CREATE OR REPLACE FUNCTION get_referral_stats(p_user_id uuid)
-RETURNS TABLE (total_referrals bigint, referral_code text)
+RETURNS TABLE (code text, total_referrals bigint, completed_referrals bigint)
 LANGUAGE SQL
 SECURITY DEFINER
 AS $$
   SELECT
+    (SELECT code FROM user_referral_codes WHERE user_id = p_user_id),
     COALESCE((SELECT COUNT(*) FROM referrals WHERE referrer_id = p_user_id), 0)::bigint,
-    (SELECT code FROM user_referral_codes WHERE user_id = p_user_id);
+    COALESCE((SELECT COUNT(*) FROM referrals WHERE referrer_id = p_user_id AND completed = true), 0)::bigint;
 $$;

@@ -333,6 +333,13 @@ export function AnalyticsPage() {
           >
             30 days
           </button>
+          <button
+            type="button"
+            className="chip"
+            onClick={() => navigate('/analytics/trends')}
+          >
+            Long-term Trends →
+          </button>
         </div>
       </div>
 

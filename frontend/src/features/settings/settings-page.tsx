@@ -24,6 +24,7 @@ type Profile = {
   display_name: string | null
   avatar_url: string | null
   timezone: string
+  leaderboard_anonymous: boolean
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -88,18 +89,19 @@ function passwordStrength(pw: string): { score: number; label: string; color: st
 async function fetchProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('display_name, avatar_url, timezone')
+    .select('display_name, avatar_url, timezone, leaderboard_anonymous')
     .eq('id', userId)
     .single()
 
   if (error || !data) {
-    return { display_name: null, avatar_url: null, timezone: 'UTC' }
+    return { display_name: null, avatar_url: null, timezone: 'UTC', leaderboard_anonymous: false }
   }
 
   return {
     display_name: (data as Record<string, unknown>).display_name as string | null,
     avatar_url: (data as Record<string, unknown>).avatar_url as string | null,
     timezone: ((data as Record<string, unknown>).timezone as string) ?? 'UTC',
+    leaderboard_anonymous: ((data as Record<string, unknown>).leaderboard_anonymous as boolean) ?? false,
   }
 }
 
@@ -521,10 +523,11 @@ export function SettingsPage() {
   const { user, session, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
 
-  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, timezone: 'UTC' })
+  const [profile, setProfile] = useState<Profile>({ display_name: null, avatar_url: null, timezone: 'UTC', leaderboard_anonymous: false })
   const [profileLoading, setProfileLoading] = useState(true)
   const [displayName, setDisplayName] = useState('')
   const [timezone, setTimezone] = useState('')
+  const [leaderboardAnonymous, setLeaderboardAnonymous] = useState(false)
   const [profileSaving, setProfileSaving] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
 
@@ -549,7 +552,7 @@ export function SettingsPage() {
     fetchProfile(user.id).then((p) => {
       setProfile(p)
       setDisplayName(p.display_name ?? '')
-      // Auto-detect timezone if none saved
+      setLeaderboardAnonymous(p.leaderboard_anonymous)
       const savedTz = p.timezone && p.timezone !== 'UTC' ? p.timezone : null
       setTimezone(savedTz ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC')
       setProfileLoading(false)
@@ -621,9 +624,10 @@ export function SettingsPage() {
       await upsertProfile(user.id, {
         display_name: displayName.trim() || null,
         timezone,
+        leaderboard_anonymous: leaderboardAnonymous,
       })
       await supabase.auth.updateUser({ data: { timezone } })
-      setProfile((prev) => ({ ...prev, display_name: displayName.trim() || null, timezone }))
+      setProfile((prev) => ({ ...prev, display_name: displayName.trim() || null, timezone, leaderboard_anonymous: leaderboardAnonymous }))
       await queryClient.invalidateQueries({ queryKey: ['user-profile', user.id] })
       showToast('Profile updated successfully.', 'success')
     } catch (err) {
@@ -799,6 +803,45 @@ export function SettingsPage() {
                 Timezone
                 <TimezoneCombobox value={timezone} onChange={setTimezone} />
               </label>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0' }}>
+                <div>
+                  <span style={{ fontWeight: 500 }}>Anonymous on leaderboard</span>
+                  <p className="muted" style={{ margin: '0.15rem 0 0', fontSize: '0.78rem' }}>
+                    Hide your name and avatar from other users on the leaderboard
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={leaderboardAnonymous}
+                  onClick={() => setLeaderboardAnonymous((prev) => !prev)}
+                  style={{
+                    width: 44,
+                    height: 24,
+                    borderRadius: 12,
+                    border: 'none',
+                    background: leaderboardAnonymous ? 'var(--brand)' : 'var(--line)',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s ease',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      left: leaderboardAnonymous ? 22 : 2,
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      transition: 'left 0.2s ease',
+                    }}
+                  />
+                </button>
+              </div>
 
               <button
                 type="button"
