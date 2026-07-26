@@ -41,6 +41,9 @@ dependencies:
   hive_flutter: ^1.1.0
   connectivity_plus: ^6.0.3
 
+  # Observability
+  sentry_flutter: ^8.0.0
+
   # Global Mirror Feature
   geolocator: ^13.0.2
   permission_handler: ^11.3.1
