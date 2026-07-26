@@ -194,7 +194,6 @@ export function AppShell() {
               className={({ isActive }) =>
                 ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
               }
-              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' as const : undefined}
               onClick={() => setIsMobileDrawerOpen(false)}
             >
               <span className="icon">{item.icon}</span>

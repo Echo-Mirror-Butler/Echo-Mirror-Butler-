@@ -153,7 +153,6 @@ function StreakCalendar({ daysMap, weekCount: propWeekCount }: { daysMap: Map<st
     return 1
   }
 
-  const brandColor = 'var(--brand)'
 
   return (
     <div>

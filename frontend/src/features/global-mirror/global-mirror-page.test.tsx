@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 
 const mockFrom = vi.hoisted(() => vi.fn())
 const mockRpc = vi.hoisted(() => vi.fn())
@@ -26,17 +26,6 @@ vi.mock('../../components/mood-pin-comments-panel', () => ({
 vi.mock('../achievements/use-achievements', () => ({
   unlockAchievement: vi.fn(),
 }))
-
-function createMockChain(data: unknown = null, error: unknown = null) {
-  const chain = {
-    select: vi.fn(() => chain),
-    eq: vi.fn(() => chain),
-    order: vi.fn(() => chain),
-    limit: vi.fn(() => chain),
-    single: vi.fn(() => Promise.resolve({ data, error })),
-  }
-  return chain
-}
 
 // Import the pure functions that are defined at module scope in global-mirror-page.tsx
 // We test them by re-creating the logic here since they aren't exported.
