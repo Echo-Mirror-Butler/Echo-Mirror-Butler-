@@ -5,6 +5,7 @@ import { AppRouter } from './app/router'
 import { validateEnv } from './lib/env-validation'
 import { initSentry } from './lib/sentry'
 import { initializeGlobalErrorHandler } from './lib/global-error-handler'
+import './lib/i18n' // Initialize i18n
 import './styles.css'
 import './error-ui.css'
 
