@@ -605,6 +605,7 @@ export function GlobalMirrorPage() {
   const [selectedSentiment, setSelectedSentiment] = useState<Sentiment>('happy')
   const [geoStatus, setGeoStatus] = useState<'idle' | 'pending' | 'denied' | 'done'>('idle')
   const [dropError, setDropError] = useState<string | null>(null)
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null)
   const [liveStatus, setLiveStatus] = useState<LiveStatus>('connecting')
   const [tickerEvents, setTickerEvents] = useState<MoodLogEvent[]>([])
   const [zoom, setZoom] = useState(1)
@@ -614,6 +615,21 @@ export function GlobalMirrorPage() {
   const pinsQuery = useQuery({
     queryKey: ['mood-pins'],
     queryFn: fetchPins,
+    enabled: Boolean(user?.id),
+  })
+
+  // Fetch blocked user IDs for filtering
+  const { data: blockedIds = [] } = useQuery({
+    queryKey: ['blocked-users', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const { data, error } = await supabase
+        .from('user_blocks')
+        .select('blocked_id')
+        .eq('blocker_id', user.id)
+      if (error) return []
+      return (data ?? []).map((r) => r.blocked_id as string)
+    },
     enabled: Boolean(user?.id),
   })
 
@@ -697,6 +713,7 @@ export function GlobalMirrorPage() {
     if (!user?.id) return
     setGeoStatus('pending')
     setDropError(null)
+    setRateLimitError(null)
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -707,8 +724,16 @@ export function GlobalMirrorPage() {
           setGeoStatus('done')
           scheduleMapInvalidate()
           setTimeout(() => setGeoStatus('idle'), 2000)
-        } catch {
-          setDropError('Failed to drop pin. Please try again.')
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          if (msg.includes('rate_limit_exceeded') || msg.includes('PT429')) {
+            const match = msg.match(/retry_after_seconds['":\s]+(\d+)/)
+            const retrySecs = match ? Number(match[1]) : 3600
+            const mins = Math.ceil(retrySecs / 60)
+            setRateLimitError(`You're dropping pins too fast. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`)
+          } else {
+            setDropError('Failed to drop pin. Please try again.')
+          }
           setGeoStatus('idle')
         }
       },
@@ -717,6 +742,31 @@ export function GlobalMirrorPage() {
   }, [user?.id, selectedSentiment, scheduleMapInvalidate])
 
   const pins = pinsQuery.data ?? []
+
+  // Fetch pin-to-user mapping for blocked-user filtering
+  const { data: pinUserMap = {} } = useQuery({
+    queryKey: ['pin-user-map'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_mood_pins')
+        .select('mood_pin_id, user_id')
+      if (error) return {}
+      const map: Record<string, string> = {}
+      for (const row of (data ?? []) as { mood_pin_id: string; user_id: string }[]) {
+        map[row.mood_pin_id] = row.user_id
+      }
+      return map
+    },
+    staleTime: 60_000,
+  })
+
+  // Filter out pins from blocked users
+  const filteredPins = blockedIds.length > 0
+    ? pins.filter((pin) => {
+        const owner = pinUserMap[pin.id]
+        return owner ? !blockedIds.includes(owner) : true
+      })
+    : pins
 
   return (
     <div
@@ -748,7 +798,7 @@ export function GlobalMirrorPage() {
         aria-label="World mood map"
       >
         <WorldMap
-          pins={pins}
+          pins={filteredPins}
           newPinIds={newPinIds}
           zoom={zoom}
           onZoomChange={setZoom}
@@ -822,6 +872,11 @@ export function GlobalMirrorPage() {
         {dropError && (
           <p role="alert" style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
             {dropError}
+          </p>
+        )}
+        {rateLimitError && (
+          <p role="alert" style={{ color: '#f97316', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+            ⏳ {rateLimitError}
           </p>
         )}
 
