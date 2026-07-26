@@ -156,6 +156,31 @@ void main() {
       expect(() => repository.createLogEntry(entry), throwsA(isA<Exception>()));
     });
 
+    test(
+      'createLogEntry throws MoodLogRateLimitException when the '
+      'enforce_mood_log_rate_limit trigger raises PT429',
+      () async {
+        final entry = buildEntry();
+        when(() => mockSupabase.from('log_entries')).thenThrow(
+          PostgrestException(
+            message: '{"error":"rate_limit_exceeded","retry_after_seconds":42}',
+            code: 'PT429',
+          ),
+        );
+
+        await expectLater(
+          () => repository.createLogEntry(entry),
+          throwsA(
+            isA<MoodLogRateLimitException>().having(
+              (e) => e.retryAfterSeconds,
+              'retryAfterSeconds',
+              42,
+            ),
+          ),
+        );
+      },
+    );
+
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
       final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));

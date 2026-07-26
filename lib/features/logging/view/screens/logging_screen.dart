@@ -11,6 +11,7 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/log_entry_model.dart';
 import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/logging_calendar.dart';
+import '../widgets/pending_sync_badge.dart';
 
 /// Daily logging screen
 class LoggingScreen extends ConsumerStatefulWidget {
@@ -44,6 +45,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
       appBar: AppBar(
         title: const Text('Daily Logging'),
         actions: [
+          const Center(child: PendingSyncBadge()),
           IconButton(
             icon: Icon(FontAwesomeIcons.calendar.data),
             onPressed: () {
@@ -54,10 +56,14 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         ],
       ),
       body: RefreshIndicator(
+        color: AppTheme.primaryColor,
         onRefresh: () async {
-          await ref
-              .read(loggingProvider.notifier)
-              .loadLogEntries(userId: userId);
+          ref.invalidate(loggingProvider);
+          if (userId != null && userId.isNotEmpty) {
+            await ref
+                .read(loggingProvider.notifier)
+                .loadLogEntries(userId: userId);
+          }
         },
         child: loggingState.when(
           data: (entries) {
@@ -150,12 +156,20 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
           },
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
-          error: (error, stack) => NoConnectionWidget(
-            message:
-                'We could not load your daily logs. '
-                'This can happen when Supabase tables are missing. '
-                'Run migrations and try again.',
-            onRetry: () => _retryLoadEntries(userId),
+          error: (error, stack) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Center(
+                child: NoConnectionWidget(
+                  message:
+                      'We could not load your daily logs. '
+                      'This can happen when Supabase tables are missing. '
+                      'Run migrations and try again.',
+                  onRetry: () => _retryLoadEntries(userId),
+                ),
+              ),
+            ),
           ),
         ),
       ),

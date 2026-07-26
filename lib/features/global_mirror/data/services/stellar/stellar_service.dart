@@ -5,6 +5,39 @@ import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import 'stellar_config.dart';
 import 'echo_token.dart';
 
+/// Live balances pulled directly from the Stellar Horizon API for a wallet.
+class LiveAccountBalances {
+  const LiveAccountBalances({
+    required this.publicKey,
+    required this.xlm,
+    required this.echo,
+  });
+
+  /// Public key the balances belong to.
+  final String publicKey;
+
+  /// Native (XLM) balance reported by Horizon.
+  final double xlm;
+
+  /// ECHO token balance (0.0 when no balance or trustline missing).
+  final double echo;
+
+  /// True when the account has any non-zero XLM (i.e. it is funded).
+  bool get isFunded => xlm > 0;
+}
+
+/// Thrown when a Stellar account has not yet been activated on the network.
+class AccountNotFoundException implements Exception {
+  const AccountNotFoundException(this.publicKey);
+
+  final String publicKey;
+
+  @override
+  String toString() =>
+      'AccountNotFoundException: account $publicKey is not activated on '
+      'the Stellar network';
+}
+
 /// Service for interacting with Stellar testnet for ECHO token operations.
 ///
 /// Usage flow:
@@ -12,6 +45,9 @@ import 'echo_token.dart';
 /// 2. Call [establishTrustline] so the wallet can hold ECHO
 /// 3. The server issues ECHO to the user wallet
 /// 4. Call [sendEcho] to gift ECHO to another user
+///
+/// For UI flows that need to refresh balances without submitting
+/// transactions, use [getLiveBalances] instead of [getEchoBalance].
 class StellarService {
   StellarService._();
 
@@ -22,10 +58,18 @@ class StellarService {
   /// Returns the [KeyPair] containing both public and secret keys.
   static Future<KeyPair> createWallet({http_client.Client? httpClient}) async {
     final keypair = KeyPair.random();
-    await _fundViaFriendbot(keypair.accountId, httpClient: httpClient);
+    await fundWithFriendbot(keypair.accountId, httpClient: httpClient);
     debugPrint('[StellarService] Created wallet: ${keypair.accountId}');
     return keypair;
   }
+
+  /// Public entrypoint so the UI can fund an already-generated keypair via
+  /// Friendbot (testnet only). Throws [Exception] when Friendbot fails.
+  static Future<void> fundWithFriendbot(
+    String publicKey, {
+    http_client.Client? httpClient,
+  }) async =>
+      _fundViaFriendbot(publicKey, httpClient: httpClient);
 
   /// Funds a testnet account with XLM via Stellar Friendbot.
   static Future<void> _fundViaFriendbot(
@@ -97,7 +141,7 @@ class StellarService {
   }) async {
     final issuer = issuerPublicKey ?? StellarConfig.issuerPublicKey;
     if (issuer.isEmpty) {
-      debugPrint('[StellarService] No issuer configured â€” cannot send ECHO');
+      debugPrint('[StellarService] No issuer configured — cannot send ECHO');
       return null;
     }
     try {
@@ -128,7 +172,7 @@ class StellarService {
       final response = await (sdk ?? _sdk).submitTransaction(transaction);
       if (response.success) {
         final hash = response.hash;
-        debugPrint('[StellarService] Sent $amount ECHO â€” tx: $hash');
+        debugPrint('[StellarService] Sent $amount ECHO — tx: $hash');
         return hash;
       }
       debugPrint(
@@ -161,6 +205,83 @@ class StellarService {
     } catch (e) {
       debugPrint('[StellarService] Balance check error: $e');
       return 0.0;
+    }
+  }
+
+  /// Fetches live XLM + ECHO balances from Horizon for [publicKey].
+  ///
+  /// Throws [AccountNotFoundException] when Horizon returns 404 for a
+  /// wallet that has not yet been funded. Other errors propagate as
+  /// their underlying [Exception] (e.g. network failure).
+  static Future<LiveAccountBalances> getLiveBalances(
+    String publicKey, {
+    String? issuerPublicKey,
+    StellarSDK? sdk,
+  }) async {
+    final issuer = issuerPublicKey ?? StellarConfig.issuerPublicKey;
+    try {
+      final account = await (sdk ?? _sdk).accounts.account(publicKey);
+
+      double xlm = 0.0;
+      double echo = 0.0;
+      for (final balance in account.balances) {
+        if (balance.assetType == 'native') {
+          xlm = double.tryParse(balance.balance) ?? 0.0;
+        } else if (issuer.isNotEmpty &&
+            balance.assetCode == EchoToken.code &&
+            balance.assetIssuer == issuer) {
+          echo = double.tryParse(balance.balance) ?? 0.0;
+        }
+      }
+      return LiveAccountBalances(
+        publicKey: publicKey,
+        xlm: xlm,
+        echo: echo,
+      );
+    } catch (e) {
+      if (_isNotFoundError(e)) {
+        throw AccountNotFoundException(publicKey);
+      }
+      debugPrint('[StellarService] getLiveBalances error: $e');
+      rethrow;
+    }
+  }
+
+  /// True when [error] represents a Stellar Horizon 404 (unfunded account).
+  static bool _isNotFoundError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('404') ||
+        message.contains('not found') ||
+        message.contains('accountnotfound');
+      double xlmBalance = 0.0;
+      double echoBalance = 0.0;
+      for (final balance in account.balances) {
+        if (balance.assetType == 'native') {
+          xlmBalance = double.tryParse(balance.balance) ?? 0.0;
+        } else if (balance.assetCode == EchoToken.code &&
+            balance.assetIssuer == issuer) {
+          echoBalance = double.tryParse(balance.balance) ?? 0.0;
+        }
+      }
+      return {'xlm': xlmBalance, 'echo': echoBalance};
+    } catch (e) {
+      debugPrint('[StellarService] Live balance check error: $e');
+      return null;
+    }
+  }
+
+  /// Funds a testnet account via Stellar Friendbot.
+  /// Returns true if funding succeeded.
+  static Future<bool> fundViaFriendbot(
+    String publicKey, {
+    http_client.Client? httpClient,
+  }) async {
+    try {
+      await _fundViaFriendbot(publicKey, httpClient: httpClient);
+      return true;
+    } catch (e) {
+      debugPrint('[StellarService] Friendbot funding error: $e');
+      return false;
     }
   }
 }

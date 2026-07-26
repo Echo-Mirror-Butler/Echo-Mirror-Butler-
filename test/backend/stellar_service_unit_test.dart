@@ -48,6 +48,38 @@ void main() {
       );
     });
 
+    test('fundWithFriendbot hits Friendbot for the supplied public key',
+        () async {
+      const targetKey = 'GTESTTARGETPUBLICKEYABCDEFGHIJKLMNOPQRSTUVWXYZ1234';
+      when(
+        () => httpClient.get(any()),
+      ).thenAnswer((_) async => http.Response('{}', 200));
+
+      await StellarService.fundWithFriendbot(targetKey, httpClient: httpClient);
+
+      final captured = verify(() => httpClient.get(captureAny())).captured;
+      expect(captured, hasLength(1));
+      expect(
+        (captured.single as Uri).toString(),
+        '${StellarConfig.friendbotUrl}?addr=$targetKey',
+      );
+    });
+
+    test('fundWithFriendbot throws when Friendbot returns non-200',
+        () async {
+      when(
+        () => httpClient.get(any()),
+      ).thenAnswer((_) async => http.Response('unavailable', 503));
+
+      await expectLater(
+        StellarService.fundWithFriendbot(
+          'GALREADYCREATEDPUBLICKEYABCDEFGHIJKLMNOPQRSTUVWXYZ12',
+          httpClient: httpClient,
+        ),
+        throwsA(isA<Exception>()),
+      );
+    });
+
     test(
       'establishTrustline returns false when issuer is not configured',
       () async {

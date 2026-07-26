@@ -814,8 +814,8 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
 /* ── CTA section ────────────────────────────────────────────── */
 .lp-cta-section {
   text-align: center;
-  background: var(--lp-ink);
-  color: white;
+  background: #0c1a2e !important;
+  color: white !important;
   position: relative;
   overflow: hidden;
 }
@@ -840,8 +840,9 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
   opacity: 0.5;
 }
 
-.lp-cta-section .lp-section-title { color: white; }
-.lp-cta-section .lp-section-sub { color: rgba(255,255,255,0.6); }
+.lp-cta-section .lp-section-title { color: #ffffff !important; }
+.lp-cta-section .lp-section-sub { color: rgba(255,255,255,0.6) !important; }
+.lp-cta-section .lp-section-eyebrow { color: rgba(147,197,253,0.9) !important; }
 
 .lp-cta-big {
   display: inline-flex;
@@ -868,11 +869,11 @@ a.lp-cta-ghost:hover { color: rgba(255,255,255,0.8) !important; }
 .lp-signin-note {
   margin-top: 1.2rem;
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.45) !important;
 }
 
-.lp-signin-note a { color: rgba(255,255,255,0.75); transition: color 0.15s; }
-.lp-signin-note a:hover { color: white; }
+.lp-signin-note a { color: rgba(255,255,255,0.75) !important; transition: color 0.15s; }
+.lp-signin-note a:hover { color: white !important; }
 
 /* ── Contributors ───────────────────────────────────────────── */
 .lp-contributors-section {
@@ -2513,4 +2514,35 @@ a.lp-mobile-menu-link {
   }
 
   :root:not([data-theme='light']) .lp-auth-input { background: var(--lp-canvas); }
+}
+
+/* ── OAuth buttons ────────────────────────────────────────── */
+.lp-oauth-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.lp-oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.7rem 1.25rem;
+  border: 1px solid var(--lp-border, rgba(20,99,255,0.15));
+  border-radius: 10px;
+  background: var(--lp-canvas, #fff);
+  color: var(--lp-ink, #0c1a2e);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.lp-oauth-btn:hover {
+  background: var(--lp-ink-10, rgba(12,26,46,0.05));
+  border-color: rgba(20,99,255,0.3);
+  box-shadow: 0 2px 8px rgba(12,26,46,0.07);
 }

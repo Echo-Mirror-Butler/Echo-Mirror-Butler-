@@ -8,6 +8,57 @@ export type AnalyticsLogEntry = Omit<LogEntry, 'habits'> & {
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+export type MoodPrediction = {
+  predicted: number
+  confidence: 'low' | 'medium' | 'high'
+  reason: string
+}
+
+export function predictTomorrowMood(entries: AnalyticsLogEntry[]): MoodPrediction | null {
+  if (entries.length === 0) return null
+
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowWeekday = tomorrow.getDay()
+
+  const weekdayEntries = entries.filter((e) => {
+    const d = new Date(e.date)
+    return d.getDay() === tomorrowWeekday && e.mood != null
+  })
+
+  const weekdayMoods = weekdayEntries.map((e) => e.mood as number)
+  if (weekdayMoods.length === 0) return null
+
+  const weekdayAvg = weekdayMoods.reduce((a, b) => a + b, 0) / weekdayMoods.length
+
+  let prediction = weekdayAvg
+
+  const sorted = [...entries]
+    .filter((e) => e.mood != null)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  const recentEntries = sorted.slice(-3).map((e) => e.mood as number)
+  if (recentEntries.length >= 3) {
+    const trend = recentEntries[2] - recentEntries[0]
+    if (trend > 0) prediction += 0.1
+    else if (trend < 0) prediction -= 0.1
+  }
+
+  prediction = Math.max(1, Math.min(5, prediction))
+  prediction = Math.round(prediction * 10) / 10
+
+  let confidence: 'low' | 'medium' | 'high' = 'low'
+  if (weekdayMoods.length >= 8) confidence = 'high'
+  else if (weekdayMoods.length >= 4) confidence = 'medium'
+
+  const dayNames = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
+  const reason = `You tend to feel around ${prediction.toFixed(1)} on ${dayNames[tomorrowWeekday]}`
+
+  return { predicted: prediction, confidence, reason }
+}
+
 export async function fetchEntries(userId: string, range: number): Promise<AnalyticsLogEntry[]> {
   const { data, error } = await supabase
     .from('log_entries')
@@ -83,4 +134,91 @@ export function buildHabitFrequency(entries: AnalyticsLogEntry[]): { habit: stri
 
 export function buildStreakDays(entries: AnalyticsLogEntry[]): Set<string> {
   return new Set(entries.map((e) => e.date.slice(0, 10)))
+}
+
+export type HeatmapRow = { habit: string; counts: Record<number, number> }
+
+export function buildHabitMoodHeatmap(entries: AnalyticsLogEntry[]): HeatmapRow[] {
+  const freq: Record<string, number> = {}
+  for (const e of entries) {
+    for (const h of e.habits ?? []) freq[h] = (freq[h] ?? 0) + 1
+  }
+  const topHabits = Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([h]) => h)
+
+  if (topHabits.length === 0) return []
+
+  const grid: Record<string, Record<number, number>> = {}
+  for (const h of topHabits) grid[h] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+
+  for (const e of entries) {
+    if (e.mood == null) continue
+    for (const h of e.habits ?? []) {
+      if (grid[h]) grid[h][e.mood] = (grid[h][e.mood] ?? 0) + 1
+    }
+  }
+
+  return topHabits.map((h) => ({ habit: h, counts: grid[h] }))
+}
+
+export type HabitStreak = {
+  habit: string
+  currentStreak: number
+  longestStreak: number
+  lastLoggedDate: string | null
+}
+
+export function buildHabitStreaks(entries: AnalyticsLogEntry[]): HabitStreak[] {
+  const habitDates: Record<string, Set<string>> = {}
+
+  for (const e of entries) {
+    for (const h of e.habits ?? []) {
+      if (!habitDates[h]) habitDates[h] = new Set()
+      habitDates[h].add(e.date)
+    }
+  }
+
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().slice(0, 10)
+  const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10)
+
+  const streaks = Object.entries(habitDates).map(([habit, dates]) => {
+    const sortedDates = Array.from(dates).sort()
+    let longestStreak = 0
+    let currentStreak = 0
+    let tempStreak = 1
+
+    for (let i = 1; i < sortedDates.length; i++) {
+      const currDate = new Date(sortedDates[i])
+      const prevDate = new Date(sortedDates[i - 1])
+      const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / 86400000)
+
+      if (diffDays === 1) {
+        tempStreak += 1
+      } else {
+        longestStreak = Math.max(longestStreak, tempStreak)
+        tempStreak = 1
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak)
+
+    const lastLoggedDate = sortedDates[sortedDates.length - 1]
+    if (lastLoggedDate === todayStr || lastLoggedDate === yesterdayStr) {
+      currentStreak = tempStreak
+    } else {
+      currentStreak = 0
+    }
+
+    return {
+      habit,
+      currentStreak,
+      longestStreak,
+      lastLoggedDate: lastLoggedDate || null,
+    }
+  })
+
+  return streaks.sort((a, b) => b.currentStreak - a.currentStreak || b.longestStreak - a.longestStreak)
 }

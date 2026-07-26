@@ -7,6 +7,10 @@ import { useSearchLogs } from '../../lib/use-search-logs'
 import { useTheme, type Theme } from '../../lib/use-theme'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
+import { AchievementsWatcher } from '../../features/achievements/achievements-watcher'
+import { useUnlockedAchievements } from '../../features/achievements/use-achievements'
+import { useGlobalShortcut } from '../../hooks/use-global-shortcut'
+import { MoodLogModal } from '../mood-log-modal'
 
 type UserProfile = { display_name: string | null; avatar_url: string | null }
 
@@ -25,14 +29,16 @@ async function fetchUserProfile(userId: string): Promise<UserProfile> {
 }
 
 const navItems = [
-  { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
-  { icon: '📝', to: '/logs', label: 'Logs' },
-  { icon: '✨', to: '/insights', label: 'AI Insights' },
-  { icon: '📊', to: '/analytics', label: 'Analytics' },
-  { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
-  { icon: '💎', to: '/wallet', label: 'Wallet' },
-  { icon: '⚙️', to: '/settings', label: 'Settings' },
-]
+  { icon: '\u{1F3E0}', to: '/dashboard', label: 'Dashboard' },
+  { icon: '\u{1F4DD}', to: '/logs', label: 'Logs' },
+  { icon: '\u2728', to: '/insights', label: 'AI Insights' },
+  { icon: '\u{1F4CA}', to: '/analytics', label: 'Analytics' },
+  { icon: '\u{1F30D}', to: '/global-mirror', label: 'Global Mirror' },
+  { icon: '\u{1F3C6}', to: '/leaderboard', label: 'Leaderboard' },
+  { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
+  { icon: '\u{1F48E}', to: '/wallet', label: 'Wallet' },
+  { icon: '\u2699\uFE0F', to: '/settings', label: 'Settings' },
+];
 
 async function getUnreadNotificationsCount(userId: string): Promise<number> {
   const { count, error } = await supabase
@@ -55,9 +61,14 @@ export function AppShell() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
+  const [isMoodModalOpen, setIsMoodModalOpen] = useState(false)
   const { theme, setTheme } = useTheme()
 
-  const themeIcon: Record<Theme, string> = { light: '☀️', dark: '🌙', system: '🖥️' }
+  useGlobalShortcut('k', () => {
+    setIsMoodModalOpen(true)
+  })
+
+  const themeIcon: Record<Theme, string> = { light: '\u2600\uFE0F', dark: '\u{1F319}', system: '\u{1F5A5}\uFE0F' }
   const themeNext: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' }
   const themeAriaLabel: Record<Theme, string> = {
     light: 'Switch to dark mode',
@@ -86,6 +97,9 @@ export function AppShell() {
     enabled: Boolean(user?.id),
     staleTime: 5 * 60 * 1000,
   })
+
+  const unlockedAchievementsQuery = useUnlockedAchievements(user?.id)
+  const achievementCount = Object.keys(unlockedAchievementsQuery.data ?? {}).length
 
   const avatarText = useMemo(() => {
     const name = profileQuery.data?.display_name ?? user?.email ?? ''
@@ -148,7 +162,9 @@ export function AppShell() {
   }
 
   return (
-    <div className="shell-root">
+    <div className="shell-root" aria-keyshortcuts="k">
+      <MoodLogModal isOpen={isMoodModalOpen} onClose={() => setIsMoodModalOpen(false)} />
+      <AchievementsWatcher />
       <aside
         className={[
           'shell-sidebar',
@@ -166,7 +182,7 @@ export function AppShell() {
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             onClick={() => setIsCollapsed((prev) => !prev)}
           >
-            {isCollapsed ? '⟩' : '⟨'}
+            {isCollapsed ? '\u27E9' : '\u27E8'}
           </button>
         </div>
 
@@ -178,14 +194,25 @@ export function AppShell() {
               className={({ isActive }) =>
                 ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
               }
-              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' : undefined}
+              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' as const : undefined}
               onClick={() => setIsMobileDrawerOpen(false)}
             >
-              <span className="icon" aria-hidden="true">{item.icon}</span>
-              <span className="label">{item.label}</span>
+              <span className="icon">{item.icon}</span>
+              <span className="label">
+                {item.to === '/achievements' && achievementCount > 0
+                  ? `${item.label} (${achievementCount})`
+                  : item.label}
+              </span>
             </NavLink>
           ))}
         </nav>
+
+        {!isCollapsed && (
+          <div style={{ padding: '0 1rem', marginTop: 'auto', marginBottom: '1rem', color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+            <kbd style={{ background: 'var(--bg-card)', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border)' }}>K</kbd>
+            <span style={{ marginLeft: '0.5rem' }}>— log mood</span>
+          </div>
+        )}
 
         <div className="shell-sidebar-footer">
           <span className="email-text">{user?.email ?? 'Signed in user'}</span>

@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/constants/environment_config.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../viewmodel/providers/wallet_provider.dart';
 
@@ -455,6 +455,25 @@ class WalletScreen extends ConsumerWidget {
     final walletState = ref.watch(walletProvider);
     final walletNotifier = ref.read(walletProvider.notifier);
 
+    // Surface friendbot result toasts. The provider stores the message;
+    // the listener pops a snackbar then clears the field so it does not
+    // replay when the widget rebuilds.
+    ref.listen<WalletState>(walletProvider, (previous, next) {
+      final messenger = ScaffoldMessenger.of(context);
+      final errorChanged = previous?.fundingError != next.fundingError;
+      final justFunded =
+          previous == null
+              ? false
+              : !previous.funded && next.funded;
+      if (errorChanged && next.fundingError != null) {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(_fundingErrorSnack(next.fundingError!));
+      } else if (justFunded) {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(_fundingSuccessSnack());
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Wallet'),
@@ -463,29 +482,74 @@ class WalletScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: 'Refresh',
-              onPressed: walletNotifier.loadWallet,
+              onPressed: () async {
+                await walletNotifier.loadWallet();
+                await walletNotifier.refreshLiveBalances();
+              },
             ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: walletState.isLoading
-            ? _buildLoading(theme)
-            : walletState.error != null
-                ? _ErrorState(
-                    message: walletState.error!,
-                    onRetry: walletNotifier.loadWallet,
-                  )
-                : !walletState.exists
-                    ? _buildEmptyState(context, walletNotifier)
-                    : _buildWalletContent(
-                        context,
-                        theme,
-                        walletState,
-                        walletNotifier,
-                        ref,
+      body: walletState.isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : walletState.error != null
+              ? _ErrorState(
+                  message: walletState.error!,
+                  onRetry: walletNotifier.loadWallet,
+                )
+              : !walletState.exists
+                  ? _buildEmptyState(context, walletNotifier)
+                  : RefreshIndicator(
+                      onRefresh: () => walletNotifier.loadWallet(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: _buildWalletContent(
+                          context,
+                          theme,
+                          walletState,
+                          walletNotifier,
+                          ref,
+                        ),
                       ),
+                    ),
+    );
+  }
+
+  SnackBar _fundingSuccessSnack() {
+    return SnackBar(
+      content: const Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.white, size: 18),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '10,000 XLM added! Your wallet is now active.',
+            ),
+          ),
+        ],
       ),
+      backgroundColor: AppTheme.successColor,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(seconds: 4),
+    );
+  }
+
+  SnackBar _fundingErrorSnack(String message) {
+    return SnackBar(
+      content: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message)),
+        ],
+      ),
+      backgroundColor: AppTheme.errorColor,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(seconds: 4),
     );
   }
 
@@ -523,6 +587,86 @@ class WalletScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildStellarError(
+    ThemeData theme,
+    WalletState walletState,
+    WalletNotifier walletNotifier,
+  ) {
+    final isUnfunded = walletState.xlmBalance == 0 && walletState.echoBalance == 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isUnfunded
+                ? Colors.amber.shade100
+                : Colors.red.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            isUnfunded
+                ? 'Activate your wallet — send any XLM to fund it'
+                : (walletState.stellarError ?? 'Could not reach Stellar network'),
+            style: TextStyle(
+              fontSize: 13,
+              color: isUnfunded ? Colors.brown : Colors.red.shade800,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: walletState.isFunding
+              ? null
+              : () => walletNotifier.fundWithFriendbot(),
+          icon: walletState.isFunding
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.attach_money, size: 18),
+          label: Text(walletState.isFunding
+              ? 'Funding...'
+              : 'Fund with Friendbot'),
+          style: FilledButton.styleFrom(
+            backgroundColor: isUnfunded ? Colors.amber.shade700 : Colors.red.shade600,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: () => _copyToClipboard(
+            context,
+            walletState.publicKey!,
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.white),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Text('Copy address'),
+        ),
+      ],
+    );
+  }
+
+  String _formatLastUpdated(DateTime lastUpdated) {
+    final diff = DateTime.now().difference(lastUpdated);
+    if (diff.inSeconds < 5) return 'just now';
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    return '${diff.inHours}h ago';
+  }
+
   Widget _buildWalletContent(
     BuildContext context,
     ThemeData theme,
@@ -531,11 +675,26 @@ class WalletScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _TestnetBanner(),
           const SizedBox(height: 16),
+          // Show the activation state for unfunded wallets on the
+          // primary position — the user cannot transact until the
+          // account is active on the network.
+          if (!walletState.funded)
+            _UnfundedActivationCard(
+              walletState: walletState,
+              walletNotifier: walletNotifier,
+            )
+          else
+            _FundedBalanceCard(
+              walletState: walletState,
+              onSend: () => _showSendEchoSheet(context, ref),
+              onCopy: () =>
+                  _copyToClipboard(context, walletState.publicKey!),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -549,20 +708,72 @@ class WalletScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'ECHO Balance',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'ECHO Balance',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (walletState.lastUpdated != null)
+                      Text(
+                        _formatLastUpdated(walletState.lastUpdated!),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  '${walletState.balance.toStringAsFixed(0)} ECHO',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ECHO',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${walletState.echoBalance.toStringAsFixed(1)} ECHO',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'XLM',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${walletState.xlmBalance.toStringAsFixed(2)} XLM',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 if (walletState.hasStreakBonus) ...[
                   const SizedBox(height: 8),
@@ -582,47 +793,50 @@ class WalletScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () =>
-                            _showSendEchoSheet(context, ref),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppTheme.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 16),
+                if (walletState.stellarError != null)
+                  _buildStellarError(theme, walletState, walletNotifier)
+                else ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () =>
+                              _showSendEchoSheet(context, ref),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
+                          child: const Text('Send ECHO'),
                         ),
-                        child: const Text('Send ECHO'),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => _copyToClipboard(
-                          context,
-                          walletState.publicKey!,
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _copyToClipboard(
+                            context,
+                            walletState.publicKey!,
                           ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.white),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Copy address'),
                         ),
-                        child: const Text('Copy address'),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ],
             ),
-          ),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(20),
@@ -939,6 +1153,253 @@ class _ErrorState extends StatelessWidget {
               label: const Text('Retry'),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Primary balance card shown for funded wallets.
+///
+/// Renders the live XLM balance next to the ECHO balance pulled from
+/// Supabase / Horizon so testers can tell at a glance whether the network
+/// has indexed their rewards.
+class _FundedBalanceCard extends StatelessWidget {
+  const _FundedBalanceCard({
+    required this.walletState,
+    required this.onSend,
+    required this.onCopy,
+  });
+
+  final WalletState walletState;
+  final VoidCallback onSend;
+  final VoidCallback onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final xlmText =
+        '${walletState.xlmBalance.toStringAsFixed(2)} XLM';
+    final echoText =
+        '${walletState.balance.toStringAsFixed(0)} ECHO';
+    final isLiveLoading = walletState.isLiveBalancesLoading;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Wallet Balance',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              if (isLiveLoading)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Primary number: live XLM (because users need XLM to do anything
+          // on Stellar). Echo balance shares the headline as secondary.
+          Text(
+            '$xlmText · $echoText',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _describeNetwork(),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+          if (walletState.hasStreakBonus) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'Streak bonus active',
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: Colors.white),
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  onPressed: onSend,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Send ECHO'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onCopy,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Copy address'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _describeNetwork() {
+    if (EnvironmentConfig.isTestnet) {
+      return 'Testnet • live Horizon balance, refreshes every 30s';
+    }
+    return 'Mainnet • live Horizon balance';
+  }
+}
+
+/// Replaces the funded balance card when the account exists in Supabase
+/// but has not been activated on the Stellar network yet.
+///
+/// On testnet it surfaces the Friendbot CTA prominently. On mainnet it
+/// explains that the user must fund the account themselves.
+class _UnfundedActivationCard extends StatelessWidget {
+  const _UnfundedActivationCard({
+    required this.walletState,
+    required this.walletNotifier,
+  });
+
+  final WalletState walletState;
+  final WalletNotifier walletNotifier;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isFunding = walletState.isFunding;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: theme.colorScheme.surfaceContainerHighest,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.account_balance_wallet_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Activation Required',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            EnvironmentConfig.isTestnet
+                ? "Your wallet isn't activated yet. Tap below to fund it with "
+                    'testnet XLM.'
+                : 'Your wallet is not yet active on the Stellar network. '
+                    'Send at least 1 XLM to the public key below to '
+                    'activate it.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: SelectableText(
+              walletState.publicKey ?? '',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontFamily: 'monospace',
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (EnvironmentConfig.isTestnet)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                // Funding errors are surfaced via the ref.listen snackbar,
+                // so we just trigger the request from here.
+                onPressed: isFunding ? null : walletNotifier.fundWithFriendbot,
+                icon: isFunding
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('🚰', style: TextStyle(fontSize: 16)),
+                label: Text(
+                  isFunding ? 'Funding…' : 'Fund with Friendbot',
+                ),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            )
+          else
+            // Mainnet has no programmatic funding; the user must send XLM
+            // themselves. Hide the CTA entirely per the spec.
+            const SizedBox.shrink(),
         ],
       ),
     );
