@@ -302,12 +302,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
       final response = await supabase.functions.invoke(
         'create-stellar-wallet',
-        body: {
-          'type': 'INSERT',
-          'schema': 'auth',
-          'table': 'users',
-          'record': {'id': userId},
-        },
+        body: {},
       );
 
       if (response.error != null) {

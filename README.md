@@ -16,6 +16,7 @@
 [![Agora](https://img.shields.io/badge/Agora-Video%20Calls-099DFD?logo=agora&logoColor=white)](https://www.agora.io)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Coverage](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-/branch/development/graph/badge.svg)](https://codecov.io/gh/Echo-Mirror-Butler/Echo-Mirror-Butler-)
+[![Flutter CI](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/Echo-Mirror-Butler/Echo-Mirror-Butler-/actions/workflows/ci.yml)
 
 </div>
 

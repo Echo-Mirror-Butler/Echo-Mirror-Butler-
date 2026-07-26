@@ -433,12 +433,7 @@ export function WalletPage() {
   const createWalletMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('create-stellar-wallet', {
-        body: {
-          type: 'INSERT',
-          schema: 'auth',
-          table: 'users',
-          record: { id: user!.id },
-        },
+        body: {},
       })
       if (error) {
         throw error
