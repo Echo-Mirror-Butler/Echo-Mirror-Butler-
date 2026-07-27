@@ -277,6 +277,8 @@ function WorldMap({ pins, newPinIds, zoom, onZoomChange, onPinClick }: WorldMapP
   } | null>(null)
 
   useEffect(() => {
+    // @ts-expect-error — react-simple-maps is an optional dependency that is
+    // not installed; the catch below falls back to the static SVG map.
     import('react-simple-maps')
       .then((mod) => {
         setRSM({

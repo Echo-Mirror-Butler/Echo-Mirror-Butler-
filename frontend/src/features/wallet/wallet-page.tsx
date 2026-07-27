@@ -270,8 +270,8 @@ function buildWalletQrUrl(publicKey: string, size = 256): string {
 async function isFreighterInstalled(): Promise<boolean> {
   try {
     const { isConnected } = await import('@stellar/freighter-api')
-    const { isAppConnected } = await isConnected()
-    return Boolean(isAppConnected)
+    const { isConnected: appConnected } = await isConnected()
+    return Boolean(appConnected)
   } catch {
     return false
   }
@@ -334,7 +334,6 @@ export function WalletPage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
   const receiveCardRef = useRef<HTMLDivElement | null>(null)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -463,7 +462,6 @@ export function WalletPage() {
       setCustomAmount(String(PRESET_AMOUNTS[1]))
       setSelectedAmount(PRESET_AMOUNTS[1])
       setRecipientInput('')
-      setShowConfirmDialog(false)
       showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
@@ -472,7 +470,6 @@ export function WalletPage() {
     onError: (error: Error) => {
       showToast(error.message, 'error')
       setInlineError(error.message)
-      setShowConfirmDialog(false)
     },
   })
 
@@ -580,14 +577,6 @@ export function WalletPage() {
     setManualKeyError(null)
     await savePublicKeyMutation.mutateAsync(key)
     setManualKeyInput('')
-  }
-
-  const handleConfirmSend = () => {
-    sendGiftMutation.mutate()
-  }
-
-  const handleCancelSend = () => {
-    setShowConfirmDialog(false)
   }
 
   const handleDownloadCSV = async () => {

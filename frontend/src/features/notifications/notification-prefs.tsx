@@ -13,6 +13,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { usePushNotifications } from '../../lib/use-push-notifications'
 import { useToast } from '../../lib/use-toast'
+import {
+  DEFAULT_QUIET_HOURS,
+  formatHHMM,
+  isInQuietHours,
+  type DigestMode,
+  type QuietHoursPrefs,
+} from './quiet-hours'
 
 type Props = {
   userId: string
@@ -148,6 +155,220 @@ function WeeklyDigestToggle({ userId }: { userId: string }) {
         {mutation.isError && (
           <p role="alert" className="error-text" style={{ fontSize: '0.82rem' }}>
             Failed to update preference. Please try again.
+          </p>
+        )}
+      </div>
+    </article>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// Quiet hours + digest frequency controls (issue #616)
+// ─────────────────────────────────────────────────────────────
+
+type QuietHoursRow = {
+  quiet_hours_enabled?: boolean
+  quiet_hours_start?: string
+  quiet_hours_end?: string
+  mood_comment_digest_mode?: string
+}
+
+function QuietHoursControls({ userId }: { userId: string }) {
+  const queryClient = useQueryClient()
+  const { showToast } = useToast()
+  const queryKey = ['quiet-hours-prefs', userId]
+
+  const { data: prefs = DEFAULT_QUIET_HOURS, isLoading } = useQuery({
+    queryKey,
+    queryFn: async (): Promise<QuietHoursPrefs> => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(
+          'quiet_hours_enabled, quiet_hours_start, quiet_hours_end, mood_comment_digest_mode',
+        )
+        .eq('id', userId)
+        .maybeSingle()
+      if (error) throw error
+      const row = (data as QuietHoursRow | null) ?? {}
+      return {
+        quietHoursEnabled: row.quiet_hours_enabled ?? DEFAULT_QUIET_HOURS.quietHoursEnabled,
+        quietHoursStart: row.quiet_hours_start ?? DEFAULT_QUIET_HOURS.quietHoursStart,
+        quietHoursEnd: row.quiet_hours_end ?? DEFAULT_QUIET_HOURS.quietHoursEnd,
+        moodCommentDigestMode:
+          (row.mood_comment_digest_mode as DigestMode | undefined) ??
+          DEFAULT_QUIET_HOURS.moodCommentDigestMode,
+      }
+    },
+  })
+
+  const mutation = useMutation({
+    mutationFn: async (next: Partial<QuietHoursPrefs>) => {
+      const merged = { ...prefs, ...next }
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          quiet_hours_enabled: merged.quietHoursEnabled,
+          quiet_hours_start: merged.quietHoursStart,
+          quiet_hours_end: merged.quietHoursEnd,
+          mood_comment_digest_mode: merged.moodCommentDigestMode,
+        })
+        .eq('id', userId)
+      if (error) throw error
+      return merged
+    },
+    onSuccess: (merged) => {
+      queryClient.setQueryData(queryKey, merged)
+    },
+    onError: () => {
+      showToast('Failed to update notification schedule', 'error')
+    },
+  })
+
+  const busy = isLoading || mutation.isPending
+  const inQuietNow = isInQuietHours(prefs)
+
+  return (
+    <article className="card" style={{ marginTop: '1rem' }}>
+      <div className="card-header">
+        <h3>Quiet Hours &amp; Digest</h3>
+      </div>
+      <div className="card-content form-stack">
+        <p className="muted" style={{ fontSize: '0.85rem', margin: 0 }}>
+          Pause non-critical notifications during set hours. Anything that would arrive during
+          quiet hours is delivered once the window ends — nothing is dropped.
+        </p>
+
+        {/* Enable toggle */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+          }}
+        >
+          <span style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+            {prefs.quietHoursEnabled ? '🌙 Quiet hours on' : '🔔 Quiet hours off'}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={prefs.quietHoursEnabled}
+            onClick={() => mutation.mutate({ quietHoursEnabled: !prefs.quietHoursEnabled })}
+            disabled={busy}
+            aria-label={prefs.quietHoursEnabled ? 'Disable quiet hours' : 'Enable quiet hours'}
+            style={{
+              position: 'relative',
+              width: 44,
+              height: 24,
+              borderRadius: 999,
+              border: 'none',
+              background: prefs.quietHoursEnabled ? 'var(--brand)' : 'var(--line)',
+              cursor: busy ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+              flexShrink: 0,
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: 3,
+                left: prefs.quietHoursEnabled ? 23 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: '#fff',
+                transition: 'left 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+              }}
+            />
+          </button>
+        </div>
+
+        {/* Start / end time pickers */}
+        {prefs.quietHoursEnabled && (
+          <>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>Start</span>
+                <input
+                  type="time"
+                  aria-label="Quiet hours start time"
+                  value={prefs.quietHoursStart}
+                  onChange={(e) => mutation.mutate({ quietHoursStart: e.target.value })}
+                  disabled={busy}
+                  style={{
+                    padding: '0.4rem 0.65rem',
+                    borderRadius: '8px',
+                    border: '1px solid var(--line)',
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>End</span>
+                <input
+                  type="time"
+                  aria-label="Quiet hours end time"
+                  value={prefs.quietHoursEnd}
+                  onChange={(e) => mutation.mutate({ quietHoursEnd: e.target.value })}
+                  disabled={busy}
+                  style={{
+                    padding: '0.4rem 0.65rem',
+                    borderRadius: '8px',
+                    border: '1px solid var(--line)',
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </label>
+            </div>
+            <p className="muted" style={{ fontSize: '0.78rem', margin: 0 }}>
+              {`Quiet from ${formatHHMM(prefs.quietHoursStart)} to ${formatHHMM(
+                prefs.quietHoursEnd,
+              )}, your local time.`}
+              {inQuietNow && ' You are in quiet hours right now.'}
+            </p>
+          </>
+        )}
+
+        {/* Digest frequency for lower-priority notifications */}
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+            Mood-comment notifications
+          </span>
+          <select
+            aria-label="Mood-comment notification frequency"
+            value={prefs.moodCommentDigestMode}
+            onChange={(e) =>
+              mutation.mutate({ moodCommentDigestMode: e.target.value as DigestMode })
+            }
+            disabled={busy}
+            style={{
+              padding: '0.4rem 0.65rem',
+              borderRadius: '8px',
+              border: '1px solid var(--line)',
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              fontSize: '0.9rem',
+              width: 'fit-content',
+            }}
+          >
+            <option value="immediately">Notify me immediately</option>
+            <option value="daily">Bundle into a daily summary</option>
+          </select>
+          <span className="muted" style={{ fontSize: '0.75rem' }}>
+            Choose how often you hear about new comments on your mood pins.
+          </span>
+        </label>
+
+        {mutation.isError && (
+          <p role="alert" className="error-text" style={{ fontSize: '0.82rem' }}>
+            Failed to update. Please try again.
           </p>
         )}
       </div>
@@ -421,6 +642,7 @@ export function NotificationPrefs({ userId }: Props) {
       </div>
     </article>
     <WeeklyDigestToggle userId={userId} />
+    <QuietHoursControls userId={userId} />
     </>
   )
 }

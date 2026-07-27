@@ -35,6 +35,9 @@ const InsightsPage = lazy(() =>
 const AnalyticsPage = lazy(() =>
   import('../features/analytics/analytics-page').then((m) => ({ default: m.AnalyticsPage })),
 )
+const RecapPage = lazy(() =>
+  import('../features/insights/recap-page').then((m) => ({ default: m.RecapPage })),
+)
 const GlobalMirrorPage = lazy(() =>
   import('../features/global-mirror/global-mirror-page').then((m) => ({ default: m.GlobalMirrorPage })),
 )
@@ -262,6 +265,14 @@ export function AppRouter() {
             element={
               <RouteErrorBoundary routeName="Analytics">
                 <AnalyticsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/recap"
+            element={
+              <RouteErrorBoundary routeName="Recap">
+                <RecapPage />
               </RouteErrorBoundary>
             }
           />
