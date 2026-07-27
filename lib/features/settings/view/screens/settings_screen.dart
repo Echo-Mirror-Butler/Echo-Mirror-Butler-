@@ -11,6 +11,7 @@ import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
 import '../../../socials/viewmodel/providers/follow_provider.dart';
+import '../../../../core/viewmodel/providers/haptics_provider.dart';
 
 /// Modern settings screen with improved UI/UX
 class SettingsScreen extends ConsumerWidget {
@@ -23,6 +24,7 @@ class SettingsScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isDark = theme.brightness == Brightness.dark;
     final echoBalance = ref.watch(giftProvider).echoBalance;
+    final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -37,11 +39,11 @@ class SettingsScreen extends ConsumerWidget {
             context,
             theme,
             icon: FontAwesomeIcons.palette.data,
-            title: 'Appearance',
+            title: 'Appearance & Feedback',
             subtitle: 'Customize your app experience',
           ),
           const SizedBox(height: 12),
-          _buildThemeCard(context, theme, themeMode, ref, isDark),
+          _buildThemeCard(context, theme, themeMode, hapticsEnabled, ref, isDark),
           const SizedBox(height: 24),
 
           // Notifications Section
@@ -95,10 +97,10 @@ class SettingsScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -124,6 +126,7 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context,
     ThemeData theme,
     ThemeMode themeMode,
+    bool hapticsEnabled,
     WidgetRef ref,
     bool isDark,
   ) {
@@ -173,6 +176,24 @@ class SettingsScreen extends ConsumerWidget {
                   ref
                       .read(themeProvider.notifier)
                       .setThemeMode(value ? ThemeMode.system : ThemeMode.light);
+                },
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            ),
+            _buildModernListTile(
+              context,
+              theme,
+              icon: FontAwesomeIcons.mobileScreenButton.data,
+              iconColor: Colors.teal,
+              title: 'Haptics & Sound',
+              subtitle: 'Enable app-wide haptic feedback and sounds',
+              trailing: Switch(
+                value: hapticsEnabled,
+                onChanged: (value) {
+                  ref.read(hapticsEnabledProvider.notifier).setEnabled(value);
                 },
               ),
             ),
@@ -417,7 +438,7 @@ class SettingsScreen extends ConsumerWidget {
               context,
               theme,
               icon: FontAwesomeIcons.coins.data,
-              iconColor: AppTheme.primaryColor,
+              iconColor: theme.colorScheme.primary,
               title: 'ECHO Balance',
               subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
               trailing: Icon(
