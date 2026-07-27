@@ -53,7 +53,11 @@ const AchievementsPage = lazy(() =>
 const OnboardingPage = lazy(() =>
   import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
 )
+const ChangelogRoadmapPage = lazy(() =>
+  import('../features/changelog/ChangelogRoadmapPage').then((m) => ({ default: m.ChangelogRoadmapPage })),
+)
 const NotFoundPage = lazy(() => import('../features/shared/not-found-page'))
+
 
 function PageSkeleton() {
   return (
@@ -150,6 +154,22 @@ export function AppRouter() {
           element={
             <RouteErrorBoundary routeName="Home">
               {user ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/changelog"
+          element={
+            <RouteErrorBoundary routeName="Changelog">
+              <ChangelogRoadmapPage />
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/roadmap"
+          element={
+            <RouteErrorBoundary routeName="Roadmap">
+              <ChangelogRoadmapPage />
             </RouteErrorBoundary>
           }
         />
