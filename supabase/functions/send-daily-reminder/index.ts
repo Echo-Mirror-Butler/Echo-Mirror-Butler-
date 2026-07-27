@@ -13,6 +13,11 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  isInQuietHours,
+  nextQuietHoursEnd,
+  type QuietHours,
+} from '../_shared/notification-scheduling.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -130,12 +135,61 @@ Deno.serve(async (req) => {
     return Math.abs(subMinutes - nowMinutes) <= 5
   })
 
+  // ── Quiet-hours lookup (issue #616) ──
+  // Fetch each due user's quiet-hours preferences so we can suppress + queue
+  // notifications that would land inside their quiet window rather than drop
+  // them. A scheduled `deliver-pending-notifications` job flushes the queue.
+  const dueUserIds = [...new Set(due.map((s) => s.user_id))]
+  const quietByUser = new Map<string, { quiet: QuietHours; timezone: string }>()
+
+  if (dueUserIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, timezone, quiet_hours_enabled, quiet_hours_start, quiet_hours_end')
+      .in('id', dueUserIds)
+
+    for (const p of (profiles ?? []) as Array<{
+      id: string
+      timezone: string | null
+      quiet_hours_enabled: boolean | null
+      quiet_hours_start: string | null
+      quiet_hours_end: string | null
+    }>) {
+      quietByUser.set(p.id, {
+        timezone: p.timezone ?? 'UTC',
+        quiet: {
+          enabled: p.quiet_hours_enabled ?? false,
+          start: p.quiet_hours_start ?? '22:00',
+          end: p.quiet_hours_end ?? '08:00',
+        },
+      })
+    }
+  }
+
   let sent = 0
   let failed = 0
+  let queued = 0
 
   await Promise.allSettled(
     due.map(async (sub) => {
       try {
+        const profile = quietByUser.get(sub.user_id)
+        if (profile && isInQuietHours(now, profile.quiet, profile.timezone)) {
+          // Suppress the immediate push and queue it for after quiet hours.
+          const scheduledFor = nextQuietHoursEnd(now, profile.quiet, profile.timezone)
+          const { error: queueError } = await supabase.from('pending_notifications').insert({
+            user_id: sub.user_id,
+            type: 'daily_reminder',
+            title: 'EchoMirror — Daily Check-in',
+            body: "How are you feeling today? Log your mood and keep your streak alive. 🔥",
+            url: '/logs/new',
+            scheduled_for: scheduledFor.toISOString(),
+          })
+          if (queueError) failed++
+          else queued++
+          return
+        }
+
         const ok = await sendPushNotification(sub)
         if (ok) sent++
         else failed++
@@ -146,7 +200,7 @@ Deno.serve(async (req) => {
   )
 
   return new Response(
-    JSON.stringify({ checked: due.length, sent, failed, time: currentTime }),
+    JSON.stringify({ checked: due.length, sent, queued, failed, time: currentTime }),
     { headers: { 'Content-Type': 'application/json' } },
   )
 })

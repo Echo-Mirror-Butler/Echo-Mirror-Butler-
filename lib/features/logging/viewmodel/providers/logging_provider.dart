@@ -12,7 +12,41 @@ final loggingRepositoryProvider = Provider<LoggingRepository>((ref) {
   return LoggingRepository();
 });
 
-/// Logging state notifier
+/// Paginated logging list state (Issue #637).
+class LoggingListState {
+  const LoggingListState({
+    this.entries = const [],
+    this.isInitialLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+    this.error,
+  });
+
+  final List<LogEntryModel> entries;
+  final bool isInitialLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final Object? error;
+
+  LoggingListState copyWith({
+    List<LogEntryModel>? entries,
+    bool? isInitialLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    Object? error,
+    bool clearError = false,
+  }) {
+    return LoggingListState(
+      entries: entries ?? this.entries,
+      isInitialLoading: isInitialLoading ?? this.isInitialLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      error: clearError ? null : error ?? this.error,
+    );
+  }
+}
+
+/// Logging state notifier with incremental page loads.
 class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
   LoggingNotifier(
     this._repository, {
@@ -29,13 +63,22 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
   final ConnectivityService? _connectivity;
   String? _currentUserId;
   bool _hasLoaded = false;
+  int _offset = 0;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+  static const int _pageSize = LoggingRepository.defaultPageSize;
 
-  /// Load all log entries for the current user
-  Future<void> loadLogEntries({String? userId}) async {
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
+
+  /// Load the first page of log entries for the current user.
+  Future<void> loadLogEntries({String? userId, bool force = false}) async {
     // If userId is provided and different from current, reset
     if (userId != null && userId != _currentUserId) {
       _currentUserId = userId;
       _hasLoaded = false;
+      _offset = 0;
+      _hasMore = true;
     }
 
     // Prevent concurrent calls while a fetch is already in-flight
@@ -47,25 +90,68 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       return;
     }
 
-    // If already loaded for this user, don't reload
-    if (_hasLoaded && _currentUserId != null) {
+    // If already loaded for this user, don't reload unless forced (pull-to-refresh)
+    if (_hasLoaded && _currentUserId != null && !force) {
       return;
     }
 
     state = const AsyncValue.loading();
+    _offset = 0;
+    _hasMore = true;
     try {
       debugPrint(
-        '[LoggingNotifier] Loading log entries for userId: $_currentUserId',
+        '[LoggingNotifier] Loading log entries page for userId: $_currentUserId',
       );
-      final entries = await _repository.getLogEntries(_currentUserId!);
-      debugPrint('[LoggingNotifier] âœ… Loaded ${entries.length} log entries');
+      final entries = await _repository.getLogEntriesPage(
+        _currentUserId!,
+        offset: 0,
+        limit: _pageSize,
+      );
+      debugPrint('[LoggingNotifier] Loaded ${entries.length} log entries');
       _hasLoaded = true;
+      _offset = entries.length;
+      _hasMore = entries.length >= _pageSize;
       state = AsyncValue.data(entries);
     } catch (e, stackTrace) {
-      debugPrint('[LoggingNotifier] âŒ Error loading log entries: $e');
+      debugPrint('[LoggingNotifier] Error loading log entries: $e');
       debugPrint('[LoggingNotifier] Stack trace: $stackTrace');
       _hasLoaded = false;
       state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  /// Append the next page when the list approaches the end.
+  Future<void> loadMoreLogEntries() async {
+    if (_currentUserId == null ||
+        _currentUserId!.isEmpty ||
+        !_hasMore ||
+        _isLoadingMore ||
+        state.isLoading) {
+      return;
+    }
+
+    _isLoadingMore = true;
+    try {
+      final next = await _repository.getLogEntriesPage(
+        _currentUserId!,
+        offset: _offset,
+        limit: _pageSize,
+      );
+      final current = state.value ?? <LogEntryModel>[];
+      // Dedup by id in case of overlap
+      final existingIds = current.map((e) => e.id).toSet();
+      final merged = [
+        ...current,
+        ...next.where((e) => !existingIds.contains(e.id)),
+      ];
+      _offset = merged.length;
+      _hasMore = next.length >= _pageSize;
+      state = AsyncValue.data(merged);
+    } catch (e, stackTrace) {
+      debugPrint('[LoggingNotifier] Error loading more log entries: $e');
+      debugPrint('[LoggingNotifier] Stack trace: $stackTrace');
+    } finally {
+      _isLoadingMore = false;
     }
   }
 
@@ -141,8 +227,8 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
   void _upsertIntoState(LogEntryModel entry) {
     final currentData = state.value ?? [];
     state = AsyncValue.data([
-      ...currentData.where((e) => e.id != entry.id),
       entry,
+      ...currentData.where((e) => e.id != entry.id),
     ]);
   }
 

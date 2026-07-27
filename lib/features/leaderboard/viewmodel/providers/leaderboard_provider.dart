@@ -41,18 +41,21 @@ class LeaderboardState {
 class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
   LeaderboardNotifier() : super(const LeaderboardState());
 
+  /// Hard cap for the weekly board (Issue #637 audit — already bounded).
+  static const int pageSize = 20;
+
   Future<void> loadLeaderboard({String? userId}) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final supabase = Supabase.instance.client;
 
-      // Fetch top 20 entries from leaderboard_weekly view
+      // Bounded fetch — never load the full leaderboard_weekly set
       final response = await supabase
           .from('leaderboard_weekly')
           .select('*')
           .order('rank', ascending: true)
-          .limit(20);
+          .limit(pageSize);
 
       final entries = (response as List<dynamic>)
           .cast<Map<String, dynamic>>()

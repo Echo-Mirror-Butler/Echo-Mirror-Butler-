@@ -13,7 +13,7 @@ import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/logging_calendar.dart';
 import '../widgets/pending_sync_badge.dart';
 
-/// Daily logging screen
+/// Daily logging screen with infinite-scroll pagination (Issue #637).
 class LoggingScreen extends ConsumerStatefulWidget {
   const LoggingScreen({super.key});
 
@@ -22,9 +22,12 @@ class LoggingScreen extends ConsumerStatefulWidget {
 }
 
 class _LoggingScreenState extends ConsumerState<LoggingScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = ref.read(authProvider);
       final userId = authState.user?.id;
@@ -35,11 +38,27 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      ref.read(loggingProvider.notifier).loadMoreLogEntries();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final loggingState = ref.watch(loggingProvider);
     final authState = ref.watch(authProvider);
     final userId = authState.user?.id;
     final theme = Theme.of(context);
+    final notifier = ref.read(loggingProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -58,11 +77,10 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
       body: RefreshIndicator(
         color: AppTheme.primaryColor,
         onRefresh: () async {
-          ref.invalidate(loggingProvider);
           if (userId != null && userId.isNotEmpty) {
             await ref
                 .read(loggingProvider.notifier)
-                .loadLogEntries(userId: userId);
+                .loadLogEntries(userId: userId, force: true);
           }
         },
         child: loggingState.when(
@@ -101,11 +119,27 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                 ],
               );
             }
+            final showFooter = notifier.hasMore || notifier.isLoadingMore;
             return ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: entries.length,
+              itemCount: entries.length + (showFooter ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index >= entries.length) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: notifier.isLoadingMore
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  );
+                }
                 final entry = entries[index];
                 return Hero(
                   tag: 'log_entry_${entry.id}',
@@ -113,7 +147,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: EdgeInsets.zero,
                     animationDuration: Duration(
-                      milliseconds: 300 + (index * 50),
+                      milliseconds: 300 + (index.clamp(0, 10) * 50),
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
@@ -187,7 +221,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
   void _retryLoadEntries(String? userId) {
     if (userId == null || userId.isEmpty) return;
-    ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
+    ref.read(loggingProvider.notifier).loadLogEntries(userId: userId, force: true);
   }
 
   IconData _getMoodIcon(int? mood) {

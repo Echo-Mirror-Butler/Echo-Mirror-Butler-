@@ -29,12 +29,13 @@ async function fetchUserProfile(userId: string): Promise<UserProfile> {
 }
 
 const navItems = [
-  { icon: '\u{1F3E0}', to: '/dashboard', label: 'Dashboard' },
-  { icon: '\u{1F4DD}', to: '/logs', label: 'Logs' },
-  { icon: '\u2728', to: '/insights', label: 'AI Insights' },
-  { icon: '\u{1F4CA}', to: '/analytics', label: 'Analytics' },
-  { icon: '\u{1F30D}', to: '/global-mirror', label: 'Global Mirror' },
-  { icon: '\u{1F3C6}', to: '/leaderboard', label: 'Leaderboard' },
+  { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
+  { icon: '📝', to: '/logs', label: 'Logs' },
+  { icon: '✨', to: '/insights', label: 'AI Insights' },
+  { icon: '📊', to: '/analytics', label: 'Analytics' },
+  { icon: '🎞️', to: '/recap', label: 'Recap' },
+  { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
+  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
   { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
   { icon: '\u{1F48E}', to: '/wallet', label: 'Wallet' },
   { icon: '\u2699\uFE0F', to: '/settings', label: 'Settings' },
@@ -194,7 +195,6 @@ export function AppShell() {
               className={({ isActive }) =>
                 ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
               }
-              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' as const : undefined}
               onClick={() => setIsMobileDrawerOpen(false)}
             >
               <span className="icon">{item.icon}</span>
