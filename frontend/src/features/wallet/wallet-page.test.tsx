@@ -50,7 +50,7 @@ vi.mock('../../lib/supabase', () => ({
 }))
 
 vi.mock('@stellar/freighter-api', () => ({
-  isConnected: vi.fn(() => Promise.resolve({ isAppConnected: mockIsAppConnected })),
+  isConnected: vi.fn(() => Promise.resolve({ isConnected: mockIsAppConnected })),
   requestAccess: vi.fn(() => Promise.resolve(mockRequestAccessResult)),
   getNetwork: vi.fn(() => Promise.resolve(mockGetNetworkResult)),
 }))
