@@ -1,8 +1,15 @@
+import { captureSentryException } from './sentry'
+
 export function initializeGlobalErrorHandler() {
   window.addEventListener('unhandledrejection', (event) => {
     console.error('Unhandled promise rejection:', {
       reason: event.reason,
       promise: event.promise,
+      timestamp: new Date().toISOString(),
+    })
+
+    captureSentryException(event.reason, {
+      type: 'unhandledrejection',
       timestamp: new Date().toISOString(),
     })
 
@@ -28,6 +35,14 @@ export function initializeGlobalErrorHandler() {
       lineno: event.lineno,
       colno: event.colno,
       error: event.error,
+      timestamp: new Date().toISOString(),
+    })
+
+    captureSentryException(event.error ?? new Error(event.message), {
+      type: 'window.error',
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
       timestamp: new Date().toISOString(),
     })
   })

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
+import '../../../auth/viewmodel/providers/auth_provider.dart';
 import 'gift_button_widget.dart';
 
 /// Dialog for viewing and adding comments on a mood pin
@@ -27,12 +29,52 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
   bool _isSubmitting = false;
   String? _clusterEncouragement;
   bool _isLoadingEncouragement = false;
+  bool? _isFollowing;
 
   @override
   void initState() {
     super.initState();
     _loadComments();
     _loadClusterEncouragement();
+    _checkFollowing();
+  }
+
+  Future<void> _checkFollowing() async {
+    final pinUserId = widget.pin.userId;
+    if (pinUserId == null) return;
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.user?.id;
+    if (currentUserId == null || currentUserId == pinUserId) return;
+    final response = await Supabase.instance.client
+        .from('user_follows')
+        .select('id')
+        .eq('follower_id', currentUserId)
+        .eq('following_id', pinUserId)
+        .maybeSingle();
+    if (mounted) {
+      setState(() => _isFollowing = response != null);
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    final pinUserId = widget.pin.userId;
+    if (pinUserId == null) return;
+    final authState = ref.read(authProvider);
+    final currentUserId = authState.user?.id;
+    if (currentUserId == null || currentUserId == pinUserId) return;
+    if (_isFollowing == true) {
+      await Supabase.instance.client
+          .from('user_follows')
+          .delete()
+          .eq('follower_id', currentUserId)
+          .eq('following_id', pinUserId);
+      setState(() => _isFollowing = false);
+    } else {
+      await Supabase.instance.client
+          .from('user_follows')
+          .insert({'follower_id': currentUserId, 'following_id': pinUserId});
+      setState(() => _isFollowing = true);
+    }
   }
 
   Future<void> _loadClusterEncouragement() async {
@@ -235,6 +277,17 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                       recipientUserId: widget.pin.userId!,
                       compact: true,
                     ),
+                  if (_isFollowing != null && widget.pin.userId != null)
+                  IconButton(
+                    icon: Icon(
+                      _isFollowing!
+                          ? FontAwesomeIcons.solidUser
+                          : FontAwesomeIcons.userPlus,
+                      size: 18,
+                    ),
+                    onPressed: _toggleFollow,
+                    tooltip: _isFollowing! ? 'Unfollow' : 'Follow',
+                  ),
                   IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),

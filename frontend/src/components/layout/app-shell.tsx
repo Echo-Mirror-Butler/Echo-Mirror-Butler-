@@ -29,15 +29,15 @@ async function fetchUserProfile(userId: string): Promise<UserProfile> {
 }
 
 const navItems = [
-  { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
-  { icon: '📝', to: '/logs', label: 'Logs' },
-  { icon: '✨', to: '/insights', label: 'AI Insights' },
-  { icon: '📊', to: '/analytics', label: 'Analytics' },
-  { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
-  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
+  { icon: '\u{1F3E0}', to: '/dashboard', label: 'Dashboard' },
+  { icon: '\u{1F4DD}', to: '/logs', label: 'Logs' },
+  { icon: '\u2728', to: '/insights', label: 'AI Insights' },
+  { icon: '\u{1F4CA}', to: '/analytics', label: 'Analytics' },
+  { icon: '\u{1F30D}', to: '/global-mirror', label: 'Global Mirror' },
+  { icon: '\u{1F3C6}', to: '/leaderboard', label: 'Leaderboard' },
   { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
-  { icon: '💎', to: '/wallet', label: 'Wallet' },
-  { icon: '⚙️', to: '/settings', label: 'Settings' },
+  { icon: '\u{1F48E}', to: '/wallet', label: 'Wallet' },
+  { icon: '\u2699\uFE0F', to: '/settings', label: 'Settings' },
 ];
 
 async function getUnreadNotificationsCount(userId: string): Promise<number> {
@@ -68,7 +68,7 @@ export function AppShell() {
     setIsMoodModalOpen(true)
   })
 
-  const themeIcon: Record<Theme, string> = { light: '☀️', dark: '🌙', system: '🖥️' }
+  const themeIcon: Record<Theme, string> = { light: '\u2600\uFE0F', dark: '\u{1F319}', system: '\u{1F5A5}\uFE0F' }
   const themeNext: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' }
   const themeAriaLabel: Record<Theme, string> = {
     light: 'Switch to dark mode',
@@ -182,11 +182,11 @@ export function AppShell() {
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             onClick={() => setIsCollapsed((prev) => !prev)}
           >
-            {isCollapsed ? '⟩' : '⟨'}
+            {isCollapsed ? '\u27E9' : '\u27E8'}
           </button>
         </div>
 
-        <nav className="shell-nav">
+        <nav className="shell-nav" aria-label="Main navigation">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -194,6 +194,7 @@ export function AppShell() {
               className={({ isActive }) =>
                 ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
               }
+              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' as const : undefined}
               onClick={() => setIsMobileDrawerOpen(false)}
             >
               <span className="icon">{item.icon}</span>
@@ -233,7 +234,8 @@ export function AppShell() {
             <button
               type="button"
               className="icon-btn mobile-only"
-              aria-label="Open navigation drawer"
+              aria-label={isMobileDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileDrawerOpen}
               onClick={() => setIsMobileDrawerOpen(true)}
             >
               ☰

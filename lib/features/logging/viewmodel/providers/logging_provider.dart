@@ -2,7 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/log_entry_model.dart';
 import '../../data/repositories/logging_repository.dart';
+import '../../../../core/services/connectivity_service.dart';
+import '../../../../core/services/mood_sync_service.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/offline_storage_service.dart';
 
 /// Logging repository provider
 final loggingRepositoryProvider = Provider<LoggingRepository>((ref) {
@@ -11,11 +14,19 @@ final loggingRepositoryProvider = Provider<LoggingRepository>((ref) {
 
 /// Logging state notifier
 class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
-  LoggingNotifier(this._repository) : super(const AsyncValue.data([])) {
+  LoggingNotifier(
+    this._repository, {
+    MoodSyncService? moodSync,
+    ConnectivityService? connectivity,
+  }) : _moodSync = moodSync,
+       _connectivity = connectivity,
+       super(const AsyncValue.data([])) {
     // Don't load on init - wait for userId to be provided
   }
 
   final LoggingRepository _repository;
+  final MoodSyncService? _moodSync;
+  final ConnectivityService? _connectivity;
   String? _currentUserId;
   bool _hasLoaded = false;
 
@@ -51,32 +62,99 @@ class LoggingNotifier extends StateNotifier<AsyncValue<List<LogEntryModel>>> {
       _hasLoaded = true;
       state = AsyncValue.data(entries);
     } catch (e, stackTrace) {
-      debugPrint('[LoggingNotifier] âŒ Error loading log entries: $e');
+      debugPrint('[LoggingNotifier] âŒ Error loading log entries: $e');
       debugPrint('[LoggingNotifier] Stack trace: $stackTrace');
       _hasLoaded = false;
       state = AsyncValue.error(e, stackTrace);
     }
   }
 
-  /// Create a new log entry
+  /// Create a new log entry. When the device is offline (or the request
+  /// fails because connectivity dropped mid-flight), the entry is queued
+  /// locally and synced automatically once the connection is restored.
   Future<bool> createLogEntry(LogEntryModel entry) async {
+    if (_moodSync != null && !await _isOnline()) {
+      return _queueOffline(entry);
+    }
+
     try {
       final created = await _repository.createLogEntry(entry);
-      final currentData = state.value ?? [];
-      state = AsyncValue.data([...currentData, created]);
-
-      // Wrap notification call so platform plugin failures (e.g. MissingPluginException
-      // in unit tests) do not fail the entire log entry creation.
-      try {
-        await NotificationService().cancelNoLogTodayNotification();
-      } catch (_) {
-        // Ignore notification errors (e.g., in unit tests where plugins are unavailable)
-      }
-
+      _upsertIntoState(created);
+      await _cancelNoLogTodayNotification();
       return true;
+    } catch (e) {
+      // The request itself may have failed because we went offline
+      // mid-flight — queue instead of surfacing an error.
+      if (_moodSync != null && !await _isOnline()) {
+        return _queueOffline(entry);
+      }
+      state = AsyncValue.error(e, StackTrace.current);
+      return false;
+    }
+  }
+
+  Future<bool> _isOnline() async {
+    final connectivity = _connectivity;
+    if (connectivity == null) return true;
+    try {
+      return await connectivity.isConnected();
+    } catch (_) {
+      // If the connectivity check itself fails, assume online and let the
+      // network request decide.
+      return true;
+    }
+  }
+
+  Future<bool> _queueOffline(LogEntryModel entry) async {
+    final moodSync = _moodSync;
+    if (moodSync == null) return false;
+    try {
+      final queued = await moodSync.queueMoodLog(
+        userId: entry.userId,
+        date: entry.date,
+        mood: entry.mood,
+        habits: entry.habits,
+        notes: entry.notes,
+      );
+      debugPrint(
+        '[LoggingNotifier] Offline — queued entry for ${queued.date} '
+        '(pending: ${moodSync.pendingCount})',
+      );
+      // Reflect the queued entry in local state so calendar/list views show
+      // it immediately; it gets replaced by the server copy after sync.
+      _upsertIntoState(
+        entry.copyWith(id: queued.id, createdAt: queued.createdAt),
+      );
+      await _cancelNoLogTodayNotification();
+      return true;
+    } on OfflineQueueFullException catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+      return false;
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
       return false;
+    }
+  }
+
+  /// Add [entry] to state, replacing an existing entry with the same id
+  /// (re-logging a queued day reuses the queued entry's id).
+  void _upsertIntoState(LogEntryModel entry) {
+    final currentData = state.value ?? [];
+    state = AsyncValue.data([
+      ...currentData.where((e) => e.id != entry.id),
+      entry,
+    ]);
+  }
+
+  Future<void> _cancelNoLogTodayNotification() async {
+    // Wrap notification call so platform plugin failures (e.g.
+    // MissingPluginException in unit tests) do not fail the entire log entry
+    // creation.
+    try {
+      await NotificationService().cancelNoLogTodayNotification();
+    } catch (_) {
+      // Ignore notification errors (e.g., in unit tests where plugins are
+      // unavailable)
     }
   }
 
@@ -132,5 +210,9 @@ final loggingProvider =
       ref,
     ) {
       final repository = ref.watch(loggingRepositoryProvider);
-      return LoggingNotifier(repository);
+      return LoggingNotifier(
+        repository,
+        moodSync: ref.watch(moodSyncServiceProvider),
+        connectivity: ref.watch(connectivityServiceProvider),
+      );
     });

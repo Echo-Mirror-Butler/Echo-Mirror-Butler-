@@ -1,27 +1,35 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-part 'connectivity_service.g.dart';
+/// Thin wrapper around connectivity_plus exposing a simple online/offline
+/// view of the device's network state.
+class ConnectivityService {
+  ConnectivityService({Connectivity? connectivity})
+    : _connectivity = connectivity ?? Connectivity();
 
-@riverpod
-class ConnectivityService extends _$ConnectivityService {
-  late Connectivity _connectivity;
+  final Connectivity _connectivity;
 
-  @override
-  Stream<bool> build() {
-    _connectivity = Connectivity();
-    return _connectivity.onConnectivityChanged.map((result) {
-      return result != ConnectivityResult.none;
-    });
-  }
+  /// Emits `true` when the device gains connectivity and `false` when it is
+  /// lost. Consecutive duplicate states are filtered out, so listeners can
+  /// treat each `true` event as a reconnect.
+  Stream<bool> get onStatusChange =>
+      _connectivity.onConnectivityChanged.map(_hasConnection).distinct();
 
   Future<bool> isConnected() async {
-    final result = await _connectivity.checkConnectivity();
-    return result != ConnectivityResult.none;
+    return _hasConnection(await _connectivity.checkConnectivity());
+  }
+
+  static bool _hasConnection(List<ConnectivityResult> results) {
+    return results.any((result) => result != ConnectivityResult.none);
   }
 }
 
-@riverpod
-Stream<bool> isOnline(IsOnlineRef ref) {
-  return ref.watch(connectivityServiceProvider);
-}
+/// Connectivity service provider
+final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
+  return ConnectivityService();
+});
+
+/// Stream of the device's online status (true = online)
+final isOnlineProvider = StreamProvider<bool>((ref) {
+  return ref.watch(connectivityServiceProvider).onStatusChange;
+});

@@ -11,6 +11,7 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/log_entry_model.dart';
 import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/logging_calendar.dart';
+import '../widgets/pending_sync_badge.dart';
 
 /// Daily logging screen
 class LoggingScreen extends ConsumerStatefulWidget {
@@ -44,6 +45,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
       appBar: AppBar(
         title: const Text('Daily Logging'),
         actions: [
+          const Center(child: PendingSyncBadge()),
           IconButton(
             icon: Icon(FontAwesomeIcons.calendar.data),
             onPressed: () {

@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/date_formatter.dart';
 import '../../data/models/log_entry_model.dart';
 
 /// Calendar widget that shows dates with log entries marked
 class LoggingCalendar extends StatefulWidget {
   final List<LogEntryModel> entries;
   final Function(DateTime) onDateSelected;
+  final String timezone;
 
   const LoggingCalendar({
     super.key,
     required this.entries,
     required this.onDateSelected,
+    this.timezone = 'UTC',
   });
 
   @override
@@ -25,8 +28,8 @@ class _LoggingCalendarState extends State<LoggingCalendar> {
   @override
   void initState() {
     super.initState();
-    _focusedDay = DateTime.now();
-    _selectedDay = DateTime.now();
+    _focusedDay = DateFormatter.daysAgo(0, widget.timezone);
+    _selectedDay = DateFormatter.daysAgo(0, widget.timezone);
   }
 
   /// Get set of dates that have log entries

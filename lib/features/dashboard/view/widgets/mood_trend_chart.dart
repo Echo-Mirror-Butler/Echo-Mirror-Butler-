@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
 /// Beautiful mood trend chart widget
 class MoodTrendChart extends StatelessWidget {
   final List<LogEntryModel> recentLogs;
   final int daysToShow;
+  final String timezone;
 
   const MoodTrendChart({
     super.key,
     required this.recentLogs,
     this.daysToShow = 30,
+    this.timezone = 'UTC',
   });
 
   @override
@@ -105,7 +109,7 @@ class MoodTrendChart extends StatelessWidget {
   }
 
   List<ChartDataPoint> _prepareChartData(List<LogEntryModel> logs) {
-    final now = DateTime.now();
+    final now = DateFormatter.daysAgo(0, timezone);
     final startDate = now.subtract(Duration(days: daysToShow));
     final dataPoints = <ChartDataPoint>[];
 
@@ -116,12 +120,12 @@ class MoodTrendChart extends StatelessWidget {
       logMap[logDate] = log;
     }
 
-    // Generate data points for the last N days
+    final today = DateFormatter.daysAgo(0, timezone);
     for (int i = daysToShow - 1; i >= 0; i--) {
       final date = DateTime(
-        now.year,
-        now.month,
-        now.day,
+        today.year,
+        today.month,
+        today.day,
       ).subtract(Duration(days: i));
       final normalizedDate = DateTime(date.year, date.month, date.day);
 
