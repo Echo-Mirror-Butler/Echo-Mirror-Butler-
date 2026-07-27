@@ -51,28 +51,48 @@ void main() {
         await notifier.loadLogEntries(userId: '');
         expect(notifier.state, const AsyncValue<List<LogEntryModel>>.data([]));
 
-        verifyNever(() => mockRepo.getLogEntries(any()));
+        verifyNever(
+          () => mockRepo.getLogEntriesPage(
+            any(),
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
+        );
       },
     );
 
     test(
-      'loadLogEntries â€” success: state becomes AsyncData with list',
+      'loadLogEntries — success: state becomes AsyncData with list',
       () async {
         final entries = [_makeEntry(id: 'e1'), _makeEntry(id: 'e2')];
         when(
-          () => mockRepo.getLogEntries('user_1'),
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
         ).thenAnswer((_) async => entries);
 
         await notifier.loadLogEntries(userId: 'user_1');
 
         expect(notifier.state, AsyncValue<List<LogEntryModel>>.data(entries));
-        verify(() => mockRepo.getLogEntries('user_1')).called(1);
+        verify(
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: 0,
+            limit: any(named: 'limit'),
+          ),
+        ).called(1);
       },
     );
 
-    test('loadLogEntries â€” failure: state becomes AsyncError', () async {
+    test('loadLogEntries — failure: state becomes AsyncError', () async {
       when(
-        () => mockRepo.getLogEntries('user_err'),
+        () => mockRepo.getLogEntriesPage(
+          'user_err',
+          offset: any(named: 'offset'),
+          limit: any(named: 'limit'),
+        ),
       ).thenThrow(Exception('network error'));
 
       await notifier.loadLogEntries(userId: 'user_err');
@@ -85,13 +105,23 @@ void main() {
       () async {
         final entries = [_makeEntry()];
         when(
-          () => mockRepo.getLogEntries('user_1'),
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
         ).thenAnswer((_) async => entries);
 
         await notifier.loadLogEntries(userId: 'user_1');
         await notifier.loadLogEntries(userId: 'user_1');
 
-        verify(() => mockRepo.getLogEntries('user_1')).called(1);
+        verify(
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
+        ).called(1);
       },
     );
 
@@ -100,7 +130,11 @@ void main() {
       () async {
         final entries = [_makeEntry()];
         when(
-          () => mockRepo.getLogEntries('user_1'),
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
         ).thenAnswer((_) async => entries);
 
         // Fire two concurrent calls without awaiting the first
@@ -108,19 +142,59 @@ void main() {
         final second = notifier.loadLogEntries(userId: 'user_1');
         await Future.wait([first, second]);
 
-        verify(() => mockRepo.getLogEntries('user_1')).called(1);
+        verify(
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
+        ).called(1);
       },
     );
 
+    test('loadMoreLogEntries appends the next page', () async {
+      final page1 = List.generate(
+        30,
+        (i) => _makeEntry(id: 'p1-$i'),
+      );
+      final page2 = List.generate(
+        5,
+        (i) => _makeEntry(id: 'p2-$i'),
+      );
+      var call = 0;
+      when(
+        () => mockRepo.getLogEntriesPage(
+          'user_1',
+          offset: any(named: 'offset'),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async {
+        call += 1;
+        return call == 1 ? page1 : page2;
+      });
+
+      await notifier.loadLogEntries(userId: 'user_1');
+      expect(notifier.hasMore, isTrue);
+
+      await notifier.loadMoreLogEntries();
+
+      expect(notifier.state.value?.length, 35);
+      expect(notifier.hasMore, isFalse);
+    });
+
     test(
-      'createLogEntry â€” returns true on success and appends entry to state',
+      'createLogEntry — returns true on success and appends entry to state',
       () async {
         final existing = _makeEntry(id: 'e_old');
         final newEntry = _makeEntry(id: 'e_new', mood: 5);
         final created = _makeEntry(id: 'e_new_server', mood: 5);
 
         when(
-          () => mockRepo.getLogEntries('user_1'),
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
         ).thenAnswer((_) async => [existing]);
         when(
           () => mockRepo.createLogEntry(any()),
@@ -133,7 +207,7 @@ void main() {
         final data = notifier.state.value;
         expect(data, isNotNull);
         expect(data!.length, 2);
-        expect(data.last, created);
+        expect(data.first, created);
       },
     );
 
@@ -155,7 +229,11 @@ void main() {
         final updated = _makeEntry(id: 'e1', mood: 4);
 
         when(
-          () => mockRepo.getLogEntries('user_1'),
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
         ).thenAnswer((_) async => [original]);
         when(
           () => mockRepo.updateLogEntry(any()),
@@ -187,7 +265,11 @@ void main() {
       final e2 = _makeEntry(id: 'e2', mood: 5);
 
       when(
-        () => mockRepo.getLogEntries('user_1'),
+        () => mockRepo.getLogEntriesPage(
+          'user_1',
+          offset: any(named: 'offset'),
+          limit: any(named: 'limit'),
+        ),
       ).thenAnswer((_) async => [e1, e2]);
       when(
         () => mockRepo.deleteLogEntry(any(), any()),
@@ -203,9 +285,13 @@ void main() {
       expect(data.first.id, 'e2');
     });
 
-    test('deleteLogEntry â€” returns false on repository error', () async {
+    test('deleteLogEntry — returns false on repository error', () async {
       when(
-        () => mockRepo.getLogEntries('user_1'),
+        () => mockRepo.getLogEntriesPage(
+          'user_1',
+          offset: any(named: 'offset'),
+          limit: any(named: 'limit'),
+        ),
       ).thenAnswer((_) async => [_makeEntry()]);
       when(
         () => mockRepo.deleteLogEntry(any(), any()),
@@ -224,13 +310,17 @@ void main() {
     });
 
     test(
-      'getLogEntryForDate â€” returns entry from repository when userId is set',
+      'getLogEntryForDate — returns entry from repository when userId is set',
       () async {
         final date = DateTime(2025, 6, 1);
         final entry = _makeEntry();
 
         when(
-          () => mockRepo.getLogEntries('user_1'),
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
         ).thenAnswer((_) async => [entry]);
         when(
           () => mockRepo.getLogEntryForDate(date, 'user_1'),
@@ -244,12 +334,16 @@ void main() {
     );
 
     test(
-      'getLogEntryForDate â€” returns null when repository returns null',
+      'getLogEntryForDate — returns null when repository returns null',
       () async {
         final date = DateTime(2025, 6, 2);
 
         when(
-          () => mockRepo.getLogEntries('user_1'),
+          () => mockRepo.getLogEntriesPage(
+            'user_1',
+            offset: any(named: 'offset'),
+            limit: any(named: 'limit'),
+          ),
         ).thenAnswer((_) async => []);
         when(
           () => mockRepo.getLogEntryForDate(date, 'user_1'),
