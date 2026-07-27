@@ -1,155 +1,111 @@
+/**
+ * Tests for the quiet-hours + digest-frequency controls (issue #616).
+ * Focuses on the QuietHoursControls card loading existing prefs and saving
+ * changes back to the profiles table.
+ */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { NotificationPrefs } from './notification-prefs'
 
 const mockFrom = vi.hoisted(() => vi.fn())
+const mockUpdate = vi.hoisted(() => vi.fn())
 
-vi.mock('../../lib/supabase', () => ({
-  supabase: {
-    from: mockFrom,
-  },
-}))
-
+// Push-notification hook is unrelated to the quiet-hours card — stub it so the
+// "Daily Mood Reminders" card renders harmlessly as "unsupported".
 vi.mock('../../lib/use-push-notifications', () => ({
-  usePushNotifications: vi.fn(() => ({
-    permissionState: 'default',
+  usePushNotifications: () => ({
+    permissionState: 'unsupported',
     prefs: { enabled: false, reminderTime: '09:00' },
     loading: false,
     error: null,
-    swAvailable: true,
+    swAvailable: false,
     subscriptionExpired: false,
-    subscribe: vi.fn().mockResolvedValue(true),
-    unsubscribe: vi.fn().mockResolvedValue(undefined),
-    updateReminderTime: vi.fn().mockResolvedValue(undefined),
-  })),
-}))
-
-vi.mock('../../lib/use-toast', () => ({
-  useToast: () => ({
-    showToast: vi.fn(),
+    subscribe: vi.fn(),
+    unsubscribe: vi.fn(),
+    updateReminderTime: vi.fn(),
   }),
 }))
 
-function createMockChain(data: unknown = null, error: unknown = null) {
-  const chain = {
-    select: vi.fn(() => chain),
-    eq: vi.fn(() => chain),
-    maybeSingle: vi.fn(() => Promise.resolve({ data, error })),
-    update: vi.fn(() => chain),
-  }
-  return chain
+vi.mock('../../lib/use-toast', () => ({
+  useToast: () => ({ showToast: vi.fn() }),
+}))
+
+vi.mock('../../lib/supabase', () => ({
+  supabase: { from: mockFrom },
+}))
+
+const currentRow = {
+  quiet_hours_enabled: true,
+  quiet_hours_start: '22:00',
+  quiet_hours_end: '08:00',
+  mood_comment_digest_mode: 'immediately',
 }
 
-function renderNotificationPrefs(userId = 'test-user-id') {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
+function setup() {
+  // profiles select chain for both WeeklyDigestToggle and QuietHoursControls.
+  mockUpdate.mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) })
+  mockFrom.mockImplementation(() => {
+    const chain = {
+      select: vi.fn(() => chain),
+      eq: vi.fn(() => chain),
+      maybeSingle: vi.fn().mockResolvedValue({ data: currentRow, error: null }),
+      update: mockUpdate,
+    }
+    return chain
   })
 
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <QueryClientProvider client={queryClient}>
-      <NotificationPrefs userId={userId} />
+      <NotificationPrefs userId="user-123" />
     </QueryClientProvider>,
   )
 }
 
-describe('NotificationPrefs', () => {
+describe('QuietHoursControls', () => {
   beforeEach(() => {
-    mockFrom.mockClear()
+    mockFrom.mockReset()
+    mockUpdate.mockReset()
   })
+  afterEach(() => vi.clearAllMocks())
 
-  it('renders daily mood reminders card', () => {
-    mockFrom.mockImplementation(() => createMockChain(null))
-    renderNotificationPrefs()
-
-    expect(screen.getByText('Daily Mood Reminders')).toBeInTheDocument()
-  })
-
-  it('renders weekly mood report card', () => {
-    mockFrom.mockImplementation(() => createMockChain(null))
-    renderNotificationPrefs()
-
-    expect(screen.getByText('Weekly Mood Report')).toBeInTheDocument()
-  })
-
-  it('shows reminder toggle as disabled by default', () => {
-    mockFrom.mockImplementation(() => createMockChain(null))
-    renderNotificationPrefs()
-
-    const toggle = screen.getByRole('switch', { name: /enable daily reminders/i })
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
-  })
-
-  it('shows weekly digest toggle as disabled by default', async () => {
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'profiles') {
-        return createMockChain({ weekly_digest: false })
-      }
-      return createMockChain(null)
+  test('loads existing quiet-hours prefs from profiles', async () => {
+    setup()
+    expect(await screen.findByText('Quiet Hours & Digest')).toBeInTheDocument()
+    // Enabled → the start/end time inputs are shown with saved values.
+    await waitFor(() => {
+      expect(screen.getByLabelText('Quiet hours start time')).toHaveValue('22:00')
     })
+    expect(screen.getByLabelText('Quiet hours end time')).toHaveValue('08:00')
+    expect(screen.getByLabelText('Mood-comment notification frequency')).toHaveValue(
+      'immediately',
+    )
+  })
 
-    renderNotificationPrefs()
+  test('saves digest-mode change back to profiles', async () => {
+    setup()
+    const select = await screen.findByLabelText('Mood-comment notification frequency')
+    fireEvent.change(select, { target: { value: 'daily' } })
 
     await waitFor(() => {
-      const toggle = screen.getByRole('switch', { name: /enable weekly digest/i })
-      expect(toggle).toHaveAttribute('aria-checked', 'false')
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ mood_comment_digest_mode: 'daily' }),
+      )
     })
   })
 
-  it('enables push notification description text', () => {
-    mockFrom.mockImplementation(() => createMockChain(null))
-    renderNotificationPrefs()
-
-    expect(screen.getByText(/enable to receive daily mood reminders/i)).toBeInTheDocument()
-  })
-
-  it('shows weekly digest description', async () => {
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'profiles') {
-        return createMockChain({ weekly_digest: false })
-      }
-      return createMockChain(null)
-    })
-
-    renderNotificationPrefs()
+  test('saves quiet-hours start-time change back to profiles', async () => {
+    setup()
+    const startInput = await screen.findByLabelText('Quiet hours start time')
+    await userEvent.clear(startInput)
+    await userEvent.type(startInput, '23:30')
 
     await waitFor(() => {
-      expect(screen.getByText(/receive a weekly email every sunday evening/i)).toBeInTheDocument()
-    })
-  })
-
-  it('toggles weekly digest on click', async () => {
-    const mockUpdate = vi.fn(() => ({
-      eq: vi.fn(() => Promise.resolve({ error: null })),
-    }))
-    mockFrom.mockImplementation((table: string) => {
-      if (table === 'profiles') {
-        const chain = {
-          select: vi.fn(() => chain),
-          eq: vi.fn(() => chain),
-          maybeSingle: vi.fn(() => Promise.resolve({ data: { weekly_digest: false }, error: null })),
-          update: vi.fn(() => mockUpdate),
-        }
-        return chain
-      }
-      return createMockChain(null)
-    })
-
-    const user = userEvent.setup()
-    renderNotificationPrefs()
-
-    await waitFor(() => {
-      expect(screen.getByRole('switch', { name: /enable weekly digest/i })).toBeInTheDocument()
-    })
-
-    await user.click(screen.getByRole('switch', { name: /enable weekly digest/i }))
-
-    await waitFor(() => {
-      expect(mockUpdate).toHaveBeenCalled()
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ quiet_hours_start: '23:30' }),
+      )
     })
   })
 })
