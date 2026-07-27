@@ -7,6 +7,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../ai/view/widgets/ai_insight_section.dart';
@@ -17,18 +18,15 @@ import '../../data/models/insight_model.dart';
 import '../../viewmodel/providers/dashboard_provider.dart';
 import '../../viewmodel/providers/streak_provider.dart';
 import '../../viewmodel/providers/echo_balance_provider.dart';
-import '../../viewmodel/providers/streak_freeze_provider.dart';
 import '../widgets/insight_section.dart';
 import '../widgets/dashboard_stats.dart';
 import '../widgets/mood_streak_card.dart';
 import '../widgets/mood_trend_chart.dart';
 import '../widgets/echo_balance_card.dart';
 import '../../viewmodel/providers/mood_chart_provider.dart';
-import '../../viewmodel/providers/has_logged_today_provider.dart';
-import '../widgets/quick_check_in_widget.dart';
-import '../widgets/daily_log_status_banner.dart';
+import '../../../socials/viewmodel/providers/follow_provider.dart';
 
-/// Dashboard screen showing insights and predictions.
+/// Dashboard screen showing insights and predictions
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -56,129 +54,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   void _checkMilestones(List<InsightModel> insights) {
     if (_hasCheckedMilestone) return;
+
     if (insights.length >= 7) {
       _hasCheckedMilestone = true;
       _confettiController.play();
     }
-  }
-
-  bool _shouldShowFreezeButton() {
-    final streakState = ref.read(streakProvider);
-    final freezeState = ref.read(streakFreezeProvider);
-    final echoState = ref.read(echoBalanceProvider);
-
-    if (streakState.currentStreak < 3) return false;
-    if (freezeState.hasActiveFreeze) return false;
-    if (echoState.balance < 5) return false;
-    return true;
-  }
-
-  Future<void> _handleFreezePurchase(String userId) async {
-    final success = await ref.read(streakFreezeProvider.notifier).purchaseFreeze(userId);
-    if (mounted) {
-      if (success) {
-        ref.read(echoBalanceProvider.notifier).loadBalance(userId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('\u2744\uFE0F Streak frozen for tomorrow!'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        Navigator.of(context).pop();
-      } else {
-        final error = ref.read(streakFreezeProvider).purchaseError;
-        if (error != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
-        }
-      }
-    }
-  }
-
-  void _showFreezeConfirmation(WidgetRef ref, authState) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return _buildFreezeDialog(dialogContext, ref, authState);
-      },
-    );
-  }
-
-  Widget _buildFreezeDialog(
-    BuildContext dialogContext,
-    WidgetRef ref,
-    authState,
-  ) {
-    final freezeState = ref.watch(streakFreezeProvider);
-    final echoState = ref.watch(echoBalanceProvider);
-    final theme = Theme.of(dialogContext);
-
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Text('\u2744\uFE0F', style: TextStyle(fontSize: 28)),
-          const SizedBox(width: 8),
-          Text(
-            'Protect your streak',
-            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Spend 5 ECHO to freeze tomorrow\'s streak? You\'ll keep your streak even if you don\'t log.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Your balance: ${echoState.balance.toStringAsFixed(0)} ECHO',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: echoState.balance >= 5 ? AppTheme.successColor : Colors.red,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (echoState.balance < 5) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Insufficient ECHO balance. You need at least 5 ECHO.',
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.red),
-            ),
-          ],
-          if (freezeState.purchaseError != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              freezeState.purchaseError!,
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.red),
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton.icon(
-          onPressed: echoState.balance < 5 || freezeState.isPurchasing
-              ? null
-              : () => _handleFreezePurchase(authState.user?.id ?? ''),
-          icon: freezeState.isPurchasing
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : const Text('\u2744\uFE0F', style: TextStyle(fontSize: 16)),
-          label: Text(freezeState.isPurchasing ? 'Freezing...' : 'Freeze it'),
-        ),
-      ],
-    );
   }
 
   @override
@@ -186,7 +66,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final dashboardState = ref.watch(dashboardProvider);
     final authState = ref.watch(authProvider);
     final streakState = ref.watch(streakProvider);
-    final hasLoggedToday = ref.watch(hasLoggedTodayProvider);
     final theme = Theme.of(context);
 
     if (authState.isAuthenticated && authState.user != null) {
@@ -208,8 +87,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
           ref.read(echoBalanceProvider.notifier).loadBalance(userId);
 
-          ref.read(streakFreezeProvider.notifier).loadFreezeStatus(userId);
-
           Future.delayed(const Duration(milliseconds: 500), () {
             if (!mounted) return;
 
@@ -217,7 +94,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             final logs = loggingState.value ?? [];
 
             if (logs.length >= 3) {
-              final now = DateTime.now();
+              final timezone = ref.read(timezoneStringProvider);
+              final now = DateFormatter.daysAgo(0, timezone);
               final recentLogs =
                   logs
                       .where(
@@ -265,72 +143,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       body: Stack(
         children: [
-          RefreshIndicator(
-            color: AppTheme.primaryColor,
-            onRefresh: () async {
-              if (authState.isAuthenticated && authState.user != null) {
-                ref.invalidate(dashboardProvider);
-                ref.invalidate(streakProvider);
-                ref.invalidate(echoBalanceProvider);
-                ref.invalidate(streakFreezeProvider);
-                ref.invalidate(moodChartDataProvider);
-                ref.invalidate(dailyLogCheckProvider);
-
-                await ref.read(dashboardProvider.notifier).loadInsights(
-                      userId: authState.user!.id,
-                      forceReload: true,
-                    );
+          dashboardState.when(
+            data: (insights) {
+              if (insights.isEmpty) {
+                return _buildEmptyState(context, theme, ref);
               }
-            },
-            child: dashboardState.when(
-              data: (insights) {
-                if (insights.isEmpty) {
-                  return _buildEmptyState(context, theme, ref, hasLoggedToday);
-                }
 
-                _checkMilestones(insights);
+              _checkMilestones(insights);
 
-                final predictions =
-                    insights
-                        .where((i) => i.type == InsightType.prediction)
-                        .toList()
-                      ..sort((a, b) => b.date.compareTo(a.date));
+              final predictions =
+                  insights
+                      .where((i) => i.type == InsightType.prediction)
+                      .toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
 
-                final habits =
-                    insights.where((i) => i.type == InsightType.habit).toList()
-                      ..sort((a, b) => b.date.compareTo(a.date));
+              final habits =
+                  insights.where((i) => i.type == InsightType.habit).toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
 
-                final moods =
-                    insights.where((i) => i.type == InsightType.mood).toList()
-                      ..sort((a, b) => b.date.compareTo(a.date));
+              final moods =
+                  insights.where((i) => i.type == InsightType.mood).toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
 
-                final general =
-                    insights
-                        .where((i) => i.type == InsightType.general)
-                        .toList()
-                      ..sort((a, b) => b.date.compareTo(a.date));
+              final general =
+                  insights.where((i) => i.type == InsightType.general).toList()
+                    ..sort((a, b) => b.date.compareTo(a.date));
 
-                return SingleChildScrollView(
+              return RefreshIndicator(
+                onRefresh: () async {
+                  if (authState.isAuthenticated && authState.user != null) {
+                    await ref
+                        .read(dashboardProvider.notifier)
+                        .loadInsights(
+                          userId: authState.user!.id,
+                          forceReload: true,
+                        );
+                  }
+                },
+                child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (hasLoggedToday)
-                        const DailyLogStatusBanner()
-                      else
-                        const QuickCheckInWidget(),
-                      const SizedBox(height: 8),
                       DashboardStats(insights: insights),
                       const SizedBox(height: 8),
-                      MoodStreakCard(
-                        streak: streakState.currentStreak,
-                        showFreezeButton: _shouldShowFreezeButton(),
-                        onFreezeTap: () => _showFreezeConfirmation(ref, authState),
-                      ),
-                      const MoodStreakFreezeBadge(),
+                      MoodStreakCard(streak: streakState.currentStreak),
                       const SizedBox(height: 8),
                       if (authState.isAuthenticated && authState.user != null)
                         EchoBalanceCard(userId: authState.user!.id),
+                      const SizedBox(height: 8),
+                      _buildFriendsMoodFeed(context, theme),
                       const SizedBox(height: 8),
                       MoodTrendChart(
                         recentLogs: ref.watch(moodChartDataProvider),
@@ -343,8 +205,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       InsightSection(
                         title: 'Predictions',
                         insights: predictions,
-                        icon: FontAwesomeIcons
-                            .wandMagicSparkles.data,
+                        icon: FontAwesomeIcons.wandMagicSparkles.data,
                         color: AppTheme.secondaryColor,
                       ),
                       InsightSection(
@@ -371,21 +232,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 16),
                     ],
                   ),
-                );
-              },
-              loading: () =>
-                  const Center(child: ShimmerLoading(width: 40, height: 40)),
-              error: (error, stack) => SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.7,
-                  child: Center(
-                    child: NoConnectionWidget(
-                      onRetry: () => ref.refresh(dashboardProvider),
-                    ),
-                  ),
                 ),
-              ),
+              );
+            },
+            loading: () =>
+                const Center(child: ShimmerLoading(width: 40, height: 40)),
+            error: (error, stack) => NoConnectionWidget(
+              onRetry: () => ref.refresh(dashboardProvider),
             ),
           ),
           Align(
@@ -417,9 +270,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: InkWell(
           onTap: () => context.push('/dashboard/mood-analytics'),
           borderRadius: BorderRadius.circular(16),
@@ -433,10 +284,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppTheme.accentColor,
-                        AppTheme.primaryColor,
-                      ],
+                      colors: [AppTheme.accentColor, AppTheme.primaryColor],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -461,8 +309,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       Text(
                         'View trends, statistics, and insights',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
@@ -471,8 +320,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Icon(
                   FontAwesomeIcons.chevronRight.data,
                   size: 16,
-                  color: theme.colorScheme.onSurface
-                      .withValues(alpha: 0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
               ],
             ),
@@ -486,21 +334,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     BuildContext context,
     ThemeData theme,
     WidgetRef ref,
-    bool hasLoggedToday,
   ) {
     return Center(
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (hasLoggedToday)
-                const DailyLogStatusBanner()
-              else
-                const QuickCheckInWidget(),
-              const SizedBox(height: 8),
               Container(
                 width: 120,
                 height: 120,
@@ -508,16 +349,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.secondaryColor,
-                    ],
+                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor
-                          .withValues(alpha: 0.3),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -541,12 +378,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Start logging your daily activities, moods, and habits '
-                'to see personalized insights and AI-powered predictions '
-                'generated by Gemini.',
+                'Start logging your daily activities, moods, and habits to see personalized insights and AI-powered predictions generated by Gemini.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface
-                      .withValues(alpha: 0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.6,
                   fontSize: 15,
                 ),
@@ -650,11 +484,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           final localDate = entry.date.isUtc
               ? entry.date.toLocal()
               : entry.date;
+
           final entryDate = DateTime(
             localDate.year,
             localDate.month,
             localDate.day,
           );
+
           return entryDate.isAtSameMomentAs(insightDate);
         });
 
@@ -669,8 +505,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'No log entry found for '
-                '${DateFormatter.formatDate(insight.date)}. '
+                'No log entry found for ${DateFormatter.formatDate(insight.date)}. '
                 'Would you like to create one?',
               ),
               duration: const Duration(seconds: 3),
@@ -683,5 +518,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         }
       }
     }
+  }
+
+  Widget _buildFriendsMoodFeed(BuildContext context, ThemeData theme) {
+    final friendsAsync = ref.watch(friendMoodLogsProvider);
+    return friendsAsync.when(
+      data: (friends) {
+        if (friends.isEmpty) return const SizedBox.shrink();
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(FontAwesomeIcons.userFriends.data, size: 16, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    Text('Friends Today', style: theme.textTheme.titleSmall),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: friends.map((friend) {
+                    final moodEmoji = friend.mood != null && friend.mood >= 1 && friend.mood <= 5
+                        ? ['😊', '😌', '😐', '😢', '😡'][friend.mood - 1]
+                        : '❓';
+                    final name = friend.displayName ?? friend.userId.substring(0, 8);
+                    return Chip(
+                      avatar: CircleAvatar(
+                        backgroundColor: AppTheme.primaryColor,
+                        radius: 12,
+                        child: Text(name[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                      label: Text('$name $moodEmoji'),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
   }
 }

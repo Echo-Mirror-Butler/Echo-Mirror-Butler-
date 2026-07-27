@@ -1,30 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../data/models/log_entry_model.dart';
-import '../../data/models/quick_check_in_data.dart';
 import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/voice_input_button.dart';
 import '../../../global_mirror/viewmodel/providers/global_mirror_provider.dart';
 
-/// Screen for creating a new log entry.
+/// Screen for creating a new log entry
 class CreateEntryScreen extends ConsumerStatefulWidget {
-  const CreateEntryScreen({super.key, this.prefill});
-
-  /// Optional prefill data from the quick check-in widget.
-  final QuickCheckInData? prefill;
+  const CreateEntryScreen({super.key});
 
   @override
-  ConsumerState<CreateEntryScreen> createState() =>
-      _CreateEntryScreenState();
+  ConsumerState<CreateEntryScreen> createState() => _CreateEntryScreenState();
 }
 
 class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
@@ -34,6 +29,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
 
   DateTime _selectedDate = DateTime.now();
   int? _selectedMood;
+  String _timezone = 'UTC';
   final List<String> _selectedHabits = [];
   bool _isSubmitting = false;
   bool _isListening = false;
@@ -43,13 +39,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.prefill != null) {
-      _selectedMood = widget.prefill!.mood;
-      if (widget.prefill!.note != null &&
-          widget.prefill!.note!.isNotEmpty) {
-        _notesController.text = widget.prefill!.note!;
-      }
-    }
+    _timezone = ref.read(timezoneStringProvider);
   }
 
   @override
@@ -64,7 +54,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateFormatter.daysAgo(0, _timezone).add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -102,23 +92,13 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
     });
   }
 
-  Future<void> _triggerHaptic(Future<void> Function() feedback) async {
-    try {
-      await feedback();
-    } catch (_) {
-      // Haptic feedback is best-effort and may be unavailable on some devices.
-    }
-  }
-
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) {
-      await _triggerHaptic(HapticFeedback.vibrate);
       return;
     }
 
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) {
-      await _triggerHaptic(HapticFeedback.vibrate);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -135,7 +115,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
     });
 
     try {
-      // Use UTC for date to avoid timezone issues — dates are date-only.
+      // Create log entry model
+      // Use UTC for date to avoid timezone issues - dates are date-only values
       final entry = LogEntryModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         userId: authState.user!.id,
@@ -152,92 +133,81 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
         createdAt: DateTime.now(),
       );
 
-      final success =
-          await ref.read(loggingProvider.notifier).createLogEntry(entry);
+      final success = await ref
+          .read(loggingProvider.notifier)
+          .createLogEntry(entry);
 
       if (mounted) {
         if (success) {
-          await _triggerHaptic(HapticFeedback.lightImpact);
           ErrorHandler.showSuccess(context, 'Entry created successfully!');
 
-          // Share mood anonymously if opted in.
+          // Share mood anonymously if opted in
           if (_shareAnonymously && _selectedMood != null) {
             debugPrint(
-              '[CreateEntryScreen] Sharing mood anonymously: '
-              'mood=$_selectedMood, '
-              'shareAnonymously=$_shareAnonymously',
+              '[CreateEntryScreen] Sharing mood anonymously: mood=$_selectedMood, shareAnonymously=$_shareAnonymously',
             );
             final sentiment = _getMoodSentiment(_selectedMood!);
             debugPrint(
-              '[CreateEntryScreen] Mapped mood $_selectedMood '
-              'to sentiment: $sentiment',
+              '[CreateEntryScreen] Mapped mood $_selectedMood to sentiment: $sentiment',
             );
             final shareResult = await ref
                 .read(globalMirrorProvider.notifier)
                 .shareMood(sentiment);
-            debugPrint(
-              '[CreateEntryScreen] Share mood result: $shareResult',
-            );
+            debugPrint('[CreateEntryScreen] Share mood result: $shareResult');
             if (!shareResult && mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Failed to share mood. '
-                    'Check location permissions.',
+                SnackBar(
+                  content: const Text(
+                    'Failed to share mood. Check location permissions.',
                   ),
                   backgroundColor: Colors.orange,
-                  duration: Duration(seconds: 3),
+                  duration: const Duration(seconds: 3),
                 ),
               );
             }
           } else {
             debugPrint(
-              '[CreateEntryScreen] Not sharing mood: '
-              'shareAnonymously=$_shareAnonymously, '
-              'selectedMood=$_selectedMood',
+              '[CreateEntryScreen] Not sharing mood: shareAnonymously=$_shareAnonymously, selectedMood=$_selectedMood',
             );
           }
 
-          // Trigger AI insight generation if we have at least 3 logs.
+          // Trigger AI insight generation if we have at least 3 logs
           final loggingState = ref.read(loggingProvider);
           final allLogs = loggingState.value ?? [];
           if (allLogs.length >= 3) {
-            final now = DateTime.now();
-            final recentLogs = allLogs
-                .where(
-                  (log) => log.date.isAfter(
-                    now.subtract(const Duration(days: 14)),
-                  ),
-                )
-                .toList()
-              ..sort((a, b) => b.date.compareTo(a.date));
+            // Get recent logs (last 7-14 days)
+            final now = DateFormatter.daysAgo(0, _timezone);
+            final recentLogs =
+                allLogs
+                    .where(
+                      (log) => log.date.isAfter(
+                        now.subtract(const Duration(days: 14)),
+                      ),
+                    )
+                    .toList()
+                  ..sort((a, b) => b.date.compareTo(a.date));
 
             if (recentLogs.length >= 3) {
-              // Don't await — let it run in background.
-              ref
-                  .read(aiInsightProvider.notifier)
-                  .generateInsight(recentLogs);
+              // Trigger insight generation (don't await - let it run in background)
+              ref.read(aiInsightProvider.notifier).generateInsight(recentLogs);
             }
           }
 
           if (!mounted) return;
           Navigator.of(context).pop();
         } else {
+          // Get error message from provider state
           final loggingState = ref.read(loggingProvider);
           final errorMessage = loggingState.hasError
               ? ErrorHandler.getErrorMessage(loggingState.error!)
               : 'Failed to create entry. Please try again.';
-          await _triggerHaptic(HapticFeedback.vibrate);
+
           ErrorHandler.showError(context, errorMessage);
         }
       }
     } catch (e) {
-      await _triggerHaptic(HapticFeedback.vibrate);
       if (mounted) {
-        ErrorHandler.showError(
-          context,
-          ErrorHandler.getErrorMessage(e),
-        );
+        ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
       }
     } finally {
       if (mounted) {
@@ -264,40 +234,37 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Header icon.
-                    Center(
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppTheme.primaryColor,
-                              AppTheme.secondaryColor,
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor
-                                  .withValues(alpha: 0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
+                    // Header icon
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.secondaryColor,
                           ],
                         ),
-                        child: Icon(
-                          FontAwesomeIcons.pen.data,
-                          size: 36,
-                          color: Colors.white,
-                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        FontAwesomeIcons.pen.data,
+                        size: 36,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // Date picker section.
+                    // Date picker section
                     Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
@@ -313,10 +280,10 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor
-                                      .withValues(alpha: 0.1),
-                                  borderRadius:
-                                      BorderRadius.circular(12),
+                                  color: AppTheme.primaryColor.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
                                   FontAwesomeIcons.calendar.data,
@@ -327,28 +294,25 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Date',
                                       style: theme.textTheme.labelMedium
                                           ?.copyWith(
-                                        color: theme
-                                            .colorScheme.onSurface
-                                            .withValues(alpha: 0.6),
-                                      ),
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       DateFormatter.formatDateLong(
                                         _selectedDate,
                                       ),
-                                      style: theme
-                                          .textTheme.titleMedium
+                                      style: theme.textTheme.titleMedium
                                           ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -356,8 +320,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               Icon(
                                 FontAwesomeIcons.chevronRight.data,
                                 size: 16,
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                             ],
                           ),
@@ -366,7 +331,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Mood selection section.
+                    // Mood selection section
                     Text(
                       'How are you feeling?',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -382,52 +347,43 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceAround,
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: List.generate(5, (index) {
                             final moodValue = index + 1;
-                            final isSelected =
-                                _selectedMood == moodValue;
-                            return Semantics(
-                              button: true,
-                              selected: isSelected,
-                              label: 'Mood $moodValue of 5',
-                              child: GestureDetector(
-                                onTap: () {
-                                  _triggerHaptic(
-                                    HapticFeedback.selectionClick,
-                                  );
-                                  setState(() {
-                                    _selectedMood = isSelected
-                                        ? null
-                                        : moodValue;
-                                  });
-                                },
-                                child: Container(
-                                  width: 56,
-                                  height: 56,
-                                  decoration: BoxDecoration(
+                            final isSelected = _selectedMood == moodValue;
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedMood = isSelected ? null : moodValue;
+                                });
+                              },
+                              child: Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppTheme.accentColor.withValues(
+                                          alpha: 0.2,
+                                        )
+                                      : theme.colorScheme.surface,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
                                     color: isSelected
                                         ? AppTheme.accentColor
-                                            .withValues(alpha: 0.2)
-                                        : theme.colorScheme.surface,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? AppTheme.accentColor
-                                          : theme.colorScheme.outline
-                                              .withValues(alpha: 0.3),
-                                      width: isSelected ? 2 : 1,
-                                    ),
+                                        : theme.colorScheme.outline.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                    width: isSelected ? 2 : 1,
                                   ),
-                                  child: Icon(
-                                    _getMoodIcon(moodValue),
-                                    size: 28,
-                                    color: isSelected
-                                        ? AppTheme.accentColor
-                                        : theme.colorScheme.onSurface
-                                            .withValues(alpha: 0.6),
-                                  ),
+                                ),
+                                child: Icon(
+                                  _getMoodIcon(moodValue),
+                                  size: 28,
+                                  color: isSelected
+                                      ? AppTheme.accentColor
+                                      : theme.colorScheme.onSurface.withValues(
+                                          alpha: 0.6,
+                                        ),
                                 ),
                               ),
                             );
@@ -448,7 +404,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                     ],
                     const SizedBox(height: 24),
 
-                    // Habits section.
+                    // Habits section
                     Text(
                       'Habits',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -484,10 +440,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: Icon(
-                            FontAwesomeIcons.plus.data,
-                            size: 18,
-                          ),
+                          child: Icon(FontAwesomeIcons.plus.data, size: 18),
                         ),
                       ],
                     ),
@@ -504,9 +457,10 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               FontAwesomeIcons.xmark.data,
                               size: 16,
                             ),
-                            backgroundColor: AppTheme.primaryColor
-                                .withValues(alpha: 0.1),
-                            labelStyle: const TextStyle(
+                            backgroundColor: AppTheme.primaryColor.withValues(
+                              alpha: 0.1,
+                            ),
+                            labelStyle: TextStyle(
                               color: AppTheme.primaryColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -516,10 +470,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                     ],
                     const SizedBox(height: 24),
 
-                    // Notes section.
+                    // Notes section
                     Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           'Notes (Optional)',
@@ -527,10 +480,11 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                        // Voice input hint
                         if (!_isListening)
                           TextButton.icon(
                             onPressed: () {
-                              // Voice button will handle this.
+                              // Voice button will handle this
                             },
                             icon: Icon(
                               FontAwesomeIcons.microphone.data,
@@ -549,8 +503,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       maxLines: 5,
                       decoration: InputDecoration(
                         hintText:
-                            'Write about your day, thoughts, or '
-                            'anything else...',
+                            'Write about your day, thoughts, or anything else...',
                         prefixIcon: Icon(
                           FontAwesomeIcons.noteSticky.data,
                           size: 18,
@@ -558,10 +511,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                         suffixIcon: _isListening
                             ? const Padding(
                                 padding: EdgeInsets.all(12),
-                                child: ShimmerLoading(
-                                  width: 20,
-                                  height: 20,
-                                ),
+                                child: ShimmerLoading(width: 20, height: 20),
                               )
                             : null,
                         border: OutlineInputBorder(
@@ -571,23 +521,22 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Anonymous sharing opt-in.
+                    // Anonymous sharing opt-in - Made more prominent
                     if (_selectedMood != null)
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor
-                              .withValues(alpha: 0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.primaryColor
-                                .withValues(alpha: 0.5),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.5),
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor
-                                  .withValues(alpha: 0.1),
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
                               blurRadius: 8,
                               spreadRadius: 2,
                             ),
@@ -606,8 +555,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                             ),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
@@ -620,25 +568,19 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                       Expanded(
                                         child: Text(
                                           'Share mood on Global Mirror',
-                                          style: theme
-                                              .textTheme.bodyLarge
+                                          style: theme.textTheme.bodyLarge
                                               ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: AppTheme.primaryColor,
-                                          ),
+                                                fontWeight: FontWeight.w700,
+                                                color: AppTheme.primaryColor,
+                                              ),
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'Help the global community by '
-                                    'sharing your mood anonymously. '
-                                    'Your location is anonymized '
-                                    '(~11km) and data expires in '
-                                    '24 hours.',
-                                    style: theme.textTheme.bodySmall
-                                        ?.copyWith(
+                                    'Help the global community by sharing your mood anonymously. Your location is anonymized (~11km) and data expires in 24 hours.',
+                                    style: theme.textTheme.bodySmall?.copyWith(
                                       color: theme.colorScheme.onSurface
                                           .withValues(alpha: 0.7),
                                     ),
@@ -656,22 +598,15 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                 showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: const Text(
-                                      'Anonymous Sharing',
-                                    ),
+                                    title: const Text('Anonymous Sharing'),
                                     content: const Text(
-                                      'When enabled, your mood will be '
-                                      'shared anonymously on the Global '
-                                      'Mirror map. Your location is '
-                                      'anonymized to ~11km precision and '
-                                      'no personal information is stored. '
-                                      'All shared data expires after '
-                                      '24 hours.',
+                                      'When enabled, your mood will be shared anonymously on the Global Mirror map. '
+                                      'Your location is anonymized to ~11km precision and no personal information is stored. '
+                                      'All shared data expires after 24 hours.',
                                     ),
                                     actions: [
                                       TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context),
+                                        onPressed: () => Navigator.pop(context),
                                         child: const Text('Got It'),
                                       ),
                                     ],
@@ -684,7 +619,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       ),
                     const SizedBox(height: 32),
 
-                    // Submit button.
+                    // Submit button
                     CustomButton(
                       onPressed: _isSubmitting ? null : _handleSubmit,
                       text: 'Create Entry',
@@ -697,7 +632,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
               ),
             ),
           ),
-          // Voice input overlay.
+          // Voice input overlay
           if (_isListening)
             VoiceInputOverlay(
               isListening: _isListening,
@@ -708,7 +643,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                 });
               },
             ),
-          // Floating voice input button.
+          // Floating voice input button
           Positioned(
             bottom: 24,
             right: 24,
@@ -724,6 +659,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                   _voiceTranscription = transcription;
                   _isListening = false;
                 });
+                // Append to existing notes if any
                 if (_notesController.text.isNotEmpty &&
                     transcription.isNotEmpty) {
                   _notesController.text =
