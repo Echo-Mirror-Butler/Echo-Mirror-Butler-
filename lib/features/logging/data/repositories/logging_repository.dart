@@ -154,14 +154,28 @@ class LoggingRepository {
     }
   }
 
-  /// Get all log entries for a user
+  /// Default page size for paginated log list fetches (Issue #637).
+  static const int defaultPageSize = 30;
+
+  /// Get log entries for a user.
+  ///
+  /// When [limit] is provided (or defaults via [offset]), results are bounded
+  /// with `.range` so the logging screen never loads an unbounded result set.
+  /// Pass [limit] = null and [offset] = null only for callers that truly need
+  /// a date-windowed full fetch (prefer providing [startDate]/[endDate]).
   Future<List<LogEntryModel>> getLogEntries(
     String userId, {
     DateTime? startDate,
     DateTime? endDate,
+    int? offset,
+    int? limit,
   }) async {
     try {
-      debugPrint('[LoggingRepository] getLogEntries -> userId: $userId');
+      final effectiveLimit = limit ?? (offset != null ? defaultPageSize : null);
+      debugPrint(
+        '[LoggingRepository] getLogEntries -> userId: $userId '
+        'offset: $offset limit: $effectiveLimit',
+      );
       var query = _supabase.from('log_entries').select().eq('user_id', userId);
       if (startDate != null) {
         query = query.gte('date', _toDateString(startDate));
@@ -170,7 +184,13 @@ class LoggingRepository {
         query = query.lte('date', _toDateString(endDate));
       }
 
-      final results = await query.order('date');
+      final ordered = query.order('date', ascending: false);
+      final results = effectiveLimit != null
+          ? await ordered.range(
+              offset ?? 0,
+              (offset ?? 0) + effectiveLimit - 1,
+            )
+          : await ordered;
       debugPrint(
         '[LoggingRepository] getLogEntries success -> ${results.length} entries',
       );
@@ -180,6 +200,15 @@ class LoggingRepository {
       debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
       return [];
     }
+  }
+
+  /// Paginated fetch used by the logging list (Issue #637).
+  Future<List<LogEntryModel>> getLogEntriesPage(
+    String userId, {
+    int offset = 0,
+    int limit = defaultPageSize,
+  }) {
+    return getLogEntries(userId, offset: offset, limit: limit);
   }
 
   /// Delete a log entry
