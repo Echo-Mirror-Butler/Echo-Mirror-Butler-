@@ -43,6 +43,15 @@ const SettingsPage = lazy(() =>
 const OnboardingPage = lazy(() =>
   import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
 )
+const LeaderboardPage = lazy(() =>
+  import('../features/leaderboard/leaderboard-page').then((m) => ({ default: m.LeaderboardPage })),
+)
+const MoodTrendsPage = lazy(() =>
+  import('../features/analytics/mood-trends-page').then((m) => ({ default: m.MoodTrendsPage })),
+)
+const ReferralsPage = lazy(() =>
+  import('../features/referrals/referrals-page').then((m) => ({ default: m.ReferralsPage })),
+)
 const NotFoundPage = lazy(() => import('../features/shared/not-found-page'))
 
 function PageSkeleton() {
@@ -263,6 +272,30 @@ export function AppRouter() {
             element={
               <RouteErrorBoundary routeName="Settings">
                 <SettingsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <RouteErrorBoundary routeName="Leaderboard">
+                <LeaderboardPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/analytics/trends"
+            element={
+              <RouteErrorBoundary routeName="Mood Trends">
+                <MoodTrendsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/invite"
+            element={
+              <RouteErrorBoundary routeName="Referrals">
+                <ReferralsPage />
               </RouteErrorBoundary>
             }
           />
