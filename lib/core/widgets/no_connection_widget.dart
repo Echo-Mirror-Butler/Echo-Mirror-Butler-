@@ -31,12 +31,12 @@ class NoConnectionWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   ),
                   child: Icon(
                     FontAwesomeIcons.wifi.data,
                     size: isMobile ? 48 : 64,
-                    color: AppTheme.primaryColor,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -93,7 +93,7 @@ class NoConnectionWidget extends StatelessWidget {
                       horizontal: isMobile ? 24 : 32,
                       vertical: isMobile ? 12 : 16,
                     ),
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: theme.colorScheme.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
