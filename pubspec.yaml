@@ -37,6 +37,12 @@ dependencies:
   audioplayers: ^6.1.0
   path_provider: ^2.1.4
   url_launcher: ^6.3.1
+  # Offline support
+  hive_flutter: ^1.1.0
+  connectivity_plus: ^6.0.3
+
+  # Observability
+  sentry_flutter: ^8.0.0
 
   # Global Mirror Feature
   geolocator: ^13.0.2
@@ -61,6 +67,10 @@ dependencies:
   wakelock_plus: ^1.2.8
   # Icons
   cupertino_icons: ^1.0.8
+  # Deep Linking
+  app_links: ^6.3.2
+  # Google Sign-In
+  google_sign_in: ^6.2.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

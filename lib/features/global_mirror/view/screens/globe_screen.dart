@@ -19,7 +19,6 @@ import '../widgets/mood_pin_comment_dialog.dart';
 import '../widgets/statistics_panel.dart';
 import '../widgets/touch_gesture_hint.dart';
 import '../../viewmodel/providers/mood_comment_notification_provider.dart';
-import '../widgets/touch_gesture_hint.dart';
 import 'package:go_router/go_router.dart';
 
 /// Globe screen showing anonymous mood pins on a 3D world globe
@@ -36,10 +35,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
   bool _use3DGlobe = defaultTargetPlatform != TargetPlatform.iOS;
   bool _has3DError = false;
   bool _showTouchHint = false;
-<<<<<<< HEAD
-=======
   static const String _touchHintKey = 'globe_touch_hint_shown';
->>>>>>> upstream/development
 
   @override
   void initState() {
@@ -54,11 +50,6 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
   }
 
   Future<void> _checkTouchHint() async {
-<<<<<<< HEAD
-    final seen = await TouchGestureHint.hasBeenSeen();
-    if (mounted && !seen) {
-      setState(() => _showTouchHint = true);
-=======
     // Only show on mobile
     if (defaultTargetPlatform != TargetPlatform.iOS && 
         defaultTargetPlatform != TargetPlatform.android) {
@@ -73,7 +64,6 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
         _showTouchHint = true;
       });
       await prefs.setBool(_touchHintKey, true);
->>>>>>> upstream/development
     }
   }
 
@@ -217,17 +207,6 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
                 // 2D Map (default on iOS until rebuild, or fallback)
                 _build2DMap(pins, theme),
 
-<<<<<<< HEAD
-              // Touch gesture hint (shown once)
-              if (_showTouchHint)
-                TouchGestureHint(
-                  onDismiss: () {
-                    setState(() => _showTouchHint = false);
-                  },
-                ),
-
-              // Stats overlay
-=======
               // Statistics Panel
               Positioned(
                 top: 0,
@@ -242,7 +221,6 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
               // Legacy stats overlay (keeping for backwards compatibility, but hidden)
               // You can remove this block if you want only the new StatisticsPanel
               /*
->>>>>>> upstream/development
               Positioned(
                 top: 16,
                 left: 16,

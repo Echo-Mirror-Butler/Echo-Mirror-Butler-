@@ -11,7 +11,7 @@
  * - Skeleton loaders during fetch
  * - Mobile-friendly layout
  */
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -240,7 +240,7 @@ async function generateInsight(userId: string, recentLogs: LogEntry[], previousF
     best_time_of_day: normalized.bestTimeOfDay ?? inferTimeOfDay(normalized.prediction),
     worst_time_of_day: normalized.worstTimeOfDay ?? null,
     recommendations: normalized.recommendations ?? normalized.suggestions,
-    mood_score: normalized.moodScore ?? null,
+    mood_score: normalized.moodScore ?? undefined,
     created_at: createdAt,
   }
 
@@ -281,7 +281,7 @@ function InsightSkeleton() {
   )
 }
 
-function MoodDriversChart({ drivers, prediction }: { drivers: { label: string; percentage: number }[]; prediction?: string }) {
+function MoodDriversChart({ drivers }: { drivers: { label: string; percentage: number }[]; prediction?: string }) {
   if (drivers.length === 0) {
     return (
       <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'var(--surface-soft)', border: '1px dashed var(--line)', fontSize: '0.85rem', color: 'var(--muted)', fontStyle: 'italic' }}>
@@ -357,7 +357,6 @@ function TimeOfDayChip({ timeLabel }: { timeLabel: string }) {
 }
 
 function RecommendationCards({
-  insightId,
   recommendations,
   actions,
   onToggle
@@ -541,7 +540,6 @@ function PersonalNoteArea({
 function InsightComparisonModal({
   latest,
   previous,
-  actions,
   onClose
 }: {
   latest: Insight

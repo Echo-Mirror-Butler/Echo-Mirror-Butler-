@@ -533,7 +533,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(FontAwesomeIcons.userFriends.data, size: 16, color: AppTheme.primaryColor),
+                    Icon(
+                      FontAwesomeIcons.userFriends.data,
+                      size: 16,
+                      color: AppTheme.primaryColor,
+                    ),
                     const SizedBox(width: 8),
                     Text('Friends Today', style: theme.textTheme.titleSmall),
                   ],
@@ -543,15 +547,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: friends.map((friend) {
-                    final moodEmoji = friend.mood != null && friend.mood >= 1 && friend.mood <= 5
+                    final moodEmoji =
+                        friend.mood != null &&
+                            friend.mood >= 1 &&
+                            friend.mood <= 5
                         ? ['😊', '😌', '😐', '😢', '😡'][friend.mood - 1]
                         : '❓';
-                    final name = friend.displayName ?? friend.userId.substring(0, 8);
+                    final name =
+                        friend.displayName ?? friend.userId.substring(0, 8);
                     return Chip(
                       avatar: CircleAvatar(
                         backgroundColor: AppTheme.primaryColor,
                         radius: 12,
-                        child: Text(name[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       label: Text('$name $moodEmoji'),
                     );

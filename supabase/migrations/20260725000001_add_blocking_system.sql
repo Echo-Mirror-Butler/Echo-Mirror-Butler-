@@ -25,32 +25,37 @@ create policy "Users can insert blocks" on public.user_blocks
 create policy "Users can delete own blocks" on public.user_blocks
   for delete using (auth.uid() = blocker_id);
 
--- Create user_follows table
-create table if not exists public.user_follows (
-  id uuid primary key default gen_random_uuid(),
-  follower_id uuid not null references auth.users(id) on delete cascade,
-  followed_id uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now(),
-  unique(follower_id, followed_id),
-  check (follower_id != followed_id)
-);
-
+-- public.user_follows is created by 20260629000001_social_features.sql, which
+-- names the target column following_id. This migration previously re-created
+-- the table with a followed_id column; the create was a no-op behind
+-- "if not exists", but the index that followed it referenced a column that
+-- does not exist and aborted the whole migration run:
+--   ERROR: column "followed_id" does not exist (SQLSTATE 42703)
+-- All application code reads following_id (follow_repository.dart,
+-- follow_model.dart, mood_pin_comment_dialog.dart) and nothing reads
+-- followed_id, so social_features owns the schema and the duplicate
+-- definition is removed here.
+--
+-- The one behaviour worth keeping from that block is block-awareness: you
+-- should not be able to follow someone you have blocked, or who has blocked
+-- you. social_features cannot express this itself because it runs before
+-- user_blocks exists, so the policy is replaced here, rewritten against
+-- following_id.
 create index if not exists idx_user_follows_follower on public.user_follows(follower_id);
-create index if not exists idx_user_follows_followed on public.user_follows(followed_id);
+create index if not exists idx_user_follows_following on public.user_follows(following_id);
 
-alter table public.user_follows enable row level security;
+drop policy if exists "users_can_follow" on public.user_follows;
 
-create policy "Anyone can view follows" on public.user_follows
-  for select using (true);
-
-create policy "Users can insert follows" on public.user_follows
-  for insert with check (auth.uid() = follower_id and not exists (
-    select 1 from public.user_blocks where (blocker_id = auth.uid() and blocked_id = followed_id)
-    or (blocker_id = followed_id and blocked_id = auth.uid())
-  ));
-
-create policy "Users can delete own follows" on public.user_follows
-  for delete using (auth.uid() = follower_id);
+create policy "users_can_follow" on public.user_follows
+  for insert with check (
+    auth.uid() = follower_id
+    and follower_id != following_id
+    and not exists (
+      select 1 from public.user_blocks
+      where (blocker_id = auth.uid() and blocked_id = following_id)
+         or (blocker_id = following_id and blocked_id = auth.uid())
+    )
+  );
 
 -- Create user_friends table
 create table if not exists public.user_friends (
@@ -99,10 +104,11 @@ begin
   values (v_blocker_id, p_blocked_id)
   on conflict (blocker_id, blocked_id) do nothing;
 
-  -- Remove follows in both directions
+  -- Remove follows in both directions (column is following_id, per
+  -- 20260629000001_social_features.sql)
   delete from public.user_follows
-  where (follower_id = v_blocker_id and followed_id = p_blocked_id)
-    or (follower_id = p_blocked_id and followed_id = v_blocker_id);
+  where (follower_id = v_blocker_id and following_id = p_blocked_id)
+    or (follower_id = p_blocked_id and following_id = v_blocker_id);
 
   -- Remove friendship
   delete from public.user_friends
