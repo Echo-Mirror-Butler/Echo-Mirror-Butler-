@@ -2,11 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
+import '../../../../core/utils/date_formatter.dart';
 
 /// Provider that computes chart data from recent logs (last 30 days)
 final moodChartDataProvider = Provider<List<LogEntryModel>>((ref) {
   final loggingState = ref.watch(loggingProvider);
   final authState = ref.watch(authProvider);
+  final timezone = ref.watch(timezoneStringProvider);
 
   // Return empty if not authenticated
   if (!authState.isAuthenticated || authState.user == null) {
@@ -20,7 +23,7 @@ final moodChartDataProvider = Provider<List<LogEntryModel>>((ref) {
   }
 
   // Filter logs from last 30 days
-  final now = DateTime.now();
+  final now = DateFormatter.daysAgo(0, timezone);
   final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
   final recentLogs = allLogs.where((log) {

@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth-context'
 import { generateErrorReferenceCode } from '../lib/error-reference'
+import { captureSentryException } from '../lib/sentry'
 
 type BoundaryProps = {
   children: ReactNode
@@ -38,6 +39,14 @@ export class ErrorBoundary extends Component<BoundaryProps, BoundaryState> {
       error,
       errorInfo.componentStack,
     )
+
+    captureSentryException(error, {
+      routeName,
+      routePath,
+      userId,
+      referenceCode: this.state.referenceCode,
+      componentStack: errorInfo.componentStack,
+    })
   }
 
   render() {
