@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/viewmodel/providers/biometric_provider.dart';
 import '../../../../core/utils/error_handler.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
@@ -481,6 +482,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isAppLockEnabled = ref.watch(biometricEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -490,6 +492,16 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          _buildSectionHeader(
+            theme,
+            icon: FontAwesomeIcons.lock.data,
+            title: 'App Lock',
+            subtitle: 'Require Face ID or Fingerprint to open the app',
+          ),
+          const SizedBox(height: 12),
+          _buildAppLockCard(theme, isAppLockEnabled),
+          const SizedBox(height: 24),
+
           _buildSectionHeader(
             theme,
             icon: FontAwesomeIcons.mobile.data,
@@ -517,6 +529,78 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     );
   }
 
+  Widget _buildAppLockCard(ThemeData theme, bool isAppLockEnabled) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(FontAwesomeIcons.fingerprint.data,
+                        color: theme.colorScheme.primary, size: 18),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Biometric Unlock',
+                            style: theme.textTheme.titleMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Use device biometrics to unlock',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Switch(
+                    value: isAppLockEnabled,
+                    onChanged: (value) async {
+                      final success = await ref
+                          .read(biometricEnabledProvider.notifier)
+                          .setEnabled(value);
+                      if (!success && value && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Authentication failed or not available.'),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(
     ThemeData theme, {
     required IconData icon,
@@ -528,10 +612,10 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: theme.colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -731,7 +815,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isMfaEnabled
                       ? Colors.red
-                      : AppTheme.primaryColor,
+                      : theme.colorScheme.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
