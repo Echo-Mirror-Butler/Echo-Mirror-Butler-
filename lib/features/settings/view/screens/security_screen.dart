@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -118,9 +119,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       if (sessionId == 'current') {
         await client.auth.signOut();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Signed out successfully')),
-          );
+          ErrorHandler.showSuccess(context, 'Signed out successfully');
         }
         return;
       }
@@ -132,16 +131,12 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           .eq('user_id', client.auth.currentUser!.id);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session revoked')),
-        );
+        ErrorHandler.showSuccess(context, 'Session revoked');
         await _loadSessions();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+        ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
       }
     }
   }
@@ -184,18 +179,15 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('All other sessions have been signed out'),
-            ),
+          ErrorHandler.showSuccess(
+            context,
+            'All other sessions have been signed out',
           );
           await _loadSessions();
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
-          );
+          ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
         }
       } finally {
         if (mounted) setState(() => _isSigningOutAll = false);
@@ -229,8 +221,9 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error enabling 2FA: ${e.toString()}')),
+        ErrorHandler.showError(
+          context,
+          'Error enabling 2FA: ${ErrorHandler.getErrorMessage(e)}',
         );
       }
     }
@@ -352,16 +345,15 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           }
 
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('2FA disabled successfully')),
-            );
+            ErrorHandler.showSuccess(context, '2FA disabled successfully');
             await _checkMfaStatus();
           }
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error disabling 2FA: ${e.toString()}')),
+          ErrorHandler.showError(
+            context,
+            'Error disabling 2FA: ${ErrorHandler.getErrorMessage(e)}',
           );
         }
       }
@@ -418,7 +410,13 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         FilledButton(
           onPressed: () async {
             final code = totpController.text.trim();
-            if (code.length != 6 || _mfaFactorId == null) return;
+            if (code.length != 6 || _mfaFactorId == null) {
+              ErrorHandler.showError(
+                context,
+                'Please enter the 6-digit code from your authenticator app',
+              );
+              return;
+            }
 
             try {
               final client = Supabase.instance.client;
@@ -433,8 +431,9 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
 
               Navigator.pop(context, true);
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Verification failed: ${e.toString()}')),
+              ErrorHandler.showError(
+                context,
+                'Verification failed: ${ErrorHandler.getErrorMessage(e)}',
               );
             }
           },

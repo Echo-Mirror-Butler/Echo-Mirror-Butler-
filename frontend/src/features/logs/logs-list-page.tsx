@@ -14,6 +14,7 @@ import {
   type ImportRow,
 } from './logs-import'
 import { SORT_OPTIONS, DEFAULT_SORT, isSortOption, splitOnMatch, type SortOption } from './logs-utils'
+import { LogImageThumbnail } from './components/log-image-thumbnail'
 
 const LOGS_PAGE_SIZE = 10
 const LOGS_SCROLL_STORAGE_KEY = 'echomirror:logs-scroll-y'
@@ -1058,7 +1059,14 @@ export function LogsListPage() {
                     ))}
                   </div>
 
-                  <p className="muted note-preview">{renderNotePreview(entry.notes, debouncedSearch)}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    {entry.image_path ? (
+                      <LogImageThumbnail path={entry.image_path} alt="" size={40} />
+                    ) : null}
+                    <p className="muted note-preview" style={{ margin: 0 }}>
+                      {renderNotePreview(entry.notes, debouncedSearch)}
+                    </p>
+                  </div>
                 </Link>
               </div>
             )
