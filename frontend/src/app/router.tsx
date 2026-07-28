@@ -57,6 +57,7 @@ const ChangelogRoadmapPage = lazy(() =>
   import('../features/changelog/ChangelogRoadmapPage').then((m) => ({ default: m.ChangelogRoadmapPage })),
 )
 const NotFoundPage = lazy(() => import('../features/shared/not-found-page'))
+const StatusPage = lazy(() => import('../features/status/status-page'))
 
 
 function PageSkeleton() {
@@ -210,6 +211,15 @@ export function AppRouter() {
           element={
             <RouteErrorBoundary routeName="Update Password">
               <UpdatePasswordPage />
+            </RouteErrorBoundary>
+          }
+        />
+
+        <Route
+          path="/status"
+          element={
+            <RouteErrorBoundary routeName="Status">
+              <StatusPage />
             </RouteErrorBoundary>
           }
         />

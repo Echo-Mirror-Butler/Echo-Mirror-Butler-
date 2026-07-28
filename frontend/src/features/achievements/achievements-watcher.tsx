@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
+import { useFocusTrap } from '../../hooks/use-focus-trap'
 import { ACHIEVEMENTS } from './achievements'
 import {
   ACHIEVEMENT_UNLOCKED_EVENT,
@@ -52,14 +53,8 @@ export function AchievementsWatcher() {
     setQueue((prev) => prev.slice(1))
   }, [])
 
-  useEffect(() => {
-    if (!current) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') dismiss()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [current, dismiss])
+  const cardRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(Boolean(current), dismiss, cardRef)
 
   if (!current || !definition) return null
 
@@ -75,7 +70,9 @@ export function AchievementsWatcher() {
         onClick={dismiss}
       >
         <div
+          ref={cardRef}
           className="modal-card"
+          tabIndex={-1}
           style={{ textAlign: 'center', gap: '0.5rem' }}
           onClick={(event) => event.stopPropagation()}
         >
