@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../auth/viewmodel/providers/auth_provider.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -116,7 +117,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       final client = Supabase.instance.client;
 
       if (sessionId == 'current') {
-        await client.auth.signOut();
+        await ref.read(authProvider.notifier).signOut();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Signed out successfully')),
