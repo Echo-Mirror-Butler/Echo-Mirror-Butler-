@@ -54,6 +54,7 @@ const OnboardingPage = lazy(() =>
   import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
 )
 const NotFoundPage = lazy(() => import('../features/shared/not-found-page'))
+const StatusPage = lazy(() => import('../features/status/status-page'))
 
 function PageSkeleton() {
   return (
@@ -190,6 +191,15 @@ export function AppRouter() {
           element={
             <RouteErrorBoundary routeName="Update Password">
               <UpdatePasswordPage />
+            </RouteErrorBoundary>
+          }
+        />
+
+        <Route
+          path="/status"
+          element={
+            <RouteErrorBoundary routeName="Status">
+              <StatusPage />
             </RouteErrorBoundary>
           }
         />
