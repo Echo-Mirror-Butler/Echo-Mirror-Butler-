@@ -31,6 +31,7 @@ function makeEntry(overrides: Partial<LogEntry> = {}): LogEntry {
     mood: 4,
     habits: ['Exercise'],
     notes: 'Morning run felt good',
+    image_path: null,
     created_at: '2026-06-01T13:00:00.000Z',
     updated_at: '2026-06-01T13:00:00.000Z',
     ...overrides,
