@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/toast_service.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -118,9 +119,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       if (sessionId == 'current') {
         await client.auth.signOut();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Signed out successfully')),
-          );
+          ToastService.success(context, 'Signed out successfully');
         }
         return;
       }
@@ -132,16 +131,12 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           .eq('user_id', client.auth.currentUser!.id);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Session revoked')),
-        );
+        ToastService.success(context, 'Session revoked');
         await _loadSessions();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+        ToastService.error(context, e, label: '[SecurityScreen] revokeSession');
       }
     }
   }
@@ -184,17 +179,18 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         }
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('All other sessions have been signed out'),
-            ),
+          ToastService.success(
+            context,
+            'All other sessions have been signed out',
           );
           await _loadSessions();
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
+          ToastService.error(
+            context,
+            e,
+            label: '[SecurityScreen] signOutAllOtherSessions',
           );
         }
       } finally {
@@ -229,9 +225,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error enabling 2FA: ${e.toString()}')),
-        );
+        ToastService.error(context, e, label: '[SecurityScreen] enrollMfa');
       }
     }
   }
@@ -352,17 +346,13 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           }
 
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('2FA disabled successfully')),
-            );
+            ToastService.success(context, '2FA disabled successfully');
             await _checkMfaStatus();
           }
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error disabling 2FA: ${e.toString()}')),
-          );
+          ToastService.error(context, e, label: '[SecurityScreen] disableMfa');
         }
       }
     }
@@ -433,8 +423,10 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
 
               Navigator.pop(context, true);
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Verification failed: ${e.toString()}')),
+              ToastService.error(
+                context,
+                e,
+                label: '[SecurityScreen] verifyMfaEnrollment',
               );
             }
           },

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
@@ -144,31 +145,20 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
         if (success) {
           _commentController.clear();
           _loadComments(); // Reload comments
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Comment sent! ðŸ’™'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
+          ToastService.success(context, 'Comment sent! ðŸ’™');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to send comment. Please try again.'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.red,
-            ),
+          ToastService.errorMessage(
+            context,
+            'Failed to send comment. Please try again.',
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[MoodPinCommentDialog] addComment',
         );
       }
     } finally {

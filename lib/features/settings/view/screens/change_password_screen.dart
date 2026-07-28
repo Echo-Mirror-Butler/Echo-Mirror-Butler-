@@ -6,6 +6,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../auth/view/widgets/custom_text_field.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../../../core/services/toast_service.dart';
 
 /// Change password screen for authenticated users
 class ChangePasswordScreen extends ConsumerStatefulWidget {
@@ -53,16 +54,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           _newPasswordController.clear();
           _confirmPasswordController.clear();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password updated successfully')),
-          );
+          ToastService.success(context, 'Password updated successfully');
           context.pop();
         } else {
           final error =
               ref.read(authProvider).error ?? 'Failed to update password';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(error)));
+          ToastService.errorMessage(context, error);
         }
       }
     }

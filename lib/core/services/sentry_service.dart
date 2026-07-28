@@ -18,10 +18,9 @@ class SentryService {
         options.environment = environment;
         options.tracesSampleRate = environment == 'production' ? 0.2 : 1.0;
         options.debug = kDebugMode;
-        options beforeSend = (event, {hint}) {
+        options.beforeSend = (event, hint) {
           // Strip PII — never send email or user metadata
-          event.user = null;
-          return event;
+          return event.copyWith(user: SentryUser(id: 'redacted'));
         };
       },
     );

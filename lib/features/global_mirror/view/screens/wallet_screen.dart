@@ -10,6 +10,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/environment_config.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/toast_service.dart';
+import '../../../../core/utils/error_message_mapper.dart';
 import '../../viewmodel/providers/wallet_provider.dart';
 
 const _testnetDismissKey = 'testnet_banner_dismissed';
@@ -163,12 +165,7 @@ class WalletScreen extends ConsumerWidget {
       await ref.read(walletProvider.notifier).loadWallet();
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ECHO sent successfully.'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
+        ToastService.success(context, 'ECHO sent successfully.');
       }
     }
 
@@ -388,9 +385,7 @@ class WalletScreen extends ConsumerWidget {
                                 await sendEcho();
                               } catch (e) {
                                 setState(() {
-                                  errorMessage = e
-                                      .toString()
-                                      .replaceFirst('Exception: ', '');
+                                  errorMessage = friendlyErrorMessage(e);
                                 });
                               }
                               setState(() => isSending = false);

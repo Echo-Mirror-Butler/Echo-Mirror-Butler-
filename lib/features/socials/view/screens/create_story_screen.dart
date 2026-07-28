@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,9 +32,7 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error picking images: $e')));
+        ToastService.error(context, e, label: '[CreateStoryScreen] pickImages');
       }
     }
   }
@@ -48,18 +47,18 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        ToastService.error(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error taking photo: $e')));
+          e,
+          label: '[CreateStoryScreen] pickImageFromCamera',
+        );
       }
     }
   }
 
   Future<void> _uploadStory() async {
     if (_selectedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one image')),
-      );
+      ToastService.errorMessage(context, 'Please select at least one image');
       return;
     }
 
@@ -91,13 +90,11 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
             throw Exception('Failed to upload image: ${imageFile.path}');
           }
         } catch (e) {
-          debugPrint('[CreateStoryScreen] Error uploading image: $e');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error uploading image: $e'),
-                backgroundColor: AppTheme.errorColor,
-              ),
+            ToastService.error(
+              context,
+              e,
+              label: '[CreateStoryScreen] uploadStoryImage',
             );
           }
           return; // Stop if any image fails to upload
@@ -118,22 +115,16 @@ class _CreateStoryScreenState extends ConsumerState<CreateStoryScreen> {
 
       if (story != null && mounted) {
         Navigator.pop(context, true); // Return true to indicate success
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Story uploaded successfully!'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
+        ToastService.success(context, 'Story uploaded successfully!');
       } else {
         throw Exception('Failed to create story');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error uploading story: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[CreateStoryScreen] uploadStory',
         );
       }
     } finally {

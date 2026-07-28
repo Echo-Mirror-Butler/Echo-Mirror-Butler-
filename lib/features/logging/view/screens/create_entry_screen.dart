@@ -5,6 +5,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../auth/view/widgets/custom_button.dart';
@@ -100,12 +101,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please log in to create entries'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        ToastService.errorMessage(context, 'Please log in to create entries');
       }
       return;
     }
@@ -155,14 +151,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                 .shareMood(sentiment);
             debugPrint('[CreateEntryScreen] Share mood result: $shareResult');
             if (!shareResult && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'Failed to share mood. Check location permissions.',
-                  ),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 3),
-                ),
+              ToastService.errorMessage(
+                context,
+                'Failed to share mood. Check location permissions.',
               );
             }
           } else {

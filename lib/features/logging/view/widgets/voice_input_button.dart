@@ -5,6 +5,7 @@ import 'package:speech_to_text/speech_to_text.dart'
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/toast_service.dart';
 
 /// Floating microphone button for voice input
 class VoiceInputButton extends StatefulWidget {
@@ -225,13 +226,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
 
   void _showError(String message) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: AppTheme.errorColor,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      ToastService.errorMessage(context, message);
     }
   }
 
@@ -276,14 +271,10 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     widget.onTranscriptionComplete(mockText);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Mock transcription (speech_to_text not available on this '
-            'platform)',
-          ),
-          duration: Duration(seconds: 2),
-        ),
+      ToastService.info(
+        context,
+        'Mock transcription (speech_to_text not available on this '
+        'platform)',
       );
     }
   }
