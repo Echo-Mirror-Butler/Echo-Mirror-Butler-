@@ -35,7 +35,6 @@ class WalletState {
     this.funded = false,
     this.lastUpdated,
     this.stellarError,
-    this.isFunding = false,
   });
 
   final bool exists;
@@ -59,13 +58,11 @@ class WalletState {
   final bool funded;
   final DateTime? lastUpdated;
   final String? stellarError;
-  final bool isFunding;
 
   bool get hasStreakBonus {
     return history.any(
       (reward) =>
-          reward.reason.contains('streak') ||
-          reward.reason.contains('bonus'),
+          reward.reason.contains('streak') || reward.reason.contains('bonus'),
     );
   }
 
@@ -87,7 +84,6 @@ class WalletState {
     bool? funded,
     DateTime? lastUpdated,
     String? stellarError,
-    bool? isFunding,
     bool clearError = false,
     bool clearFundingError = false,
   }) {
@@ -103,18 +99,17 @@ class WalletState {
       isLiveBalancesLoading:
           isLiveBalancesLoading ?? this.isLiveBalancesLoading,
       error: clearError ? null : error ?? this.error,
-      fundingError: clearFundingError ? null : fundingError ?? this.fundingError,
+      fundingError: clearFundingError
+          ? null
+          : fundingError ?? this.fundingError,
       funded: funded ?? this.funded,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       stellarError: stellarError ?? this.stellarError,
-      isFunding: isFunding ?? this.isFunding,
     );
   }
 }
 
 class WalletNotifier extends StateNotifier<WalletState> {
-  Timer? _refreshTimer;
-
   WalletNotifier() : super(const WalletState()) {
     loadWallet();
     // Only auto-refresh the live balances on testnet, where activation
@@ -138,19 +133,6 @@ class WalletNotifier extends StateNotifier<WalletState> {
     _liveBalanceTimer?.cancel();
     _liveBalanceTimer = null;
     super.dispose();
-  }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startAutoRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _fetchLiveBalances();
-    });
   }
 
   Future<void> loadWallet() async {
@@ -182,32 +164,24 @@ class WalletNotifier extends StateNotifier<WalletState> {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      final history = (historyData as List<dynamic>?)
-              ?.map((item) {
-                return WalletReward(
-                  reason: item['reason'] as String? ?? 'Unknown',
-                  amount:
-                      double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
-                  createdAt: DateTime.parse(item['created_at'] as String),
-                );
-              })
-              .toList() ??
+      final history =
+          (historyData as List<dynamic>?)?.map((item) {
+            return WalletReward(
+              reason: item['reason'] as String? ?? 'Unknown',
+              amount: double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
+              createdAt: DateTime.parse(item['created_at'] as String),
+            );
+          }).toList() ??
           [];
 
       final balance =
           double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0;
-
-      state = WalletState(
-        exists: true,
-        publicKey: wallet['public_key'] as String?,
-        balance: balance,
       final publicKey = wallet['public_key'] as String?;
 
       state = WalletState(
         exists: true,
         publicKey: publicKey,
-        balance:
-            double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0,
+        balance: balance,
         history: history,
         isLoading: false,
         // Treat a wallet that already has ECHO balance as likely funded —
@@ -220,70 +194,11 @@ class WalletNotifier extends StateNotifier<WalletState> {
       // Pull live balances right after the wallet hydrates so the UI can
       // show XLM and the funded/unfunded state without an extra tap.
       unawaited(refreshLiveBalances());
-      if (publicKey != null) {
-        _fetchLiveBalances();
-      }
-      _startAutoRefresh();
     } catch (e) {
       debugPrint('[WalletNotifier] loadWallet error: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Unable to load your wallet.',
-      );
-    }
-  }
-
-  Future<void> _fetchLiveBalances() async {
-    final publicKey = state.publicKey;
-    if (publicKey == null) return;
-
-    try {
-      final balances =
-          await StellarService.getLiveBalances(publicKey);
-      if (balances == null) {
-        state = state.copyWith(
-          stellarError: 'Activate your wallet — send any XLM to fund it',
-          lastUpdated: DateTime.now(),
-        );
-        return;
-      }
-      state = state.copyWith(
-        xlmBalance: balances['xlm'] ?? 0.0,
-        echoBalance: balances['echo'] ?? 0.0,
-        stellarError: null,
-        lastUpdated: DateTime.now(),
-      );
-    } catch (e) {
-      debugPrint('[WalletNotifier] Live balance fetch error: $e');
-      state = state.copyWith(
-        stellarError: 'Could not reach Stellar network',
-        lastUpdated: DateTime.now(),
-      );
-    }
-  }
-
-  Future<void> fundWithFriendbot() async {
-    final publicKey = state.publicKey;
-    if (publicKey == null) return;
-
-    state = state.copyWith(isFunding: true);
-
-    try {
-      final success = await StellarService.fundViaFriendbot(publicKey);
-      if (success) {
-        await Future.delayed(const Duration(seconds: 5));
-        await _fetchLiveBalances();
-        state = state.copyWith(isFunding: false, stellarError: null);
-      } else {
-        state = state.copyWith(
-          isFunding: false,
-          stellarError: 'Friendbot funding failed. Try again.',
-        );
-      }
-    } catch (e) {
-      state = state.copyWith(
-        isFunding: false,
-        stellarError: 'Funding failed. Please retry.',
       );
     }
   }
@@ -304,10 +219,6 @@ class WalletNotifier extends StateNotifier<WalletState> {
         'create-stellar-wallet',
         body: {},
       );
-
-      if (response.error != null) {
-        throw response.error!;
-      }
 
       final data = response.data;
       if (data is Map && data['error'] != null) {
@@ -334,7 +245,10 @@ class WalletNotifier extends StateNotifier<WalletState> {
     final publicKey = state.publicKey;
     if (publicKey == null || publicKey.isEmpty) return;
 
-    state = state.copyWith(isLiveBalancesLoading: true, clearFundingError: true);
+    state = state.copyWith(
+      isLiveBalancesLoading: true,
+      clearFundingError: true,
+    );
 
     try {
       final balances = await StellarService.getLiveBalances(publicKey);
@@ -379,16 +293,11 @@ class WalletNotifier extends StateNotifier<WalletState> {
   Future<bool> fundWithFriendbot() async {
     final publicKey = state.publicKey;
     if (publicKey == null || publicKey.isEmpty) {
-      state = state.copyWith(
-        fundingError: 'No wallet to fund yet.',
-      );
+      state = state.copyWith(fundingError: 'No wallet to fund yet.');
       return false;
     }
 
-    state = state.copyWith(
-      isFunding: true,
-      clearFundingError: true,
-    );
+    state = state.copyWith(isFunding: true, clearFundingError: true);
 
     try {
       await StellarService.fundWithFriendbot(publicKey);
@@ -413,7 +322,8 @@ class WalletNotifier extends StateNotifier<WalletState> {
   }
 }
 
-final walletProvider =
-    StateNotifierProvider<WalletNotifier, WalletState>((ref) {
+final walletProvider = StateNotifierProvider<WalletNotifier, WalletState>((
+  ref,
+) {
   return WalletNotifier();
 });
