@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AppShell } from '../components/layout/app-shell'
+import { MaintenanceBanner } from '../components/maintenance-banner'
 import { SignInPanel } from '../components/auth/sign-in-panel'
 import { LandingPage } from '../features/landing/LandingPage'
 import { SignupPage } from '../features/auth/pages/SignupPage'
@@ -144,7 +145,9 @@ export function AppRouter() {
   const { user } = useAuth()
 
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <>
+      <MaintenanceBanner />
+      <Suspense fallback={<PageSkeleton />}>
       <Routes>
         <Route
           path="/"
@@ -329,6 +332,7 @@ export function AppRouter() {
           }
         />
       </Routes>
-    </Suspense>
+      </Suspense>
+    </>
   )
 }
