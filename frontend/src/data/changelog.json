@@ -1,0 +1,11 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2026-07-28",
+    "items": [
+      "Keyboard-only navigation fixes for modals and dropdown menus",
+      "New public /status page for checking backend health",
+      "This what's-new modal, so you can see updates like this one"
+    ]
+  }
+]

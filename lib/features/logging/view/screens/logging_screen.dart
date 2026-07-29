@@ -213,7 +213,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         },
         icon: Icon(FontAwesomeIcons.plus.data),
         label: const Text('New Entry'),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
       ),
     );

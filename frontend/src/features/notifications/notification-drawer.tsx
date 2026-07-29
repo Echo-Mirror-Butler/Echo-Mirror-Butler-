@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { formatDateTime } from '../../lib/date'
+import { useFocusTrap } from '../../hooks/use-focus-trap'
 
 type Notification = {
   id: string
@@ -99,15 +100,8 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
     },
   })
 
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [isOpen, onClose])
+  // Trap focus while open, close on Escape, restore focus to trigger on close
+  useFocusTrap(isOpen, onClose, panelRef)
 
   // Close on outside click
   useEffect(() => {
@@ -135,6 +129,7 @@ export function NotificationDrawer({ isOpen, onClose }: Props) {
       role="dialog"
       aria-label="Notifications"
       aria-modal="true"
+      tabIndex={-1}
       className="notification-drawer"
       style={{
         position: 'absolute',
