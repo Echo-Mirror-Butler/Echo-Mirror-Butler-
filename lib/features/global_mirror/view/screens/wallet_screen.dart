@@ -252,36 +252,6 @@ class WalletScreen extends ConsumerWidget {
         }
       }
     }
-    final parsed = double.tryParse(value.trim());
-    if (parsed == null) {
-        setState(() => amountError = 'Enter a valid number');
-    } else {
-        // Round to 2 decimal places
-        final rounded = (parsed * 100).round() / 100;
-        if (rounded <= 0) {
-            setState(() => amountError = 'Amount must be greater than 0');
-        } else if (rounded > (ref.read(walletProvider).balance)) {
-            setState(() => amountError = 'Insufficient ECHO balance');
-        } else {
-            setState(() {
-                amountError = null;
-                selectedAmount = rounded;
-                // Update the text field to show rounded value
-                customAmountController.text = rounded.toStringAsFixed(2);
-            });
-        }
-    }
-} else if (parsed <= 0) {
-        setState(() => amountError = 'Amount must be greater than 0');
-      } else if (parsed > (ref.read(walletProvider).balance)) {
-        setState(() => amountError = 'Insufficient ECHO balance');
-      } else {
-        setState(() {
-          amountError = null;
-          selectedAmount = parsed.roundToDouble();
-        });
-      }
-    }
 
     showModalBottomSheet(
       context: context,
