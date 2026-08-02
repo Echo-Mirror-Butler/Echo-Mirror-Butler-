@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/environment_config.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
+import '../../../widgets/send_confirmation_dialog.dart';
 import '../../viewmodel/providers/wallet_provider.dart';
 
 const _testnetDismissKey = 'testnet_banner_dismissed';
@@ -144,10 +145,27 @@ class WalletScreen extends ConsumerWidget {
     Timer? _debounce;
 
     Future<void> sendEcho() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => SendConfirmationDialog(
+        recipientName: recipientController.text.trim(),
+        recipientAddress: recipientController.text.trim(),
+        amount: amount,
+        message: '',
+        onConfirm: () => Navigator.pop(context, true),
+        onCancel: () => Navigator.pop(context, false),
+      ),
+    );
+    
+    if (confirmed != true) {
+      return;
+    }
       if (recipientController.text.trim().isEmpty) {
         throw Exception('Recipient is required.');
       }
-      final amount = double.tryParse(customAmountController.text.trim()) ?? selectedAmount.toDouble();
+      final rawAmount = double.tryParse(customAmountController.text.trim()) ?? selectedAmount;
+    final amount = (rawAmount * 100).round() / 100; // Round to 2 decimal places
       if (amount <= 0) throw Exception('Enter a valid ECHO amount.');
 
       final recipientId =
@@ -217,16 +235,21 @@ class WalletScreen extends ConsumerWidget {
       }
       final parsed = double.tryParse(value.trim());
       if (parsed == null) {
-        setState(() => amountError = 'Enter a valid number');
-      } else if (parsed <= 0) {
-        setState(() => amountError = 'Amount must be greater than 0');
-      } else if (parsed > (ref.read(walletProvider).balance)) {
-        setState(() => amountError = 'Insufficient ECHO balance');
+        setState(() => amountError = "Enter a valid number");
       } else {
-        setState(() {
-          amountError = null;
-          selectedAmount = parsed.roundToDouble();
-        });
+        // Round to 2 decimal places
+        final rounded = (parsed * 100).round() / 100;
+        if (rounded <= 0) {
+          setState(() => amountError = "Amount must be greater than 0");
+        } else if (rounded > (ref.read(walletProvider).balance)) {
+          setState(() => amountError = "Insufficient ECHO balance");
+        } else {
+          setState(() {
+            amountError = null;
+            selectedAmount = rounded;
+            customAmountController.text = rounded.toStringAsFixed(2);
+          });
+        }
       }
     }
 
@@ -1095,6 +1118,8 @@ class _TestnetBannerState extends State<_TestnetBanner> {
 
   @override
   Widget build(BuildContext context) {
+    // Only show on testnet
+    if (!EnvironmentConfig.isTestnet) return const SizedBox.shrink();
     if (_dismissed) return const SizedBox.shrink();
 
     return Container(
