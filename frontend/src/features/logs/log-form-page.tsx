@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
@@ -6,6 +6,13 @@ import { useAuth } from '../../lib/auth-context'
 import { useToast } from '../../lib/use-toast'
 import type { LogEntry } from '../../lib/types'
 import { toDateInputValue } from '../../lib/date'
+import {
+  ALLOWED_LOG_IMAGE_TYPES,
+  MAX_LOG_IMAGE_BYTES,
+  getLogImageSignedUrl,
+  removeLogImage,
+  uploadLogImage,
+} from '../../lib/log-images'
 
 type LogFormMode = 'create' | 'edit'
 
@@ -86,6 +93,20 @@ export function LogFormPage({ mode }: LogFormPageProps) {
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' } | null>(null)
   const [fieldErrors, setFieldErrors] = useState<{ date?: string; mood?: string; habits?: string; notes?: string }>({})
 
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [existingImagePath, setExistingImagePath] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
+  const [removeExistingImage, setRemoveExistingImage] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
+  const [imageDragOver, setImageDragOver] = useState(false)
+
+  const existingImageUrlQuery = useQuery({
+    queryKey: ['log-image-url', existingImagePath],
+    queryFn: () => getLogImageSignedUrl(existingImagePath!),
+    enabled: Boolean(existingImagePath) && !removeExistingImage,
+  })
+
   const hydrated = useMemo(
     () =>
       mode === 'edit' && existingEntry
@@ -94,6 +115,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             mood: existingEntry.mood,
             habits: existingEntry.habits,
             notes: existingEntry.notes ?? '',
+            imagePath: existingEntry.image_path,
           }
         : null,
     [mode, existingEntry],
@@ -108,7 +130,42 @@ export function LogFormPage({ mode }: LogFormPageProps) {
     setMood(hydrated.mood)
     setHabits(hydrated.habits)
     setNotes(hydrated.notes)
+    setExistingImagePath(hydrated.imagePath)
   }, [hydrated])
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    }
+  }, [imagePreviewUrl])
+
+  function selectImageFile(file: File) {
+    setImageError(null)
+    if (!ALLOWED_LOG_IMAGE_TYPES.includes(file.type)) {
+      setImageError('Only PNG, JPG, or WEBP images are allowed.')
+      return
+    }
+    if (file.size > MAX_LOG_IMAGE_BYTES) {
+      setImageError(`File is ${(file.size / 1024 / 1024).toFixed(1)} MB — max is 5 MB.`)
+      return
+    }
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    setImageFile(file)
+    setImagePreviewUrl(URL.createObjectURL(file))
+    setRemoveExistingImage(false)
+  }
+
+  function clearImage() {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    setImageFile(null)
+    setImagePreviewUrl(null)
+    setImageError(null)
+    if (existingImagePath) {
+      setRemoveExistingImage(true)
+    }
+  }
+
+  const displayedImageUrl = imagePreviewUrl ?? (!removeExistingImage ? existingImageUrlQuery.data ?? null : null)
 
   function validate(): boolean {
     const errors: { date?: string; mood?: string; habits?: string; notes?: string } = {}
@@ -134,6 +191,8 @@ export function LogFormPage({ mode }: LogFormPageProps) {
         throw new Error('No signed in user found.')
       }
 
+      let entry: LogEntry
+
       if (mode === 'create') {
         const existingId = await findExistingByDate(user.id, date)
         if (existingId) {
@@ -157,27 +216,53 @@ export function LogFormPage({ mode }: LogFormPageProps) {
           throw error
         }
 
-        return data as LogEntry
+        entry = data as LogEntry
+      } else {
+        const { data, error } = await supabase
+          .from('log_entries')
+          .update({
+            date: new Date(`${date}T12:00:00.000Z`).toISOString(),
+            mood,
+            habits,
+            notes: notes.trim() || null,
+          })
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .select('*')
+          .single()
+
+        if (error) {
+          throw error
+        }
+
+        entry = data as LogEntry
       }
 
-      const { data, error } = await supabase
-        .from('log_entries')
-        .update({
-          date: new Date(`${date}T12:00:00.000Z`).toISOString(),
-          mood,
-          habits,
-          notes: notes.trim() || null,
-        })
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select('*')
-        .single()
-
-      if (error) {
-        throw error
+      let imagePath = entry.image_path
+      if (removeExistingImage && existingImagePath) {
+        await removeLogImage(existingImagePath).catch(() => {})
+        imagePath = null
+      }
+      if (imageFile) {
+        imagePath = await uploadLogImage(user.id, entry.id, imageFile)
       }
 
-      return data as LogEntry
+      if (imagePath !== entry.image_path) {
+        const { data: updated, error: imageUpdateError } = await supabase
+          .from('log_entries')
+          .update({ image_path: imagePath })
+          .eq('id', entry.id)
+          .select('*')
+          .single()
+
+        if (imageUpdateError) {
+          throw imageUpdateError
+        }
+
+        entry = updated as LogEntry
+      }
+
+      return entry
     },
     onMutate: () => {
       setFormError(null)
@@ -188,6 +273,7 @@ export function LogFormPage({ mode }: LogFormPageProps) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['logs', user?.id] }),
         queryClient.invalidateQueries({ queryKey: ['log-entry', id] }),
+        queryClient.invalidateQueries({ queryKey: ['log-image-url'] }),
       ])
       showToast(mode === 'create' ? 'Mood logged! +1 ECHO earned 🎉' : 'Changes saved', 'success')
       navigate('/logs')
@@ -282,29 +368,33 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             {fieldErrors.date && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.date}</p>}
           </label>
 
-          <div>
-            <p className="field-label">Mood</p>
+          <div role="radiogroup" aria-label="Mood selection">
+            <p className="field-label" id="mood-label">Mood</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '0.4rem', marginTop: '0.45rem' }}>
               {MOOD_EMOJIS.map((emoji, idx) => {
                 const value = idx + 1
+                const moodLabels = ['Very sad, mood 1', 'Sad, mood 2', 'Neutral, mood 3', 'Happy, mood 4', 'Very happy, mood 5']
                 return (
                   <button
                     key={value}
                     type="button"
+                    role="radio"
                     style={{ fontSize: '1.3rem', minHeight: '44px', width: '100%', padding: '0.25rem' }}
                     className={mood === value ? 'chip active' : 'chip'}
                     onClick={() => {
                       setMood((prev) => (prev === value ? null : value))
                       setFieldErrors((prev) => ({ ...prev, mood: undefined }))
                     }}
-                    aria-label={`Mood ${value}`}
+                    aria-label={moodLabels[idx]}
+                    aria-pressed={mood === value}
+                    aria-checked={mood === value}
                   >
                     {emoji}
                   </button>
                 )
               })}
             </div>
-            {fieldErrors.mood && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.mood}</p>}
+            {fieldErrors.mood && <p id="mood-error" className="error-text" style={{ marginTop: '0.25rem' }} role="alert">{fieldErrors.mood}</p>}
           </div>
 
           <div>
@@ -377,6 +467,65 @@ export function LogFormPage({ mode }: LogFormPageProps) {
             </span>
             {fieldErrors.notes && <p className="error-text" style={{ marginTop: '0.25rem' }}>{fieldErrors.notes}</p>}
           </label>
+
+          <div>
+            <p className="field-label">Photo (optional)</p>
+            {displayedImageUrl ? (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginTop: '0.45rem' }}>
+                <img
+                  src={displayedImageUrl}
+                  alt="Log entry attachment preview"
+                  style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--line)' }}
+                />
+                <button type="button" className="secondary" onClick={clearImage}>
+                  Remove photo
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                onDragOver={(event) => { event.preventDefault(); setImageDragOver(true) }}
+                onDragLeave={() => setImageDragOver(false)}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  setImageDragOver(false)
+                  const file = event.dataTransfer.files[0]
+                  if (file) selectImageFile(file)
+                }}
+                style={{
+                  marginTop: '0.45rem',
+                  padding: '0.6rem 1rem',
+                  borderRadius: '8px',
+                  border: `1px dashed ${imageDragOver ? 'var(--brand)' : 'var(--line)'}`,
+                  background: imageDragOver ? 'var(--surface-soft)' : 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  color: 'var(--text)',
+                  width: '100%',
+                  textAlign: 'center',
+                }}
+              >
+                Drag & drop a photo, or click to browse
+              </button>
+            )}
+            <p className="muted" style={{ margin: '0.35rem 0 0', fontSize: '0.75rem' }}>
+              PNG, JPG, or WEBP, max 5 MB
+            </p>
+            {imageError && <p className="error-text" style={{ marginTop: '0.25rem' }}>{imageError}</p>}
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: 'none' }}
+              aria-label="Attach a photo to this log entry"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) selectImageFile(file)
+                event.target.value = ''
+              }}
+            />
+          </div>
 
           <button type="submit" disabled={saveMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
             {saveMutation.isPending && (

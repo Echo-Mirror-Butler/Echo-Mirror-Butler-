@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { stellarRouter } from './routes/stellar';
 import { healthRouter } from './routes/health';
+import { moderationRouter } from './routes/moderation';
 import { errorHandler } from './middleware/errorHandler';
 
 const REQUIRED_ENV_VARS = [
@@ -25,6 +26,7 @@ app.use(express.json());
 
 app.use('/health', healthRouter);
 app.use('/stellar', stellarRouter);
+app.use('/moderation', moderationRouter);
 
 app.use(errorHandler);
 

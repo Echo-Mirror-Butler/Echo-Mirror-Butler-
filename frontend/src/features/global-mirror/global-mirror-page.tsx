@@ -26,11 +26,13 @@ import type { RealtimeChannel, REALTIME_SUBSCRIBE_STATES } from '@supabase/supab
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import { MoodPinCommentsPanel } from '../../components/mood-pin-comments-panel'
+import { unlockAchievement } from '../achievements/use-achievements'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type MoodPin = {
   id: string
+  user_id?: string
   grid_lat: number
   grid_lon: number
   sentiment: string
@@ -147,6 +149,12 @@ async function fetchPins(): Promise<MoodPin[]> {
     .select('id, grid_lat, grid_lon, sentiment, created_at')
     .order('created_at', { ascending: false })
     .limit(500)
+  if (error) throw error
+  return (data ?? []) as MoodPin[]
+}
+
+async function fetchFollowingPins(userId: string): Promise<MoodPin[]> {
+  const { data, error } = await supabase.rpc('get_following_mood_pins', { p_user_id: userId })
   if (error) throw error
   return (data ?? []) as MoodPin[]
 }
@@ -269,6 +277,8 @@ function WorldMap({ pins, newPinIds, zoom, onZoomChange, onPinClick }: WorldMapP
   } | null>(null)
 
   useEffect(() => {
+    // @ts-expect-error — react-simple-maps is an optional dependency that is
+    // not installed; the catch below falls back to the static SVG map.
     import('react-simple-maps')
       .then((mod) => {
         setRSM({
@@ -488,12 +498,41 @@ function PinDetailPopover({
   bucket,
   onClose,
   onOpenComments,
+  currentUserId,
 }: {
   bucket: ClusterBucket
   onClose: () => void
   onOpenComments: (pinId: string) => void
+  currentUserId?: string
 }) {
   const sentiment = SENTIMENTS.find((s) => s.value === bucket.dominantSentiment)
+  const [following, setFollowing] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (!currentUserId || bucket.count !== 1) return
+    const pin = bucket.pins[0]
+    if (!pin.user_id || pin.user_id === currentUserId) return
+    supabase
+      .from('user_follows')
+      .select('id')
+      .eq('follower_id', currentUserId)
+      .eq('following_id', pin.user_id)
+      .maybeSingle()
+      .then((res) => setFollowing(res.data != null))
+  }, [currentUserId, bucket])
+
+  const handleFollow = async () => {
+    if (!currentUserId) return
+    const pin = bucket.pins[0]
+    if (!pin.user_id) return
+    if (following) {
+      await supabase.from('user_follows').delete().eq('follower_id', currentUserId).eq('following_id', pin.user_id)
+      setFollowing(false)
+    } else {
+      await supabase.from('user_follows').insert({ follower_id: currentUserId, following_id: pin.user_id })
+      setFollowing(true)
+    }
+  }
 
   return (
     <div
@@ -532,18 +571,36 @@ function PinDetailPopover({
       )}
 
       {bucket.count === 1 && (
-        <button
-          type="button"
-          onClick={() => onOpenComments(bucket.pins[0].id)}
-          style={{
-            display: 'block', width: '100%', padding: '0.4rem 0.8rem',
-            borderRadius: '8px', border: '1px solid var(--line)',
-            background: 'var(--surface-soft)', color: 'var(--text)',
-            cursor: 'pointer', fontSize: '0.82rem', textAlign: 'center',
-          }}
-        >
-          💬 View comments
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => onOpenComments(bucket.pins[0].id)}
+            style={{
+              display: 'block', width: '100%', padding: '0.4rem 0.8rem',
+              borderRadius: '8px', border: '1px solid var(--line)',
+              background: 'var(--surface-soft)', color: 'var(--text)',
+              cursor: 'pointer', fontSize: '0.82rem', textAlign: 'center',
+              marginBottom: '0.4rem',
+            }}
+          >
+            💬 View comments
+          </button>
+          {currentUserId && bucket.pins[0].user_id && bucket.pins[0].user_id !== currentUserId && following !== null && (
+            <button
+              type="button"
+              onClick={() => void handleFollow()}
+              style={{
+                display: 'block', width: '100%', padding: '0.4rem 0.8rem',
+                borderRadius: '8px', border: '1px solid var(--brand)',
+                background: following ? 'var(--brand)' : 'transparent',
+                color: following ? '#fff' : 'var(--brand)',
+                cursor: 'pointer', fontSize: '0.82rem', textAlign: 'center',
+              }}
+            >
+              {following ? '✓ Following' : '+ Follow'}
+            </button>
+          )}
+        </>
       )}
     </div>
   )
@@ -604,15 +661,34 @@ export function GlobalMirrorPage() {
   const [selectedSentiment, setSelectedSentiment] = useState<Sentiment>('happy')
   const [geoStatus, setGeoStatus] = useState<'idle' | 'pending' | 'denied' | 'done'>('idle')
   const [dropError, setDropError] = useState<string | null>(null)
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null)
   const [liveStatus, setLiveStatus] = useState<LiveStatus>('connecting')
   const [tickerEvents, setTickerEvents] = useState<MoodLogEvent[]>([])
   const [zoom, setZoom] = useState(1)
   // Track recently inserted pin IDs for pulse animation (cleared after 3s)
   const [newPinIds, setNewPinIds] = useState<Set<string>>(new Set())
+  const [showFollowingOnly, setShowFollowingOnly] = useState(false)
 
   const pinsQuery = useQuery({
-    queryKey: ['mood-pins'],
-    queryFn: fetchPins,
+    queryKey: ['mood-pins', showFollowingOnly],
+    queryFn: showFollowingOnly && user?.id
+      ? () => fetchFollowingPins(user.id)
+      : fetchPins,
+    enabled: Boolean(user?.id),
+  })
+
+  // Fetch blocked user IDs for filtering
+  const { data: blockedIds = [] } = useQuery({
+    queryKey: ['blocked-users', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return []
+      const { data, error } = await supabase
+        .from('user_blocks')
+        .select('blocked_id')
+        .eq('blocker_id', user.id)
+      if (error) return []
+      return (data ?? []).map((r) => r.blocked_id as string)
+    },
     enabled: Boolean(user?.id),
   })
 
@@ -696,16 +772,27 @@ export function GlobalMirrorPage() {
     if (!user?.id) return
     setGeoStatus('pending')
     setDropError(null)
+    setRateLimitError(null)
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           await insertPin(user.id, pos.coords.latitude, pos.coords.longitude, selectedSentiment)
+          // Pins are anonymous, so this achievement is unlocked at drop time.
+          void unlockAchievement('global_citizen')
           setGeoStatus('done')
           scheduleMapInvalidate()
           setTimeout(() => setGeoStatus('idle'), 2000)
-        } catch {
-          setDropError('Failed to drop pin. Please try again.')
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          if (msg.includes('rate_limit_exceeded') || msg.includes('PT429')) {
+            const match = msg.match(/retry_after_seconds['":\s]+(\d+)/)
+            const retrySecs = match ? Number(match[1]) : 3600
+            const mins = Math.ceil(retrySecs / 60)
+            setRateLimitError(`You're dropping pins too fast. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`)
+          } else {
+            setDropError('Failed to drop pin. Please try again.')
+          }
           setGeoStatus('idle')
         }
       },
@@ -714,6 +801,31 @@ export function GlobalMirrorPage() {
   }, [user?.id, selectedSentiment, scheduleMapInvalidate])
 
   const pins = pinsQuery.data ?? []
+
+  // Fetch pin-to-user mapping for blocked-user filtering
+  const { data: pinUserMap = {} } = useQuery({
+    queryKey: ['pin-user-map'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_mood_pins')
+        .select('mood_pin_id, user_id')
+      if (error) return {}
+      const map: Record<string, string> = {}
+      for (const row of (data ?? []) as { mood_pin_id: string; user_id: string }[]) {
+        map[row.mood_pin_id] = row.user_id
+      }
+      return map
+    },
+    staleTime: 60_000,
+  })
+
+  // Filter out pins from blocked users
+  const filteredPins = blockedIds.length > 0
+    ? pins.filter((pin) => {
+        const owner = pinUserMap[pin.id]
+        return owner ? !blockedIds.includes(owner) : true
+      })
+    : pins
 
   return (
     <div
@@ -729,6 +841,23 @@ export function GlobalMirrorPage() {
           </p>
         </div>
         <LiveIndicator status={liveStatus} />
+        <button
+          type="button"
+          onClick={() => setShowFollowingOnly((prev) => !prev)}
+          aria-pressed={showFollowingOnly}
+          style={{
+            padding: '0.3rem 0.75rem',
+            borderRadius: '999px',
+            border: `1px solid ${showFollowingOnly ? 'var(--brand)' : 'var(--line)'}`,
+            background: showFollowingOnly ? 'var(--brand)' : 'transparent',
+            color: showFollowingOnly ? '#fff' : 'var(--text)',
+            cursor: 'pointer',
+            fontSize: '0.8rem',
+            fontWeight: 600,
+          }}
+        >
+          Following {showFollowingOnly ? '✓' : ''}
+        </button>
       </div>
 
       {/* Ticker */}
@@ -745,7 +874,7 @@ export function GlobalMirrorPage() {
         aria-label="World mood map"
       >
         <WorldMap
-          pins={pins}
+          pins={filteredPins}
           newPinIds={newPinIds}
           zoom={zoom}
           onZoomChange={setZoom}
@@ -785,6 +914,7 @@ export function GlobalMirrorPage() {
             setCommentsPanelPinId(pinId)
             setSelectedBucket(null)
           }}
+          currentUserId={user?.id}
         />
       )}
 
@@ -819,6 +949,11 @@ export function GlobalMirrorPage() {
         {dropError && (
           <p role="alert" style={{ color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
             {dropError}
+          </p>
+        )}
+        {rateLimitError && (
+          <p role="alert" style={{ color: '#f97316', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+            ⏳ {rateLimitError}
           </p>
         )}
 

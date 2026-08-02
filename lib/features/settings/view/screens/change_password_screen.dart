@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../auth/view/widgets/custom_text_field.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
@@ -53,16 +54,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           _newPasswordController.clear();
           _confirmPasswordController.clear();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password updated successfully')),
-          );
+          ErrorHandler.showSuccess(context, 'Password updated successfully');
           context.pop();
         } else {
           final error =
               ref.read(authProvider).error ?? 'Failed to update password';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(error)));
+          ErrorHandler.showError(context, error);
         }
       }
     }

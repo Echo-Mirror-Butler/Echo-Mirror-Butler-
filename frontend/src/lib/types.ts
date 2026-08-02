@@ -36,6 +36,7 @@ export type LogEntry = {
   mood: number | null
   habits: string[]
   notes: string | null
+  image_path: string | null
   created_at: string
   updated_at: string
 }

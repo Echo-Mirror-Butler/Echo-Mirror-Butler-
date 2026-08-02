@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/viewmodel/providers/haptics_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/gift_transaction_model.dart';
 import '../../viewmodel/providers/gift_provider.dart';
@@ -47,6 +48,16 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     super.dispose();
   }
 
+  Future<void> _triggerHaptic(Future<void> Function() feedback) async {
+    final hapticsEnabled = ref.read(hapticsEnabledProvider);
+    if (!hapticsEnabled) return;
+    try {
+      await feedback();
+    } catch (_) {
+      // Haptic feedback is best-effort and may be unavailable on some devices.
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -65,11 +76,15 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   Future<void> _handleSend() async {
     final currentBalance = ref.read(giftProvider).echoBalance;
 
+    await _triggerHaptic(HapticFeedback.mediumImpact);
+
     if (_selectedAmount <= 0) {
+      await _triggerHaptic(HapticFeedback.vibrate);
       _showError('Amount must be greater than 0');
       return;
     }
     if (_selectedAmount > currentBalance) {
+      await _triggerHaptic(HapticFeedback.vibrate);
       _showError('Insufficient ECHO balance');
       return;
     }
@@ -85,6 +100,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         );
 
     if (success && mounted) {
+      await _triggerHaptic(HapticFeedback.lightImpact);
       _confettiController.play();
       _showSuccess('Gift sent successfully!');
       await Future.delayed(const Duration(seconds: 3));
@@ -104,6 +120,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       if (nextError != null &&
           nextError.isNotEmpty &&
           nextError != previousError) {
+        _triggerHaptic(HapticFeedback.vibrate);
         _showError(nextError);
       }
     });
@@ -191,7 +208,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                         : 'Send ${_selectedAmount.toStringAsFixed(0)} ECHO',
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: theme.colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -267,7 +284,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -323,7 +340,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
           (amount) => ChoiceChip(
             label: Text('${amount.toStringAsFixed(0)} ECHO'),
             selected: _selectedAmount == amount,
-            selectedColor: AppTheme.primaryColor,
+            selectedColor: theme.colorScheme.primary,
             labelStyle: TextStyle(
               color: _selectedAmount == amount ? Colors.white : null,
               fontWeight: FontWeight.w600,
@@ -512,14 +529,14 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             ),
             leading: CircleAvatar(
               backgroundColor: isSent
-                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
                   : Colors.green.withValues(alpha: 0.1),
               child: Icon(
                 isSent
                     ? FontAwesomeIcons.gift.data
                     : FontAwesomeIcons.handHoldingHeart.data,
                 size: 16,
-                color: isSent ? AppTheme.primaryColor : Colors.green,
+                color: isSent ? theme.colorScheme.primary : Colors.green,
               ),
             ),
             title: Row(

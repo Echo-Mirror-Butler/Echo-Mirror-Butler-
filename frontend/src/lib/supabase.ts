@@ -19,5 +19,10 @@ const rememberMe =
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: rememberMe ? localStorage : sessionStorage,
+    // Issue #634: pin PKCE so authorization codes require a stored verifier (CSRF protection)
+    flowType: 'pkce',
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true,
   },
 })

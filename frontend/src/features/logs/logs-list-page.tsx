@@ -7,7 +7,14 @@ import { useToast } from '../../lib/use-toast'
 import type { LogEntry } from '../../lib/types'
 import { formatDate, moodToEmoji, toDateInputValue } from '../../lib/date'
 import { buildLogsCsv, type LogCsvRow } from './logs-csv'
+import {
+  parseImportFile,
+  toImportRpcPayload,
+  type ImportPreview,
+  type ImportRow,
+} from './logs-import'
 import { SORT_OPTIONS, DEFAULT_SORT, isSortOption, splitOnMatch, type SortOption } from './logs-utils'
+import { LogImageThumbnail } from './components/log-image-thumbnail'
 
 const LOGS_PAGE_SIZE = 10
 const LOGS_SCROLL_STORAGE_KEY = 'echomirror:logs-scroll-y'
@@ -233,6 +240,10 @@ export function LogsListPage() {
 
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+  const importInputRef = useRef<HTMLInputElement>(null)
 
   // Free-text search (kept in component state, debounced before querying)
   const [searchInput, setSearchInput] = useState('')
@@ -255,6 +266,7 @@ export function LogsListPage() {
   const selectAllRef = useRef<HTMLInputElement>(null)
   const cancelDeleteRef = useRef<HTMLButtonElement>(null)
   const deleteTriggerFocusRef = useRef<HTMLElement | null>(null)
+  const deleteDialogRef = useRef<HTMLDivElement>(null)
 
   // Parse filters from URL
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams])
@@ -327,6 +339,64 @@ export function LogsListPage() {
       setExportError('Failed to export logs')
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const handleImportFile = async (file: File | null) => {
+    if (!file) return
+    setImportError(null)
+    try {
+      const text = await file.text()
+      const preview = parseImportFile(file.name, text)
+      if (preview.uniqueValid.length === 0 && preview.invalid.length > 0) {
+        setImportError(preview.invalid[0]?.error ?? 'No valid rows found')
+        setImportPreview(preview.uniqueValid.length ? preview : preview)
+        return
+      }
+      setImportPreview(preview)
+    } catch (err) {
+      console.error(err)
+      setImportError('Failed to read import file')
+      setImportPreview(null)
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = ''
+    }
+  }
+
+  const commitImport = async (rows: ImportRow[]) => {
+    if (!user || rows.length === 0) return
+    setIsImporting(true)
+    setImportError(null)
+    try {
+      const { data, error } = await supabase.rpc('import_log_entries', {
+        p_rows: toImportRpcPayload(rows),
+      })
+      if (error) throw error
+      const result = data as {
+        success?: boolean
+        inserted?: number
+        skipped?: number
+        error?: string
+        errors?: { row: number; error: string }[]
+      }
+      if (result?.success === false) {
+        setImportError(result.error ?? 'Import failed')
+        return
+      }
+      const inserted = result?.inserted ?? 0
+      const skipped = result?.skipped ?? 0
+      showToast(
+        `Imported ${inserted} log${inserted === 1 ? '' : 's'}` +
+          (skipped > 0 ? ` (${skipped} skipped as duplicates)` : ''),
+        'success',
+      )
+      setImportPreview(null)
+      await queryClient.invalidateQueries({ queryKey: ['logs'] })
+    } catch (err) {
+      console.error(err)
+      setImportError(err instanceof Error ? err.message : 'Failed to import logs')
+    } finally {
+      setIsImporting(false)
     }
   }
 
@@ -529,13 +599,30 @@ export function LogsListPage() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [habitAutocompleteOpen])
 
-  // Bulk-delete dialog: move focus into it on open, close on Escape, and
-  // restore focus to the element that opened it on close.
+  // Bulk-delete dialog: move focus into it on open, trap Tab cycling, close
+  // on Escape, and restore focus to the element that opened it on close.
   useEffect(() => {
     if (!isDeleteDialogOpen) return
     cancelDeleteRef.current?.focus()
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsDeleteDialogOpen(false)
+      if (e.key === 'Escape') {
+        setIsDeleteDialogOpen(false)
+        return
+      }
+      if (e.key !== 'Tab' || !deleteDialogRef.current) return
+      const items = Array.from(
+        deleteDialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled])'),
+      )
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', handleKey)
     return () => {
@@ -570,8 +657,108 @@ export function LogsListPage() {
           <button type="button" className="secondary" onClick={handleExport} disabled={isExporting}>
             {isExporting ? 'Exporting…' : 'Export CSV'}
           </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => importInputRef.current?.click()}
+            disabled={isImporting}
+          >
+            Import CSV/JSON
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".csv,.json,text/csv,application/json"
+            style={{ display: 'none' }}
+            aria-label="Import mood logs file"
+            onChange={(e) => void handleImportFile(e.target.files?.[0] ?? null)}
+          />
         </div>
         {exportError && <p className="error-text" style={{ padding: '0 1.5rem' }}>{exportError}</p>}
+        {importError && <p className="error-text" style={{ padding: '0 1.5rem' }}>{importError}</p>}
+        {importPreview && (
+          <div
+            role="dialog"
+            aria-label="Import preview"
+            style={{
+              margin: '0.75rem 1.5rem',
+              padding: '1rem',
+              border: '1px solid var(--line)',
+              borderRadius: 12,
+              background: 'var(--surface-soft)',
+            }}
+          >
+            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>Import preview</h3>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '0.875rem', color: 'var(--muted)' }}>
+              {importPreview.uniqueValid.length} valid row
+              {importPreview.uniqueValid.length === 1 ? '' : 's'} ready
+              {importPreview.invalid.length > 0
+                ? ` · ${importPreview.invalid.length} invalid skipped`
+                : ''}
+              . Existing logs for the same date are not duplicated.
+            </p>
+            {importPreview.uniqueValid.length > 0 && (
+              <div style={{ maxHeight: 180, overflow: 'auto', marginBottom: '0.75rem' }}>
+                <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th align="left">Date</th>
+                      <th align="left">Mood</th>
+                      <th align="left">Habits</th>
+                      <th align="left">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importPreview.uniqueValid.slice(0, 20).map((row) => (
+                      <tr key={row.date}>
+                        <td>{row.date}</td>
+                        <td>{row.mood ?? '—'}</td>
+                        <td>{row.habits.join('; ') || '—'}</td>
+                        <td>{row.notes?.slice(0, 40) || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {importPreview.uniqueValid.length > 20 && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                    …and {importPreview.uniqueValid.length - 20} more
+                  </p>
+                )}
+              </div>
+            )}
+            {importPreview.invalid.length > 0 && (
+              <ul style={{ fontSize: '0.8rem', color: 'var(--danger, #b91c1c)', margin: '0 0 0.75rem' }}>
+                {importPreview.invalid.slice(0, 5).map((err) =>
+                  err.ok ? null : (
+                    <li key={`${err.row}-${err.error}`}>
+                      Row {err.row}: {err.error}
+                    </li>
+                  ),
+                )}
+              </ul>
+            )}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                disabled={isImporting || importPreview.uniqueValid.length === 0}
+                onClick={() => void commitImport(importPreview.uniqueValid)}
+              >
+                {isImporting ? 'Importing…' : `Import ${importPreview.uniqueValid.length} rows`}
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                disabled={isImporting}
+                onClick={() => {
+                  setImportPreview(null)
+                  setImportError(null)
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Search bar ── */}
         <div style={{ padding: '0.75rem 1.5rem 0', position: 'relative' }}>
@@ -890,7 +1077,14 @@ export function LogsListPage() {
                     ))}
                   </div>
 
-                  <p className="muted note-preview">{renderNotePreview(entry.notes, debouncedSearch)}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    {entry.image_path ? (
+                      <LogImageThumbnail path={entry.image_path} alt="" size={40} />
+                    ) : null}
+                    <p className="muted note-preview" style={{ margin: 0 }}>
+                      {renderNotePreview(entry.notes, debouncedSearch)}
+                    </p>
+                  </div>
                 </Link>
               </div>
             )
@@ -950,6 +1144,7 @@ export function LogsListPage() {
       {isDeleteDialogOpen && (
         <div className="modal-overlay" role="presentation" onClick={() => setIsDeleteDialogOpen(false)}>
           <div
+            ref={deleteDialogRef}
             className="modal-card"
             role="dialog"
             aria-modal="true"

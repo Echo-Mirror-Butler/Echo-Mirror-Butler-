@@ -1,6 +1,3 @@
-﻿import { FormEvent, useState } from 'react'
-import { FormEvent, useEffect, useState } from 'react'
-﻿import { FormEvent, useEffect, useState } from 'react'
 ﻿import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
@@ -10,7 +7,7 @@ import { RecipientAutocomplete } from '../../components/recipient-autocomplete'
 import type { EchoReward, WalletRecord } from '../../lib/types'
 import { formatDateTime } from '../../lib/date'
 import { TestnetBadge } from '../../components/TestnetBadge'
-import { txExplorerUrl } from '../../lib/stellar-config'
+import { jsPDF } from 'jspdf'
 import { useWalletBalances } from '../../lib/use-wallet-balances'
 import { isTestnet, stellarConfig } from '../../lib/stellar-config'
 
@@ -264,17 +261,17 @@ function isValidStellarKey(key: string): boolean {
 
 function buildWalletQrUrl(publicKey: string, size = 256): string {
   const params = new URLSearchParams({
-    size: ${size}x,
+    size: `${size}x${size}`,
     data: publicKey,
   })
-  return https://api.qrserver.com/v1/create-qr-code/?
+  return `https://api.qrserver.com/v1/create-qr-code/?${params.toString()}`
 }
 
 async function isFreighterInstalled(): Promise<boolean> {
   try {
     const { isConnected } = await import('@stellar/freighter-api')
-    const { isAppConnected } = await isConnected()
-    return Boolean(isAppConnected)
+    const { isConnected: appConnected } = await isConnected()
+    return Boolean(appConnected)
   } catch {
     return false
   }
@@ -337,7 +334,6 @@ export function WalletPage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [copiedWalletAddress, setCopiedWalletAddress] = useState(false)
   const receiveCardRef = useRef<HTMLDivElement | null>(null)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -433,12 +429,7 @@ export function WalletPage() {
   const createWalletMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('create-stellar-wallet', {
-        body: {
-          type: 'INSERT',
-          schema: 'auth',
-          table: 'users',
-          record: { id: user!.id },
-        },
+        body: {},
       })
       if (error) {
         throw error
@@ -471,15 +462,14 @@ export function WalletPage() {
       setCustomAmount(String(PRESET_AMOUNTS[1]))
       setSelectedAmount(PRESET_AMOUNTS[1])
       setRecipientInput('')
-      setShowConfirmDialog(false)
       showToast('ECHO sent!', 'success')
       await queryClient.invalidateQueries({ queryKey: ['wallet', user?.id] })
       await queryClient.invalidateQueries({ queryKey: ['wallet-history', user?.id] })
+      await queryClient.invalidateQueries({ queryKey: ['achievement-progress', user?.id] })
     },
     onError: (error: Error) => {
       showToast(error.message, 'error')
       setInlineError(error.message)
-      setShowConfirmDialog(false)
     },
   })
 
@@ -513,7 +503,7 @@ export function WalletPage() {
       })
       const link = document.createElement('a')
       link.href = dataUrl
-      link.download = echo-wallet-.png
+      link.download = `echo-wallet-${publicKey.slice(0, 8)}.png`
       link.click()
       showToast('QR downloaded.', 'success')
     } catch {
@@ -526,7 +516,7 @@ export function WalletPage() {
       return
     }
 
-    const shareText = Send ECHO to this Stellar address: + String.fromCharCode(10) + publicKey
+    const shareText = `Send ECHO to this Stellar address:${String.fromCharCode(10)}${publicKey}`
     const shareUrl = window.location.href
 
     try {
@@ -539,7 +529,7 @@ export function WalletPage() {
         return
       }
 
-      await navigator.clipboard.writeText(${shareText} + String.fromCharCode(10) + shareUrl)
+      await navigator.clipboard.writeText(`${shareText}${String.fromCharCode(10)}${shareUrl}`)
       showToast('Copied to clipboard', 'success')
     } catch {
       showToast('Could not share wallet address.', 'error')
@@ -587,14 +577,6 @@ export function WalletPage() {
     setManualKeyError(null)
     await savePublicKeyMutation.mutateAsync(key)
     setManualKeyInput('')
-  }
-
-  const handleConfirmSend = () => {
-    sendGiftMutation.mutate()
-  }
-
-  const handleCancelSend = () => {
-    setShowConfirmDialog(false)
   }
 
   const handleDownloadCSV = async () => {
@@ -667,6 +649,89 @@ export function WalletPage() {
     URL.revokeObjectURL(url)
   }
 
+  // #618: single-transaction PDF receipt, reusing jsPDF (already a dependency
+  // for the mood-journal export in settings-page.tsx) rather than adding a
+  // second PDF library.
+  //
+  // NOTE: this only covers what's actually queryable for a row today —
+  // date, type, and amount from `echo_rewards`. There is currently no
+  // per-row Stellar transaction hash wired into this table (the
+  // `GiftTransaction` shape in lib/types.ts with sender/recipient/
+  // stellar_tx_hash/message is never populated by any query in this file —
+  // confirmed by searching the whole frontend for `stellar_tx_hash`, which
+  // has zero write sites). Faking a hash or explorer link here would be
+  // worse than not having one, so the receipt honestly discloses that this
+  // is an in-app record rather than an on-chain-verifiable one. Wiring a
+  // real per-gift Stellar tx hash through to this table is a larger,
+  // separate data-layer change, called out in the PR as not covered.
+  const handleDownloadReceipt = (row: EchoReward) => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a5' })
+    const W = doc.internal.pageSize.getWidth()
+    const margin = 40
+    const BRAND = [20, 99, 255] as const
+
+    doc.setFillColor(...BRAND)
+    doc.rect(0, 0, W, 6, 'F')
+
+    doc.setFontSize(20)
+    doc.setTextColor(...BRAND)
+    doc.setFont('helvetica', 'bold')
+    doc.text('EchoMirror', margin, 50)
+
+    doc.setFontSize(13)
+    doc.setTextColor(30, 40, 55)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Transaction Receipt', margin, 72)
+
+    doc.setDrawColor(210, 220, 235)
+    doc.line(margin, 86, W - margin, 86)
+
+    const fields: Array<[string, string]> = [
+      ['Date', formatDateTime(row.created_at)],
+      ['Type', formatRewardReason(row.reason)],
+      ['Amount', formatEchoAmount(row.amount)],
+      ['Reference ID', row.id],
+    ]
+    let y = 116
+    for (const [label, value] of fields) {
+      doc.setFontSize(10)
+      doc.setTextColor(90, 100, 115)
+      doc.setFont('helvetica', 'bold')
+      doc.text(label, margin, y)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(30, 40, 55)
+      const wrapped = doc.splitTextToSize(value, W - margin * 2 - 110)
+      doc.text(wrapped, margin + 110, y)
+      y += 20 * wrapped.length
+    }
+
+    y += 12
+    doc.setDrawColor(230, 236, 246)
+    doc.line(margin, y, W - margin, y)
+    y += 20
+
+    doc.setFontSize(9)
+    doc.setTextColor(120, 130, 145)
+    doc.setFont('helvetica', 'italic')
+    const disclosure = doc.splitTextToSize(
+      'This receipt reflects an EchoMirror in-app record and is not independently verifiable on-chain.',
+      W - margin * 2,
+    )
+    doc.text(disclosure, margin, y)
+
+    doc.setFontSize(8)
+    doc.setTextColor(150, 158, 170)
+    doc.setFont('helvetica', 'normal')
+    doc.text(
+      'Generated locally by EchoMirror — your data never left your device',
+      W / 2,
+      doc.internal.pageSize.getHeight() - 20,
+      { align: 'center' },
+    )
+
+    doc.save(`echomirror-receipt-${row.id}.pdf`)
+  }
+
   const handleClearFilters = () => {
     setSearchQuery('')
     setDebouncedSearch('')
@@ -729,7 +794,6 @@ export function WalletPage() {
         ) : walletQuery.data?.exists ? (
           <>
             <p className="balance-number">{walletQuery.data.balance.toFixed(2)} ECHO</p>
-            <p className="muted">Public key: {walletQuery.data.record?.public_key.slice(0, 14)}â€¦</p>
             {publicKey ? (
               <p className="muted" style={{ margin: 0 }}>
                 Public key: {publicKey.slice(0, 14)}...{publicKey.slice(-4)}
@@ -1177,38 +1241,14 @@ export function WalletPage() {
                 <th style={{ cursor: 'pointer' }} onClick={() => setSortBy(sortBy === 'amount_desc' ? 'amount_asc' : 'amount_desc')}>
                   Amount {sortBy.startsWith('amount') && (sortBy === 'amount_desc' ? '↓' : '↑')}
                 </th>
+                <th>Receipt</th>
               </tr>
             </thead>
             <tbody>
-              {(historyQuery.data?.rows ?? []).map((row) => {
-                const isSent = row.sender_user_id === user.id
-                const counterparty = isSent ? row.recipient_user_id : row.sender_user_id
-                
-                return (
-                  <tr key={row.id}>
-                    <td>{formatDateTime(row.created_at)}</td>
-                    <td>{isSent ? 'sent' : 'received'}</td>
-                    <td className={isSent ? 'amount-minus' : 'amount-plus'}>
-                      {isSent ? '-' : '+'}
-                      {row.echo_amount.toFixed(2)}
-                    </td>
-                    <td>{counterparty.slice(0, 10)}â€¦</td>
-                    <td>{row.status}</td>
-                    <td>
-                      {row.stellar_tx_hash ? (
-                        <a
-                          href={txExplorerUrl(row.stellar_tx_hash!)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {row.stellar_tx_hash.slice(0, 8)}â€¦
-                        </a>
-                      ) : (
-                        'â€”'
-                      )}
               {historyQuery.isLoading ? (
                 Array.from({ length: 3 }).map((_, index) => (
-                  <tr key={`reward-skeleton-${index}`}>
+                  <tr key={`tx-skeleton-${index}`}>
+                    <td><div className="skeleton-line" /></td>
                     <td><div className="skeleton-line" /></td>
                     <td><div className="skeleton-line" /></td>
                     <td><div className="skeleton-line" /></td>
@@ -1221,6 +1261,11 @@ export function WalletPage() {
                     <td>{formatRewardReason(row.reason)}</td>
                     <td className={row.amount >= 0 ? 'amount-plus' : 'amount-minus'}>
                       {formatEchoAmount(row.amount)}
+                    </td>
+                    <td>
+                      <button type="button" onClick={() => handleDownloadReceipt(row)}>
+                        Download receipt
+                      </button>
                     </td>
                   </tr>
                 ))

@@ -20,13 +20,11 @@ const PRECACHE_URLS = ['/', '/offline.html']
 
 self.addEventListener('install', (event) => {
   self.skipWaiting()
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) =>
-      cache.addAll(PRECACHE_URLS).catch(() => {
-        // Silently ignore missing precache entries (e.g. /offline.html not yet created)
-      }),
-    ),
-  )
+  // #605: intentionally NOT swallowing cache.addAll() failures here anymore.
+  // A missing precache entry (e.g. offline.html deleted by accident) should
+  // fail the install loudly — surfaced in devtools/CI — rather than silently
+  // shipping a service worker with no real offline fallback.
+  event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS)))
 })
 
 // ── Activate — clean up old caches ───────────────────────────────────────────
@@ -74,11 +72,15 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Navigation requests — network-first, fall back to app shell
+  // Navigation requests — network-first, fall back to the dedicated offline
+  // page (#605), then the cached app shell, then a bare 503 as a last resort.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() =>
-        caches.match('/').then((r) => r ?? new Response('Offline', { status: 503 })),
+        caches
+          .match('/offline.html')
+          .then((r) => r ?? caches.match('/'))
+          .then((r) => r ?? new Response('Offline', { status: 503 })),
       ),
     )
     return

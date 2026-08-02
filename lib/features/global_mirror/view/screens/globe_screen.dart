@@ -10,6 +10,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../data/models/mood_pin_model.dart';
+import '../../data/repositories/global_mirror_repository.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../widgets/privacy_info_sheet.dart';
 import '../widgets/globe_3d_widget.dart';
@@ -179,7 +180,11 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
           ),
         ],
       ),
-      body: moodPinsAsync.when(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.refresh(moodPinsStreamProvider);
+        },
+        child: moodPinsAsync.when(
         data: (pins) {
           final isMobile = defaultTargetPlatform == TargetPlatform.iOS || 
                            defaultTargetPlatform == TargetPlatform.android;
@@ -317,6 +322,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
           onRetry: () => ref.refresh(moodPinsStreamProvider),
         ),
       ),
+      ),
     );
   }
 
@@ -341,8 +347,9 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
         ),
 
         // Mood pins layer
+        // Cap markers for map virtualization (stream already caps at 500)
         MarkerLayer(
-          markers: pins.map((pin) {
+          markers: pins.take(GlobalMirrorRepository.maxMoodPins).map((pin) {
             return Marker(
               point: LatLng(pin.gridLat, pin.gridLon),
               width: 30,

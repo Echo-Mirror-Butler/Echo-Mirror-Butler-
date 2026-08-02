@@ -6,10 +6,20 @@ import 'core/viewmodel/providers/theme_provider.dart';
 import 'core/viewmodel/providers/notification_provider.dart';
 import 'core/services/supabase_client_service.dart';
 import 'core/services/deep_link_service.dart';
-import 'package:go_router/go_router.dart';
+import 'core/services/mood_sync_service.dart';
+import 'core/services/sentry_service.dart';
+import 'core/navigation/biometric_lock_wrapper.dart';
+import 'features/auth/viewmodel/providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Sentry before anything else so it captures bootstrap errors
+  const environment = String.fromEnvironment(
+    'APP_ENV',
+    defaultValue: 'development',
+  );
+  await SentryService.init(environment: environment);
 
   // Initialize Supabase client service before app start.
   await SupabaseClientService.instance.ensureInitialized();
@@ -33,7 +43,10 @@ class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
     // Initialize notifications on app start
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(notificationInitProvider.future);
-      
+
+      // Start the offline mood log queue (auto-syncs on reconnect)
+      ref.read(moodSyncInitProvider.future);
+
       // Initialize deep link handling
       final router = ref.read(routerProvider);
       _deepLinkService.initialize(
@@ -41,6 +54,12 @@ class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
           router.go(route);
         },
       );
+
+      // Set Sentry user ID if available
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        SentryService.setUserId(user.id);
+      }
     });
   }
 
@@ -65,6 +84,11 @@ class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) {
+        return BiometricLockWrapper(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

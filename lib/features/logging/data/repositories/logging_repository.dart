@@ -1,7 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/supabase_client_service.dart';
 import '../models/log_entry_model.dart';
+
+/// Thrown when the server-side mood log rate limit (max 10 logs per user per
+/// hour, enforced by a Postgres trigger on `log_entries`) is exceeded.
+class MoodLogRateLimitException implements Exception {
+  MoodLogRateLimitException(this.retryAfterSeconds);
+
+  final int retryAfterSeconds;
+
+  @override
+  String toString() =>
+      'rate_limit_exceeded: retry after $retryAfterSeconds seconds';
+}
 
 /// Repository for logging operations
 /// Handles all Supabase table queries for daily logging
@@ -30,6 +44,21 @@ class LoggingRepository {
     return '$year-$month-$day';
   }
 
+  /// Parses the `{"error":"rate_limit_exceeded","retry_after_seconds":N}`
+  /// payload the `enforce_mood_log_rate_limit` trigger sends as the
+  /// PostgrestException message, defaulting to 3600s if it can't be parsed.
+  int _parseRetryAfterSeconds(String message) {
+    try {
+      final decoded = jsonDecode(message);
+      if (decoded is Map && decoded['retry_after_seconds'] is int) {
+        return decoded['retry_after_seconds'] as int;
+      }
+    } catch (_) {
+      // Fall through to default below.
+    }
+    return 3600;
+  }
+
   /// Create a new log entry
   Future<LogEntryModel> createLogEntry(LogEntryModel entry) async {
     try {
@@ -48,6 +77,16 @@ class LoggingRepository {
 
       debugPrint('[LoggingRepository] createLogEntry success');
       return LogEntryModel.fromJson(result);
+    } on PostgrestException catch (e) {
+      if (e.code == 'PT429') {
+        final retryAfter = _parseRetryAfterSeconds(e.message);
+        debugPrint(
+          '[LoggingRepository] createLogEntry rate limited, retryAfterSeconds=$retryAfter',
+        );
+        throw MoodLogRateLimitException(retryAfter);
+      }
+      debugPrint('[LoggingRepository] createLogEntry error -> $e');
+      throw Exception('Failed to create log entry: ${e.toString()}');
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] createLogEntry error -> $e');
       debugPrint(
@@ -115,14 +154,28 @@ class LoggingRepository {
     }
   }
 
-  /// Get all log entries for a user
+  /// Default page size for paginated log list fetches (Issue #637).
+  static const int defaultPageSize = 30;
+
+  /// Get log entries for a user.
+  ///
+  /// When [limit] is provided (or defaults via [offset]), results are bounded
+  /// with `.range` so the logging screen never loads an unbounded result set.
+  /// Pass [limit] = null and [offset] = null only for callers that truly need
+  /// a date-windowed full fetch (prefer providing [startDate]/[endDate]).
   Future<List<LogEntryModel>> getLogEntries(
     String userId, {
     DateTime? startDate,
     DateTime? endDate,
+    int? offset,
+    int? limit,
   }) async {
     try {
-      debugPrint('[LoggingRepository] getLogEntries -> userId: $userId');
+      final effectiveLimit = limit ?? (offset != null ? defaultPageSize : null);
+      debugPrint(
+        '[LoggingRepository] getLogEntries -> userId: $userId '
+        'offset: $offset limit: $effectiveLimit',
+      );
       var query = _supabase.from('log_entries').select().eq('user_id', userId);
       if (startDate != null) {
         query = query.gte('date', _toDateString(startDate));
@@ -131,7 +184,13 @@ class LoggingRepository {
         query = query.lte('date', _toDateString(endDate));
       }
 
-      final results = await query.order('date');
+      final ordered = query.order('date', ascending: false);
+      final results = effectiveLimit != null
+          ? await ordered.range(
+              offset ?? 0,
+              (offset ?? 0) + effectiveLimit - 1,
+            )
+          : await ordered;
       debugPrint(
         '[LoggingRepository] getLogEntries success -> ${results.length} entries',
       );
@@ -141,6 +200,15 @@ class LoggingRepository {
       debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');
       return [];
     }
+  }
+
+  /// Paginated fetch used by the logging list (Issue #637).
+  Future<List<LogEntryModel>> getLogEntriesPage(
+    String userId, {
+    int offset = 0,
+    int limit = defaultPageSize,
+  }) {
+    return getLogEntries(userId, offset: offset, limit: limit);
   }
 
   /// Delete a log entry

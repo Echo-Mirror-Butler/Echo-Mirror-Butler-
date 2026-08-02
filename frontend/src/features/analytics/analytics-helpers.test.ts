@@ -5,13 +5,10 @@ describe('buildHabitStreaks', () => {
   it('calculates current and longest streaks correctly', () => {
     const today = new Date()
     today.setUTCHours(0, 0, 0, 0)
-    const todayStr = today.toISOString().slice(0, 10)
     const yesterday = new Date(today.getTime() - 86400000)
     const yesterdayStr = yesterday.toISOString().slice(0, 10)
     const twoDaysAgo = new Date(today.getTime() - 2 * 86400000)
     const threeDaysAgo = new Date(today.getTime() - 3 * 86400000)
-    const fourDaysAgo = new Date(today.getTime() - 4 * 86400000)
-    const eightDaysAgo = new Date(today.getTime() - 8 * 86400000)
 
     const entries: AnalyticsLogEntry[] = [
       {

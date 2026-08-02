@@ -68,6 +68,7 @@ export function QuickCheckInWidget() {
       queryClient.invalidateQueries({ queryKey: ['today-log', user?.id] })
       queryClient.invalidateQueries({ queryKey: ['logs', user?.id] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-streak', user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['achievement-progress', user?.id] })
     },
   })
 

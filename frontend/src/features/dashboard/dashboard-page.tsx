@@ -1,13 +1,12 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth-context";
 import type { LogEntry, Insight } from "../../lib/types";
 import { formatDate, moodToEmoji } from "../../lib/date";
 import { HabitTrackerWidget } from "./components/habit-tracker-widget";
-import { QuickCheckInWidget } from "./components/QuickCheckInWidget";
-import { predictTomorrowMood, type AnalyticsLogEntry } from "../analytics/analytics-helpers";
+
+const MOOD_EMOJIS = ['😞', '😕', '😐', '🙂', '😄'];
 
 async function fetchMoodTrend(userId: string) {
   const today = new Date();
@@ -114,70 +113,29 @@ export function DashboardPage() {
     enabled: !!user,
   });
 
-  // Mood prediction query
-  const predictionQuery = useQuery({
-    queryKey: ["dashboard-prediction", user?.id],
+  // Friends' mood feed
+  const friendsMoodQuery = useQuery({
+    queryKey: ["friends-mood", user?.id],
     queryFn: async () => {
-      if (!user) return null;
-      const sixtyDaysAgo = new Date();
-      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-      const { data, error } = await supabase
-        .from("log_entries")
-        .select("id, date, mood, habits, notes, user_id, created_at, updated_at")
-        .eq("user_id", user.id)
-        .gte("date", sixtyDaysAgo.toISOString())
-        .order("date", { ascending: true });
-      if (error) throw error;
-      const entries = (data ?? []).map((e) => ({
-        ...e,
-        habits: Array.isArray(e.habits) ? e.habits : [],
-      })) as AnalyticsLogEntry[];
-      if (entries.length < 14) return null;
-      return predictTomorrowMood(entries);
-    },
-    enabled: !!user,
-    staleTime: 1000 * 60 * 60 * 12,
-  });
-
-  // Streak freeze query
-  const freezeQuery = useQuery({
-    queryKey: ["streak-freeze", user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const today = new Date().toISOString().slice(0, 10);
-      const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-      const { data, error } = await supabase
-        .from("streak_freezes")
-        .select("id, used_on_date")
-        .eq("user_id", user.id)
-        .in("used_on_date", [today, tomorrow])
-        .maybeSingle();
-      if (error) throw error;
-      return data as { id: string; used_on_date: string } | null;
-    },
-    enabled: !!user,
-  });
-
-  const queryClient = useQueryClient();
-  const [showFreezeModal, setShowFreezeModal] = useState(false);
-
-  const purchaseFreezeMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error("Not authenticated");
-      const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
-      const { error } = await supabase.from("streak_freezes").insert({
-        user_id: user.id,
-        used_on_date: tomorrow,
-        echo_cost: 5,
-        created_at: new Date().toISOString(),
+      if (!user) return [];
+      const { data, error } = await supabase.rpc("get_friends_mood_logs", {
+        p_user_id: user.id,
+        p_days: 1,
       });
-      if (error) throw error;
+      if (error) {
+        console.warn("Friends mood feed unavailable:", error.message);
+        return [];
+      }
+      return (data ?? []) as Array<{
+        user_id: string;
+        display_name: string | null;
+        avatar_url: string | null;
+        mood: number | null;
+        date: string;
+        has_public_profile: boolean;
+      }>;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["streak-freeze", user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-echo", user?.id] });
-      setShowFreezeModal(false);
-    },
+    enabled: !!user,
   });
 
   const echoQuery = useQuery({
@@ -231,10 +189,38 @@ export function DashboardPage() {
 
   return (
     <section className="feature-grid">
-      {/* Quick Check-in Widget */}
-      <div style={{ gridColumn: '1 / -1' }}>
-        <QuickCheckInWidget />
-      </div>
+      {/* Log Today's Mood button */}
+      <article className="card full-width" style={{ gridColumn: '1 / -1', padding: '0.75rem 1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem' }}>
+          <div>
+            <strong style={{ fontSize: '1rem' }}>How are you feeling today?</strong>
+            <p className="muted" style={{ margin: '0.15rem 0 0', fontSize: '0.85rem' }}>
+              Log your mood to track your emotional journey
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const today = new Date().toISOString().slice(0, 10)
+              const { data } = await supabase
+                .from('log_entries')
+                .select('id')
+                .eq('user_id', user.id)
+                .gte('date', `${today}T00:00:00.000Z`)
+                .lte('date', `${today}T23:59:59.999Z`)
+                .maybeSingle()
+              if (data) {
+                navigate(`/logs/${data.id}/edit`)
+              } else {
+                navigate(`/logs/new?date=${today}`)
+              }
+            }}
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            Log Today's Mood
+          </button>
+        </div>
+      </article>
 
       {/* Mood Summary Card - spans 2 columns */}
       <article className="card">
@@ -283,19 +269,6 @@ export function DashboardPage() {
       <article className="card">
         <div className="card-header">
           <h3>Streak</h3>
-          {freezeQuery.data && (
-            <span
-              className="chip"
-              style={{
-                fontSize: "0.7rem",
-                background: "var(--brand)",
-                color: "#fff",
-                border: "none",
-              }}
-            >
-              ❄️ Streak protected
-            </span>
-          )}
         </div>
         <div className="card-content">
           {streakQuery.isLoading ? (
@@ -309,24 +282,6 @@ export function DashboardPage() {
             <div className="streak-count">
               <p className="muted">Current streak</p>
               <h2 style={{ margin: "0.25rem 0 0" }}>🔥 {currentStreak}-day streak</h2>
-              {currentStreak >= 3 && !freezeQuery.data && echoQuery.data && (echoQuery.data as { balance: number; earnedToday: number }).balance >= 10 && (
-                <button
-                  type="button"
-                  onClick={() => setShowFreezeModal(true)}
-                  style={{
-                    marginTop: "0.75rem",
-                    background: "none",
-                    border: "1px solid var(--brand)",
-                    color: "var(--brand)",
-                    borderRadius: "8px",
-                    padding: "0.35rem 0.75rem",
-                    fontSize: "0.8rem",
-                    cursor: "pointer",
-                  }}
-                >
-                  ❄️ Protect my streak (5 ECHO)
-                </button>
-              )}
             </div>
           ) : (
             <div className="streak-count">
@@ -338,105 +293,6 @@ export function DashboardPage() {
           )}
         </div>
       </article>
-
-      {/* Freeze confirmation modal */}
-      {showFreezeModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.5)",
-          }}
-          onClick={() => setShowFreezeModal(false)}
-        >
-          <div
-            className="card"
-            style={{ maxWidth: "380px", width: "90%", margin: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="card-header">
-              <h3>Protect your streak</h3>
-            </div>
-            <div className="card-content">
-              <p style={{ marginBottom: "1rem", lineHeight: 1.6 }}>
-                Spend <strong>5 ECHO</strong> to freeze tomorrow's streak? You'll
-                keep your streak even if you don't log.
-              </p>
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => setShowFreezeModal(false)}
-                  style={{ flex: 1 }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => purchaseFreezeMutation.mutate()}
-                  disabled={purchaseFreezeMutation.isPending}
-                  style={{ flex: 1 }}
-                >
-                  {purchaseFreezeMutation.isPending ? "Freezing..." : "❄️ Freeze it"}
-                </button>
-              </div>
-              {purchaseFreezeMutation.isError && (
-                <p style={{ color: "var(--danger)", marginTop: "0.75rem", fontSize: "0.85rem" }}>
-                  Failed to freeze streak. Please try again.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tomorrow's Forecast Card */}
-      {predictionQuery.data && (
-        <article className="card">
-          <div className="card-header">
-            <h3>Tomorrow's forecast</h3>
-          </div>
-          <div className="card-content">
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <span style={{ fontSize: "2rem" }}>
-                {moodToEmoji(Math.round(predictionQuery.data.predicted))}
-              </span>
-              <div>
-                <h2 style={{ margin: 0 }}>
-                  {predictionQuery.data.predicted.toFixed(1)} / 5
-                </h2>
-                <p className="muted" style={{ margin: "0.15rem 0 0", fontSize: "0.8rem" }}>
-                  {predictionQuery.data.reason}
-                </p>
-              </div>
-            </div>
-            <div style={{ marginTop: "0.5rem" }}>
-              <span
-                className="chip"
-                style={{
-                  fontSize: "0.7rem",
-                  padding: "0.15rem 0.5rem",
-                  background:
-                    predictionQuery.data.confidence === "high"
-                      ? "var(--success)"
-                      : predictionQuery.data.confidence === "medium"
-                        ? "var(--warning)"
-                        : "var(--muted)",
-                  color: "#fff",
-                  border: "none",
-                }}
-              >
-                {predictionQuery.data.confidence} confidence
-              </span>
-            </div>
-          </div>
-        </article>
-      )}
 
       {/* ECHO Balance Card */}
       <article
@@ -466,6 +322,40 @@ export function DashboardPage() {
                 Tap to view wallet →
               </p>
             </>
+          )}
+        </div>
+      </article>
+
+      {/* Friends' Mood Feed */}
+      <article className="card">
+        <div className="card-header">
+          <h3>Friends Today</h3>
+        </div>
+        <div className="card-content">
+          {friendsMoodQuery.isLoading && <p className="muted">Loading friends' mood…</p>}
+          {friendsMoodQuery.data && friendsMoodQuery.data.length === 0 && (
+            <p className="muted" style={{ fontSize: '0.85rem' }}>Follow other users from the Global Mirror to see their mood here</p>
+          )}
+          {friendsMoodQuery.data && friendsMoodQuery.data.length > 0 && (
+            <div className="chip-row">
+              {friendsMoodQuery.data.map((friend) => {
+                const moodEmoji = friend.mood != null && friend.mood >= 1 && friend.mood <= 5
+                  ? MOOD_EMOJIS[friend.mood - 1]
+                  : '❓';
+                const name = friend.display_name ?? friend.user_id.slice(0, 8);
+                return (
+                  <div key={friend.user_id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.65rem', borderRadius: '999px', background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+                    {friend.avatar_url ? (
+                      <img src={friend.avatar_url} alt={name} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>{name.charAt(0).toUpperCase()}</span>
+                    )}
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{name}</span>
+                    <span style={{ fontSize: '1.1rem' }}>{moodEmoji}</span>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       </article>

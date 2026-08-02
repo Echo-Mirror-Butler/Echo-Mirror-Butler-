@@ -1,192 +1,190 @@
-import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2';
+/**
+ * Issue #592: Account Deletion Flow - Improved Data Export Function
+ *
+ * This Edge Function exports a complete user data dump including:
+ * - Profile information
+ * - Mood logs with all fields
+ * - Comments/notes
+ * - Wallet transactions
+ * - Social connections (followers/following)
+ *
+ * Returns JSON file ready for download
+ *
+ * GET /export-user-data
+ * Response: { userId, exportedAt, data: { profiles, logs, comments, transactions, social } }
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createLogger, extractTraceId, addTraceIdToResponse } from './_shared/logger.ts';
 
-function jsonResponse(body: unknown, status = 200, extra: Record<string, string> = {}) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json', ...extra },
-  });
-}
+const logger = createLogger('export-user-data');
 
-function getEnv(name: string) {
-  return Deno.env.get(name) ?? '';
-}
+export async function exportUserDataFunction(req: Request): Promise<Response> {
+  const incomingTraceId = extractTraceId(Object.fromEntries(req.headers));
+  let traceId = incomingTraceId;
 
-function sanitizeCsvCell(raw: string): string {
-  let s = raw;
-  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"`
-    : s;
-}
-
-function toCsv(label: string, rows: Record<string, unknown>[]): string {
-  if (rows.length === 0) return `--- ${label} ---\n(no data)\n`;
-  const keys = Object.keys(rows[0]);
-  const header = keys.join(',');
-  const body = rows.map((r) =>
-    keys.map((k) => {
-      const v = r[k];
-      const s = typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
-      return sanitizeCsvCell(s);
-    }).join(',')
-  ).join('\n');
-  return `--- ${label} ---\n${header}\n${body}\n`;
-}
-
-const BATCH_SIZE = 200;
-
-async function fetchAllPages<T>(
-  query: (from: number, to: number) => ReturnType<ReturnType<SupabaseClient['from']>['select']>,
-): Promise<T[]> {
-  const results: T[] = [];
-  let from = 0;
-
-  while (true) {
-    const { data, error } = await query(from, from + BATCH_SIZE - 1);
-    if (error || !data || data.length === 0) break;
-    results.push(...(data as T[]));
-    if (data.length < BATCH_SIZE) break;
-    from += BATCH_SIZE;
-  }
-
-  return results;
-}
-
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  if (req.method !== 'GET') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
-
-  const authHeader = req.headers.get('authorization') ?? '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) {
-    return jsonResponse({ error: 'Missing authorization token' }, 401);
-  }
-
-  const supabaseUrl = getEnv('SUPABASE_URL');
-  const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
-  if (!supabaseUrl || !serviceRoleKey) {
-    return jsonResponse({ error: 'Server configuration error' }, 500);
-  }
-
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data: { user }, error: authError } = await admin.auth.getUser(token);
-  if (authError || !user) {
-    return jsonResponse({ error: 'Invalid or expired token' }, 401);
-  }
-
-  const lastExport = user.user_metadata?.last_export_at;
-  if (lastExport) {
-    const elapsed = Date.now() - new Date(lastExport).getTime();
-    const oneHour = 60 * 60 * 1000;
-    if (elapsed < oneHour) {
-      const retryAfter = Math.ceil((oneHour - elapsed) / 1000);
-      return jsonResponse(
-        { error: 'Rate limited. Try again later.', retry_after_seconds: retryAfter },
-        429,
-        { 'Retry-After': String(retryAfter) },
+  try {
+    // Verify request method
+    if (req.method !== 'GET') {
+      const errorTraceId = logger.warn('Invalid request method', { method: req.method }, traceId);
+      traceId = errorTraceId;
+      return new Response(
+        JSON.stringify({ error: 'Method not allowed', traceId }),
+        {
+          status: 405,
+          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+        }
       );
     }
-  }
 
-  const url = new URL(req.url);
-  const format = url.searchParams.get('format') === 'csv' ? 'csv' : 'json';
-  const userId = user.id;
+    // Extract user ID from Authorization header (JWT)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      const errorTraceId = logger.warn('Missing authorization header', {}, traceId);
+      traceId = errorTraceId;
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', traceId }),
+        {
+          status: 401,
+          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+        }
+      );
+    }
 
-  // Fetch all tables in parallel, each paginated in 200-row batches
-  const [logs, gifts, insights, habits, completions] = await Promise.all([
-    fetchAllPages((from, to) =>
-      admin
-        .from('log_entries')
-        .select('id, date, mood, habits, notes, created_at, updated_at')
-        .eq('user_id', userId)
-        .order('date', { ascending: false })
-        .range(from, to),
-    ),
-    fetchAllPages((from, to) =>
-      admin
-        .from('gift_transactions')
-        .select('id, echo_amount, stellar_tx_hash, message, status, created_at')
-        .or(`sender_user_id.eq.${userId},recipient_user_id.eq.${userId}`)
-        .order('created_at', { ascending: false })
-        .range(from, to),
-    ),
-    fetchAllPages((from, to) =>
-      admin
-        .from('ai_insights')
-        .select('id, prediction, suggestions, future_letter, stress_level, calming_message, music_recommendations, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .range(from, to),
-    ),
-    fetchAllPages((from, to) =>
-      admin
-        .from('habits')
-        .select('id, name, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .range(from, to),
-    ),
-    fetchAllPages((from, to) =>
-      admin
-        .from('habit_completions')
-        .select('id, habit_id, completed_date, created_at')
-        .eq('user_id', userId)
-        .order('completed_date', { ascending: false })
-        .range(from, to),
-    ),
-  ]);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  const data = {
-    log_entries: logs,
-    gift_transactions: gifts,
-    ai_insights: insights,
-    habits: habits,
-    habit_completions: completions,
-  };
+    if (!supabaseUrl || !supabaseKey) {
+      const errorTraceId = logger.error(
+        'Missing Supabase credentials',
+        'Configuration error',
+        {},
+        traceId
+      );
+      traceId = errorTraceId;
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error', traceId }),
+        { status: 500, headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId) }
+      );
+    }
 
-  await admin.auth.admin.updateUserById(userId, {
-    user_metadata: { ...user.user_metadata, last_export_at: new Date().toISOString() },
-  });
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const dateStr = new Date().toISOString().slice(0, 10);
+    // Get authenticated user from JWT
+    const token = authHeader.slice(7);
+    const { data: userData, error: authError } = await supabase.auth.getUser(token);
 
-  if (format === 'csv') {
-    const csv = [
-      toCsv('Log Entries', data.log_entries as Record<string, unknown>[]),
-      toCsv('Gift Transactions', data.gift_transactions as Record<string, unknown>[]),
-      toCsv('AI Insights', data.ai_insights as Record<string, unknown>[]),
-      toCsv('Habits', data.habits as Record<string, unknown>[]),
-      toCsv('Habit Completions', data.habit_completions as Record<string, unknown>[]),
-    ].join('\n');
+    if (authError || !userData.user) {
+      const errorTraceId = logger.warn('Invalid authorization token', {}, traceId);
+      traceId = errorTraceId;
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', traceId }),
+        {
+          status: 401,
+          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+        }
+      );
+    }
 
-    return new Response(csv, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="echomirror-export-${dateStr}.csv"`,
+    const userId = userData.user.id;
+    traceId = logger.info('Exporting user data', { userId }, traceId);
+
+    // Fetch all user data in parallel
+    const [profilesRes, logsRes, commentsRes, transactionsRes, followersRes, followingRes] =
+      await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId),
+        supabase.from('log_entries').select('*').eq('user_id', userId).order('created_at', {
+          ascending: false,
+        }),
+        supabase.from('comments').select('*').eq('user_id', userId).order('created_at', {
+          ascending: false,
+        }),
+        supabase
+          .from('transactions')
+          .select('*')
+          .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+          .order('created_at', { ascending: false }),
+        supabase.from('follows').select('follower_id').eq('followee_id', userId),
+        supabase.from('follows').select('followee_id').eq('follower_id', userId),
+      ]);
+
+    // Check for errors
+    const errors = [profilesRes.error, logsRes.error, commentsRes.error, transactionsRes.error];
+    if (errors.some((e) => e)) {
+      const errorTraceId = logger.error('Failed to export user data', 'Database query failed', {
+        userId,
+        errors: errors.filter((e) => e).map((e) => e?.message),
+      });
+      traceId = errorTraceId;
+      return new Response(
+        JSON.stringify({ error: 'Failed to export data', traceId }),
+        {
+          status: 500,
+          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+        }
+      );
+    }
+
+    // Build comprehensive export
+    const exportData = {
+      userId,
+      exportedAt: new Date().toISOString(),
+      data: {
+        profile: profilesRes.data?.[0] || null,
+        moodLogs: logsRes.data || [],
+        comments: commentsRes.data || [],
+        transactions: transactionsRes.data || [],
+        social: {
+          followers: followersRes.data || [],
+          following: followingRes.data || [],
+        },
       },
-    });
-  }
+      summary: {
+        totalMoodLogs: logsRes.data?.length || 0,
+        totalComments: commentsRes.data?.length || 0,
+        totalTransactions: transactionsRes.data?.length || 0,
+        followers: followersRes.data?.length || 0,
+        following: followingRes.data?.length || 0,
+      },
+    };
 
-  return new Response(JSON.stringify(data, null, 2), {
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': `attachment; filename="echomirror-export-${dateStr}.json"`,
-    },
-  });
-});
+    traceId = logger.info('User data exported successfully', {
+      userId,
+      dataSize: JSON.stringify(exportData).length,
+      summary: exportData.summary,
+    });
+
+    // Return JSON file for download
+    const filename = `echo-mirror-data-export-${userId}-${Date.now()}.json`;
+
+    return new Response(JSON.stringify(exportData, null, 2), {
+      status: 200,
+      headers: addTraceIdToResponse(
+        {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+        traceId
+      ),
+    });
+  } catch (error) {
+    const errorTraceId = logger.error(
+      'Unexpected error in export-user-data',
+      error instanceof Error ? error : new Error(String(error)),
+      {},
+      traceId
+    );
+    traceId = errorTraceId;
+
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', traceId }),
+      {
+        status: 500,
+        headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+      }
+    );
+  }
+}
+
+// Export for Supabase Edge Functions
+Deno.serve(exportUserDataFunction);

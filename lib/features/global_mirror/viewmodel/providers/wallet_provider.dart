@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/constants/environment_config.dart';
+import '../../../../core/constants/environment_config.dart';
 import '../../data/services/stellar/stellar_service.dart';
 
 class WalletReward {
@@ -302,12 +302,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
       final response = await supabase.functions.invoke(
         'create-stellar-wallet',
-        body: {
-          'type': 'INSERT',
-          'schema': 'auth',
-          'table': 'users',
-          'record': {'id': userId},
-        },
+        body: {},
       );
 
       if (response.error != null) {

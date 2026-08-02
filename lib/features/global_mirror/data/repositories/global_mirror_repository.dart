@@ -18,14 +18,18 @@ class GlobalMirrorRepository {
 
   SupabaseClient get supabase => _supabaseClient ?? Supabase.instance.client;
 
-  /// Stream mood pins in real-time
-  Stream<List<MoodPinModel>> streamMoodPins() {
+  /// Max pins retained from the realtime stream / map layer (Issue #637).
+  /// Matches the web global-mirror cap to avoid unbounded marker lists.
+  static const int maxMoodPins = 500;
+
+  /// Stream mood pins in real-time, capped at [maxMoodPins] newest pins.
+  Stream<List<MoodPinModel>> streamMoodPins({int limit = maxMoodPins}) {
     final existingStream = _moodPinsStream;
     if (existingStream != null) return existingStream;
 
     debugPrint(
       '[GlobalMirrorRepository] Connecting to '
-      'streamMoodPins using Supabase Realtime...',
+      'streamMoodPins using Supabase Realtime (cap=$limit)...',
     );
     try {
       _moodPinsStream = supabase
@@ -33,7 +37,7 @@ class GlobalMirrorRepository {
           .stream(primaryKey: ['id'])
           .gt('expires_at', DateTime.now().toIso8601String())
           .map((events) {
-            return events.map((p) {
+            final pins = events.map((p) {
               return MoodPinModel(
                 id: p['id'].toString(),
                 sentiment: p['sentiment'] as String,
@@ -45,6 +49,12 @@ class GlobalMirrorRepository {
                     : null,
               );
             }).toList();
+            // Prefer newest pins when over the virtualization cap
+            pins.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+            if (pins.length > limit) {
+              return pins.sublist(0, limit);
+            }
+            return pins;
           })
           .asBroadcastStream();
       return _moodPinsStream!;
@@ -52,6 +62,39 @@ class GlobalMirrorRepository {
       debugPrint('[GlobalMirrorRepository] Fatal error in streamMoodPins: $e');
       debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
       return Stream.value([]);
+    }
+  }
+
+  /// One-shot paginated pin fetch for callers that do not need realtime.
+  Future<List<MoodPinModel>> getMoodPinsPage({
+    int offset = 0,
+    int limit = 50,
+  }) async {
+    try {
+      final nowIso = DateTime.now().toIso8601String();
+      final response = await supabase
+          .from('mood_pins')
+          .select()
+          .gt('expires_at', nowIso)
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      return (response as List).map((p) {
+        return MoodPinModel(
+          id: p['id'].toString(),
+          sentiment: p['sentiment'] as String,
+          gridLat: (p['grid_lat'] as num).toDouble(),
+          gridLon: (p['grid_lon'] as num).toDouble(),
+          timestamp: DateTime.parse(p['created_at'] as String),
+          expiresAt: p['expires_at'] != null
+              ? DateTime.parse(p['expires_at'] as String)
+              : null,
+        );
+      }).toList();
+    } catch (e, stackTrace) {
+      debugPrint('[GlobalMirrorRepository] getMoodPinsPage error: $e');
+      debugPrint('[GlobalMirrorRepository] Stack trace: $stackTrace');
+      return [];
     }
   }
 

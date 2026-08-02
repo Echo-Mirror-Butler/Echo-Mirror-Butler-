@@ -2,6 +2,7 @@
 -- Weekly mood summary email digest (opt-in)
 -- Adds weekly_digest toggle to profiles
 -- Schedules send-weekly-digest edge function via pg_cron
+-- NOTE: cron time corrected to 20:00 UTC in migration 20260720000000
 -- ============================================================
 
 -- Add weekly_digest column to profiles (opt-in, default off)
@@ -9,14 +10,14 @@ alter table public.profiles
   add column if not exists weekly_digest boolean not null default false;
 
 -- pg_cron schedule for the send-weekly-digest edge function.
--- Runs every Sunday at 09:00 UTC.
+-- Runs every Sunday at 20:00 UTC (issue #570 — originally set to 09:00, corrected in 20260720000000).
 -- Requires net extension (built-in) and service role key set as a custom DB param.
 --
 -- Deploy manually after setting app.settings.supa_url and app.settings.service_key:
 --
 --   select cron.schedule(
 --     'send-weekly-digest',
---     '0 9 * * 0',
+--     '0 20 * * 0',
 --     $$
 --     select net.http_post(
 --       url := current_setting('app.settings.supa_url') || '/functions/v1/send-weekly-digest',
@@ -32,7 +33,7 @@ alter table public.profiles
 --
 --   select cron.schedule(
 --     'send-weekly-digest',
---     '0 9 * * 0',
+--     '0 20 * * 0',
 --     $$
 --     select net.http_post(
 --       url := 'https://<project>.supabase.co/functions/v1/send-weekly-digest',
