@@ -145,10 +145,27 @@ class WalletScreen extends ConsumerWidget {
     Timer? _debounce;
 
     Future<void> sendEcho() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => SendConfirmationDialog(
+        recipientName: recipientController.text.trim(),
+        recipientAddress: recipientController.text.trim(),
+        amount: amount,
+        message: '',
+        onConfirm: () => Navigator.pop(context, true),
+        onCancel: () => Navigator.pop(context, false),
+      ),
+    );
+    
+    if (confirmed != true) {
+      return;
+    }
       if (recipientController.text.trim().isEmpty) {
         throw Exception('Recipient is required.');
       }
-      final amount = double.tryParse(customAmountController.text.trim()) ?? selectedAmount.toDouble();
+      final rawAmount = double.tryParse(customAmountController.text.trim()) ?? selectedAmount;
+    final amount = (rawAmount * 100).round() / 100; // Round to 2 decimal places
       if (amount <= 0) throw Exception('Enter a valid ECHO amount.');
 
       final recipientId =
@@ -213,16 +230,21 @@ class WalletScreen extends ConsumerWidget {
       }
       final parsed = double.tryParse(value.trim());
       if (parsed == null) {
-        setState(() => amountError = 'Enter a valid number');
-      } else if (parsed <= 0) {
-        setState(() => amountError = 'Amount must be greater than 0');
-      } else if (parsed > (ref.read(walletProvider).balance)) {
-        setState(() => amountError = 'Insufficient ECHO balance');
+        setState(() => amountError = "Enter a valid number");
       } else {
-        setState(() {
-          amountError = null;
-          selectedAmount = parsed.roundToDouble();
-        });
+        // Round to 2 decimal places
+        final rounded = (parsed * 100).round() / 100;
+        if (rounded <= 0) {
+          setState(() => amountError = "Amount must be greater than 0");
+        } else if (rounded > (ref.read(walletProvider).balance)) {
+          setState(() => amountError = "Insufficient ECHO balance");
+        } else {
+          setState(() {
+            amountError = null;
+            selectedAmount = rounded;
+            customAmountController.text = rounded.toStringAsFixed(2);
+          });
+        }
       }
     }
 
@@ -490,9 +512,9 @@ class WalletScreen extends ConsumerWidget {
               child: Center(child: CircularProgressIndicator()),
             )
           : walletState.error != null
-              ? _ErrorState(
+              ? NoConnectionWidget(
                   message: walletState.error!,
-                  onRetry: walletNotifier.loadWallet,
+                  onRetry: () => walletNotifier.loadWallet(),
                 )
               : !walletState.exists
                   ? _buildEmptyState(context, walletNotifier)
@@ -559,7 +581,7 @@ class WalletScreen extends ConsumerWidget {
           const Icon(
             Icons.account_balance_wallet_outlined,
             size: 72,
-            color: AppTheme.primaryColor,
+            color: theme.colorScheme.primary,
           ),
           const SizedBox(height: 20),
           Text(
@@ -695,7 +717,7 @@ class WalletScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: const LinearGradient(
-                colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+                colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -800,7 +822,7 @@ class WalletScreen extends ConsumerWidget {
                               _showSendEchoSheet(context, ref),
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.white,
-                            foregroundColor: AppTheme.primaryColor,
+                            foregroundColor: theme.colorScheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1012,7 +1034,7 @@ class _QrBottomSheet extends StatelessWidget {
               backgroundColor: Colors.white,
               eyeStyle: const QrEyeStyle(
                 eyeShape: QrEyeShape.square,
-                color: AppTheme.primaryColor,
+                color: theme.colorScheme.primary,
               ),
               dataModuleStyle: const QrDataModuleStyle(
                 dataModuleShape: QrDataModuleShape.square,
@@ -1089,6 +1111,8 @@ class _TestnetBannerState extends State<_TestnetBanner> {
 
   @override
   Widget build(BuildContext context) {
+    // Only show on testnet
+    if (!EnvironmentConfig.isTestnet) return const SizedBox.shrink();
     if (_dismissed) return const SizedBox.shrink();
 
     return Container(
@@ -1119,40 +1143,6 @@ class _TestnetBannerState extends State<_TestnetBanner> {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, this.onRetry});
-
-  final String message;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: theme.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
 
 /// Primary balance card shown for funded wallets.
 ///
@@ -1184,7 +1174,7 @@ class _FundedBalanceCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1256,7 +1246,7 @@ class _FundedBalanceCard extends StatelessWidget {
                   onPressed: onSend,
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: AppTheme.primaryColor,
+                    foregroundColor: theme.colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

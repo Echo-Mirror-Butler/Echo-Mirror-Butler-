@@ -2,7 +2,7 @@ import { daysAgo } from '../../lib/date'
 import { supabase } from '../../lib/supabase'
 import type { LogEntry } from '../../lib/types'
 
-export type AnalyticsLogEntry = Omit<LogEntry, 'habits'> & {
+export type AnalyticsLogEntry = Omit<LogEntry, 'habits' | 'image_path'> & {
   habits: string[] | null
 }
 

@@ -14,6 +14,7 @@ import {
   type ImportRow,
 } from './logs-import'
 import { SORT_OPTIONS, DEFAULT_SORT, isSortOption, splitOnMatch, type SortOption } from './logs-utils'
+import { LogImageThumbnail } from './components/log-image-thumbnail'
 
 const LOGS_PAGE_SIZE = 10
 const LOGS_SCROLL_STORAGE_KEY = 'echomirror:logs-scroll-y'
@@ -265,6 +266,7 @@ export function LogsListPage() {
   const selectAllRef = useRef<HTMLInputElement>(null)
   const cancelDeleteRef = useRef<HTMLButtonElement>(null)
   const deleteTriggerFocusRef = useRef<HTMLElement | null>(null)
+  const deleteDialogRef = useRef<HTMLDivElement>(null)
 
   // Parse filters from URL
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams])
@@ -597,13 +599,30 @@ export function LogsListPage() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [habitAutocompleteOpen])
 
-  // Bulk-delete dialog: move focus into it on open, close on Escape, and
-  // restore focus to the element that opened it on close.
+  // Bulk-delete dialog: move focus into it on open, trap Tab cycling, close
+  // on Escape, and restore focus to the element that opened it on close.
   useEffect(() => {
     if (!isDeleteDialogOpen) return
     cancelDeleteRef.current?.focus()
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsDeleteDialogOpen(false)
+      if (e.key === 'Escape') {
+        setIsDeleteDialogOpen(false)
+        return
+      }
+      if (e.key !== 'Tab' || !deleteDialogRef.current) return
+      const items = Array.from(
+        deleteDialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled])'),
+      )
+      if (items.length === 0) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', handleKey)
     return () => {
@@ -1058,7 +1077,14 @@ export function LogsListPage() {
                     ))}
                   </div>
 
-                  <p className="muted note-preview">{renderNotePreview(entry.notes, debouncedSearch)}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    {entry.image_path ? (
+                      <LogImageThumbnail path={entry.image_path} alt="" size={40} />
+                    ) : null}
+                    <p className="muted note-preview" style={{ margin: 0 }}>
+                      {renderNotePreview(entry.notes, debouncedSearch)}
+                    </p>
+                  </div>
                 </Link>
               </div>
             )
@@ -1118,6 +1144,7 @@ export function LogsListPage() {
       {isDeleteDialogOpen && (
         <div className="modal-overlay" role="presentation" onClick={() => setIsDeleteDialogOpen(false)}>
           <div
+            ref={deleteDialogRef}
             className="modal-card"
             role="dialog"
             aria-modal="true"
