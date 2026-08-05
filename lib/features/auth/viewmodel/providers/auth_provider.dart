@@ -3,6 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../../dashboard/viewmodel/providers/dashboard_provider.dart';
+import '../../../dashboard/viewmodel/providers/echo_balance_provider.dart';
+import '../../../dashboard/viewmodel/providers/streak_provider.dart';
+import '../../../dashboard/viewmodel/providers/streak_freeze_provider.dart';
+import '../../../global_mirror/viewmodel/providers/wallet_provider.dart';
+import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
+import '../../../global_mirror/viewmodel/providers/global_mirror_provider.dart';
+import '../../../global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
+import '../../../logging/viewmodel/providers/logging_provider.dart';
+import '../../../socials/viewmodel/providers/socials_provider.dart';
 
 /// Auth state class
 class AuthState {
@@ -30,11 +40,12 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 /// Auth state notifier
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier(this._repository) : super(const AuthState()) {
+  AuthNotifier(this._repository, this._ref) : super(const AuthState()) {
     _checkAuthStatus();
   }
 
   final AuthRepository _repository;
+  final Ref _ref;
   bool _isCheckingAuth = false;
 
   /// Check if user is already authenticated
@@ -141,9 +152,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _repository.signOut();
       state = const AuthState();
+      _invalidateUserScopedProviders();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  /// Clears cached per-user state so the next signed-in user never sees
+  /// this account's dashboard, wallet, gifts, streaks, or social data.
+  void _invalidateUserScopedProviders() {
+    _ref.invalidate(dashboardProvider);
+    _ref.invalidate(echoBalanceProvider);
+    _ref.invalidate(streakProvider);
+    _ref.invalidate(streakFreezeProvider);
+    _ref.invalidate(walletProvider);
+    _ref.invalidate(giftProvider);
+    _ref.invalidate(globalMirrorProvider);
+    _ref.invalidate(moodCommentNotificationProvider);
+    _ref.invalidate(loggingProvider);
+    _ref.invalidate(socialsProvider);
   }
 
   /// Request password reset
@@ -222,5 +249,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 /// Auth provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository);
+  return AuthNotifier(repository, ref);
 });

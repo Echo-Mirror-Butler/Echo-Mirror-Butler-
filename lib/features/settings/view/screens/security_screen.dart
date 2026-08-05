@@ -117,7 +117,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       final client = Supabase.instance.client;
 
       if (sessionId == 'current') {
-        await client.auth.signOut();
+        await ref.read(authProvider.notifier).signOut();
         if (mounted) {
           ToastService.success(context, 'Signed out successfully');
         }
