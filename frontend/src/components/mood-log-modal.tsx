@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LogEntryForm } from '../features/logs/components/log-entry-form'
+import { useFocusTrap } from '../hooks/use-focus-trap'
 
 export type MoodLogModalProps = {
   isOpen: boolean
@@ -9,16 +10,10 @@ export type MoodLogModalProps = {
 
 export function MoodLogModal({ isOpen, onClose }: MoodLogModalProps) {
   const navigate = useNavigate()
+  const contentRef = useRef<HTMLDivElement>(null)
 
-  // Close the modal when the Escape key is pressed
-  useEffect(() => {
-    if (!isOpen) return
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+  // Trap focus while open, close on Escape, restore focus to trigger on close
+  useFocusTrap(isOpen, onClose, contentRef)
 
   if (!isOpen) return null
 
@@ -45,7 +40,9 @@ export function MoodLogModal({ isOpen, onClose }: MoodLogModalProps) {
       onClick={onClose}
     >
       <div
+        ref={contentRef}
         className="modal-content card"
+        tabIndex={-1}
         style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()} // Prevent clicking inside from closing modal
       >

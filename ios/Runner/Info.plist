@@ -49,6 +49,8 @@
 	<string>EchoMirror uses speech recognition to help you quickly log your daily mood and thoughts by voice. This makes it easier to capture your reflections without typing.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>EchoMirror needs microphone access to convert your voice into text for quick mood and habit logging.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>EchoMirror would like to send you daily reflection reminders and nudges so you never miss a moment to check in with your future self. You can change this at any time in Settings.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

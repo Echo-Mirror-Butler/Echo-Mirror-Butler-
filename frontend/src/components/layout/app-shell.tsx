@@ -10,7 +10,10 @@ import { NotificationDrawer } from '../../features/notifications/notification-dr
 import { AchievementsWatcher } from '../../features/achievements/achievements-watcher'
 import { useUnlockedAchievements } from '../../features/achievements/use-achievements'
 import { useGlobalShortcut } from '../../hooks/use-global-shortcut'
+import { useFocusTrap } from '../../hooks/use-focus-trap'
 import { MoodLogModal } from '../mood-log-modal'
+import { WhatsNewModal } from '../whats-new-modal'
+import { useWhatsNew } from '../../hooks/use-whats-new'
 
 type UserProfile = { display_name: string | null; avatar_url: string | null }
 
@@ -29,12 +32,13 @@ async function fetchUserProfile(userId: string): Promise<UserProfile> {
 }
 
 const navItems = [
-  { icon: '\u{1F3E0}', to: '/dashboard', label: 'Dashboard' },
-  { icon: '\u{1F4DD}', to: '/logs', label: 'Logs' },
-  { icon: '\u2728', to: '/insights', label: 'AI Insights' },
-  { icon: '\u{1F4CA}', to: '/analytics', label: 'Analytics' },
-  { icon: '\u{1F30D}', to: '/global-mirror', label: 'Global Mirror' },
-  { icon: '\u{1F3C6}', to: '/leaderboard', label: 'Leaderboard' },
+  { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
+  { icon: '📝', to: '/logs', label: 'Logs' },
+  { icon: '✨', to: '/insights', label: 'AI Insights' },
+  { icon: '📊', to: '/analytics', label: 'Analytics' },
+  { icon: '🎞️', to: '/recap', label: 'Recap' },
+  { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
+  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
   { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
   { icon: '\u{1F48E}', to: '/wallet', label: 'Wallet' },
   { icon: '\u2699\uFE0F', to: '/settings', label: 'Settings' },
@@ -62,6 +66,7 @@ export function AppShell() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
   const [isMoodModalOpen, setIsMoodModalOpen] = useState(false)
+  const whatsNew = useWhatsNew()
   const { theme, setTheme } = useTheme()
 
   useGlobalShortcut('k', () => {
@@ -81,6 +86,7 @@ export function AppShell() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [selectedResultIdx, setSelectedResultIdx] = useState(-1)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const { results: searchResults, isLoading: searchLoading } = useSearchLogs(user?.id, searchQuery)
   const searchListboxId = useId()
 
@@ -156,6 +162,9 @@ export function AppShell() {
     }
   }, [isSearchOpen, selectedResultIdx, searchResults, navigate])
 
+  // Trap focus in the user menu while open, close on Escape, restore focus to the avatar button on close
+  useFocusTrap(isUserMenuOpen, () => setIsUserMenuOpen(false), userMenuRef)
+
   const onSignOut = async () => {
     await signOut()
     navigate('/login', { replace: true })
@@ -164,6 +173,7 @@ export function AppShell() {
   return (
     <div className="shell-root" aria-keyshortcuts="k">
       <MoodLogModal isOpen={isMoodModalOpen} onClose={() => setIsMoodModalOpen(false)} />
+      <WhatsNewModal isOpen={whatsNew.isOpen} onClose={whatsNew.dismiss} />
       <AchievementsWatcher />
       <aside
         className={[
@@ -194,7 +204,6 @@ export function AppShell() {
               className={({ isActive }) =>
                 ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
               }
-              aria-current={({ isActive }: { isActive: boolean }) => isActive ? 'page' as const : undefined}
               onClick={() => setIsMobileDrawerOpen(false)}
             >
               <span className="icon">{item.icon}</span>
@@ -396,11 +405,11 @@ export function AppShell() {
               </button>
 
               {isUserMenuOpen ? (
-                <div className="avatar-menu">
-                  <button type="button" onClick={() => navigate('/settings')}>
+                <div className="avatar-menu" ref={userMenuRef} role="menu" aria-label="User menu" tabIndex={-1}>
+                  <button type="button" role="menuitem" onClick={() => { setIsUserMenuOpen(false); navigate('/settings') }}>
                     Profile
                   </button>
-                  <button type="button" onClick={() => void onSignOut()}>
+                  <button type="button" role="menuitem" onClick={() => void onSignOut()}>
                     Sign out
                   </button>
                 </div>

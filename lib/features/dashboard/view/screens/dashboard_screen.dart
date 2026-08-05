@@ -206,13 +206,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         title: 'Predictions',
                         insights: predictions,
                         icon: FontAwesomeIcons.wandMagicSparkles.data,
-                        color: AppTheme.secondaryColor,
+                        color: theme.colorScheme.secondary,
                       ),
                       InsightSection(
                         title: 'Habits',
                         insights: habits,
                         icon: FontAwesomeIcons.repeat.data,
-                        color: AppTheme.primaryColor,
+                        color: theme.colorScheme.primary,
                       ),
                       InsightSection(
                         title: 'Mood Insights',
@@ -227,7 +227,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           title: 'General Insights',
                           insights: general,
                           icon: FontAwesomeIcons.lightbulb.data,
-                          color: AppTheme.primaryColor,
+                          color: theme.colorScheme.primary,
                         ),
                       const SizedBox(height: 16),
                     ],
@@ -253,8 +253,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               gravity: 0.1,
               shouldLoop: false,
               colors: const [
-                AppTheme.primaryColor,
-                AppTheme.secondaryColor,
+                theme.colorScheme.primary,
+                theme.colorScheme.secondary,
                 AppTheme.accentColor,
                 AppTheme.successColor,
               ],
@@ -284,7 +284,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [AppTheme.accentColor, AppTheme.primaryColor],
+                      colors: [AppTheme.accentColor, theme.colorScheme.primary],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -349,12 +349,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.3),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -392,12 +392,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -533,7 +533,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(FontAwesomeIcons.userFriends.data, size: 16, color: AppTheme.primaryColor),
+                    Icon(
+                      FontAwesomeIcons.userFriends.data,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Text('Friends Today', style: theme.textTheme.titleSmall),
                   ],
@@ -543,15 +547,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: friends.map((friend) {
-                    final moodEmoji = friend.mood != null && friend.mood >= 1 && friend.mood <= 5
+                    final moodEmoji =
+                        friend.mood != null &&
+                            friend.mood >= 1 &&
+                            friend.mood <= 5
                         ? ['😊', '😌', '😐', '😢', '😡'][friend.mood - 1]
                         : '❓';
-                    final name = friend.displayName ?? friend.userId.substring(0, 8);
+                    final name =
+                        friend.displayName ?? friend.userId.substring(0, 8);
                     return Chip(
                       avatar: CircleAvatar(
-                        backgroundColor: AppTheme.primaryColor,
+                        backgroundColor: theme.colorScheme.primary,
                         radius: 12,
-                        child: Text(name[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       label: Text('$name $moodEmoji'),
                     );

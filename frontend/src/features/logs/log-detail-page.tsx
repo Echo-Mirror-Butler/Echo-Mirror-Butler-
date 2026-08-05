@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
 import type { LogEntry } from '../../lib/types'
 import { moodToEmoji } from '../../lib/date'
+import { LogImageThumbnail } from './components/log-image-thumbnail'
 
 const MOOD_COLORS: Record<number, string> = {
   1: '#ef4444',
@@ -209,6 +210,13 @@ export function LogDetailPage() {
             <div>
               <p className="field-label">Notes</p>
               <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{entry.notes}</p>
+            </div>
+          ) : null}
+
+          {entry.image_path ? (
+            <div>
+              <p className="field-label">Photo</p>
+              <LogImageThumbnail path={entry.image_path} alt="Log entry attachment" size={220} />
             </div>
           ) : null}
 

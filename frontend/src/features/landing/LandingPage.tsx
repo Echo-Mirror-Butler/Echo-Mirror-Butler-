@@ -331,6 +331,7 @@ export function LandingPage() {
           <a href="#global" className="lp-nav-link">Global Mirror</a>
           <a href="#wallet" className="lp-nav-link">Wallet</a>
           <a href="#contributors" className="lp-nav-link">Contributors</a>
+          <Link to="/changelog" className="lp-nav-link">Changelog</Link>
           <Link to="/login" className="lp-nav-link">Sign in</Link>
         </div>
         <button className="lp-btn-solid" onClick={() => navigate('/signup')}>Get started free</button>
@@ -359,6 +360,7 @@ export function LandingPage() {
             <a href="#global" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Global Mirror</a>
             <a href="#wallet" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Wallet</a>
             <a href="#contributors" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Contributors</a>
+            <Link to="/changelog" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Changelog</Link>
             <Link to="/login" className="lp-mobile-menu-link" onClick={closeMobileMenu}>Sign in</Link>
           </div>
           <button className="lp-mobile-menu-cta" onClick={() => { closeMobileMenu(); navigate('/signup') }}>
@@ -674,6 +676,7 @@ export function LandingPage() {
           <a href="#features">Features</a>
           <a href="#global">Global Mirror</a>
           <a href="#wallet">Wallet</a>
+          <Link to="/changelog">Changelog & Roadmap</Link>
           <Link to="/login">Sign in</Link>
         </div>
         <span className="lp-footer-copy">© 2025 EchoMirror. All rights reserved.</span>

@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../data/models/leaderboard_entry_model.dart';
-import '../viewmodel/providers/leaderboard_provider.dart';
+import '../../viewmodel/providers/leaderboard_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 
 /// Leaderboard screen showing top 20 ECHO earners

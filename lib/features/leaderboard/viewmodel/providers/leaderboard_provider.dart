@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/leaderboard_entry_model.dart';
+import '../../../auth/viewmodel/providers/auth_provider.dart';
 
 /// Leaderboard state
 class LeaderboardState {
@@ -40,18 +41,21 @@ class LeaderboardState {
 class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
   LeaderboardNotifier() : super(const LeaderboardState());
 
+  /// Hard cap for the weekly board (Issue #637 audit — already bounded).
+  static const int pageSize = 20;
+
   Future<void> loadLeaderboard({String? userId}) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final supabase = Supabase.instance.client;
 
-      // Fetch top 20 entries from leaderboard_weekly view
+      // Bounded fetch — never load the full leaderboard_weekly set
       final response = await supabase
           .from('leaderboard_weekly')
           .select('*')
           .order('rank', ascending: true)
-          .limit(20);
+          .limit(pageSize);
 
       final entries = (response as List<dynamic>)
           .cast<Map<String, dynamic>>()
@@ -103,9 +107,14 @@ final leaderboardProvider =
 });
 
 /// Current user ID provider (from auth)
+///
+/// Resolves to the currently authenticated user's id by watching
+/// [authProvider]. Returns `null` when no user is signed in, so downstream
+/// consumers (e.g. [asyncLeaderboardProvider]) gracefully skip the
+/// current-user rank/highlight lookup instead of receiving a hardcoded null.
 final currentUserIdProvider = Provider<String?>((ref) {
-  // This will be provided by the auth provider when used
-  return null;
+  final authState = ref.watch(authProvider);
+  return authState.user?.id;
 });
 
 /// Async leaderboard provider that auto-loads with user ID

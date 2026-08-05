@@ -1,5 +1,8 @@
 // Issue #590: Automated test coverage for Supabase Edge Functions
-import { assertEquals, assertStringIncludes } from "std/assert/mod.ts";
+import {
+  assertEquals,
+  assertStringIncludes,
+} from "https://deno.land/std@0.192.0/testing/asserts.ts";
 
 // Test utilities
 function createMockRequest(
@@ -26,6 +29,12 @@ const testSuites: Record<string, { name: string; tests: (() => Promise<void>)[] 
 
 function registerTestSuite(name: string, tests: (() => Promise<void>)[]) {
   testSuites[name] = { name, tests };
+  // Also register with Deno's test runner. Without this, `deno test` imports
+  // this module (so import.meta.main is false), runAllTests() never fires and
+  // the suite reports "0 tests" while still exiting 0 — a green but empty job.
+  tests.forEach((testFn, index) => {
+    Deno.test(`${name} — case ${index + 1}`, testFn);
+  });
 }
 
 // create-stellar-wallet tests

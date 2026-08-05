@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AppShell } from '../components/layout/app-shell'
+import { MaintenanceBanner } from '../components/maintenance-banner'
 import { SignInPanel } from '../components/auth/sign-in-panel'
 import { LandingPage } from '../features/landing/LandingPage'
 import { SignupPage } from '../features/auth/pages/SignupPage'
@@ -35,6 +36,9 @@ const InsightsPage = lazy(() =>
 const AnalyticsPage = lazy(() =>
   import('../features/analytics/analytics-page').then((m) => ({ default: m.AnalyticsPage })),
 )
+const RecapPage = lazy(() =>
+  import('../features/insights/recap-page').then((m) => ({ default: m.RecapPage })),
+)
 const GlobalMirrorPage = lazy(() =>
   import('../features/global-mirror/global-mirror-page').then((m) => ({ default: m.GlobalMirrorPage })),
 )
@@ -50,7 +54,12 @@ const AchievementsPage = lazy(() =>
 const OnboardingPage = lazy(() =>
   import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
 )
+const ChangelogRoadmapPage = lazy(() =>
+  import('../features/changelog/ChangelogRoadmapPage').then((m) => ({ default: m.ChangelogRoadmapPage })),
+)
 const NotFoundPage = lazy(() => import('../features/shared/not-found-page'))
+const StatusPage = lazy(() => import('../features/status/status-page'))
+
 
 function PageSkeleton() {
   return (
@@ -140,13 +149,31 @@ export function AppRouter() {
   const { user } = useAuth()
 
   return (
-    <Suspense fallback={<PageSkeleton />}>
+    <>
+      <MaintenanceBanner />
+      <Suspense fallback={<PageSkeleton />}>
       <Routes>
         <Route
           path="/"
           element={
             <RouteErrorBoundary routeName="Home">
               {user ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/changelog"
+          element={
+            <RouteErrorBoundary routeName="Changelog">
+              <ChangelogRoadmapPage />
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/roadmap"
+          element={
+            <RouteErrorBoundary routeName="Roadmap">
+              <ChangelogRoadmapPage />
             </RouteErrorBoundary>
           }
         />
@@ -187,6 +214,15 @@ export function AppRouter() {
           element={
             <RouteErrorBoundary routeName="Update Password">
               <UpdatePasswordPage />
+            </RouteErrorBoundary>
+          }
+        />
+
+        <Route
+          path="/status"
+          element={
+            <RouteErrorBoundary routeName="Status">
+              <StatusPage />
             </RouteErrorBoundary>
           }
         />
@@ -266,6 +302,14 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/recap"
+            element={
+              <RouteErrorBoundary routeName="Recap">
+                <RecapPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
             path="/global-mirror"
             element={
               <RouteErrorBoundary routeName="Global Mirror">
@@ -308,6 +352,7 @@ export function AppRouter() {
           }
         />
       </Routes>
-    </Suspense>
+      </Suspense>
+    </>
   )
 }

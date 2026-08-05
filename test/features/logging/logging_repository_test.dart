@@ -31,6 +31,8 @@ class FakePostgrestBuilder extends Fake
     String? referencedTable,
   }) => this;
   @override
+  PostgrestTransformBuilder<PostgrestList> range(int from, int to) => this;
+  @override
   PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
       this;
   @override
@@ -246,6 +248,28 @@ void main() {
 
       // Verification of filters would require capturing calls on Fake,
       // but the main goal here is keeping CI green with stable builder fakes.
+    });
+
+    test('getLogEntriesPage returns a bounded page of entries', () async {
+      final rows = List.generate(
+        30,
+        (i) => buildLogJson(id: 'log-$i', date: now.subtract(Duration(days: i))),
+      );
+      final fakeBuilder = FakePostgrestBuilder(rows);
+
+      when(
+        () => mockSupabase.from('log_entries'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
+
+      final page = await repository.getLogEntriesPage(
+        userId,
+        offset: 0,
+        limit: 30,
+      );
+
+      expect(page.length, 30);
+      expect(page.first.id, 'log-0');
     });
   });
 }

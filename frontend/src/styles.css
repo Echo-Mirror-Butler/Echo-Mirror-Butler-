@@ -1341,3 +1341,58 @@ mark {
     min-width: 120px;
   }
 }
+
+/* ── Print ─────────────────────────────────────────────────
+   Chrome-free printing for logs history / insights pages.
+   Hide navigation, top bar, and interactive controls; let the
+   content column take the full page and print in plain black-on-white. */
+@media print {
+  .shell-sidebar,
+  .shell-topbar,
+  .shell-drawer-overlay,
+  .search-dropdown,
+  .search-overlay,
+  .notification-drawer,
+  .avatar-menu,
+  .modal-overlay,
+  .pagination-row,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  .shell-root {
+    display: block;
+  }
+
+  .shell-main {
+    display: block;
+  }
+
+  .shell-content {
+    padding: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .card,
+  .feature-grid > * {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    background: #fff !important;
+    color: #000 !important;
+    break-inside: avoid;
+  }
+
+  .card * {
+    color: #000 !important;
+  }
+
+  a[href]::after {
+    content: '';
+  }
+}
