@@ -8,6 +8,7 @@ import 'core/services/supabase_client_service.dart';
 import 'core/services/deep_link_service.dart';
 import 'core/services/mood_sync_service.dart';
 import 'core/services/sentry_service.dart';
+import 'core/navigation/biometric_lock_wrapper.dart';
 import 'features/auth/viewmodel/providers/auth_provider.dart';
 
 void main() async {
@@ -83,6 +84,11 @@ class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) {
+        return BiometricLockWrapper(
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

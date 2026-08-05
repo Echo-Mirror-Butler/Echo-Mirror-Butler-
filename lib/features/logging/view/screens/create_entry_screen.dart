@@ -100,12 +100,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please log in to create entries'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        ErrorHandler.showError(context, 'Please log in to create entries');
       }
       return;
     }
@@ -155,14 +150,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                 .shareMood(sentiment);
             debugPrint('[CreateEntryScreen] Share mood result: $shareResult');
             if (!shareResult && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'Failed to share mood. Check location permissions.',
-                  ),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 3),
-                ),
+              ErrorHandler.showError(
+                context,
+                'Failed to share mood. Check location permissions.',
               );
             }
           } else {
