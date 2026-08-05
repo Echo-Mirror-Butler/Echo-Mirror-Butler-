@@ -30,15 +30,15 @@ class _FakeLoggingNotifier extends LoggingNotifier {
 }
 
 class _FakeAuthNotifier extends AuthNotifier {
-  _FakeAuthNotifier._(MockAuthRepository repo, AuthState initialState)
-    : super(repo) {
+  _FakeAuthNotifier._(MockAuthRepository repo, Ref ref, AuthState initialState)
+    : super(repo, ref) {
     state = initialState;
   }
 
-  factory _FakeAuthNotifier(AuthState initialState) {
+  factory _FakeAuthNotifier(Ref ref, AuthState initialState) {
     final repo = MockAuthRepository();
     when(() => repo.isAuthenticated()).thenAnswer((_) async => false);
-    return _FakeAuthNotifier._(repo, initialState);
+    return _FakeAuthNotifier._(repo, ref, initialState);
   }
 }
 
@@ -80,7 +80,7 @@ void main() {
         loggingProvider.overrideWith(
           (ref) => _FakeLoggingNotifier(loggingState),
         ),
-        authProvider.overrideWith((ref) => _FakeAuthNotifier(authState)),
+        authProvider.overrideWith((ref) => _FakeAuthNotifier(ref, authState)),
       ],
       child: MaterialApp.router(routerConfig: router),
     );
