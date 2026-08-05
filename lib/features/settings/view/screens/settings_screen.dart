@@ -7,6 +7,8 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/viewmodel/providers/theme_provider.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
+import '../../../../core/viewmodel/providers/notification_permission_provider.dart';
+import '../../../../core/widgets/notification_permission_banner.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
@@ -270,147 +272,160 @@ class SettingsScreen extends ConsumerWidget {
     final notificationTime = ref.watch(notificationTimeProvider);
     final notificationService = ref.watch(notificationServiceProvider);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: notificationEnabled.when(
-        data: (enabled) => notificationTime.when(
-          data: (time) => Padding(
-            padding: const EdgeInsets.all(4),
-            child: Column(
-              children: [
-                _buildModernListTile(
-                  context,
-                  theme,
-                  icon: FontAwesomeIcons.bell.data,
-                  iconColor: Colors.orange,
-                  title: 'Daily Reflection Reminder',
-                  subtitle: enabled
-                      ? 'Reminder at ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
-                      : 'Get reminded to log your daily reflections',
-                  trailing: Switch(
-                    value: enabled,
-                    onChanged: (value) async {
-                      if (value) {
-                        await notificationService.scheduleDailyReminder(
-                          hour: time.hour,
-                          minute: time.minute,
-                        );
-                      } else {
-                        await notificationService.cancelDailyReminder();
-                      }
-                      ref.invalidate(notificationEnabledProvider);
-                    },
-                  ),
-                ),
-                if (enabled) ...[
-                  Divider(
-                    height: 1,
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                  ),
-                  _buildModernListTile(
-                    context,
-                    theme,
-                    icon: FontAwesomeIcons.clock.data,
-                    iconColor: Colors.teal,
-                    title: 'Reminder Time',
-                    subtitle:
-                        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                    trailing: Icon(
-                      FontAwesomeIcons.chevronRight.data,
-                      size: 14,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                    ),
-                    onTap: () async {
-                      final TimeOfDay? picked = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay(
-                          hour: time.hour,
-                          minute: time.minute,
-                        ),
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: ColorScheme.light(
-                                primary: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── OS-level permission banner ──────────────────────────────────
+        // Visible only when the user has denied or revoked notification
+        // permission at the OS level. Guides them to re-enable in Settings.
+        const NotificationPermissionBanner(),
 
-                      if (picked != null) {
-                        await notificationService.scheduleDailyReminder(
-                          hour: picked.hour,
-                          minute: picked.minute,
-                        );
-                        ref.invalidate(notificationTimeProvider);
-                      }
-                    },
+        // ── Reminder toggle card ────────────────────────────────────────
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+              width: 1,
+            ),
+          ),
+          child: notificationEnabled.when(
+            data: (enabled) => notificationTime.when(
+              data: (time) => Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  children: [
+                    _buildModernListTile(
+                      context,
+                      theme,
+                      icon: FontAwesomeIcons.bell.data,
+                      iconColor: Colors.orange,
+                      title: 'Daily Reflection Reminder',
+                      subtitle: enabled
+                          ? 'Reminder at ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
+                          : 'Get reminded to log your daily reflections',
+                      trailing: Switch(
+                        value: enabled,
+                        onChanged: (value) async {
+                          if (value) {
+                            await notificationService.scheduleDailyReminder(
+                              hour: time.hour,
+                              minute: time.minute,
+                            );
+                          } else {
+                            await notificationService.cancelDailyReminder();
+                          }
+                          ref.invalidate(notificationEnabledProvider);
+                        },
+                      ),
+                    ),
+                    if (enabled) ...[
+                      Divider(
+                        height: 1,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                      ),
+                      _buildModernListTile(
+                        context,
+                        theme,
+                        icon: FontAwesomeIcons.clock.data,
+                        iconColor: Colors.teal,
+                        title: 'Reminder Time',
+                        subtitle:
+                            '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                        trailing: Icon(
+                          FontAwesomeIcons.chevronRight.data,
+                          size: 14,
+                          color:
+                              theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                        onTap: () async {
+                          final TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay(
+                              hour: time.hour,
+                              minute: time.minute,
+                            ),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(
+                                    primary:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+
+                          if (picked != null) {
+                            await notificationService.scheduleDailyReminder(
+                              hour: picked.hour,
+                              minute: picked.minute,
+                            );
+                            ref.invalidate(notificationTimeProvider);
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              loading: () => Padding(
+                padding: const EdgeInsets.all(20),
+                child: Center(child: ShimmerLoading(width: 24, height: 24)),
+              ),
+              error: (_, _) => Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Icon(
+                      FontAwesomeIcons.triangleExclamation.data,
+                      color: theme.colorScheme.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Error loading reminder time',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            loading: () => Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(child: ShimmerLoading(width: 24, height: 24)),
+            ),
+            error: (_, _) => Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.triangleExclamation.data,
+                    color: theme.colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Error loading reminder settings',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
                   ),
                 ],
-              ],
-            ),
-          ),
-          loading: () => Padding(
-            padding: const EdgeInsets.all(20),
-            child: Center(child: ShimmerLoading(width: 24, height: 24)),
-          ),
-          error: (_, _) => Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Icon(
-                  FontAwesomeIcons.triangleExclamation.data,
-                  color: theme.colorScheme.error,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Error loading reminder time',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-        loading: () => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Center(child: ShimmerLoading(width: 24, height: 24)),
-        ),
-        error: (_, _) => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Icon(
-                FontAwesomeIcons.triangleExclamation.data,
-                color: theme.colorScheme.error,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Error loading reminder settings',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      ],
     );
   }
 
