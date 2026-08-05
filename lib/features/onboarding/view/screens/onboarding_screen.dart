@@ -9,6 +9,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/animations/lottie_animations.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/notification_permission_service.dart';
 import '../../viewmodel/providers/onboarding_provider.dart';
 
 // ─── Step indices ────────────────────────────────────────────────────────────
@@ -78,6 +79,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   // Step 2 — reminder time
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
   bool _permissionDenied = false;
+  bool _permissionPermanentlyDenied = false;
 
   static const int _totalSteps = 3; // welcome, features, reminder
 
@@ -95,6 +97,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _requestReminderPermission() async {
+    final permSvc = NotificationPermissionService();
+    final status = await permSvc.checkPermissionStatus();
+
+    if (status == NotificationPermissionStatus.permanentlyDenied ||
+        status == NotificationPermissionStatus.restricted) {
+      // System dialog won't show — send user to OS App Settings directly.
+      await permSvc.openOsAppSettings();
+      // After returning from settings, re-check in case they enabled it.
+      final updated = await permSvc.checkPermissionStatus();
+      if (updated == NotificationPermissionStatus.granted) {
+        final svc = NotificationService();
+        await svc.initialize();
+        await svc.scheduleDailyReminder(
+          hour: _reminderTime.hour,
+          minute: _reminderTime.minute,
+        );
+        setState(() {
+          _permissionDenied = false;
+          _permissionPermanentlyDenied = false;
+        });
+      } else {
+        setState(() {
+          _permissionDenied = false;
+          _permissionPermanentlyDenied = true;
+        });
+      }
+      return;
+    }
+
     final svc = NotificationService();
     await svc.initialize();
     final granted = await svc.requestPermissions();
@@ -103,9 +134,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         hour: _reminderTime.hour,
         minute: _reminderTime.minute,
       );
-      setState(() => _permissionDenied = false);
+      setState(() {
+        _permissionDenied = false;
+        _permissionPermanentlyDenied = false;
+      });
     } else {
-      setState(() => _permissionDenied = true);
+      // Check whether it is now permanently denied (user tapped "Don't ask again").
+      final updated = await permSvc.checkPermissionStatus();
+      setState(() {
+        _permissionPermanentlyDenied =
+            updated == NotificationPermissionStatus.permanentlyDenied;
+        _permissionDenied = !_permissionPermanentlyDenied;
+      });
     }
   }
 
@@ -177,6 +217,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 _ReminderStep(
                   reminderTime: _reminderTime,
                   permissionDenied: _permissionDenied,
+                  permissionPermanentlyDenied: _permissionPermanentlyDenied,
                   onTimeChanged: (t) => setState(() => _reminderTime = t),
                   onRequestPermission: _requestReminderPermission,
                 ),
@@ -630,12 +671,14 @@ class _FeatureCard {
 class _ReminderStep extends StatelessWidget {
   final TimeOfDay reminderTime;
   final bool permissionDenied;
+  final bool permissionPermanentlyDenied;
   final void Function(TimeOfDay) onTimeChanged;
   final VoidCallback onRequestPermission;
 
   const _ReminderStep({
     required this.reminderTime,
     required this.permissionDenied,
+    required this.permissionPermanentlyDenied,
     required this.onTimeChanged,
     required this.onRequestPermission,
   });
@@ -757,9 +800,16 @@ class _ReminderStep extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: onRequestPermission,
-              icon: const Icon(FontAwesomeIcons.bell, size: 16),
+              icon: Icon(
+                permissionPermanentlyDenied
+                    ? FontAwesomeIcons.arrowUpRightFromSquare
+                    : FontAwesomeIcons.bell,
+                size: 16,
+              ),
               label: Text(
-                'Enable Reminders',
+                permissionPermanentlyDenied
+                    ? 'Open Settings to Enable'
+                    : 'Enable Reminders',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -775,7 +825,8 @@ class _ReminderStep extends StatelessWidget {
               ),
             ),
           ),
-          if (permissionDenied) ...[
+          // ── Denied (soft) ──────────────────────────────────────────────
+          if (permissionDenied && !permissionPermanentlyDenied) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
@@ -800,6 +851,41 @@ class _ReminderStep extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: AppTheme.accentColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          // ── Permanently denied ─────────────────────────────────────────
+          if (permissionPermanentlyDenied) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.red.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    FontAwesomeIcons.bellSlash,
+                    color: Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Notification permission was denied. Tap "Open Settings to Enable" above to allow notifications for EchoMirror in your device settings.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.red.shade700,
+                        height: 1.45,
                       ),
                     ),
                   ),

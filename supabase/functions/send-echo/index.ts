@@ -1,11 +1,20 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as StellarSdk from 'npm:@stellar/stellar-sdk';
+import {
+  extractIdempotencyKey,
+  checkIdempotency,
+  storeIdempotencyResult,
+  buildReplayedResponse,
+} from '../_shared/idempotency.ts';
 
 type SendEchoPayload = {
   recipient_id?: string;
   recipient_user_id?: string;
   amount: number;
   message?: string;
+  // Clients may also pass the idempotency key in the body as a fallback,
+  // but the preferred location is the `Idempotency-Key` HTTP header.
+  idempotency_key?: string;
 };
 
 const jsonHeaders = {
@@ -130,6 +139,12 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    // Create the admin client early so it can be shared across all DB calls,
+    // including the idempotency cache lookup that happens before payload parsing.
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
       authHeader.replace('Bearer ', ''),
     );
@@ -138,12 +153,38 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);
     }
 
+    // ── Idempotency: extract key (header takes precedence over body field) ──
+    // The key is optional — requests without it are processed normally.
+    // When present the first execution's result is cached for 24 hours;
+    // retries with the same key receive the cached response immediately.
+    const idempotencyKey = extractIdempotencyKey(req);
+
     // ── Parse and validate payload ──
     let payload: SendEchoPayload;
     try {
       payload = (await req.json()) as SendEchoPayload;
     } catch {
       return jsonResponse({ error: 'Invalid JSON body', code: 'INVALID_BODY' }, 400);
+    }
+
+    // Allow body-supplied key as fallback (header wins if both are present)
+    const resolvedIdempotencyKey = idempotencyKey ?? payload.idempotency_key?.trim() ?? null;
+
+    // ── Idempotency cache check ──
+    if (resolvedIdempotencyKey) {
+      const cached = await checkIdempotency(
+        supabaseAdmin,
+        user.id,
+        'send-echo',
+        resolvedIdempotencyKey,
+      );
+
+      if (cached.hit) {
+        console.log(
+          `[send-echo] Idempotency cache hit for user=${user.id} key=${resolvedIdempotencyKey}`,
+        );
+        return buildReplayedResponse(cached.body, cached.status);
+      }
     }
 
     const { recipient_id, recipient_user_id, amount, message } = payload;
@@ -179,10 +220,6 @@ Deno.serve(async (req) => {
     }
 
     // ── Recipient validation ──
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
     const { data: recipientProfile, error: recipientError } = await supabaseAdmin
       .from('user_wallets')
       .select('public_key, user_id')
@@ -337,11 +374,30 @@ Deno.serve(async (req) => {
       .eq('id', rpcResult.gift_id)
       .single();
 
-    return jsonResponse({
+    const successBody = {
       success: true,
       stellar_tx_hash: txHash,
       transaction: fetchError ? null : giftRow,
-    }, 201);
+      // Echo back the idempotency key so clients can correlate requests
+      ...(resolvedIdempotencyKey ? { idempotency_key: resolvedIdempotencyKey } : {}),
+    };
+
+    // ── Store idempotency result (only on full success) ──
+    // Stored AFTER both the Stellar tx and the DB RPC succeed so we never
+    // cache a partial failure. 5xx errors are intentionally NOT cached so
+    // clients can safely retry on network/infra issues.
+    if (resolvedIdempotencyKey) {
+      await storeIdempotencyResult(
+        supabaseAdmin,
+        user.id,
+        'send-echo',
+        resolvedIdempotencyKey,
+        201,
+        successBody,
+      );
+    }
+
+    return jsonResponse(successBody, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[send-echo] Error:', message);
