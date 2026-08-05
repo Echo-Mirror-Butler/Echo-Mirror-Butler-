@@ -185,6 +185,80 @@ export function DashboardPage() {
     return null;
   }
 
+  const hasNoLogs = !recentLogsQuery.isLoading && recentLogsQuery.data && recentLogsQuery.data.length === 0;
+
+  if (hasNoLogs) {
+    return (
+      <div 
+        className="card" 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          textAlign: 'center',
+          padding: '4rem 2rem',
+          maxWidth: '480px',
+          margin: '3rem auto',
+          gap: '1.5rem',
+          animation: 'fadeIn 0.6s ease-out',
+        }}
+      >
+        <style>{`
+          @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+        <div style={{ animation: 'float 3.5s ease-in-out infinite', display: 'flex', justifyContent: 'center' }}>
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="50" stroke="var(--line)" strokeWidth="1.5" strokeDasharray="3 3" />
+            <circle cx="60" cy="60" r="40" fill="var(--surface-soft)" stroke="var(--line)" strokeWidth="1" />
+            <rect x="42" y="24" width="36" height="52" rx="18" fill="var(--surface)" stroke="var(--brand)" strokeWidth="3" />
+            <rect x="46" y="28" width="28" height="44" rx="14" fill="var(--surface-soft)" />
+            <path d="M60 76V94" stroke="var(--brand)" strokeWidth="4" strokeLinecap="round" />
+            <circle cx="60" cy="96" r="2.5" fill="var(--brand)" />
+            <path d="M52 38 L68 64" stroke="var(--line)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+            <path d="M58 35 L65 49" stroke="var(--line)" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+            <path d="M90 30 L91.5 34.5 L96 36 L91.5 37.5 L90 42 L88.5 37.5 L84 36 L88.5 34.5 Z" fill="var(--accent)" opacity="0.8" />
+            <path d="M30 70 L31 73 L34 74 L31 75 L30 78 L29 75 L26 74 L29 73 Z" fill="var(--brand)" opacity="0.7" />
+          </svg>
+        </div>
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+          Your mirror is empty
+        </h2>
+        <p className="muted" style={{ fontSize: '0.95rem', maxWidth: '320px', margin: 0, lineHeight: 1.5 }}>
+          Log your first mood to start your streak.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate('/log')}
+          style={{
+            padding: '0.75rem 1.75rem',
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            borderRadius: 'var(--radius)',
+            backgroundColor: 'var(--brand)',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s, transform 0.1s',
+            marginTop: '0.5rem',
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--brand-strong)')}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'var(--brand)')}
+        >
+          Log your first mood
+        </button>
+      </div>
+    );
+  }
+
   const echoData = echoQuery.data ?? { balance: 0, earnedToday: 0 };
 
   return (

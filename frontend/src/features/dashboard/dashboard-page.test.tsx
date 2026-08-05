@@ -42,7 +42,11 @@ vi.mock('../../features/dashboard/components/habit-tracker-widget', () => ({
 
 function createMockChain(data: unknown = null, error: unknown = null) {
   const chain = {
-    select: vi.fn(() => chain),
+    selectedFields: '',
+    select: vi.fn((fields) => {
+      chain.selectedFields = fields || ''
+      return chain
+    }),
     eq: vi.fn(() => chain),
     gte: vi.fn(() => chain),
     lt: vi.fn(() => chain),
@@ -51,6 +55,13 @@ function createMockChain(data: unknown = null, error: unknown = null) {
     limit: vi.fn(() => chain),
     maybeSingle: vi.fn(() => Promise.resolve({ data, error })),
     single: vi.fn(() => Promise.resolve({ data, error })),
+    then: vi.fn((onFulfilled) => {
+      if (chain.selectedFields.includes('notes')) {
+        const resultData = data !== null ? data : [{ id: 'mock-recent-log', mood: 4, date: '2024-04-26' }]
+        return Promise.resolve({ data: resultData, error: null }).then(onFulfilled)
+      }
+      return chain.maybeSingle().then(onFulfilled)
+    }),
   }
   return chain
 }
@@ -70,6 +81,7 @@ function renderDashboardPage() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/wallet" element={<div>Wallet Page</div>} />
           <Route path="/logs" element={<div>Logs Page</div>} />
+          <Route path="/log" element={<div>Log Page</div>} />
           <Route path="/logs/new" element={<div>New Log Page</div>} />
           <Route path="/logs/:id/edit" element={<div>Edit Log Page</div>} />
           <Route path="/insights" element={<div>Insights Page</div>} />
@@ -92,7 +104,7 @@ describe('DashboardPage', () => {
   test('renders all 7 widget headings', async () => {
     mockRpc.mockResolvedValue({ data: 5, error: null })
 
-    const logsChain = createMockChain([])
+    const logsChain = createMockChain([{ id: 'mock-log-id', date: '2026-07-27', mood: 4 }])
     const insightChain = createMockChain(null)
     const walletChain = createMockChain({ balance: 10 })
     const rewardsChain = createMockChain([])
@@ -127,7 +139,7 @@ describe('DashboardPage', () => {
     })
   })
 
-  test('shows no recent logs empty state when query returns empty array', async () => {
+  test('empty state renders on zero logs', async () => {
     mockRpc.mockResolvedValue({ data: 0, error: null })
 
     const logsChain = createMockChain([])
@@ -155,7 +167,8 @@ describe('DashboardPage', () => {
     renderDashboardPage()
 
     await waitFor(() => {
-      expect(screen.getByText(/No logs yet/i)).toBeInTheDocument()
+      expect(screen.getByText('Your mirror is empty')).toBeInTheDocument()
+      expect(screen.getByText('Log your first mood to start your streak.')).toBeInTheDocument()
     })
   })
 
@@ -213,7 +226,9 @@ describe('DashboardPage', () => {
 
     mockFrom.mockImplementation((table: string) => {
       if (table === 'log_entries') {
-        return logsChain
+        const queryChain = createMockChain()
+        queryChain.maybeSingle = vi.fn(() => logsChain.maybeSingle())
+        return queryChain
       }
       if (table === 'ai_insights') {
         return insightChain
@@ -238,7 +253,7 @@ describe('DashboardPage', () => {
   test('clicking ECHO balance card navigates to wallet page', async () => {
     mockRpc.mockResolvedValue({ data: 5, error: null })
 
-    const logsChain = createMockChain([])
+    const logsChain = createMockChain([{ id: 'mock-log-id', date: '2026-07-27', mood: 4 }])
     const insightChain = createMockChain(null)
     const walletChain = createMockChain({ balance: 50 })
     const rewardsChain = createMockChain([])
@@ -279,7 +294,7 @@ describe('DashboardPage', () => {
   test('CTA banner Log Todays Mood navigates to new log page', async () => {
     mockRpc.mockResolvedValue({ data: 0, error: null })
 
-    const logsChain = createMockChain()
+    const logsChain = createMockChain([{ id: 'mock-log-id', date: '2026-07-27', mood: 4 }])
     logsChain.maybeSingle = vi.fn(() => Promise.resolve({ data: null, error: null }))
 
     const insightChain = createMockChain(null)
@@ -376,7 +391,7 @@ describe('DashboardPage', () => {
   test('streak card shows current streak when available', async () => {
     mockRpc.mockResolvedValue({ data: 7, error: null })
 
-    const logsChain = createMockChain([])
+    const logsChain = createMockChain([{ id: 'mock-log-id', date: '2026-07-27', mood: 4 }])
     const insightChain = createMockChain(null)
     const walletChain = createMockChain({ balance: 10 })
     const rewardsChain = createMockChain([])
@@ -407,7 +422,7 @@ describe('DashboardPage', () => {
   test('insight preview shows truncated text with view more button', async () => {
     mockRpc.mockResolvedValue({ data: 0, error: null })
 
-    const logsChain = createMockChain([])
+    const logsChain = createMockChain([{ id: 'mock-log-id', date: '2026-07-27', mood: 4 }])
     const insightData = {
       id: 'insight-1',
       user_id: 'test-user-id',
@@ -458,7 +473,7 @@ describe('DashboardPage', () => {
   test('all interactive elements have accessible labels', async () => {
     mockRpc.mockResolvedValue({ data: 0, error: null })
 
-    const logsChain = createMockChain([])
+    const logsChain = createMockChain([{ id: 'mock-log-id', date: '2026-07-27', mood: 4 }])
     const insightChain = createMockChain(null)
     const walletChain = createMockChain({ balance: 10 })
     const rewardsChain = createMockChain([])
@@ -484,6 +499,76 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: "Log Today's Mood" })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'View all' })).toBeInTheDocument()
+    })
+  })
+
+  test('empty state CTA button navigates to /log', async () => {
+    mockRpc.mockResolvedValue({ data: 0, error: null })
+
+    const logsChain = createMockChain([])
+    const insightChain = createMockChain(null)
+    const walletChain = createMockChain({ balance: 10 })
+    const rewardsChain = createMockChain([])
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'log_entries') {
+        return logsChain
+      }
+      if (table === 'ai_insights') {
+        return insightChain
+      }
+      if (table === 'user_wallets') {
+        return walletChain
+      }
+      if (table === 'echo_rewards') {
+        return rewardsChain
+      }
+      return createMockChain([])
+    })
+
+    const user = userEvent.setup()
+    renderDashboardPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Log your first mood' })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Log your first mood' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Log Page')).toBeInTheDocument()
+    })
+  })
+
+  test('empty state is hidden once logs exist', async () => {
+    mockRpc.mockResolvedValue({ data: 5, error: null })
+
+    const logsChain = createMockChain([{ id: 'log-1', date: '2026-07-27', mood: 4 }])
+    const insightChain = createMockChain(null)
+    const walletChain = createMockChain({ balance: 10 })
+    const rewardsChain = createMockChain([])
+
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'log_entries') {
+        return logsChain
+      }
+      if (table === 'ai_insights') {
+        return insightChain
+      }
+      if (table === 'user_wallets') {
+        return walletChain
+      }
+      if (table === 'echo_rewards') {
+        return rewardsChain
+      }
+      return createMockChain([])
+    })
+
+    renderDashboardPage()
+
+    await waitFor(() => {
+      expect(screen.queryByText('Your mirror is empty')).not.toBeInTheDocument()
+      expect(screen.getByText('Mood Summary')).toBeInTheDocument()
     })
   })
 })

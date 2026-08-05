@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../widgets/video_recorder_sheet.dart';
 
@@ -215,61 +216,11 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
   Widget _buildErrorState(String errorMessage) {
     return Center(
       key: const Key('video-feed-error-state'),
-      child: FadeIn(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                FontAwesomeIcons.triangleExclamation.data,
-                size: 56,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Could not load videos',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                errorMessage,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => ref
-                    .read(globalMirrorProvider.notifier)
-                    .loadVideoFeed(refresh: true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                icon: Icon(FontAwesomeIcons.rotateRight.data, size: 16),
-                label: Text(
-                  'Try Again',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: NoConnectionWidget(
+        message: errorMessage,
+        onRetry: () => ref
+            .read(globalMirrorProvider.notifier)
+            .loadVideoFeed(refresh: true),
       ),
     );
   }
