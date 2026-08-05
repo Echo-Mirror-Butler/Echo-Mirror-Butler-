@@ -74,7 +74,7 @@ export function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input
             label="Email"
-            type="email"
+            type="email" autoComplete="email"
             value={credentials.email}
             onChange={(e) =>
               setCredentials({ ...credentials, email: e.target.value })
@@ -85,7 +85,7 @@ export function LoginPage() {
 
           <Input
             label="Password"
-            type="password"
+            type="password" autoComplete="current-password"
             value={credentials.password}
             onChange={(e) =>
               setCredentials({ ...credentials, password: e.target.value })
