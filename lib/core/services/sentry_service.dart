@@ -18,11 +18,9 @@ class SentryService {
         options.environment = environment;
         options.tracesSampleRate = environment == 'production' ? 0.2 : 1.0;
         options.debug = kDebugMode;
-        options beforeSend = (event, {hint}) {
-          // Strip PII — never send email or user metadata
-          event.user = null;
-          return event;
-        };
+        // Never send email or user metadata. This is also the SDK default,
+        // but set explicitly so the intent is clear to future readers.
+        options.sendDefaultPii = false;
       },
     );
 
