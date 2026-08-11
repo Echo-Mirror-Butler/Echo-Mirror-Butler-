@@ -11,7 +11,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { createLogger, extractTraceId, addTraceIdToResponse } from './_shared/logger.ts';
+import { createLogger, extractTraceId, addTraceIdToResponse } from '../_shared/logger.ts';
 
 const logger = createLogger('delete-account');
 const GRACE_PERIOD_DAYS = 14;

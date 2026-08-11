@@ -11,7 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/environment_config.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
-import '../../../widgets/send_confirmation_dialog.dart';
+import '../../widgets/send_confirmation_dialog.dart';
 import '../../viewmodel/providers/wallet_provider.dart';
 
 const _testnetDismissKey = 'testnet_banner_dismissed';
@@ -145,28 +145,29 @@ class WalletScreen extends ConsumerWidget {
     Timer? _debounce;
 
     Future<void> sendEcho() async {
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => SendConfirmationDialog(
-        recipientName: recipientController.text.trim(),
-        recipientAddress: recipientController.text.trim(),
-        amount: amount,
-        message: '',
-        onConfirm: () => Navigator.pop(context, true),
-        onCancel: () => Navigator.pop(context, false),
-      ),
-    );
-    
-    if (confirmed != true) {
-      return;
-    }
       if (recipientController.text.trim().isEmpty) {
         throw Exception('Recipient is required.');
       }
       final rawAmount = double.tryParse(customAmountController.text.trim()) ?? selectedAmount;
-    final amount = (rawAmount * 100).round() / 100; // Round to 2 decimal places
+      final amount = (rawAmount * 100).round() / 100; // Round to 2 decimal places
       if (amount <= 0) throw Exception('Enter a valid ECHO amount.');
+
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => SendConfirmationDialog(
+          recipientName: recipientController.text.trim(),
+          recipientAddress: recipientController.text.trim(),
+          amount: amount,
+          message: '',
+          onConfirm: () => Navigator.pop(context, true),
+          onCancel: () => Navigator.pop(context, false),
+        ),
+      );
+
+      if (confirmed != true) {
+        return;
+      }
 
       final recipientId =
           await _resolveRecipientId(supabase, recipientController.text);
@@ -719,6 +720,7 @@ class WalletScreen extends ConsumerWidget {
               onSend: () => _showSendEchoSheet(context, ref),
               onCopy: () =>
                   _copyToClipboard(context, walletState.publicKey!),
+            ),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(

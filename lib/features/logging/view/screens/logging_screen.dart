@@ -221,7 +221,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
   void _retryLoadEntries(String? userId) {
     if (userId == null || userId.isEmpty) return;
-    ref.read(loggingProvider.notifier).loadLogEntries(userId: userId, force: true);
+    ref
+        .read(loggingProvider.notifier)
+        .loadLogEntries(userId: userId, force: true);
   }
 
   IconData _getMoodIcon(int? mood) {
