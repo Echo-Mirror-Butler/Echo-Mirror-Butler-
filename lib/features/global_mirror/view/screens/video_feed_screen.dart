@@ -80,80 +80,83 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
       body: RefreshIndicator(
         onRefresh: _refreshVideos,
         child: Stack(
-        children: [
-          // Video feed
-          isInitialFeedLoading
-              ? const _VideoFeedLoadingState()
-              : hasFeedError && videos.isEmpty
-              ? _buildErrorState(state.error!)
-              : videos.isEmpty
-              ? _buildEmptyState()
-              : PageView.builder(
-                  controller: _pageController,
-                  scrollDirection: Axis.vertical,
-                  itemCount: videos.length,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
+          children: [
+            // Video feed
+            isInitialFeedLoading
+                ? const _VideoFeedLoadingState()
+                : hasFeedError && videos.isEmpty
+                ? _buildErrorState(state.error!)
+                : videos.isEmpty
+                ? _buildEmptyState()
+                : PageView.builder(
+                    controller: _pageController,
+                    scrollDirection: Axis.vertical,
+                    itemCount: videos.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
 
-                    // Load more when near end
-                    if (index >= videos.length - 2) {
-                      ref.read(globalMirrorProvider.notifier).loadMoreVideos();
-                    }
-                  },
-                  itemBuilder: (context, index) {
-                    final video = videos[index];
-                    return VideoReelItem(
-                      video: video,
-                      isActive: index == _currentPage,
-                    );
-                  },
-                ),
-
-          // Record button
-          Positioned(
-            bottom: 100,
-            right: 16,
-            child: FadeInRight(
-              child: FloatingActionButton.extended(
-                onPressed: _showRecorder,
-                backgroundColor: AppTheme.primaryColor,
-                icon: Icon(FontAwesomeIcons.video.data, color: Colors.white),
-                label: Text(
-                  'Share',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                      // Load more when near end
+                      if (index >= videos.length - 2) {
+                        ref
+                            .read(globalMirrorProvider.notifier)
+                            .loadMoreVideos();
+                      }
+                    },
+                    itemBuilder: (context, index) {
+                      final video = videos[index];
+                      return VideoReelItem(
+                        video: video,
+                        isActive: index == _currentPage,
+                      );
+                    },
                   ),
-                ),
-              ),
-            ),
-          ),
 
-          // Page indicator
-          if (videos.isNotEmpty)
+            // Record button
             Positioned(
+              bottom: 100,
               right: 16,
-              top: MediaQuery.of(context).size.height / 2 - 50,
-              child: Column(
-                children: List.generate(
-                  videos.length.clamp(0, 5),
-                  (index) => Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    width: 8,
-                    height: index == _currentPage ? 24 : 8,
-                    decoration: BoxDecoration(
-                      color: index == _currentPage
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(4),
+              child: FadeInRight(
+                child: FloatingActionButton.extended(
+                  onPressed: _showRecorder,
+                  backgroundColor: AppTheme.primaryColor,
+                  icon: Icon(FontAwesomeIcons.video.data, color: Colors.white),
+                  label: Text(
+                    'Share',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
             ),
-        ],
+
+            // Page indicator
+            if (videos.isNotEmpty)
+              Positioned(
+                right: 16,
+                top: MediaQuery.of(context).size.height / 2 - 50,
+                child: Column(
+                  children: List.generate(
+                    videos.length.clamp(0, 5),
+                    (index) => Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      width: 8,
+                      height: index == _currentPage ? 24 : 8,
+                      decoration: BoxDecoration(
+                        color: index == _currentPage
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
