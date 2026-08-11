@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../features/auth/viewmodel/providers/auth_provider.dart';
-import '../../utils/date_formatter.dart';
 
 final timezoneProvider = FutureProvider<String>((ref) async {
   final authState = ref.watch(authProvider);
@@ -13,7 +12,7 @@ final timezoneProvider = FutureProvider<String>((ref) async {
         .select('timezone')
         .eq('id', userId)
         .maybeSingle();
-    if (response != null && response is Map && response['timezone'] != null) {
+    if (response != null && response['timezone'] != null) {
       return response['timezone'] as String;
     }
     return 'UTC';

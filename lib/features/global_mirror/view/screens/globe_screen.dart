@@ -6,7 +6,6 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../data/models/mood_pin_model.dart';
@@ -182,7 +181,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.refresh(moodPinsStreamProvider);
+          ref.invalidate(moodPinsStreamProvider);
         },
         child: moodPinsAsync.when(
         data: (pins) {

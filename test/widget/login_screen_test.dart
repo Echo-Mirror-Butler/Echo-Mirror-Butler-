@@ -134,8 +134,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // The password TextFormField should be obscured by default
-      final passwordField = tester.widget<TextFormField>(
-        find.byType(TextFormField).last,
+      final passwordField = tester.widget<TextField>(
+        find.byType(TextField).last,
       );
       expect(passwordField.obscureText, isTrue);
 
@@ -145,8 +145,8 @@ void main() {
       await tester.tap(visibilityToggle);
       await tester.pumpAndSettle();
 
-      final updatedField = tester.widget<TextFormField>(
-        find.byType(TextFormField).last,
+      final updatedField = tester.widget<TextField>(
+        find.byType(TextField).last,
       );
       expect(updatedField.obscureText, isFalse);
     });

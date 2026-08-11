@@ -71,7 +71,6 @@ void main() {
         ],
       );
 
-      final notifier = container.read(streakFreezeProvider.notifier);
       // We can't easily set internal state through the notifier
       // Test the badge display by directly testing the widget logic
       addTearDown(container.dispose);

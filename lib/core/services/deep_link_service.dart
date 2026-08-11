@@ -55,7 +55,7 @@ class DeepLinkService {
           return;
         }
         // Content deep links via universal links
-        final route = _mapUniversalLink(uri);
+        final route = mapUniversalLink(uri);
         if (route != null) {
           _navigateToContent(route);
           return;
@@ -67,7 +67,7 @@ class DeepLinkService {
 
     // Custom scheme content deep links
     if (uri.scheme == 'echomirror') {
-      final route = _mapCustomSchemeLink(uri);
+      final route = mapCustomSchemeLink(uri);
       if (route != null) {
         _navigateToContent(route);
         return;
@@ -77,21 +77,24 @@ class DeepLinkService {
     debugPrint('Unrecognized deep link: $uri');
   }
 
-  String? _mapCustomSchemeLink(Uri uri) {
+  @visibleForTesting
+  String? mapCustomSchemeLink(Uri uri) {
+    // For scheme://authority/path URIs like echomirror://gift/user123, the
+    // resource type ('gift') parses as the URI's host/authority, not a path
+    // segment — only 'user123' shows up in pathSegments.
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-    if (segments.isEmpty) return null;
 
-    switch (segments[0]) {
+    switch (uri.host) {
       case 'gift':
-        if (segments.length >= 2 && segments[1].isNotEmpty) {
-          return '/gift/${segments[1]}';
+        if (segments.isNotEmpty && segments[0].isNotEmpty) {
+          return '/gift/${segments[0]}';
         }
         return null;
       case 'leaderboard':
         return '/leaderboard';
       case 'log':
-        if (segments.length >= 2 && segments[1].isNotEmpty) {
-          return '/logging/detail/${segments[1]}';
+        if (segments.isNotEmpty && segments[0].isNotEmpty) {
+          return '/logging/detail/${segments[0]}';
         }
         return null;
       default:
@@ -99,7 +102,8 @@ class DeepLinkService {
     }
   }
 
-  String? _mapUniversalLink(Uri uri) {
+  @visibleForTesting
+  String? mapUniversalLink(Uri uri) {
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (segments.isEmpty) return null;
 
@@ -129,12 +133,13 @@ class DeepLinkService {
       _onNavigate?.call(route);
     } else {
       debugPrint('User not authenticated, saving pending route: $route');
-      _savePendingRoute(route);
+      savePendingRoute(route);
       _onNavigate?.call('/login');
     }
   }
 
-  Future<void> _savePendingRoute(String route) async {
+  @visibleForTesting
+  Future<void> savePendingRoute(String route) async {
     _pendingRoute = route;
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -189,8 +194,7 @@ class DeepLinkService {
 
       if (accessToken != null && refreshToken != null) {
         final response = await Supabase.instance.client.auth.setSession(
-          refreshToken: refreshToken,
-          accessToken: accessToken,
+          refreshToken,
         );
 
         if (response.session != null) {

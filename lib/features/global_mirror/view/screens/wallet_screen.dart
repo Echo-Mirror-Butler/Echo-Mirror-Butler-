@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/environment_config.dart';
@@ -454,33 +453,6 @@ class WalletScreen extends ConsumerWidget {
           },
         );
       },
-    );
-  }
-
-  Widget _buildLoading(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildShimmerCard(theme, height: 140),
-        const SizedBox(height: 20),
-        _buildShimmerCard(theme, height: 80),
-        const SizedBox(height: 20),
-        _buildShimmerCard(theme, height: 200),
-      ],
-    );
-  }
-
-  Widget _buildShimmerCard(ThemeData theme, {required double height}) {
-    return Shimmer.fromColors(
-      baseColor: theme.colorScheme.surface,
-      highlightColor: theme.colorScheme.surfaceContainerHighest,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          color: theme.colorScheme.surface,
-        ),
-      ),
     );
   }
 

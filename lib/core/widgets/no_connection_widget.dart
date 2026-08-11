@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
-import '../themes/app_theme.dart';
 
 /// Reusable no internet connection empty state widget
 class NoConnectionWidget extends StatelessWidget {

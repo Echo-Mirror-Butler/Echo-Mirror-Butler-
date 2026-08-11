@@ -75,8 +75,7 @@ class LeaderboardNotifier extends StateNotifier<LeaderboardState> {
 
         if (userResponse != null) {
           currentUserRank = userResponse['rank'] as int?;
-          currentUserEntry = LeaderboardEntryModel.fromJson(
-              userResponse as Map<String, dynamic>);
+          currentUserEntry = LeaderboardEntryModel.fromJson(userResponse);
         }
       }
 

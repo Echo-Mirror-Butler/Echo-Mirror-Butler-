@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
-import '../../../logging/data/models/log_entry_model.dart';
 
 /// Repository for dashboard operations.
 class DashboardRepository {
@@ -179,7 +178,7 @@ class DashboardRepository {
         },
       );
 
-      if (response.status != null && response.status! >= 400) {
+      if (response.status >= 400) {
         final data = response.data;
         if (data is Map &&
             data['error']?.toString().contains('Rate limit') == true) {

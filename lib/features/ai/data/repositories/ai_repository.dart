@@ -157,7 +157,7 @@ class AiRepository {
       }
       
       // Handle other error responses
-      if (response.status != null && response.status! >= 400) {
+      if (response.status >= 400) {
         final data = response.data;
         final errorMsg = data is Map ? data['error'] as String? : null;
         throw Exception(errorMsg ?? 'Failed to generate insight');

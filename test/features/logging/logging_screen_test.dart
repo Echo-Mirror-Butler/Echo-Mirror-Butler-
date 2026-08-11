@@ -24,7 +24,7 @@ class _FakeLoggingNotifier extends LoggingNotifier {
   }
 
   @override
-  Future<void> loadLogEntries({String? userId}) async {
+  Future<void> loadLogEntries({String? userId, bool force = false}) async {
     // Do nothing in tests to prevent state changes unless intended
   }
 }

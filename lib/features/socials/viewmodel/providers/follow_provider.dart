@@ -13,7 +13,7 @@ final isPublicProfileProvider = FutureProvider<bool>((ref) async {
       .select('public_profile')
       .eq('id', userId)
       .maybeSingle();
-  if (response != null && response is Map) {
+  if (response != null) {
     return (response['public_profile'] as bool?) ?? true;
   }
   return true;

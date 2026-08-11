@@ -1,7 +1,7 @@
 import 'package:echomirror/features/auth/viewmodel/providers/auth_provider.dart';
 import 'package:echomirror/features/leaderboard/viewmodel/providers/leaderboard_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart' hide pumpEventQueue;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/leaderboard_test_helpers.dart';
