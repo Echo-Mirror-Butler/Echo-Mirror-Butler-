@@ -11,7 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/environment_config.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
-import '../../../widgets/send_confirmation_dialog.dart';
+import '../../widgets/send_confirmation_dialog.dart';
 import '../../viewmodel/providers/wallet_provider.dart';
 
 const _testnetDismissKey = 'testnet_banner_dismissed';
