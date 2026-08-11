@@ -10,13 +10,17 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../data/models/log_entry_model.dart';
+import '../../data/models/quick_check_in_data.dart';
 import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/voice_input_button.dart';
 import '../../../global_mirror/viewmodel/providers/global_mirror_provider.dart';
 
 /// Screen for creating a new log entry
 class CreateEntryScreen extends ConsumerStatefulWidget {
-  const CreateEntryScreen({super.key});
+  const CreateEntryScreen({super.key, this.prefill});
+
+  /// Mood/note carried over from the QuickCheckInWidget on the dashboard.
+  final QuickCheckInData? prefill;
 
   @override
   ConsumerState<CreateEntryScreen> createState() => _CreateEntryScreenState();
@@ -40,6 +44,14 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
   void initState() {
     super.initState();
     _timezone = ref.read(timezoneStringProvider);
+
+    final prefill = widget.prefill;
+    if (prefill != null) {
+      _selectedMood = prefill.mood;
+      if (prefill.note != null) {
+        _notesController.text = prefill.note!;
+      }
+    }
   }
 
   @override
