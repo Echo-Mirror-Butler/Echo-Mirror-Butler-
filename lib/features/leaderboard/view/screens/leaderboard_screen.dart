@@ -90,7 +90,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _refreshLeaderboard,
-              icon: const Icon(FontAwesomeIcons.rotateRight.data),
+              icon: Icon(FontAwesomeIcons.rotateRight.data),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,

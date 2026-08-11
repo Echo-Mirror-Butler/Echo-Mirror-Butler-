@@ -281,8 +281,8 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                   IconButton(
                     icon: Icon(
                       _isFollowing!
-                          ? FontAwesomeIcons.solidUser
-                          : FontAwesomeIcons.userPlus,
+                          ? FontAwesomeIcons.solidUser.data
+                          : FontAwesomeIcons.userPlus.data,
                       size: 18,
                     ),
                     onPressed: _toggleFollow,
