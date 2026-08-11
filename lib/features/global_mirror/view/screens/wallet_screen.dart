@@ -34,8 +34,7 @@ class WalletScreen extends ConsumerWidget {
         ),
         backgroundColor: AppTheme.successColor,
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -95,9 +94,10 @@ class WalletScreen extends ConsumerWidget {
         }
       }
 
-      final lookup = await supabase.rpc('lookup_user_by_email', {
-        'email_input': trimmed,
-      });
+      final lookup = await supabase.rpc(
+        'lookup_user_by_email',
+        params: {'email_input': trimmed},
+      );
       if (lookup != null && lookup['user_id'] != null) {
         return lookup['user_id'] as String;
       }
@@ -132,9 +132,10 @@ class WalletScreen extends ConsumerWidget {
   void _showSendEchoSheet(BuildContext context, WidgetRef ref) {
     final supabase = Supabase.instance.client;
     final recipientController = TextEditingController();
-    final customAmountController =
-        TextEditingController(text: _presetAmounts[1].toString());
-    var selectedAmount = _presetAmounts[1];
+    final customAmountController = TextEditingController(
+      text: _presetAmounts[1].toString(),
+    );
+    var selectedAmount = _presetAmounts[1].toDouble();
     var isSending = false;
     String? errorMessage;
     String? recipientError;
@@ -148,8 +149,10 @@ class WalletScreen extends ConsumerWidget {
       if (recipientController.text.trim().isEmpty) {
         throw Exception('Recipient is required.');
       }
-      final rawAmount = double.tryParse(customAmountController.text.trim()) ?? selectedAmount;
-      final amount = (rawAmount * 100).round() / 100; // Round to 2 decimal places
+      final rawAmount =
+          double.tryParse(customAmountController.text.trim()) ?? selectedAmount;
+      final amount =
+          (rawAmount * 100).round() / 100; // Round to 2 decimal places
       if (amount <= 0) throw Exception('Enter a valid ECHO amount.');
 
       // Show confirmation dialog
@@ -169,13 +172,14 @@ class WalletScreen extends ConsumerWidget {
         return;
       }
 
-      final recipientId =
-          await _resolveRecipientId(supabase, recipientController.text);
+      final recipientId = await _resolveRecipientId(
+        supabase,
+        recipientController.text,
+      );
       final response = await supabase.functions.invoke(
         'send-echo',
         body: {'recipient_id': recipientId, 'amount': amount},
       );
-      if (response.error != null) throw response.error!;
       final data = response.data;
       if (data is Map && data['error'] != null) {
         throw Exception(data['error'].toString());
@@ -192,68 +196,6 @@ class WalletScreen extends ConsumerWidget {
       }
     }
 
-    void validateRecipient(String value) {
-      _debounce?.cancel();
-      if (value.trim().isEmpty) {
-        setState(() {
-          isResolvingRecipient = false;
-          recipientError = null;
-          recipientSuccess = null;
-          hasValidRecipient = false;
-        });
-        return;
-      }
-      setState(() {
-        isResolvingRecipient = true;
-        recipientError = null;
-        recipientSuccess = null;
-        hasValidRecipient = false;
-      });
-      _debounce = Timer(const Duration(milliseconds: 500), () async {
-        try {
-          final resolvedId = await _resolveRecipientId(supabase, value);
-          setState(() {
-            isResolvingRecipient = false;
-            recipientSuccess = 'Sending to: $resolvedId';
-            recipientError = null;
-            hasValidRecipient = true;
-          });
-        } catch (e) {
-          setState(() {
-            isResolvingRecipient = false;
-            recipientError = 'Recipient not found';
-            recipientSuccess = null;
-            hasValidRecipient = false;
-          });
-        }
-      });
-    }
-
-    void validateAmount(String value) {
-      if (value.trim().isEmpty) {
-        setState(() => amountError = null);
-        return;
-      }
-      final parsed = double.tryParse(value.trim());
-      if (parsed == null) {
-        setState(() => amountError = "Enter a valid number");
-      } else {
-        // Round to 2 decimal places
-        final rounded = (parsed * 100).round() / 100;
-        if (rounded <= 0) {
-          setState(() => amountError = "Amount must be greater than 0");
-        } else if (rounded > (ref.read(walletProvider).balance)) {
-          setState(() => amountError = "Insufficient ECHO balance");
-        } else {
-          setState(() {
-            amountError = null;
-            selectedAmount = rounded;
-            customAmountController.text = rounded.toStringAsFixed(2);
-          });
-        }
-      }
-    }
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -261,7 +203,70 @@ class WalletScreen extends ConsumerWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            final canSend = hasValidRecipient && amountError == null && !isSending;
+            final canSend =
+                hasValidRecipient && amountError == null && !isSending;
+
+            void validateRecipient(String value) {
+              _debounce?.cancel();
+              if (value.trim().isEmpty) {
+                setState(() {
+                  isResolvingRecipient = false;
+                  recipientError = null;
+                  recipientSuccess = null;
+                  hasValidRecipient = false;
+                });
+                return;
+              }
+              setState(() {
+                isResolvingRecipient = true;
+                recipientError = null;
+                recipientSuccess = null;
+                hasValidRecipient = false;
+              });
+              _debounce = Timer(const Duration(milliseconds: 500), () async {
+                try {
+                  final resolvedId = await _resolveRecipientId(supabase, value);
+                  setState(() {
+                    isResolvingRecipient = false;
+                    recipientSuccess = 'Sending to: $resolvedId';
+                    recipientError = null;
+                    hasValidRecipient = true;
+                  });
+                } catch (e) {
+                  setState(() {
+                    isResolvingRecipient = false;
+                    recipientError = 'Recipient not found';
+                    recipientSuccess = null;
+                    hasValidRecipient = false;
+                  });
+                }
+              });
+            }
+
+            void validateAmount(String value) {
+              if (value.trim().isEmpty) {
+                setState(() => amountError = null);
+                return;
+              }
+              final parsed = double.tryParse(value.trim());
+              if (parsed == null) {
+                setState(() => amountError = "Enter a valid number");
+              } else {
+                // Round to 2 decimal places
+                final rounded = (parsed * 100).round() / 100;
+                if (rounded <= 0) {
+                  setState(() => amountError = "Amount must be greater than 0");
+                } else if (rounded > (ref.read(walletProvider).balance)) {
+                  setState(() => amountError = "Insufficient ECHO balance");
+                } else {
+                  setState(() {
+                    amountError = null;
+                    selectedAmount = rounded;
+                    customAmountController.text = rounded.toStringAsFixed(2);
+                  });
+                }
+              }
+            }
 
             return Padding(
               padding: EdgeInsets.only(
@@ -270,8 +275,9 @@ class WalletScreen extends ConsumerWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -288,18 +294,15 @@ class WalletScreen extends ConsumerWidget {
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.2),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     Text(
                       'Send ECHO',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
+                      style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
@@ -320,14 +323,22 @@ class WalletScreen extends ConsumerWidget {
                                 child: SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               )
                             : recipientSuccess != null
-                                ? const Icon(Icons.check_circle, color: AppTheme.successColor)
-                                : recipientError != null
-                                    ? const Icon(Icons.error, color: AppTheme.errorColor)
-                                    : null,
+                            ? const Icon(
+                                Icons.check_circle,
+                                color: AppTheme.successColor,
+                              )
+                            : recipientError != null
+                            ? const Icon(
+                                Icons.error,
+                                color: AppTheme.errorColor,
+                              )
+                            : null,
                       ),
                       onChanged: (value) => validateRecipient(value),
                     ),
@@ -364,9 +375,8 @@ class WalletScreen extends ConsumerWidget {
                           onSelected: (selected) {
                             if (!selected) return;
                             setState(() {
-                              selectedAmount = amount;
-                              customAmountController.text =
-                                  amount.toString();
+                              selectedAmount = amount.toDouble();
+                              customAmountController.text = amount.toString();
                               amountError = null;
                             });
                           },
@@ -376,8 +386,9 @@ class WalletScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     TextField(
                       controller: customAmountController,
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Amount',
                         suffixText: 'ECHO',
@@ -396,8 +407,7 @@ class WalletScreen extends ConsumerWidget {
                       Text(
                         errorMessage!,
                         style: TextStyle(
-                          color:
-                              Theme.of(context).colorScheme.error,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ],
@@ -413,9 +423,10 @@ class WalletScreen extends ConsumerWidget {
                                 await sendEcho();
                               } catch (e) {
                                 setState(() {
-                                  errorMessage = e
-                                      .toString()
-                                      .replaceFirst('Exception: ', '');
+                                  errorMessage = e.toString().replaceFirst(
+                                    'Exception: ',
+                                    '',
+                                  );
                                 });
                               }
                               setState(() => isSending = false);
@@ -425,16 +436,15 @@ class WalletScreen extends ConsumerWidget {
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Send ECHO'),
                     ),
                     const SizedBox(height: 12),
                     OutlinedButton(
-                      onPressed:
-                          isSending ? null : () => Navigator.pop(context),
+                      onPressed: isSending
+                          ? null
+                          : () => Navigator.pop(context),
                       child: const Text('Cancel'),
                     ),
                   ],
@@ -486,10 +496,9 @@ class WalletScreen extends ConsumerWidget {
     ref.listen<WalletState>(walletProvider, (previous, next) {
       final messenger = ScaffoldMessenger.of(context);
       final errorChanged = previous?.fundingError != next.fundingError;
-      final justFunded =
-          previous == null
-              ? false
-              : !previous.funded && next.funded;
+      final justFunded = previous == null
+          ? false
+          : !previous.funded && next.funded;
       if (errorChanged && next.fundingError != null) {
         messenger.hideCurrentSnackBar();
         messenger.showSnackBar(_fundingErrorSnack(next.fundingError!));
@@ -520,25 +529,25 @@ class WalletScreen extends ConsumerWidget {
               child: Center(child: CircularProgressIndicator()),
             )
           : walletState.error != null
-              ? NoConnectionWidget(
-                  message: walletState.error!,
-                  onRetry: () => walletNotifier.loadWallet(),
-                )
-              : !walletState.exists
-                  ? _buildEmptyState(context, walletNotifier)
-                  : RefreshIndicator(
-                      onRefresh: () => walletNotifier.loadWallet(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: _buildWalletContent(
-                          context,
-                          theme,
-                          walletState,
-                          walletNotifier,
-                          ref,
-                        ),
-                      ),
-                    ),
+          ? NoConnectionWidget(
+              message: walletState.error!,
+              onRetry: () => walletNotifier.loadWallet(),
+            )
+          : !walletState.exists
+          ? _buildEmptyState(context, walletNotifier)
+          : RefreshIndicator(
+              onRefresh: () => walletNotifier.loadWallet(),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: _buildWalletContent(
+                  context,
+                  theme,
+                  walletState,
+                  walletNotifier,
+                  ref,
+                ),
+              ),
+            ),
     );
   }
 
@@ -548,11 +557,7 @@ class WalletScreen extends ConsumerWidget {
         children: [
           Icon(Icons.check_circle, color: Colors.white, size: 18),
           SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '10,000 XLM added! Your wallet is now active.',
-            ),
-          ),
+          Expanded(child: Text('10,000 XLM added! Your wallet is now active.')),
         ],
       ),
       backgroundColor: AppTheme.successColor,
@@ -578,18 +583,15 @@ class WalletScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(
-    BuildContext context,
-    WalletNotifier walletNotifier,
-  ) {
+  Widget _buildEmptyState(BuildContext context, WalletNotifier walletNotifier) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.account_balance_wallet_outlined,
             size: 72,
-            color: theme.colorScheme.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 20),
           Text(
@@ -613,11 +615,13 @@ class WalletScreen extends ConsumerWidget {
   }
 
   Widget _buildStellarError(
+    BuildContext context,
     ThemeData theme,
     WalletState walletState,
     WalletNotifier walletNotifier,
   ) {
-    final isUnfunded = walletState.xlmBalance == 0 && walletState.echoBalance == 0;
+    final isUnfunded =
+        walletState.xlmBalance == 0 && walletState.echoBalance == 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -625,15 +629,14 @@ class WalletScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isUnfunded
-                ? Colors.amber.shade100
-                : Colors.red.shade100,
+            color: isUnfunded ? Colors.amber.shade100 : Colors.red.shade100,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             isUnfunded
                 ? 'Activate your wallet — send any XLM to fund it'
-                : (walletState.stellarError ?? 'Could not reach Stellar network'),
+                : (walletState.stellarError ??
+                      'Could not reach Stellar network'),
             style: TextStyle(
               fontSize: 13,
               color: isUnfunded ? Colors.brown : Colors.red.shade800,
@@ -652,11 +655,13 @@ class WalletScreen extends ConsumerWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.attach_money, size: 18),
-          label: Text(walletState.isFunding
-              ? 'Funding...'
-              : 'Fund with Friendbot'),
+          label: Text(
+            walletState.isFunding ? 'Funding...' : 'Fund with Friendbot',
+          ),
           style: FilledButton.styleFrom(
-            backgroundColor: isUnfunded ? Colors.amber.shade700 : Colors.red.shade600,
+            backgroundColor: isUnfunded
+                ? Colors.amber.shade700
+                : Colors.red.shade600,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
@@ -666,10 +671,7 @@ class WalletScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         OutlinedButton(
-          onPressed: () => _copyToClipboard(
-            context,
-            walletState.publicKey!,
-          ),
+          onPressed: () => _copyToClipboard(context, walletState.publicKey!),
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: Colors.white),
             foregroundColor: Colors.white,
@@ -718,15 +720,17 @@ class WalletScreen extends ConsumerWidget {
             _FundedBalanceCard(
               walletState: walletState,
               onSend: () => _showSendEchoSheet(context, ref),
-              onCopy: () =>
-                  _copyToClipboard(context, walletState.publicKey!),
+              onCopy: () => _copyToClipboard(context, walletState.publicKey!),
             ),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              gradient: const LinearGradient(
-                colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.secondary,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -814,21 +818,26 @@ class WalletScreen extends ConsumerWidget {
                     ),
                     child: Text(
                       'Streak bonus active',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: Colors.white),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
                 const SizedBox(height: 16),
                 if (walletState.stellarError != null)
-                  _buildStellarError(theme, walletState, walletNotifier)
+                  _buildStellarError(
+                    context,
+                    theme,
+                    walletState,
+                    walletNotifier,
+                  )
                 else ...[
                   Row(
                     children: [
                       Expanded(
                         child: FilledButton(
-                          onPressed: () =>
-                              _showSendEchoSheet(context, ref),
+                          onPressed: () => _showSendEchoSheet(context, ref),
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: theme.colorScheme.primary,
@@ -843,10 +852,8 @@ class WalletScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => _copyToClipboard(
-                            context,
-                            walletState.publicKey!,
-                          ),
+                          onPressed: () =>
+                              _copyToClipboard(context, walletState.publicKey!),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.white),
                             foregroundColor: Colors.white,
@@ -863,6 +870,7 @@ class WalletScreen extends ConsumerWidget {
                 ],
               ],
             ),
+          ),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.all(20),
@@ -904,10 +912,8 @@ class WalletScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () => _copyToClipboard(
-                          context,
-                          walletState.publicKey!,
-                        ),
+                        onPressed: () =>
+                            _copyToClipboard(context, walletState.publicKey!),
                         icon: const Icon(Icons.copy, size: 18),
                         label: const Text('Copy Key'),
                       ),
@@ -915,10 +921,8 @@ class WalletScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton.icon(
-                        onPressed: () => _showQrModal(
-                          context,
-                          walletState.publicKey!,
-                        ),
+                        onPressed: () =>
+                            _showQrModal(context, walletState.publicKey!),
                         icon: const Icon(Icons.qr_code, size: 18),
                         label: const Text('Show QR'),
                       ),
@@ -1012,14 +1016,16 @@ class _QrBottomSheet extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             'Scan to Send ECHO',
-            style: theme.textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Scan this QR code to get your Stellar public key',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 28),
@@ -1041,7 +1047,7 @@ class _QrBottomSheet extends StatelessWidget {
               version: QrVersions.auto,
               size: 220,
               backgroundColor: Colors.white,
-              eyeStyle: const QrEyeStyle(
+              eyeStyle: QrEyeStyle(
                 eyeShape: QrEyeShape.square,
                 color: theme.colorScheme.primary,
               ),
@@ -1053,11 +1059,11 @@ class _QrBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest
-                  .withValues(alpha: 0.4),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.4,
+              ),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -1134,7 +1140,11 @@ class _TestnetBannerState extends State<_TestnetBanner> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.amber,
+            size: 20,
+          ),
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
@@ -1151,7 +1161,6 @@ class _TestnetBannerState extends State<_TestnetBanner> {
     );
   }
 }
-
 
 /// Primary balance card shown for funded wallets.
 ///
@@ -1172,17 +1181,15 @@ class _FundedBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final xlmText =
-        '${walletState.xlmBalance.toStringAsFixed(2)} XLM';
-    final echoText =
-        '${walletState.balance.toStringAsFixed(0)} ECHO';
+    final xlmText = '${walletState.xlmBalance.toStringAsFixed(2)} XLM';
+    final echoText = '${walletState.balance.toStringAsFixed(0)} ECHO';
     final isLiveLoading = walletState.isLiveBalancesLoading;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1232,18 +1239,14 @@ class _FundedBalanceCard extends StatelessWidget {
           if (walletState.hasStreakBonus) ...[
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 'Streak bonus active',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: Colors.white),
+                style: theme.textTheme.bodySmall?.copyWith(color: Colors.white),
               ),
             ),
           ],
@@ -1333,8 +1336,9 @@ class _UnfundedActivationCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Activation Required',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -1343,10 +1347,10 @@ class _UnfundedActivationCard extends StatelessWidget {
           Text(
             EnvironmentConfig.isTestnet
                 ? "Your wallet isn't activated yet. Tap below to fund it with "
-                    'testnet XLM.'
+                      'testnet XLM.'
                 : 'Your wallet is not yet active on the Stellar network. '
-                    'Send at least 1 XLM to the public key below to '
-                    'activate it.',
+                      'Send at least 1 XLM to the public key below to '
+                      'activate it.',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -1379,9 +1383,7 @@ class _UnfundedActivationCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('🚰', style: TextStyle(fontSize: 16)),
-                label: Text(
-                  isFunding ? 'Funding…' : 'Fund with Friendbot',
-                ),
+                label: Text(isFunding ? 'Funding…' : 'Fund with Friendbot'),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
