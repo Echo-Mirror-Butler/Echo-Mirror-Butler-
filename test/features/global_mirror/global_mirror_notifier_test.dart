@@ -7,6 +7,7 @@ import 'package:echomirror/features/global_mirror/data/models/video_post_model.d
 import 'package:echomirror/features/global_mirror/data/models/mood_pin_comment_model.dart';
 import 'package:echomirror/features/global_mirror/data/repositories/global_mirror_repository.dart';
 import 'package:echomirror/features/global_mirror/viewmodel/providers/global_mirror_provider.dart';
+import 'package:echomirror/features/global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
@@ -287,7 +288,20 @@ class _FakePosition implements Position {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _FakeMoodCommentNotificationNotifier
+    extends MoodCommentNotificationNotifier {
+  _FakeMoodCommentNotificationNotifier() : super.forTesting();
+
+  @override
+  Future<void> refreshNotifications() async {}
+}
+
 class _FakeWidgetRef implements WidgetRef {
+  final _fakeMoodCommentNotifier = _FakeMoodCommentNotificationNotifier();
+
+  @override
+  T read<T>(ProviderListenable<T> provider) => _fakeMoodCommentNotifier as T;
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
