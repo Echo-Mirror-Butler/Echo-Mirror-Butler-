@@ -3,19 +3,31 @@ import 'package:echomirror/features/dashboard/viewmodel/providers/streak_freeze_
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
+  setUpAll(() async {
+    // StreakFreezeNotifier reaches for Supabase.instance.client on
+    // construction, which MoodStreakFreezeBadge triggers via streakFreezeProvider.
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(
+      url: 'http://localhost:54321',
+      anonKey: 'test-anon-key',
+    );
+  });
+
   group('MoodStreakCard - freeze button', () {
     testWidgets('shows freeze button when showFreezeButton is true', (
       tester,
     ) async {
       await tester.pumpWidget(
-        const MaterialApp(
+        MaterialApp(
           home: Scaffold(
             body: MoodStreakCard(
               streak: 5,
               showFreezeButton: true,
-              onFreezeTap: null,
+              onFreezeTap: () {},
             ),
           ),
         ),
@@ -84,14 +96,16 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                Text('Before'),
-                MoodStreakFreezeBadge(),
-                Text('After'),
-              ],
+        ProviderScope(
+          child: const MaterialApp(
+            home: Scaffold(
+              body: Column(
+                children: [
+                  Text('Before'),
+                  MoodStreakFreezeBadge(),
+                  Text('After'),
+                ],
+              ),
             ),
           ),
         ),
@@ -104,7 +118,7 @@ void main() {
 
   group('Freeze confirmation dialog', () {
     testWidgets('cancel button dismisses the dialog', (tester) async {
-      bool dialogVisible = true;
+      bool dialogVisible = false;
 
       await tester.pumpWidget(
         MaterialApp(
