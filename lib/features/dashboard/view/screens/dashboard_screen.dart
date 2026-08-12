@@ -349,7 +349,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.secondary,
+                    ],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
@@ -392,7 +395,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.secondary,
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [

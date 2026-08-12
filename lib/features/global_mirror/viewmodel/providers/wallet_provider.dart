@@ -176,6 +176,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
       final balance =
           double.tryParse(wallet['balance']?.toString() ?? '') ?? 0.0;
+
       final publicKey = wallet['public_key'] as String?;
 
       state = WalletState(

@@ -144,7 +144,7 @@ select is(
 );
 
 -- Run the purge function
-perform public.purge_expired_idempotency_keys();
+select public.purge_expired_idempotency_keys();
 
 -- The expired row must be gone
 select is(
