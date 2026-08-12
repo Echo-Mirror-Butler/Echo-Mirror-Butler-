@@ -25,11 +25,11 @@ void _stubPermission(
       case 'checkPermissionStatus':
         return status.index;
       case 'requestPermissions':
-        // Returns a map of permission.value → status.index.
-        // Permission.notification.value is 14 (as of permission_handler 11.x).
-        final Map<dynamic, dynamic> args =
-            (call.arguments as Map?)?.cast<dynamic, dynamic>() ?? {};
-        final List<dynamic> permissions = (args['permissions'] as List?) ?? [];
+        // encodePermissions() sends call.arguments as a plain List<int> of
+        // permission codes directly — not wrapped in a map. Returns a map
+        // of permission.value → status.index (Permission.notification.value
+        // is 14 as of permission_handler 11.x).
+        final List<dynamic> permissions = (call.arguments as List?) ?? [];
         return {for (final p in permissions) p: (requestResult ?? status).index};
       case 'openAppSettings':
         return openSettingsResult;
