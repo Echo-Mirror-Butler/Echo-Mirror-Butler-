@@ -1,8 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:echomirror/features/dashboard/viewmodel/providers/streak_freeze_provider.dart';
 
 void main() {
+  setUpAll(() async {
+    // Supabase's internal auth storage reaches for SharedPreferences during
+    // initialize(), so the mock must be in place before that call.
+    SharedPreferences.setMockInitialValues({});
+
+    // StreakFreezeNotifier reaches for Supabase.instance.client on
+    // construction. Nothing here issues a real query.
+    await Supabase.initialize(
+      url: 'http://localhost:54321',
+      anonKey: 'test-anon-key',
+    );
+  });
+
   group('StreakFreezeNotifier', () {
     late ProviderContainer container;
     late StreakFreezeNotifier notifier;
