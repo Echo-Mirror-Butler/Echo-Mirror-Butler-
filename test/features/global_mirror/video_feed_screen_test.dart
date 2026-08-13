@@ -65,7 +65,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('video-feed-error-state')), findsOneWidget);
-    expect(find.text('Could not load videos'), findsOneWidget);
+    expect(find.text('No Internet Connection'), findsOneWidget);
     expect(find.text('Network request failed'), findsOneWidget);
     expect(find.byKey(const Key('video-feed-loading-state')), findsNothing);
   });
