@@ -109,8 +109,8 @@ class StatisticsPanel extends StatelessWidget {
     }
     if (lat > -35) {
       if (lon < -70) return 'Southern South America';
-      if (lon < 20) return 'Southern Africa';
-      if (lon < 140) return 'Southern Australia';
+      if (lon < 40) return 'Southern Africa';
+      if (lon < 155) return 'Southern Australia';
       return 'New Zealand / South Pacific';
     }
     if (lat > -60) return 'Subantarctic';
