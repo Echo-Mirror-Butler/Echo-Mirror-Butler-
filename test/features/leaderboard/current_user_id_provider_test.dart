@@ -31,7 +31,10 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      // Let the constructor-driven auth check settle.
+      // Riverpod providers are created lazily on first read — touch
+      // authProvider now so AuthNotifier's constructor-driven auth check
+      // actually starts before we drain the event queue below.
+      container.read(authProvider);
       await pumpEventQueue();
 
       expect(container.read(authProvider).user?.id, kTestUserId);
@@ -48,6 +51,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
+      container.read(authProvider);
       await pumpEventQueue();
 
       expect(container.read(authProvider).isAuthenticated, isFalse);
@@ -75,6 +79,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
+      container.read(authProvider);
       await pumpEventQueue();
 
       final state = await container.read(asyncLeaderboardProvider.future);
@@ -102,6 +107,7 @@ void main() {
         );
         addTearDown(container.dispose);
 
+        container.read(authProvider);
         await pumpEventQueue();
 
         final state = await container.read(asyncLeaderboardProvider.future);
