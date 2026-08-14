@@ -137,13 +137,19 @@ void main() {
     await tester.pumpAndSettle();
 
     // Section headers
-    expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('Appearance & Feedback'), findsOneWidget);
     expect(find.text('Reminders'), findsOneWidget);
-    expect(find.text('Account'), findsOneWidget);
 
     // Key tiles
     expect(find.text('Dark Mode'), findsOneWidget);
     expect(find.text('System Theme'), findsOneWidget);
+
+    // The Account section is further down the ListView than the default
+    // test viewport, so its sliver children aren't mounted until scrolled
+    // into view.
+    await tester.scrollUntilVisible(find.text('Account'), 300);
+    expect(find.text('Account'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Change Password'), 300);
     expect(find.text('Change Password'), findsOneWidget);
   });
 
@@ -190,7 +196,7 @@ void main() {
       await tester.pumpWidget(_buildScreenWithRouter());
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Change Password'));
+      await tester.scrollUntilVisible(find.text('Change Password'), 300);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Change Password'), warnIfMissed: false);
       await tester.pumpAndSettle();
@@ -218,6 +224,7 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('ECHO Balance'), 300);
     expect(find.text('ECHO Balance'), findsOneWidget);
     expect(find.textContaining('75'), findsOneWidget);
   });
@@ -226,6 +233,7 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('tester@example.com'), 300);
     expect(find.text('tester@example.com'), findsOneWidget);
   });
 }
