@@ -47,6 +47,7 @@ void main() {
       final result = await StellarService.getLiveBalances(
         _testPublicKey,
         sdk: sdk,
+        issuerPublicKey: _testIssuer,
       );
 
       expect(result.xlm, 12.5);
