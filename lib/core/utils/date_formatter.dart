@@ -75,7 +75,7 @@ class DateFormatter {
   /// Returns the same instant, but with the timezone's offset applied.
   static DateTime toLocalDate(DateTime utcDate, String timezone) {
     // Ensure timezone database is initialized.
-    tz.initializeTimeZones();
+    tzdata.initializeTimeZones();
     final location = tz.getLocation(timezone);
     final tzDate = tz.TZDateTime.from(utcDate, location);
     // Strip time part to get a pure date.

@@ -29,7 +29,7 @@ class NetworkErrorWidget extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                FontAwesomeIcons.wifi,
+                FontAwesomeIcons.wifi.data,
                 size: 48,
                 color: theme.colorScheme.error,
               ),

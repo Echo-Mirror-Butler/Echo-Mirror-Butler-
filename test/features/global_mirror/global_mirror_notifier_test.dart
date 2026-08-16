@@ -1,8 +1,13 @@
-import 'package:echomirror/features/global_mirror/data/models/mood_pin_model.dart';
+// Fake classes below expose configurable optional parameters that not every
+// test case needs to pass — that's intentional fixture flexibility, not dead
+// code.
+// ignore_for_file: unused_element_parameter
+
 import 'package:echomirror/features/global_mirror/data/models/video_post_model.dart';
 import 'package:echomirror/features/global_mirror/data/models/mood_pin_comment_model.dart';
 import 'package:echomirror/features/global_mirror/data/repositories/global_mirror_repository.dart';
 import 'package:echomirror/features/global_mirror/viewmodel/providers/global_mirror_provider.dart';
+import 'package:echomirror/features/global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
@@ -16,15 +21,6 @@ VideoPostModel _makeVideoPost({String id = 'video-1'}) => VideoPostModel(
   timestamp: _now,
   expiresAt: _now.add(const Duration(hours: 24)),
 );
-
-MoodPinCommentModel _makeComment({String id = 'comment-1'}) =>
-    MoodPinCommentModel(
-      id: id,
-      moodPinId: 'pin-1',
-      text: 'Test comment',
-      timestamp: _now,
-      userId: 'user-1',
-    );
 
 class _FakeGlobalMirrorRepository extends GlobalMirrorRepository {
   _FakeGlobalMirrorRepository({
@@ -232,7 +228,7 @@ class _FakePosition implements Position {
   _FakePosition({
     this.latitude = 37.7749,
     this.longitude = -122.4194,
-    this.timestamp,
+    DateTime? timestamp,
     this.accuracy = 0.0,
     this.altitude = 0.0,
     this.altitudeAccuracy = 0.0,
@@ -243,7 +239,7 @@ class _FakePosition implements Position {
     this.floor = 0,
     this.isMocked = false,
     this.extras = const {},
-  });
+  }) : timestamp = timestamp ?? DateTime(2024);
 
   @override
   final double latitude;
@@ -252,7 +248,7 @@ class _FakePosition implements Position {
   final double longitude;
 
   @override
-  final DateTime? timestamp;
+  final DateTime timestamp;
 
   @override
   final double accuracy;
@@ -281,10 +277,8 @@ class _FakePosition implements Position {
   @override
   final bool isMocked;
 
-  @override
   final Map<String, dynamic> extras;
 
-  @override
   double get speedAccuracyMetersPerSecond => 0.0;
 
   @override
@@ -294,7 +288,20 @@ class _FakePosition implements Position {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _FakeMoodCommentNotificationNotifier
+    extends MoodCommentNotificationNotifier {
+  _FakeMoodCommentNotificationNotifier() : super.forTesting();
+
+  @override
+  Future<void> refreshNotifications() async {}
+}
+
 class _FakeWidgetRef implements WidgetRef {
+  final _fakeMoodCommentNotifier = _FakeMoodCommentNotificationNotifier();
+
+  @override
+  T read<T>(ProviderListenable<T> provider) => _fakeMoodCommentNotifier as T;
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

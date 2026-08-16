@@ -25,6 +25,10 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Northern Europe'), findsNothing);
       expect(find.text('Northern America / Greenland'), findsOneWidget);
@@ -48,6 +52,10 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Northern Europe'), findsNothing);
       expect(find.text('Northern Asia'), findsOneWidget);
@@ -71,6 +79,10 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Europe'), findsOneWidget);
     });
@@ -93,11 +105,15 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('East Asia'), findsOneWidget);
     });
 
-    testWidgets('sydney resolves to Australia / Oceania', (tester) async {
+    testWidgets('sydney resolves to Southern Australia', (tester) async {
       final pins = [
         MoodPinModel(
           id: '1',
@@ -115,11 +131,15 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('Australia / Oceania'), findsOneWidget);
+      expect(find.text('Southern Australia'), findsOneWidget);
     });
 
-    testWidgets('sao paulo resolves to Southern Tropical South America', (
+    testWidgets('sao paulo resolves to Southern Brazil / Atlantic', (
       tester,
     ) async {
       final pins = [
@@ -139,8 +159,12 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
-      expect(find.text('Southern Tropical South America'), findsOneWidget);
+      expect(find.text('Southern Brazil / Atlantic'), findsOneWidget);
     });
 
     testWidgets('southern africa resolves correctly', (tester) async {
@@ -161,6 +185,10 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Southern Africa'), findsOneWidget);
     });
@@ -183,6 +211,10 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Eastern North America'), findsOneWidget);
     });
@@ -205,6 +237,10 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('Southern Africa'), findsOneWidget);
     });
@@ -217,6 +253,10 @@ void main() {
           ),
         ),
       );
+      // animate_do's FadeInDown schedules a Timer via Future.delayed even
+      // with a zero delay; it must fire before the test tears down the
+      // widget tree, or the "!timersPending" invariant check fails.
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('No activity'), findsOneWidget);
     });

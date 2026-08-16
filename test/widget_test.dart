@@ -1,3 +1,4 @@
+@Tags(['integration'])
 import 'package:echomirror/main.dart' as app;
 import 'package:echomirror/features/auth/view/screens/login_screen.dart';
 import 'package:flutter/material.dart';

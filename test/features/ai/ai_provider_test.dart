@@ -66,17 +66,6 @@ void main() {
     );
   }
 
-  AiInsightModel buildTestInsight() {
-    return AiInsightModel(
-      prediction:
-          'Test prediction based on your logs. You have been consistent with meditation and exercise. If you continue this pattern for one month, you will see significant improvements in your mood and overall well-being.',
-      suggestions: ['Try adding morning gratitude', 'Consider journaling'],
-      futureLetter:
-          'Hey! It is me, your future self. I remember when you logged that tough day. That consistency paid off - look at you now! I am so proud of how far you have come.',
-      generatedAt: DateTime.now(),
-    );
-  }
-
   group('AiInsightNotifier', () {
     late FakeAiRepository fakeRepository;
 

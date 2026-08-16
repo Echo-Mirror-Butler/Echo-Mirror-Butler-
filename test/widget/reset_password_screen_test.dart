@@ -1,9 +1,11 @@
+import 'package:echomirror/core/widgets/shimmer_loading.dart';
 import 'package:echomirror/features/auth/view/screens/reset_password_screen.dart';
 import 'package:echomirror/features/auth/viewmodel/providers/auth_provider.dart';
 import 'package:echomirror/features/auth/data/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:go_router/go_router.dart';
 
@@ -150,7 +152,7 @@ void main() {
       final textField = tester.widget<TextField>(newPasswordField);
       expect(textField.obscureText, isTrue);
 
-      final visibilityToggles = find.byIcon(Icons.visibility);
+      final visibilityToggles = find.byIcon(FontAwesomeIcons.eye.data);
       await tester.tap(visibilityToggles.first);
       await tester.pumpAndSettle();
 
@@ -178,7 +180,12 @@ void main() {
       await tester.tap(resetButton);
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // CustomButton shows ShimmerLoading (not CircularProgressIndicator)
+      expect(find.byType(ShimmerLoading), findsOneWidget);
+
+      // Let the mocked reset's 100ms delay finish so its Timer doesn't
+      // outlive the widget tree's disposal at test teardown.
+      await tester.pumpAndSettle();
     });
   });
 }

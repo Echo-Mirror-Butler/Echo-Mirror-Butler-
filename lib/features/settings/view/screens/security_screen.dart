@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../../../core/themes/app_theme.dart';
 import '../../../../core/viewmodel/providers/biometric_provider.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../auth/viewmodel/providers/auth_provider.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -64,12 +64,13 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             },
           ];
         } else {
+          final lastSignInAt = currentSession?.user.lastSignInAt;
           _sessions = sessions.map((s) {
             s['is_current'] = s['created_at'] != null &&
-                currentSession?.createdAt != null &&
+                lastSignInAt != null &&
                 _closeTimestamps(
                   DateTime.parse(s['created_at'] as String),
-                  currentSession!.createdAt,
+                  DateTime.parse(lastSignInAt),
                 );
             return s;
           }).toList();
@@ -202,7 +203,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       final challenge = await client.auth.mfa.enroll(issuer: 'EchoMirror');
 
       setState(() {
-        _qrCodeData = challenge.totp.qrCode;
+        _qrCodeData = challenge.totp!.qrCode;
         _mfaFactorId = challenge.id;
       });
 
@@ -335,7 +336,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             code: code,
           );
 
-          await client.auth.mfa.unenroll(factorId: factor.id);
+          await client.auth.mfa.unenroll(factor.id);
 
           final userId = client.auth.currentUser?.id;
           if (userId != null) {

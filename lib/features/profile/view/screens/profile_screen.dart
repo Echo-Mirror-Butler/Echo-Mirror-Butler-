@@ -272,15 +272,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                 // Info cards
                 _infoCard(theme, [
-                  _infoRow(theme, FontAwesomeIcons.envelope, 'Email', _email ?? '—', Colors.blue),
+                  _infoRow(theme, FontAwesomeIcons.envelope.data, 'Email', _email ?? '—', Colors.blue),
                   Divider(height: 1, color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-                  _infoRow(theme, FontAwesomeIcons.calendarCheck, 'Member since', _memberSince ?? '—', Colors.green),
+                  _infoRow(theme, FontAwesomeIcons.calendarCheck.data, 'Member since', _memberSince ?? '—', Colors.green),
                 ]),
                 const SizedBox(height: 16),
                 _infoCard(theme, [
-                  _infoRow(theme, FontAwesomeIcons.bookOpen, 'Total logs', '$_totalLogs entries', AppTheme.primaryColor),
+                  _infoRow(theme, FontAwesomeIcons.bookOpen.data, 'Total logs', '$_totalLogs entries', AppTheme.primaryColor),
                   Divider(height: 1, color: theme.colorScheme.outline.withValues(alpha: 0.1)),
-                  _infoRow(theme, FontAwesomeIcons.fire, 'Current streak', '$_streak day${_streak != 1 ? 's' : ''}', Colors.orange),
+                  _infoRow(theme, FontAwesomeIcons.fire.data, 'Current streak', '$_streak day${_streak != 1 ? 's' : ''}', Colors.orange),
                 ]),
               ],
             ),

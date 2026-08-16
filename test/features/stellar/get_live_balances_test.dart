@@ -5,8 +5,8 @@ import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 
 class MockStellarSDK extends Mock implements StellarSDK {}
 
-class MockAccountsResponseBuilder extends Mock
-    implements AccountsResponseBuilder {}
+class MockAccountsRequestBuilder extends Mock
+    implements AccountsRequestBuilder {}
 
 void main() {
   group('StellarService.getLiveBalances', () {
@@ -15,7 +15,7 @@ void main() {
     const tCredit = 'credit_alphanum4';
 
     late MockStellarSDK sdk;
-    late MockAccountsResponseBuilder accounts;
+    late MockAccountsRequestBuilder accounts;
 
     Balance nativeBalance(double amount) => _FakeBalance(
           assetType: tNative,
@@ -31,7 +31,7 @@ void main() {
 
     setUp(() {
       sdk = MockStellarSDK();
-      accounts = MockAccountsResponseBuilder();
+      accounts = MockAccountsRequestBuilder();
       when(() => sdk.accounts).thenReturn(accounts);
     });
 
@@ -47,6 +47,7 @@ void main() {
       final result = await StellarService.getLiveBalances(
         _testPublicKey,
         sdk: sdk,
+        issuerPublicKey: _testIssuer,
       );
 
       expect(result.xlm, 12.5);
@@ -167,10 +168,8 @@ const _testPublicKey =
 class _FakeAccountResponse extends Fake implements AccountResponse {
   _FakeAccountResponse({required this.balances});
 
-  final List<Balance> balances;
-
   @override
-  List<Balance> get balancesValue => balances;
+  final List<Balance> balances;
 
   @override
   String get accountId => _testPublicKey;

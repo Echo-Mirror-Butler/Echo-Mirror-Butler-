@@ -3,6 +3,7 @@ import 'package:echomirror/features/global_mirror/data/repositories/gift_reposit
 import 'package:echomirror/features/global_mirror/view/screens/gift_screen.dart';
 import 'package:echomirror/features/global_mirror/viewmodel/providers/gift_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -45,6 +46,14 @@ class _FakeGiftNotifier extends GiftNotifier {
 }
 
 void main() {
+  setUp(() {
+    // HapticFeedback calls go out over SystemChannels.platform and never
+    // get a response in the test environment, hanging any awaited call
+    // (e.g. _handleSend's `await _triggerHaptic(...)`) forever. Stub it.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+  });
+
   Widget buildScreen(
     GiftState giftState, {
     String recipientUserId = 'recipient_1',

@@ -110,7 +110,7 @@ class _FakeGlobalMirrorRepository extends GlobalMirrorRepository {
   }
 
   @override
-  Stream<List<MoodPinModel>> streamMoodPins() {
+  Stream<List<MoodPinModel>> streamMoodPins({int limit = 500}) {
     if (_error != null) return Stream.value([]);
     return Stream.value(_streamPins);
   }

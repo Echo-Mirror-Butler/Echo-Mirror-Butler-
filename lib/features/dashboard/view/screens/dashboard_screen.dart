@@ -252,7 +252,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               numberOfParticles: 20,
               gravity: 0.1,
               shouldLoop: false,
-              colors: const [
+              colors: [
                 theme.colorScheme.primary,
                 theme.colorScheme.secondary,
                 AppTheme.accentColor,
@@ -392,7 +392,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 40),
               Container(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
@@ -553,11 +553,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: friends.map((friend) {
-                    final moodEmoji =
-                        friend.mood != null &&
-                            friend.mood >= 1 &&
-                            friend.mood <= 5
-                        ? ['😊', '😌', '😐', '😢', '😡'][friend.mood - 1]
+                    final mood = friend.mood;
+                    final moodEmoji = mood != null && mood >= 1 && mood <= 5
+                        ? ['😊', '😌', '😐', '😢', '😡'][mood - 1]
                         : '❓';
                     final name =
                         friend.displayName ?? friend.userId.substring(0, 8);

@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/error_handler.dart';
-import '../../viewmodel/providers/auth_provider.dart';
+// AuthState here refers to Supabase's own auth-event type (via
+// onAuthStateChange below), not this app's AuthState in auth_provider.dart.
+import '../../viewmodel/providers/auth_provider.dart' hide AuthState;
 import '../widgets/custom_button.dart';
 
 /// Screen shown after signup — asks user to verify their email.

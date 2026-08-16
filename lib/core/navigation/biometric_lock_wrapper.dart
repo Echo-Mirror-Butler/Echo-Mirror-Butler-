@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../core/viewmodel/providers/biometric_provider.dart';
-import '../../core/themes/app_theme.dart';
 
 class BiometricLockWrapper extends ConsumerStatefulWidget {
   final Widget child;

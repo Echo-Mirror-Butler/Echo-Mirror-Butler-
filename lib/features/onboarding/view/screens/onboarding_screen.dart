@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// ignore: unused_import
 import 'package:lottie/lottie.dart';
 import '../../../../core/themes/app_theme.dart';
+// ignore: unused_import
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/animations/lottie_animations.dart';
 import '../../../../core/services/notification_service.dart';
@@ -36,12 +38,36 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+class OnboardingPageData {
+  const OnboardingPageData({
+    required this.title,
+    this.subtitle,
+    required this.description,
+    required this.icon,
+    required this.imageUrl,
+    required this.lottieAsset,
+    required this.gradient,
+  });
+
+  final String title;
+  final String? subtitle;
+  final String description;
+  final IconData icon;
+  final String imageUrl;
+  final String lottieAsset;
+  final List<Color> gradient;
+}
+
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
   // Step 0 — habit presets
   final Set<String> _selectedHabits = {};
+
+  // Data for the "Intro pages" step (see step index comment above) — not
+  // yet wired into a widget, kept here for whoever builds _IntroPages next.
+  // ignore: unused_field
   final List<OnboardingPageData> _pages = [
     OnboardingPageData(
       title: 'Meet EchoMirror',
@@ -292,8 +318,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               const SizedBox(width: 8),
                               Icon(
                                 isLast
-                                    ? FontAwesomeIcons.arrowRight
-                                    : FontAwesomeIcons.chevronRight,
+                                    ? FontAwesomeIcons.arrowRight.data
+                                    : FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                               ),
                             ],
@@ -348,8 +374,8 @@ class _WelcomeStep extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
-                FontAwesomeIcons.userTie,
+              child: Icon(
+                FontAwesomeIcons.userTie.data,
                 size: 80,
                 color: Colors.white,
               ),
@@ -437,8 +463,8 @@ class _WelcomeStep extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (selected) ...[
-                        const Icon(
-                          FontAwesomeIcons.check,
+                        Icon(
+                          FontAwesomeIcons.check.data,
                           size: 12,
                           color: Colors.white,
                         ),
@@ -491,21 +517,21 @@ class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
   final PageController _cardController = PageController(viewportFraction: 0.85);
   int _cardIndex = 0;
 
-  static const _cards = [
+  static final _cards = [
     _FeatureCard(
-      icon: FontAwesomeIcons.faceSmile,
+      icon: FontAwesomeIcons.faceSmile.data,
       title: 'Log your mood daily',
       description: 'Takes just 2 minutes — capture how you feel and what matters.',
       gradient: [Color(0xFF6D5CE8), Color(0xFF8B5CF6)],
     ),
     _FeatureCard(
-      icon: FontAwesomeIcons.star,
+      icon: FontAwesomeIcons.star.data,
       title: 'Earn ECHO tokens on Stellar',
       description: 'Stay consistent and earn crypto rewards for your growth journey.',
       gradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
     ),
     _FeatureCard(
-      icon: FontAwesomeIcons.lightbulb,
+      icon: FontAwesomeIcons.lightbulb.data,
       title: 'Unlock AI insights',
       description: 'After just 3 logs, your future self starts sending insights.',
       gradient: [Color(0xFFEC4899), Color(0xFF6D5CE8)],
@@ -714,8 +740,8 @@ class _ReminderStep extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(
-              FontAwesomeIcons.bell,
+            child: Icon(
+              FontAwesomeIcons.bell.data,
               size: 48,
               color: Colors.white,
             ),
@@ -770,8 +796,8 @@ class _ReminderStep extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    FontAwesomeIcons.clock,
+                  Icon(
+                    FontAwesomeIcons.clock.data,
                     color: AppTheme.primaryColor,
                     size: 20,
                   ),
@@ -785,8 +811,8 @@ class _ReminderStep extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Icon(
-                    FontAwesomeIcons.penToSquare,
+                  Icon(
+                    FontAwesomeIcons.penToSquare.data,
                     color: AppTheme.primaryColor,
                     size: 16,
                   ),
@@ -802,8 +828,8 @@ class _ReminderStep extends StatelessWidget {
               onPressed: onRequestPermission,
               icon: Icon(
                 permissionPermanentlyDenied
-                    ? FontAwesomeIcons.arrowUpRightFromSquare
-                    : FontAwesomeIcons.bell,
+                    ? FontAwesomeIcons.arrowUpRightFromSquare.data
+                    : FontAwesomeIcons.bell.data,
                 size: 16,
               ),
               label: Text(
@@ -839,8 +865,8 @@ class _ReminderStep extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    FontAwesomeIcons.circleInfo,
+                  Icon(
+                    FontAwesomeIcons.circleInfo.data,
                     color: AppTheme.accentColor,
                     size: 16,
                   ),
@@ -873,8 +899,8 @@ class _ReminderStep extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    FontAwesomeIcons.bellSlash,
+                  Icon(
+                    FontAwesomeIcons.bellSlash.data,
                     color: Colors.red,
                     size: 16,
                   ),

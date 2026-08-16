@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
 /// Beautiful mood trend chart widget

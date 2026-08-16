@@ -44,7 +44,7 @@ class _FakeLoggingNotifier extends LoggingNotifier {
   }
 
   @override
-  Future<void> loadLogEntries({String? userId}) async {}
+  Future<void> loadLogEntries({String? userId, bool force = false}) async {}
 }
 
 class _FakeStreakNotifier extends StreakNotifier {

@@ -92,7 +92,7 @@ class _BannerContent extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                FontAwesomeIcons.bellSlash,
+                FontAwesomeIcons.bellSlash.data,
                 size: 18,
                 color: theme.colorScheme.error,
               ),
@@ -148,8 +148,8 @@ class _BannerContent extends ConsumerWidget {
                         children: [
                           Icon(
                             isPermanent
-                                ? FontAwesomeIcons.arrowUpRightFromSquare
-                                : FontAwesomeIcons.bell,
+                                ? FontAwesomeIcons.arrowUpRightFromSquare.data
+                                : FontAwesomeIcons.bell.data,
                             size: 13,
                           ),
                           const SizedBox(width: 8),

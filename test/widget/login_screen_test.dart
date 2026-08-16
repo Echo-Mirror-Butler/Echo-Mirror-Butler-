@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -18,6 +19,9 @@ void main() {
   late MockAuthRepository mockAuthRepository;
 
   setUp(() {
+    // LoginScreen's initState reads SharedPreferences directly; unmocked,
+    // the platform channel call never resolves and pumpAndSettle hangs.
+    SharedPreferences.setMockInitialValues({});
     mockAuthRepository = MockAuthRepository();
   });
 
@@ -105,6 +109,10 @@ void main() {
 
       // CustomButton shows ShimmerLoading (not CircularProgressIndicator)
       expect(find.byType(ShimmerLoading), findsOneWidget);
+
+      // Let the mocked sign-in's 100ms delay finish so its Timer doesn't
+      // outlive the widget tree's disposal at test teardown.
+      await tester.pumpAndSettle();
     });
 
     testWidgets('shows error snackbar on failed login', (
@@ -134,8 +142,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // The password TextFormField should be obscured by default
-      final passwordField = tester.widget<TextFormField>(
-        find.byType(TextFormField).last,
+      final passwordField = tester.widget<TextField>(
+        find.byType(TextField).last,
       );
       expect(passwordField.obscureText, isTrue);
 
@@ -145,8 +153,8 @@ void main() {
       await tester.tap(visibilityToggle);
       await tester.pumpAndSettle();
 
-      final updatedField = tester.widget<TextFormField>(
-        find.byType(TextFormField).last,
+      final updatedField = tester.widget<TextField>(
+        find.byType(TextField).last,
       );
       expect(updatedField.obscureText, isFalse);
     });
