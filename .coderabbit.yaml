@@ -1,0 +1,61 @@
+language: "en-US"
+early_access: false
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!**/*.g.dart"
+    - "!**/*.freezed.dart"
+    - "!**/*.mocks.dart"
+    - "!**/*.gr.dart"
+    - "!**/generated/**"
+    - "!**/l10n/generated/**"
+    - "!build/**"
+    - "!.dart_tool/**"
+    - "!android/**"
+    - "!ios/**"
+    - "!linux/**"
+    - "!macos/**"
+    - "!windows/**"
+    - "!web/**"
+    - "!coverage/**"
+  path_instructions:
+    - path: "lib/**/*.dart"
+      instructions: >
+        This is a Flutter app using Riverpod for state management and Supabase
+        for the backend. Flag any provider that reaches for
+        Supabase.instance.client (or SharedPreferences.getInstance()) without
+        the surrounding code guarding for it being uninitialized in tests.
+        Watch for StatefulWidget/ConsumerStatefulWidget lifecycle bugs (using
+        ref/context after dispose), missing const constructors on
+        theme-independent widgets, and provider state that should be
+        auto-disposed but isn't.
+    - path: "test/**/*.dart"
+      instructions: >
+        Widget/unit tests should not assume strings or icons match without
+        verifying them against the real widget being tested. Flag tests that
+        mock Supabase or SharedPreferences incorrectly (e.g. missing
+        SharedPreferences.setMockInitialValues before Supabase.initialize),
+        and flag tests that could leave a pending Timer or unresolved Future
+        at teardown.
+    - path: ".github/workflows/**"
+      instructions: >
+        This repo's CI gate is `flutter analyze --no-fatal-infos` (errors and
+        warnings fail, infos do not) followed by `flutter test --exclude-tags
+        integration --coverage`. Flag any workflow change that would weaken
+        that gate silently.
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: "auto"
