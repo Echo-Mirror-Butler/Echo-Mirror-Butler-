@@ -300,15 +300,6 @@ void main() {
 
     test(
       'adds "Pattern Detected" prediction when there are >= 5 mood entries',
-      skip:
-          'getInsights() has no day-of-week pattern detection logic that '
-          'produces a "Pattern Detected" / InsightType.prediction entry — '
-          'every other insight type this describe block checks for exists '
-          'in the real repository (Mood Improvement Detected, Great Mood '
-          'Day, Consistent Habit, etc.), only this one does not. Looks like '
-          'a planned-but-never-implemented feature rather than a regression; '
-          'needs someone with intent context to either build the pattern '
-          'detection or remove this test.',
       () async {
         // Provide 5 mood entries spread across weekdays. Monday will have the highest avg.
         final monday = DateTime(2026, 3, 23); // Monday
@@ -341,13 +332,76 @@ void main() {
         ).thenAnswer((_) async => entries);
 
         final insights = await repository.getInsights(userId);
-        expect(
-          insights.any(
-            (i) =>
-                i.title == 'Pattern Detected' &&
-                i.type == InsightType.prediction,
+        final pattern = insights.singleWhere(
+          (i) =>
+              i.title == 'Pattern Detected' &&
+              i.type == InsightType.prediction,
+        );
+        expect(pattern.description, contains('Mondays'));
+        expect(pattern.description, contains('average 5.0 across 2 entries'));
+        expect(pattern.description, contains('2.0 points above'));
+      },
+    );
+
+    test(
+      'does not predict a weekday pattern from single observations',
+      () async {
+        final monday = DateTime(2026, 3, 23);
+        final entries = List.generate(
+          5,
+          (index) => _entry(
+            userId: userId,
+            date: monday.add(Duration(days: index)),
+            mood: index == 0 ? 5 : 3,
           ),
-          isTrue,
+        );
+        when(
+          () => loggingRepository.getLogEntries(userId),
+        ).thenAnswer((_) async => entries);
+
+        final insights = await repository.getInsights(userId);
+        expect(
+          insights.where((i) => i.title == 'Pattern Detected'),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'does not predict a weekday pattern when averages are too close',
+      () async {
+        final monday = DateTime(2026, 3, 23);
+        final entries = <LogEntryModel>[
+          _entry(userId: userId, date: monday, mood: 4),
+          _entry(
+            userId: userId,
+            date: monday.subtract(const Duration(days: 7)),
+            mood: 4,
+          ),
+          _entry(
+            userId: userId,
+            date: monday.add(const Duration(days: 1)),
+            mood: 4,
+          ),
+          _entry(
+            userId: userId,
+            date: monday.add(const Duration(days: 2)),
+            mood: 3,
+          ),
+          _entry(
+            userId: userId,
+            date: monday.add(const Duration(days: 3)),
+            mood: 4,
+          ),
+        ];
+        when(
+          () => loggingRepository.getLogEntries(userId),
+        ).thenAnswer((_) async => entries);
+
+        final insights = await repository.getInsights(userId);
+        expect(
+          insights.where((i) => i.title == 'Pattern Detected'),
+          isEmpty,
         );
       },
     );

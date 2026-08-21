@@ -2,6 +2,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
+import '../../../logging/data/models/log_entry_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
 
 /// Repository for dashboard operations.
@@ -86,6 +87,26 @@ class DashboardRepository {
                 'What made that day special?',
             date: localDate,
             type: InsightType.mood,
+            createdAt: now,
+          ));
+        }
+
+        final weekdayPattern = _detectWeekdayMoodPattern(moodEntries);
+        if (weekdayPattern != null) {
+          final weekday = _weekdayName(weekdayPattern.weekday);
+          insights.add(InsightModel(
+            id:
+                'mood-pattern-${weekdayPattern.weekday}-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Pattern Detected',
+            description:
+                'Your mood tends to be highest on ${weekday}s '
+                '(average ${weekdayPattern.average.toStringAsFixed(1)} across '
+                '${weekdayPattern.sampleCount} entries), '
+                '${weekdayPattern.gap.toStringAsFixed(1)} points above your '
+                'other logged days.',
+            date: now,
+            type: InsightType.prediction,
             createdAt: now,
           ));
         }
@@ -331,6 +352,80 @@ class DashboardRepository {
     );
   }
 
+  _WeekdayMoodPattern? _detectWeekdayMoodPattern(
+    List<LogEntryModel> moodEntries,
+  ) {
+    // A prediction needs repeated evidence for one weekday and enough
+    // comparison data to avoid treating a single unusually good day as a
+    // recurring pattern.
+    if (moodEntries.length < 5) return null;
+
+    final moodsByWeekday = <int, List<int>>{};
+    for (final entry in moodEntries) {
+      final mood = entry.mood;
+      if (mood == null) continue;
+      final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
+      moodsByWeekday.putIfAbsent(localDate.weekday, () => []).add(mood);
+    }
+    if (moodsByWeekday.length < 3) return null;
+
+    final summaries = moodsByWeekday.entries
+        .map(
+          (entry) => _WeekdayMoodSummary(
+            weekday: entry.key,
+            average: entry.value.reduce((a, b) => a + b) / entry.value.length,
+            sampleCount: entry.value.length,
+          ),
+        )
+        .toList()
+      ..sort((a, b) {
+        final averageOrder = b.average.compareTo(a.average);
+        if (averageOrder != 0) return averageOrder;
+        final countOrder = b.sampleCount.compareTo(a.sampleCount);
+        if (countOrder != 0) return countOrder;
+        return a.weekday.compareTo(b.weekday);
+      });
+
+    final best = summaries.first;
+    if (best.sampleCount < 2) return null;
+
+    // Require the leading weekday to be clearly separated from the next-best
+    // weekday as well as from all other observations combined.
+    const minimumMoodGap = 1.0;
+    if (best.average - summaries[1].average < minimumMoodGap) return null;
+
+    final otherMoods = <int>[];
+    for (final entry in moodsByWeekday.entries) {
+      if (entry.key != best.weekday) otherMoods.addAll(entry.value);
+    }
+    if (otherMoods.length < 3) return null;
+
+    final otherAverage =
+        otherMoods.reduce((a, b) => a + b) / otherMoods.length;
+    final gap = best.average - otherAverage;
+    if (gap < minimumMoodGap) return null;
+
+    return _WeekdayMoodPattern(
+      weekday: best.weekday,
+      average: best.average,
+      sampleCount: best.sampleCount,
+      gap: gap,
+    );
+  }
+
+  String _weekdayName(int weekday) {
+    const names = <String>[
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    return names[weekday - DateTime.monday];
+  }
+
   DateTime _parseDateTime(dynamic value) {
     if (value is DateTime) return value;
     if (value is String && value.isNotEmpty) return DateTime.parse(value);
@@ -356,4 +451,26 @@ class DashboardRepository {
   }
 }
 
+class _WeekdayMoodSummary {
+  const _WeekdayMoodSummary({
+    required this.weekday,
+    required this.average,
+    required this.sampleCount,
+  });
+
+  final int weekday;
+  final double average;
+  final int sampleCount;
+}
+
+class _WeekdayMoodPattern extends _WeekdayMoodSummary {
+  const _WeekdayMoodPattern({
+    required super.weekday,
+    required super.average,
+    required super.sampleCount,
+    required this.gap,
+  });
+
+  final double gap;
+}
 
