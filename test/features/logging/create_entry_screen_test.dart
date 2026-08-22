@@ -26,7 +26,10 @@ class _FakeLoggingNotifier extends LoggingNotifier {
 }
 
 void main() {
-  setUpAll(() {
+  // Per-test, not setUpAll — see the note in dashboard_screen_test.dart. A
+  // file-wide prefs store lets one test's write leak into the next; resetting
+  // per test keeps each one independent of the order they run in.
+  setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 

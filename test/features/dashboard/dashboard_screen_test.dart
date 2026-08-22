@@ -72,7 +72,13 @@ class _FakeAiInsightNotifier extends AiInsightNotifier {
 }
 
 void main() {
-  setUpAll(() {
+  // Per-test, not setUpAll: DashboardScreen reaches AiInsightSection, which
+  // persists its last-triggered stress level to SharedPreferences. A store
+  // shared across the whole file would let one test's write change what the
+  // next one sees, exactly the way settings_screen_test.dart's theme_mode
+  // write used to. setMockInitialValues() drops the cached instance, so this
+  // hands every test a clean store.
+  setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
