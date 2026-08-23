@@ -126,8 +126,18 @@ Widget _buildScreenWithRouter({MockAuthRepository? authRepo}) {
 // ---------------------------------------------------------------------------
 
 void main() {
-  setUpAll(() {
-    SharedPreferences.setMockInitialValues({});
+  // Per-test, not setUpAll: ThemeNotifier.setThemeMode() persists the chosen
+  // mode to SharedPreferences under 'theme_mode', so a store shared across the
+  // whole file lets the dark-mode toggle test below leak its result into every
+  // test that runs after it. Seeding a fresh store per test also pins the
+  // starting mode to light — matching _buildScreen()'s initialThemeMode — so
+  // both Appearance switches deterministically start off regardless of the
+  // order the tests run in. (Without the seed, ThemeNotifier keeps its
+  // ThemeMode.system default and the System Theme switch starts *on*.)
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'theme_mode': ThemeMode.light.index,
+    });
   });
 
   testWidgets('renders all section headers and key setting tiles', (
