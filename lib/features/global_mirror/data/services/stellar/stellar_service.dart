@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http_client;
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import 'stellar_config.dart';
 import 'echo_token.dart';
+import '../../models/on_chain_transaction_model.dart';
 
 /// Live balances pulled directly from the Stellar Horizon API for a wallet.
 class LiveAccountBalances {
@@ -253,5 +254,66 @@ class StellarService {
     return message.contains('404') ||
         message.contains('not found') ||
         message.contains('accountnotfound');
+  }
+
+  /// Fetches payment and account creation operations for [publicKey] from Horizon.
+  ///
+  /// Returns operations sorted by timestamp (most recent first), excluding
+  /// operations that are not payments or account creations.
+  /// Limit is capped at 200 operations per Horizon's default.
+  static Future<List<OnChainTransactionModel>> getPaymentHistory(
+    String publicKey, {
+    int limit = 50,
+    StellarSDK? sdk,
+  }) async {
+    try {
+      final response = await (sdk ?? _sdk).payments.forAccount(publicKey)
+          .limit(limit.clamp(1, 200))
+          .order(OrderDirection.DESC)
+          .execute();
+
+      final transactions = <OnChainTransactionModel>[];
+      for (final record in response.records) {
+        if (record is PaymentOperationResponse) {
+          transactions.add(
+            OnChainTransactionModel(
+              id: record.id,
+              type: 'payment',
+              transactionHash: record.transactionHash,
+              sourceAccount: record.sourceAccount,
+              amount: record.amount,
+              asset: record.assetCode ?? 'XLM',
+              from: record.from,
+              to: record.to,
+              timestamp: DateTime.parse(record.createdAt),
+              memo: null,
+            ),
+          );
+        } else if (record is CreateAccountOperationResponse) {
+          transactions.add(
+            OnChainTransactionModel(
+              id: record.id,
+              type: 'create_account',
+              transactionHash: record.transactionHash,
+              sourceAccount: record.sourceAccount,
+              amount: record.startingBalance,
+              asset: 'XLM',
+              from: record.funder,
+              to: record.account,
+              timestamp: DateTime.parse(record.createdAt),
+              memo: null,
+            ),
+          );
+        }
+      }
+
+      debugPrint(
+        '[StellarService] Fetched ${transactions.length} payment operations for $publicKey',
+      );
+      return transactions;
+    } catch (e) {
+      debugPrint('[StellarService] getPaymentHistory error: $e');
+      return [];
+    }
   }
 }
