@@ -28,6 +28,9 @@ class DashboardRepository {
       final insights = <InsightModel>[];
       final now = _now();
 
+      final echoInsight = await _buildEchoRewardInsight(userId, logEntries, now);
+      if (echoInsight != null) insights.add(echoInsight);
+
       final moodEntries = logEntries.where((e) => e.mood != null).toList();
       if (moodEntries.isNotEmpty) {
         final averageMood =
@@ -332,6 +335,92 @@ class DashboardRepository {
     );
   }
 
+  Future<InsightModel?> _buildEchoRewardInsight(
+    String userId,
+    List<LogEntryModel> logEntries,
+    DateTime now,
+  ) async {
+    final localNow = now.isUtc ? now.toLocal() : now;
+    final weekAgo = localNow.subtract(const Duration(days: 7));
+    final recentLogDays = logEntries
+        .map((entry) => entry.date.isUtc ? entry.date.toLocal() : entry.date)
+        .where((date) => date.isAfter(weekAgo))
+        .map(_dateKey)
+        .toSet();
+
+    if (recentLogDays.length < 3) return null;
+
+    try {
+      final rewardRows = await _client
+          .from('echo_rewards')
+          .select('reason, amount, created_at')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(30);
+
+      if (rewardRows is! List) return null;
+
+      final rewardsByDay = <String, double>{};
+      var totalRecentEcho = 0.0;
+      for (final row in rewardRows.whereType<Map>()) {
+        final createdAt = _parseDateTime(row['created_at']);
+        final localCreatedAt = createdAt.isUtc ? createdAt.toLocal() : createdAt;
+        if (localCreatedAt.isBefore(weekAgo)) continue;
+
+        final amount = double.tryParse(row['amount']?.toString() ?? '') ?? 0.0;
+        if (amount <= 0) continue;
+
+        totalRecentEcho += amount;
+        final key = _dateKey(localCreatedAt);
+        rewardsByDay[key] = (rewardsByDay[key] ?? 0) + amount;
+      }
+
+      if (rewardsByDay.length < 3 || totalRecentEcho <= 0) return null;
+
+      final averagePerRewardDay = totalRecentEcho / rewardsByDay.length;
+      final projectedWeeklyEcho = averagePerRewardDay * recentLogDays.length;
+      final currentStreak = _currentLoggingStreak(logEntries, localNow);
+      final streakCopy = currentStreak >= 3
+          ? ' Your $currentStreak-day logging streak is helping keep that earning pace steady.'
+          : '';
+
+      return InsightModel(
+        id: 'echo-earning-${now.millisecondsSinceEpoch}',
+        userId: userId,
+        title: 'ECHO Earning Trend',
+        description:
+            'Based on your recent reward history, you are on track to earn about '
+            '${projectedWeeklyEcho.toStringAsFixed(1)} ECHO this week if your logging pace stays the same.$streakCopy',
+        date: now,
+        type: InsightType.general,
+        createdAt: now,
+      );
+    } catch (e) {
+      debugPrint('[DashboardRepository] ECHO reward insight error -> $e');
+      return null;
+    }
+  }
+
+  int _currentLoggingStreak(List<LogEntryModel> logEntries, DateTime localNow) {
+    final loggedDays = logEntries
+        .map((entry) => entry.date.isUtc ? entry.date.toLocal() : entry.date)
+        .map(_dateKey)
+        .toSet();
+    var streak = 0;
+    var day = DateTime(localNow.year, localNow.month, localNow.day);
+
+    while (loggedDays.contains(_dateKey(day))) {
+      streak++;
+      day = day.subtract(const Duration(days: 1));
+    }
+
+    return streak;
+  }
+
+  String _dateKey(DateTime date) {
+    final local = date.isUtc ? date.toLocal() : date;
+    return '${local.year}-${local.month}-${local.day}';
+  }
   DateTime _parseDateTime(dynamic value) {
     if (value is DateTime) return value;
     if (value is String && value.isNotEmpty) return DateTime.parse(value);
