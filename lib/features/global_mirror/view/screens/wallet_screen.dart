@@ -772,6 +772,17 @@ class WalletScreen extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (walletState.xlmValueInUsd != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                '≈ \$${walletState.xlmValueInUsd!.toStringAsFixed(2)}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -942,6 +953,59 @@ class WalletScreen extends ConsumerWidget {
                         amountText,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: reward.amount >= 0
+                              ? AppTheme.successColor
+                              : theme.colorScheme.error,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                  ],
+                );
+              }).toList(),
+            ),
+          const SizedBox(height: 24),
+          Text('On-Chain Activity', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 14),
+          if (walletState.isOnChainHistoryLoading)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            )
+          else if (walletState.onChainHistory.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'No on-chain activity yet.',
+                style: theme.textTheme.bodyMedium,
+              ),
+            )
+          else
+            Column(
+              children: walletState.onChainHistory.map((tx) {
+                final isIncoming = tx.isIncoming(walletState.publicKey ?? '');
+                final amountText = '${isIncoming ? '+' : '-'}${tx.amount} ${tx.asset}';
+                return Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(tx.typeLabel),
+                      subtitle: Text(
+                        tx.timestamp
+                            .toLocal()
+                            .toIso8601String()
+                            .split('T')
+                            .first,
+                      ),
+                      trailing: Text(
+                        amountText,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isIncoming
                               ? AppTheme.successColor
                               : theme.colorScheme.error,
                           fontWeight: FontWeight.bold,

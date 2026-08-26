@@ -11,6 +11,7 @@ import '../../../../core/viewmodel/providers/haptics_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/gift_transaction_model.dart';
 import '../../viewmodel/providers/gift_provider.dart';
+import '../widgets/gift_receipt_dialog.dart';
 
 /// Screen for sending ECHO token gifts to another user.
 class GiftScreen extends ConsumerStatefulWidget {
@@ -102,9 +103,45 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
     if (success && mounted) {
       await _triggerHaptic(HapticFeedback.lightImpact);
       _confettiController.play();
-      _showSuccess('Gift sent successfully!');
-      await Future.delayed(const Duration(seconds: 3));
-      if (mounted) context.pop();
+
+      final lastTx = ref.read(giftProvider).lastSentTx;
+      if (lastTx != null) {
+        // Get recipient name from Supabase
+        String recipientName = 'User';
+        try {
+          final authState = ref.read(authStateProvider);
+          final supabaseUser = authState.whenData((auth) => auth?.user);
+          if (supabaseUser != null) {
+            final profiles = await supabaseUser.value.client
+                .from('user_profiles')
+                .select('display_name')
+                .eq('id', widget.recipientUserId)
+                .maybeSingle();
+            if (profiles != null && profiles['display_name'] != null) {
+              recipientName = profiles['display_name'] as String;
+            }
+          }
+        } catch (e) {
+          debugPrint('Error fetching recipient name: $e');
+        }
+
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => GiftReceiptDialog(
+              transaction: lastTx,
+              recipientName: recipientName,
+            ),
+          ).then((_) {
+            if (mounted) context.pop();
+          });
+        }
+      } else {
+        _showSuccess('Gift sent successfully!');
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) context.pop();
+      }
     }
   }
 

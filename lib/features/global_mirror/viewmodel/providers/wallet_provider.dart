@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/environment_config.dart';
 import '../../data/services/stellar/stellar_service.dart';
+import '../../data/services/price_service.dart';
+import '../../data/models/on_chain_transaction_model.dart';
 
 class WalletReward {
   const WalletReward({
@@ -26,10 +28,15 @@ class WalletState {
     this.balance = 0.0,
     this.xlmBalance = 0.0,
     this.echoBalance = 0.0,
+    this.xlmPrice,
+    this.echoPrice,
     this.history = const [],
+    this.onChainHistory = const [],
     this.isLoading = false,
     this.isFunding = false,
     this.isLiveBalancesLoading = false,
+    this.isPriceLoading = false,
+    this.isOnChainHistoryLoading = false,
     this.error,
     this.fundingError,
     this.funded = false,
@@ -42,22 +49,27 @@ class WalletState {
   final double balance;
   final double xlmBalance;
   final double echoBalance;
+  final double? xlmPrice;
+  final double? echoPrice;
   final List<WalletReward> history;
+  final List<OnChainTransactionModel> onChainHistory;
   final bool isLoading;
-
-  /// True while a Friendbot funding request is in flight.
+  final bool isOnChainHistoryLoading;
   final bool isFunding;
-
-  /// True while the background Horizon balance refresh is in flight.
   final bool isLiveBalancesLoading;
+  final bool isPriceLoading;
 
   final String? error;
   final String? fundingError;
 
-  /// True when Horizon reports a positive XLM balance for this account.
   final bool funded;
   final DateTime? lastUpdated;
   final String? stellarError;
+
+  double? get xlmValueInUsd =>
+      xlmPrice != null ? (xlmBalance * xlmPrice!) : null;
+  double? get echoValueInUsd =>
+      echoPrice != null ? (echoBalance * echoPrice!) : null;
 
   bool get hasStreakBonus {
     return history.any(
@@ -76,10 +88,15 @@ class WalletState {
     double? balance,
     double? xlmBalance,
     double? echoBalance,
+    double? xlmPrice,
+    double? echoPrice,
     List<WalletReward>? history,
+    List<OnChainTransactionModel>? onChainHistory,
     bool? isLoading,
     bool? isFunding,
     bool? isLiveBalancesLoading,
+    bool? isPriceLoading,
+    bool? isOnChainHistoryLoading,
     String? error,
     String? fundingError,
     bool? funded,
@@ -94,11 +111,17 @@ class WalletState {
       balance: balance ?? this.balance,
       xlmBalance: xlmBalance ?? this.xlmBalance,
       echoBalance: echoBalance ?? this.echoBalance,
+      xlmPrice: xlmPrice ?? this.xlmPrice,
+      echoPrice: echoPrice ?? this.echoPrice,
       history: history ?? this.history,
+      onChainHistory: onChainHistory ?? this.onChainHistory,
       isLoading: isLoading ?? this.isLoading,
       isFunding: isFunding ?? this.isFunding,
       isLiveBalancesLoading:
           isLiveBalancesLoading ?? this.isLiveBalancesLoading,
+      isPriceLoading: isPriceLoading ?? this.isPriceLoading,
+      isOnChainHistoryLoading:
+          isOnChainHistoryLoading ?? this.isOnChainHistoryLoading,
       error: clearError ? null : error ?? this.error,
       fundingError: clearFundingError ? null : fundingError ?? this.fundingError,
       funded: funded ?? this.funded,
@@ -193,9 +216,10 @@ class WalletNotifier extends StateNotifier<WalletState> {
         funded: balance > 0,
       );
 
-      // Pull live balances right after the wallet hydrates so the UI can
-      // show XLM and the funded/unfunded state without an extra tap.
+      // Pull live balances, prices, and on-chain history right after wallet hydrates
       unawaited(refreshLiveBalances());
+      unawaited(refreshXlmPrice());
+      unawaited(refreshOnChainHistory());
     } catch (e) {
       debugPrint('[WalletNotifier] loadWallet error: $e');
       state = state.copyWith(
@@ -281,6 +305,41 @@ class WalletNotifier extends StateNotifier<WalletState> {
       await refreshLiveBalances();
     } catch (_) {
       // Swallow — refreshLiveBalances already records state.
+    }
+  }
+
+  /// Fetches the current USD price for XLM from CoinGecko.
+  /// Results are cached for a few minutes by PriceService.
+  Future<void> refreshXlmPrice() async {
+    state = state.copyWith(isPriceLoading: true);
+    try {
+      final price = await PriceService.getUsdPrice('stellar');
+      if (price != null) {
+        state = state.copyWith(xlmPrice: price, isPriceLoading: false);
+      } else {
+        state = state.copyWith(isPriceLoading: false);
+      }
+    } catch (e) {
+      debugPrint('[WalletNotifier] refreshXlmPrice error: $e');
+      state = state.copyWith(isPriceLoading: false);
+    }
+  }
+
+  /// Fetches payment operations from Horizon for the current wallet.
+  Future<void> refreshOnChainHistory() async {
+    final publicKey = state.publicKey;
+    if (publicKey == null || publicKey.isEmpty) return;
+
+    state = state.copyWith(isOnChainHistoryLoading: true);
+    try {
+      final transactions = await StellarService.getPaymentHistory(publicKey);
+      state = state.copyWith(
+        onChainHistory: transactions,
+        isOnChainHistoryLoading: false,
+      );
+    } catch (e) {
+      debugPrint('[WalletNotifier] refreshOnChainHistory error: $e');
+      state = state.copyWith(isOnChainHistoryLoading: false);
     }
   }
 
