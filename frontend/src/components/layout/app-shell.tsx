@@ -1,21 +1,48 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef, useId } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useSearchLogs } from '../../lib/use-search-logs'
+import { useTheme, type Theme } from '../../lib/use-theme'
 import { formatDate, moodToEmoji } from '../../lib/date'
 import { NotificationDrawer } from '../../features/notifications/notification-drawer'
+import { AchievementsWatcher } from '../../features/achievements/achievements-watcher'
+import { useUnlockedAchievements } from '../../features/achievements/use-achievements'
+import { useGlobalShortcut } from '../../hooks/use-global-shortcut'
+import { useFocusTrap } from '../../hooks/use-focus-trap'
+import { MoodLogModal } from '../mood-log-modal'
+import { WhatsNewModal } from '../whats-new-modal'
+import { useWhatsNew } from '../../hooks/use-whats-new'
+
+type UserProfile = { display_name: string | null; avatar_url: string | null }
+
+async function fetchUserProfile(userId: string): Promise<UserProfile> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('display_name, avatar_url')
+    .eq('id', userId)
+    .single()
+  if (!data) return { display_name: null, avatar_url: null }
+  const row = data as Record<string, unknown>
+  return {
+    display_name: (row.display_name as string | null) ?? null,
+    avatar_url: (row.avatar_url as string | null) ?? null,
+  }
+}
 
 const navItems = [
   { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
   { icon: '📝', to: '/logs', label: 'Logs' },
   { icon: '✨', to: '/insights', label: 'AI Insights' },
   { icon: '📊', to: '/analytics', label: 'Analytics' },
+  { icon: '🎞️', to: '/recap', label: 'Recap' },
   { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
-  { icon: '💎', to: '/wallet', label: 'Wallet' },
-  { icon: '⚙️', to: '/settings', label: 'Settings' },
-]
+  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
+  { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
+  { icon: '\u{1F48E}', to: '/wallet', label: 'Wallet' },
+  { icon: '\u2699\uFE0F', to: '/settings', label: 'Settings' },
+];
 
 async function getUnreadNotificationsCount(userId: string): Promise<number> {
   const { count, error } = await supabase
@@ -38,13 +65,30 @@ export function AppShell() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
+  const [isMoodModalOpen, setIsMoodModalOpen] = useState(false)
+  const whatsNew = useWhatsNew()
+  const { theme, setTheme } = useTheme()
+
+  useGlobalShortcut('k', () => {
+    setIsMoodModalOpen(true)
+  })
+
+  const themeIcon: Record<Theme, string> = { light: '\u2600\uFE0F', dark: '\u{1F319}', system: '\u{1F5A5}\uFE0F' }
+  const themeNext: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' }
+  const themeAriaLabel: Record<Theme, string> = {
+    light: 'Switch to dark mode',
+    dark: 'Switch to system theme',
+    system: 'Switch to light mode',
+  }
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [selectedResultIdx, setSelectedResultIdx] = useState(-1)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const { results: searchResults } = useSearchLogs(user?.id, searchQuery)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const { results: searchResults, isLoading: searchLoading } = useSearchLogs(user?.id, searchQuery)
+  const searchListboxId = useId()
 
   const unreadNotificationsQuery = useQuery({
     queryKey: ['unread-notifications', user?.id],
@@ -53,10 +97,20 @@ export function AppShell() {
     refetchInterval: 30_000,
   })
 
+  const profileQuery = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: () => fetchUserProfile(user!.id),
+    enabled: Boolean(user?.id),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const unlockedAchievementsQuery = useUnlockedAchievements(user?.id)
+  const achievementCount = Object.keys(unlockedAchievementsQuery.data ?? {}).length
+
   const avatarText = useMemo(() => {
-    const email = user?.email ?? ''
-    return email.trim().charAt(0).toUpperCase() || 'U'
-  }, [user?.email])
+    const name = profileQuery.data?.display_name ?? user?.email ?? ''
+    return name.trim().charAt(0).toUpperCase() || 'U'
+  }, [profileQuery.data?.display_name, user?.email])
 
   useEffect(() => {
     if (!isMobileDrawerOpen) {
@@ -108,13 +162,19 @@ export function AppShell() {
     }
   }, [isSearchOpen, selectedResultIdx, searchResults, navigate])
 
+  // Trap focus in the user menu while open, close on Escape, restore focus to the avatar button on close
+  useFocusTrap(isUserMenuOpen, () => setIsUserMenuOpen(false), userMenuRef)
+
   const onSignOut = async () => {
     await signOut()
     navigate('/login', { replace: true })
   }
 
   return (
-    <div className="shell-root">
+    <div className="shell-root" aria-keyshortcuts="k">
+      <MoodLogModal isOpen={isMoodModalOpen} onClose={() => setIsMoodModalOpen(false)} />
+      <WhatsNewModal isOpen={whatsNew.isOpen} onClose={whatsNew.dismiss} />
+      <AchievementsWatcher />
       <aside
         className={[
           'shell-sidebar',
@@ -132,11 +192,11 @@ export function AppShell() {
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             onClick={() => setIsCollapsed((prev) => !prev)}
           >
-            {isCollapsed ? '⟩' : '⟨'}
+            {isCollapsed ? '\u27E9' : '\u27E8'}
           </button>
         </div>
 
-        <nav className="shell-nav">
+        <nav className="shell-nav" aria-label="Main navigation">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -147,10 +207,21 @@ export function AppShell() {
               onClick={() => setIsMobileDrawerOpen(false)}
             >
               <span className="icon">{item.icon}</span>
-              <span className="label">{item.label}</span>
+              <span className="label">
+                {item.to === '/achievements' && achievementCount > 0
+                  ? `${item.label} (${achievementCount})`
+                  : item.label}
+              </span>
             </NavLink>
           ))}
         </nav>
+
+        {!isCollapsed && (
+          <div style={{ padding: '0 1rem', marginTop: 'auto', marginBottom: '1rem', color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center' }}>
+            <kbd style={{ background: 'var(--bg-card)', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border)' }}>K</kbd>
+            <span style={{ marginLeft: '0.5rem' }}>— log mood</span>
+          </div>
+        )}
 
         <div className="shell-sidebar-footer">
           <span className="email-text">{user?.email ?? 'Signed in user'}</span>
@@ -172,7 +243,8 @@ export function AppShell() {
             <button
               type="button"
               className="icon-btn mobile-only"
-              aria-label="Open navigation drawer"
+              aria-label={isMobileDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={isMobileDrawerOpen}
               onClick={() => setIsMobileDrawerOpen(true)}
             >
               ☰
@@ -181,23 +253,48 @@ export function AppShell() {
           </div>
 
           <div className="shell-search" style={{ position: 'relative' }}>
-            <label style={{ width: '100%' }}>
-              <span className="sr-only">Search logs</span>
+            <div style={{ position: 'relative', width: '100%' }}>
+              <span
+                style={{
+                  position: 'absolute',
+                  left: '0.65rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '0.85rem',
+                  color: 'var(--muted)',
+                  pointerEvents: 'none',
+                }}
+                aria-hidden="true"
+              >
+                🔍
+              </span>
               <input
                 ref={searchInputRef}
+                id="search-logs-input"
                 type="text"
-                placeholder="Search logs..."
+                role="combobox"
+                aria-expanded={isSearchOpen && searchResults.length > 0}
+                aria-controls={searchListboxId}
+                aria-activedescendant={selectedResultIdx >= 0 ? `search-result-${selectedResultIdx}` : undefined}
+                aria-autocomplete="list"
+                aria-haspopup="listbox"
+                aria-label="Search logs by notes, date, or mood score"
+                placeholder="Search logs…"
                 value={searchQuery}
+                style={{ paddingLeft: '2rem' }}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
                   setIsSearchOpen(true)
                   setSelectedResultIdx(-1)
                 }}
                 onFocus={() => searchQuery && setIsSearchOpen(true)}
+                autoComplete="off"
               />
-            </label>
+            </div>
             {isSearchOpen && (
               <div
+                id={searchListboxId}
+                role="listbox"
                 className="search-dropdown"
                 style={{
                   position: 'absolute',
@@ -207,14 +304,19 @@ export function AppShell() {
                   zIndex: 1000,
                 }}
               >
-                {searchResults.length === 0 && searchQuery ? (
+                {searchLoading ? (
+                  <div className="search-empty">Searching…</div>
+                ) : searchResults.length === 0 && searchQuery ? (
                   <div className="search-empty">No logs matched</div>
                 ) : (
                   <div className="search-results">
                     {searchResults.map((result, idx) => (
                       <button
                         key={result.id}
+                        id={`search-result-${idx}`}
+                        role="option"
                         type="button"
+                        aria-selected={selectedResultIdx === idx}
                         className={`search-result ${selectedResultIdx === idx ? 'focused' : ''}`}
                         onClick={() => {
                           navigate(`/logs/${result.id}/edit`)
@@ -223,9 +325,9 @@ export function AppShell() {
                           setSelectedResultIdx(-1)
                         }}
                       >
-                        <span className="result-date">{formatDate(new Date(result.date))}</span>
+                        <span className="result-date">{formatDate(result.date)}</span>
                         <span className="result-mood">{moodToEmoji(result.mood)}</span>
-                        <span className="result-notes">{result.notes ? result.notes.substring(0, 80) : 'No notes'}</span>
+                        <span className="result-notes">{result.notes ? result.notes.substring(0, 60) : 'No notes'}</span>
                       </button>
                     ))}
                   </div>
@@ -254,6 +356,16 @@ export function AppShell() {
           )}
 
           <div className="shell-topbar-actions">
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label={themeAriaLabel[theme]}
+              title={themeAriaLabel[theme]}
+              onClick={() => setTheme(themeNext[theme])}
+            >
+              {themeIcon[theme]}
+            </button>
+
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
@@ -279,16 +391,25 @@ export function AppShell() {
                 className="avatar-btn"
                 onClick={() => setIsUserMenuOpen((prev) => !prev)}
                 aria-expanded={isUserMenuOpen}
+                aria-label="User menu"
               >
-                <span>{avatarText}</span>
+                {profileQuery.data?.avatar_url ? (
+                  <img
+                    src={profileQuery.data.avatar_url}
+                    alt={profileQuery.data.display_name ?? user?.email ?? 'Avatar'}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  />
+                ) : (
+                  <span>{avatarText}</span>
+                )}
               </button>
 
               {isUserMenuOpen ? (
-                <div className="avatar-menu">
-                  <button type="button" onClick={() => navigate('/settings')}>
+                <div className="avatar-menu" ref={userMenuRef} role="menu" aria-label="User menu" tabIndex={-1}>
+                  <button type="button" role="menuitem" onClick={() => { setIsUserMenuOpen(false); navigate('/settings') }}>
                     Profile
                   </button>
-                  <button type="button" onClick={() => void onSignOut()}>
+                  <button type="button" role="menuitem" onClick={() => void onSignOut()}>
                     Sign out
                   </button>
                 </div>

@@ -2,11 +2,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/insight_model.dart';
-import '../../../logging/data/repositories/logging_repository.dart';
 import '../../../logging/data/models/log_entry_model.dart';
+import '../../../logging/data/repositories/logging_repository.dart';
 
 /// Repository for dashboard operations.
-/// Handles Supabase Edge Function calls for insights and predictions.
 class DashboardRepository {
   DashboardRepository(
     this._loggingRepository, {
@@ -51,7 +50,9 @@ class DashboardRepository {
               id: 'mood-improving-${now.millisecondsSinceEpoch}',
               userId: userId,
               title: 'Mood Improvement Detected',
-              description: 'Your mood has been improving over the past week! Keep up the great work.',
+              description:
+                  'Your mood has been improving over the past week! '
+                  'Keep up the great work.',
               date: now,
               type: InsightType.mood,
               createdAt: now,
@@ -61,7 +62,9 @@ class DashboardRepository {
               id: 'mood-declining-${now.millisecondsSinceEpoch}',
               userId: userId,
               title: 'Mood Trend Notice',
-              description: 'Your mood has been lower recently. Consider taking some time for self-care.',
+              description:
+                  'Your mood has been lower recently. '
+                  'Consider taking some time for self-care.',
               date: now,
               type: InsightType.mood,
               createdAt: now,
@@ -69,8 +72,8 @@ class DashboardRepository {
           }
         }
 
-        final bestMoodEntry =
-            moodEntries.reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
+        final bestMoodEntry = moodEntries
+            .reduce((a, b) => (a.mood ?? 0) > (b.mood ?? 0) ? a : b);
         if (bestMoodEntry.mood != null && bestMoodEntry.mood! >= 4) {
           final localDate = bestMoodEntry.date.isUtc
               ? bestMoodEntry.date.toLocal()
@@ -79,9 +82,31 @@ class DashboardRepository {
             id: 'best-mood-${bestMoodEntry.id}',
             userId: userId,
             title: 'Great Mood Day',
-            description: 'You had an excellent mood on ${_formatDate(localDate)}. What made that day special?',
+            description:
+                'You had an excellent mood on ${_formatDate(localDate)}. '
+                'What made that day special?',
             date: localDate,
             type: InsightType.mood,
+            createdAt: now,
+          ));
+        }
+
+        final weekdayPattern = _detectWeekdayMoodPattern(moodEntries);
+        if (weekdayPattern != null) {
+          final weekday = _weekdayName(weekdayPattern.weekday);
+          insights.add(InsightModel(
+            id:
+                'mood-pattern-${weekdayPattern.weekday}-${now.millisecondsSinceEpoch}',
+            userId: userId,
+            title: 'Pattern Detected',
+            description:
+                'Your mood tends to be highest on ${weekday}s '
+                '(average ${weekdayPattern.average.toStringAsFixed(1)} across '
+                '${weekdayPattern.sampleCount} entries), '
+                '${weekdayPattern.gap.toStringAsFixed(1)} points above your '
+                'other logged days.',
+            date: now,
+            type: InsightType.prediction,
             createdAt: now,
           ));
         }
@@ -104,7 +129,9 @@ class DashboardRepository {
             id: 'top-habit-${now.millisecondsSinceEpoch}',
             userId: userId,
             title: 'Consistent Habit',
-            description: 'You have logged "${topHabit.key}" ${topHabit.value} times. Consistency is key!',
+            description:
+                'You have logged "${topHabit.key}" ${topHabit.value} times. '
+                'Consistency is key!',
             date: now,
             type: InsightType.habit,
             createdAt: now,
@@ -114,7 +141,8 @@ class DashboardRepository {
         final localNow = now.isUtc ? now.toLocal() : now;
         final recentEntries = logEntries.where((e) {
           final localDate = e.date.isUtc ? e.date.toLocal() : e.date;
-          return localDate.isAfter(localNow.subtract(const Duration(days: 7)));
+          return localDate
+              .isAfter(localNow.subtract(const Duration(days: 7)));
         }).toList();
 
         final recentHabits = <String>{};
@@ -127,7 +155,9 @@ class DashboardRepository {
             id: 'habit-variety-${now.millisecondsSinceEpoch}',
             userId: userId,
             title: 'Habit Variety',
-            description: 'You have been practising ${recentHabits.length} different habits this week. Great diversity!',
+            description:
+                "You've been practicing ${recentHabits.length} different "
+                'habits this week. Great diversity!',
             date: now,
             type: InsightType.habit,
             createdAt: now,
@@ -141,7 +171,9 @@ class DashboardRepository {
           id: 'milestone-${now.millisecondsSinceEpoch}',
           userId: userId,
           title: 'Logging Milestone',
-          description: 'You have logged $totalEntries entries! Your consistency is building valuable insights.',
+          description:
+              'You have logged $totalEntries entries! '
+              'Your consistency is building valuable insights.',
           date: now,
           type: InsightType.general,
           createdAt: now,
@@ -155,8 +187,6 @@ class DashboardRepository {
     }
   }
 
-  /// Calls the generate-insight Supabase Edge Function and maps the response
-  /// to a list of InsightModel objects.
   Future<List<InsightModel>> getPredictions(String userId) async {
     try {
       final logEntries = await _loggingRepository.getLogEntries(userId);
@@ -169,9 +199,22 @@ class DashboardRepository {
         },
       );
 
+      if (response.status >= 400) {
+        final data = response.data;
+        if (data is Map &&
+            data['error']?.toString().contains('Rate limit') == true) {
+          debugPrint(
+            '[DashboardRepository] Rate limit exceeded for generate-insight',
+          );
+          return [];
+        }
+      }
+
       final result = response.data;
       if (result is! Map<String, dynamic>) {
-        debugPrint('[DashboardRepository] getPredictions: unexpected response type');
+        debugPrint(
+          '[DashboardRepository] getPredictions: unexpected response type',
+        );
         return [];
       }
 
@@ -221,7 +264,8 @@ class DashboardRepository {
         ));
       }
 
-      final calmingMessage = (result['calmingMessage'] as String? ?? '').trim();
+      final calmingMessage =
+          (result['calmingMessage'] as String? ?? '').trim();
       if (calmingMessage.isNotEmpty) {
         insights.add(InsightModel(
           id: 'calming-${now.millisecondsSinceEpoch}',
@@ -260,16 +304,13 @@ class DashboardRepository {
     }
   }
 
-  /// Queries the future_letters table in Supabase and maps each row
-  /// to an InsightModel.
   Future<List<InsightModel>> getFutureLetters(String userId) async {
     try {
       final response = await _client
           .from('future_letters')
           .select()
           .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .limit(10);
+          .order('created_at', ascending: false);
 
       return (response as List<dynamic>)
           .whereType<Map<String, dynamic>>()
@@ -283,10 +324,16 @@ class DashboardRepository {
 
   InsightModel _mapFutureLetterToInsight(Map<String, dynamic> row) {
     final createdAt = _parseDateTime(
-      row['created_at'] ?? row['createdAt'] ?? row['delivery_date'] ?? row['date'],
+      row['created_at'] ??
+          row['createdAt'] ??
+          row['delivery_date'] ??
+          row['date'],
     );
     final date = _parseDateTime(
-      row['delivery_date'] ?? row['open_at'] ?? row['date'] ?? row['created_at'],
+      row['delivery_date'] ??
+          row['open_at'] ??
+          row['date'] ??
+          row['created_at'],
     );
     return InsightModel(
       id: row['id'].toString(),
@@ -305,6 +352,80 @@ class DashboardRepository {
     );
   }
 
+  _WeekdayMoodPattern? _detectWeekdayMoodPattern(
+    List<LogEntryModel> moodEntries,
+  ) {
+    // A prediction needs repeated evidence for one weekday and enough
+    // comparison data to avoid treating a single unusually good day as a
+    // recurring pattern.
+    if (moodEntries.length < 5) return null;
+
+    final moodsByWeekday = <int, List<int>>{};
+    for (final entry in moodEntries) {
+      final mood = entry.mood;
+      if (mood == null) continue;
+      final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
+      moodsByWeekday.putIfAbsent(localDate.weekday, () => []).add(mood);
+    }
+    if (moodsByWeekday.length < 3) return null;
+
+    final summaries = moodsByWeekday.entries
+        .map(
+          (entry) => _WeekdayMoodSummary(
+            weekday: entry.key,
+            average: entry.value.reduce((a, b) => a + b) / entry.value.length,
+            sampleCount: entry.value.length,
+          ),
+        )
+        .toList()
+      ..sort((a, b) {
+        final averageOrder = b.average.compareTo(a.average);
+        if (averageOrder != 0) return averageOrder;
+        final countOrder = b.sampleCount.compareTo(a.sampleCount);
+        if (countOrder != 0) return countOrder;
+        return a.weekday.compareTo(b.weekday);
+      });
+
+    final best = summaries.first;
+    if (best.sampleCount < 2) return null;
+
+    // Require the leading weekday to be clearly separated from the next-best
+    // weekday as well as from all other observations combined.
+    const minimumMoodGap = 1.0;
+    if (best.average - summaries[1].average < minimumMoodGap) return null;
+
+    final otherMoods = <int>[];
+    for (final entry in moodsByWeekday.entries) {
+      if (entry.key != best.weekday) otherMoods.addAll(entry.value);
+    }
+    if (otherMoods.length < 3) return null;
+
+    final otherAverage =
+        otherMoods.reduce((a, b) => a + b) / otherMoods.length;
+    final gap = best.average - otherAverage;
+    if (gap < minimumMoodGap) return null;
+
+    return _WeekdayMoodPattern(
+      weekday: best.weekday,
+      average: best.average,
+      sampleCount: best.sampleCount,
+      gap: gap,
+    );
+  }
+
+  String _weekdayName(int weekday) {
+    const names = <String>[
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    return names[weekday - DateTime.monday];
+  }
+
   DateTime _parseDateTime(dynamic value) {
     if (value is DateTime) return value;
     if (value is String && value.isNotEmpty) return DateTime.parse(value);
@@ -313,17 +434,43 @@ class DashboardRepository {
 
   String _formatDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
-
-  String _getWeekdayName(int weekday) {
-    const weekdays = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
-    ];
-    return weekdays[weekday - 1];
-  }
 }
+
+class _WeekdayMoodSummary {
+  const _WeekdayMoodSummary({
+    required this.weekday,
+    required this.average,
+    required this.sampleCount,
+  });
+
+  final int weekday;
+  final double average;
+  final int sampleCount;
+}
+
+class _WeekdayMoodPattern extends _WeekdayMoodSummary {
+  const _WeekdayMoodPattern({
+    required super.weekday,
+    required super.average,
+    required super.sampleCount,
+    required this.gap,
+  });
+
+  final double gap;
+}
+

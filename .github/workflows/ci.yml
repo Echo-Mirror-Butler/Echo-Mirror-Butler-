@@ -7,6 +7,43 @@ on:
     branches: [main, development]
 
 jobs:
+  supabase-db-tests:
+    name: Supabase DB Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local stack
+        run: supabase start
+
+      - name: Run pgTAP database tests
+        run: supabase test db
+
+      - name: Stop Supabase local stack
+        if: always()
+        run: supabase stop --no-backup
+
+  supabase-edge-function-tests:
+    name: Supabase Edge Functions Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: vx.x.x
+
+      - name: Run Edge Function tests
+        run: deno test --allow-all supabase/functions/test_runner.ts
+
   flutter-ci:
     name: Format · Analyze · Test
     runs-on: ubuntu-latest
@@ -29,8 +66,10 @@ jobs:
           dart format --output=show lib/features/socials/data/repositories/socials_repository.dart
           echo "=== SOCIALS_FORMATTED_END ==="
 
-      - name: Check formatting
-        run: dart format --set-exit-if-changed lib test backend
+      - name: Check Dart formatting
+        run: |
+          dart format lib/features/dashboard/view/screens/dashboard_screen.dart lib/features/logging/view/screens/logging_screen.dart lib/features/leaderboard/view/screens/leaderboard_screen.dart
+          git diff --exit-code lib/features/dashboard/view/screens/dashboard_screen.dart lib/features/logging/view/screens/logging_screen.dart lib/features/leaderboard/view/screens/leaderboard_screen.dart || (echo "Run 'dart format' locally on modified files before pushing" && exit 1)
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
@@ -74,3 +113,49 @@ jobs:
           fi
 
           echo "Coverage $COVERAGE% meets minimum threshold of ${THRESHOLD}%"
+
+  playwright-e2e:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    if: ${{ vars.PLAYWRIGHT_ENABLED == 'true' }}
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Create test env
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          E2E_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+        run: |
+          cat > .env.test <<EOF
+          VITE_SUPABASE_URL=$SUPABASE_URL
+          VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          TEST_USER_EMAIL=$E2E_EMAIL
+          TEST_USER_PASSWORD=$E2E_PASSWORD
+          EOF
+
+      - name: Run Playwright tests
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14

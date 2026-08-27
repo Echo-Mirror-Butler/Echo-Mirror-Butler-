@@ -10,11 +10,13 @@ import '../../../logging/data/models/log_entry_model.dart';
 class MoodTrendChart extends StatelessWidget {
   final List<LogEntryModel> recentLogs;
   final int daysToShow;
+  final String timezone;
 
   const MoodTrendChart({
     super.key,
     required this.recentLogs,
     this.daysToShow = 30,
+    this.timezone = 'UTC',
   });
 
   @override
@@ -70,8 +72,8 @@ class MoodTrendChart extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    FontAwesomeIcons.chartLine,
+                  child: Icon(
+                    FontAwesomeIcons.chartLine.data,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -105,7 +107,7 @@ class MoodTrendChart extends StatelessWidget {
   }
 
   List<ChartDataPoint> _prepareChartData(List<LogEntryModel> logs) {
-    final now = DateTime.now();
+    final now = DateFormatter.daysAgo(0, timezone);
     final startDate = now.subtract(Duration(days: daysToShow));
     final dataPoints = <ChartDataPoint>[];
 
@@ -116,12 +118,12 @@ class MoodTrendChart extends StatelessWidget {
       logMap[logDate] = log;
     }
 
-    // Generate data points for the last N days
+    final today = DateFormatter.daysAgo(0, timezone);
     for (int i = daysToShow - 1; i >= 0; i--) {
       final date = DateTime(
-        now.year,
-        now.month,
-        now.day,
+        today.year,
+        today.month,
+        today.day,
       ).subtract(Duration(days: i));
       final normalizedDate = DateTime(date.year, date.month, date.day);
 
@@ -348,7 +350,7 @@ class MoodTrendChart extends StatelessWidget {
         child: Column(
           children: [
             Icon(
-              FontAwesomeIcons.chartLine,
+              FontAwesomeIcons.chartLine.data,
               size: 48,
               color: AppTheme.primaryColor.withValues(alpha: 0.3),
             ),

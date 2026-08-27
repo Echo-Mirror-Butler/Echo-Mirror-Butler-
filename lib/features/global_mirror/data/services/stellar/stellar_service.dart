@@ -4,6 +4,40 @@ import 'package:http/http.dart' as http_client;
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import 'stellar_config.dart';
 import 'echo_token.dart';
+import '../../models/on_chain_transaction_model.dart';
+
+/// Live balances pulled directly from the Stellar Horizon API for a wallet.
+class LiveAccountBalances {
+  const LiveAccountBalances({
+    required this.publicKey,
+    required this.xlm,
+    required this.echo,
+  });
+
+  /// Public key the balances belong to.
+  final String publicKey;
+
+  /// Native (XLM) balance reported by Horizon.
+  final double xlm;
+
+  /// ECHO token balance (0.0 when no balance or trustline missing).
+  final double echo;
+
+  /// True when the account has any non-zero XLM (i.e. it is funded).
+  bool get isFunded => xlm > 0;
+}
+
+/// Thrown when a Stellar account has not yet been activated on the network.
+class AccountNotFoundException implements Exception {
+  const AccountNotFoundException(this.publicKey);
+
+  final String publicKey;
+
+  @override
+  String toString() =>
+      'AccountNotFoundException: account $publicKey is not activated on '
+      'the Stellar network';
+}
 
 /// Service for interacting with Stellar testnet for ECHO token operations.
 ///
@@ -12,6 +46,9 @@ import 'echo_token.dart';
 /// 2. Call [establishTrustline] so the wallet can hold ECHO
 /// 3. The server issues ECHO to the user wallet
 /// 4. Call [sendEcho] to gift ECHO to another user
+///
+/// For UI flows that need to refresh balances without submitting
+/// transactions, use [getLiveBalances] instead of [getEchoBalance].
 class StellarService {
   StellarService._();
 
@@ -22,10 +59,18 @@ class StellarService {
   /// Returns the [KeyPair] containing both public and secret keys.
   static Future<KeyPair> createWallet({http_client.Client? httpClient}) async {
     final keypair = KeyPair.random();
-    await _fundViaFriendbot(keypair.accountId, httpClient: httpClient);
+    await fundWithFriendbot(keypair.accountId, httpClient: httpClient);
     debugPrint('[StellarService] Created wallet: ${keypair.accountId}');
     return keypair;
   }
+
+  /// Public entrypoint so the UI can fund an already-generated keypair via
+  /// Friendbot (testnet only). Throws [Exception] when Friendbot fails.
+  static Future<void> fundWithFriendbot(
+    String publicKey, {
+    http_client.Client? httpClient,
+  }) async =>
+      _fundViaFriendbot(publicKey, httpClient: httpClient);
 
   /// Funds a testnet account with XLM via Stellar Friendbot.
   static Future<void> _fundViaFriendbot(
@@ -161,6 +206,114 @@ class StellarService {
     } catch (e) {
       debugPrint('[StellarService] Balance check error: $e');
       return 0.0;
+    }
+  }
+
+  /// Fetches live XLM + ECHO balances from Horizon for [publicKey].
+  ///
+  /// Throws [AccountNotFoundException] when Horizon returns 404 for a
+  /// wallet that has not yet been funded. Other errors propagate as
+  /// their underlying [Exception] (e.g. network failure).
+  static Future<LiveAccountBalances> getLiveBalances(
+    String publicKey, {
+    String? issuerPublicKey,
+    StellarSDK? sdk,
+  }) async {
+    final issuer = issuerPublicKey ?? StellarConfig.issuerPublicKey;
+    try {
+      final account = await (sdk ?? _sdk).accounts.account(publicKey);
+
+      double xlm = 0.0;
+      double echo = 0.0;
+      for (final balance in account.balances) {
+        if (balance.assetType == 'native') {
+          xlm = double.tryParse(balance.balance) ?? 0.0;
+        } else if (issuer.isNotEmpty &&
+            balance.assetCode == EchoToken.code &&
+            balance.assetIssuer == issuer) {
+          echo = double.tryParse(balance.balance) ?? 0.0;
+        }
+      }
+      return LiveAccountBalances(
+        publicKey: publicKey,
+        xlm: xlm,
+        echo: echo,
+      );
+    } catch (e) {
+      if (_isNotFoundError(e)) {
+        throw AccountNotFoundException(publicKey);
+      }
+      debugPrint('[StellarService] getLiveBalances error: $e');
+      rethrow;
+    }
+  }
+
+  /// True when [error] represents a Stellar Horizon 404 (unfunded account).
+  static bool _isNotFoundError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('404') ||
+        message.contains('not found') ||
+        message.contains('accountnotfound');
+  }
+
+  /// Fetches payment and account creation operations for [publicKey] from Horizon.
+  ///
+  /// Returns operations sorted by timestamp (most recent first), excluding
+  /// operations that are not payments or account creations.
+  /// Limit is capped at 200 operations per Horizon's default.
+  static Future<List<OnChainTransactionModel>> getPaymentHistory(
+    String publicKey, {
+    int limit = 50,
+    StellarSDK? sdk,
+  }) async {
+    try {
+      final response = await (sdk ?? _sdk).payments.forAccount(publicKey)
+          .limit(limit.clamp(1, 200))
+          .order(OrderDirection.DESC)
+          .execute();
+
+      final transactions = <OnChainTransactionModel>[];
+      for (final record in response.records) {
+        if (record is PaymentOperationResponse) {
+          transactions.add(
+            OnChainTransactionModel(
+              id: record.id,
+              type: 'payment',
+              transactionHash: record.transactionHash,
+              sourceAccount: record.sourceAccount,
+              amount: record.amount,
+              asset: record.assetCode ?? 'XLM',
+              from: record.from,
+              to: record.to,
+              timestamp: DateTime.parse(record.createdAt),
+              memo: null,
+            ),
+          );
+        } else if (record is CreateAccountOperationResponse) {
+          transactions.add(
+            OnChainTransactionModel(
+              id: record.id,
+              type: 'create_account',
+              transactionHash: record.transactionHash,
+              sourceAccount: record.sourceAccount,
+              amount: record.startingBalance,
+              asset: 'XLM',
+              from: record.funder,
+              to: record.account,
+              timestamp: DateTime.parse(record.createdAt),
+              memo: null,
+            ),
+          );
+        }
+      }
+
+      debugPrint(
+        '[StellarService] Fetched ${transactions.length} payment operations for $publicKey',
+      );
+      return transactions;
+    } catch (e) {
+      debugPrint('[StellarService] getPaymentHistory error: $e');
+      return [];
     }
   }
 }

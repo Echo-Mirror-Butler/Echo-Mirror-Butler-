@@ -1,22 +1,91 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { AppShell } from '../components/layout/app-shell'
+import { MaintenanceBanner } from '../components/maintenance-banner'
 import { SignInPanel } from '../components/auth/sign-in-panel'
-import { useAuth } from '../lib/auth-context'
-import { WalletPage } from '../features/wallet/wallet-page'
-import { LogsListPage } from '../features/logs/logs-list-page'
-import { LogFormPage } from '../features/logs/log-form-page'
-import { InsightsPage } from '../features/insights/insights-page'
-import { AnalyticsPage } from '../features/analytics/analytics-page'
-import { GlobalMirrorPage } from '../features/global-mirror/global-mirror-page'
-import { DashboardPage } from '../features/dashboard/dashboard-page'
-import { SettingsPage } from '../features/settings/settings-page'
-import { ErrorBoundary } from '../components/error-boundary'
-import NotFoundPage from '../features/shared/not-found-page'
+import { LandingPage } from '../features/landing/LandingPage'
 import { SignupPage } from '../features/auth/pages/SignupPage'
 import { ResetPasswordPage } from '../features/auth/pages/ResetPasswordPage'
 import { UpdatePasswordPage } from '../features/auth/pages/UpdatePasswordPage'
+import { AuthCallbackPage } from '../features/auth/pages/AuthCallbackPage'
+import { ErrorBoundary } from '../components/error-boundary'
+import { RouteErrorBoundary } from '../components/RouteErrorBoundary'
+import { useAuth } from '../lib/auth-context'
+import { supabase } from '../lib/supabase'
 
-function RequireAuth() {
+// Lazy-loaded feature pages — only downloaded when the route is first visited
+const DashboardPage = lazy(() =>
+  import('../features/dashboard/dashboard-page').then((m) => ({ default: m.DashboardPage })),
+)
+const WalletPage = lazy(() =>
+  import('../features/wallet/wallet-page').then((m) => ({ default: m.WalletPage })),
+)
+const LogsListPage = lazy(() =>
+  import('../features/logs/logs-list-page').then((m) => ({ default: m.LogsListPage })),
+)
+const LogFormPage = lazy(() =>
+  import('../features/logs/log-form-page').then((m) => ({ default: m.LogFormPage })),
+)
+const LogDetailPage = lazy(() =>
+  import('../features/logs/log-detail-page').then((m) => ({ default: m.LogDetailPage })),
+)
+const InsightsPage = lazy(() =>
+  import('../features/insights/insights-page').then((m) => ({ default: m.InsightsPage })),
+)
+const AnalyticsPage = lazy(() =>
+  import('../features/analytics/analytics-page').then((m) => ({ default: m.AnalyticsPage })),
+)
+const RecapPage = lazy(() =>
+  import('../features/insights/recap-page').then((m) => ({ default: m.RecapPage })),
+)
+const GlobalMirrorPage = lazy(() =>
+  import('../features/global-mirror/global-mirror-page').then((m) => ({ default: m.GlobalMirrorPage })),
+)
+const SettingsPage = lazy(() =>
+  import('../features/settings/settings-page').then((m) => ({ default: m.SettingsPage })),
+)
+const LeaderboardPage = lazy(() =>
+  import('../features/leaderboard/leaderboard-page').then((m) => ({ default: m.LeaderboardPage })),
+)
+const AchievementsPage = lazy(() =>
+  import('../features/achievements/achievements-page').then((m) => ({ default: m.AchievementsPage })),
+)
+const OnboardingPage = lazy(() =>
+  import('../features/onboarding/onboarding-page').then((m) => ({ default: m.OnboardingPage })),
+)
+const ChangelogRoadmapPage = lazy(() =>
+  import('../features/changelog/ChangelogRoadmapPage').then((m) => ({ default: m.ChangelogRoadmapPage })),
+)
+const NotFoundPage = lazy(() => import('../features/shared/not-found-page'))
+const StatusPage = lazy(() => import('../features/status/status-page'))
+
+
+function PageSkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Loading page…"
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        background: 'var(--bg-page, var(--surface, #f5f5f5))',
+        backgroundSize: '400% 100%',
+        animation: 'page-skeleton-shimmer 1.6s ease-in-out infinite',
+      }}
+    >
+      <style>{`
+        @keyframes page-skeleton-shimmer {
+          0%   { opacity: 1; }
+          50%  { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function OnboardingGuard() {
   const { user, isLoading } = useAuth()
 
   if (isLoading) {
@@ -25,6 +94,48 @@ function RequireAuth() {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <OnboardingPage />
+    </Suspense>
+  )
+}
+
+function RequireAuth() {
+  const { user, isLoading } = useAuth()
+
+  const logCountQuery = useQuery({
+    queryKey: ['onboarding-check', user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('log_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+      if (error) return 1
+      return count ?? 0
+    },
+    enabled: !!user && !user.user_metadata?.onboarding_completed,
+    staleTime: 30_000,
+  })
+
+  if (isLoading) {
+    return <div className="page-message">Loading session…</div>
+  }
+
+  if (!user) {
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: window.location.pathname }}
+        replace
+      />
+    )
+  }
+
+  if (!user.user_metadata?.onboarding_completed && logCountQuery.data === 0) {
+    return <Navigate to="/onboarding" replace />
   }
 
   return (
@@ -38,26 +149,210 @@ export function AppRouter() {
   const { user } = useAuth()
 
   return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <SignInPanel />} />
-      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupPage />} />
-      <Route path="/reset-password" element={user ? <Navigate to="/dashboard" replace /> : <ResetPasswordPage />} />
-      <Route path="/update-password" element={user ? <Navigate to="/dashboard" replace /> : <UpdatePasswordPage />} />
+    <>
+      <MaintenanceBanner />
+      <Suspense fallback={<PageSkeleton />}>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <RouteErrorBoundary routeName="Home">
+              {user ? <Navigate to="/dashboard" replace /> : <LandingPage />}
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/changelog"
+          element={
+            <RouteErrorBoundary routeName="Changelog">
+              <ChangelogRoadmapPage />
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/roadmap"
+          element={
+            <RouteErrorBoundary routeName="Roadmap">
+              <ChangelogRoadmapPage />
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <RouteErrorBoundary routeName="Login">
+              {user ? <Navigate to="/dashboard" replace /> : <SignInPanel />}
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <RouteErrorBoundary routeName="Signup">
+              {user ? <Navigate to="/dashboard" replace /> : <SignupPage />}
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/auth/callback"
+          element={
+            <RouteErrorBoundary routeName="Auth Callback">
+              <AuthCallbackPage />
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <RouteErrorBoundary routeName="Reset Password">
+              {user ? <Navigate to="/dashboard" replace /> : <ResetPasswordPage />}
+            </RouteErrorBoundary>
+          }
+        />
+        <Route
+          path="/update-password"
+          element={
+            <RouteErrorBoundary routeName="Update Password">
+              <UpdatePasswordPage />
+            </RouteErrorBoundary>
+          }
+        />
 
-      <Route element={<RequireAuth />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/wallet" element={<WalletPage />} />
-        <Route path="/logs" element={<LogsListPage />} />
-        <Route path="/logs/new" element={<LogFormPage mode="create" />} />
-        <Route path="/logs/:id/edit" element={<LogFormPage mode="edit" />} />
-        <Route path="/insights" element={<InsightsPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/global-mirror" element={<GlobalMirrorPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
+        <Route
+          path="/status"
+          element={
+            <RouteErrorBoundary routeName="Status">
+              <StatusPage />
+            </RouteErrorBoundary>
+          }
+        />
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        <Route
+          path="/onboarding"
+          element={
+            <RouteErrorBoundary routeName="Onboarding">
+              {user ? <OnboardingGuard /> : <Navigate to="/login" replace />}
+            </RouteErrorBoundary>
+          }
+        />
+
+        <Route element={<RequireAuth />}>
+          <Route
+            path="/dashboard"
+            element={
+              <RouteErrorBoundary routeName="Dashboard">
+                <DashboardPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/wallet"
+            element={
+              <RouteErrorBoundary routeName="Wallet">
+                <WalletPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs"
+            element={
+              <RouteErrorBoundary routeName="Logs">
+                <LogsListPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs/new"
+            element={
+              <RouteErrorBoundary routeName="New Log">
+                <LogFormPage mode="create" />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs/:id"
+            element={
+              <RouteErrorBoundary routeName="Log Detail">
+                <LogDetailPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/logs/:id/edit"
+            element={
+              <RouteErrorBoundary routeName="Edit Log">
+                <LogFormPage mode="edit" />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/insights"
+            element={
+              <RouteErrorBoundary routeName="Insights">
+                <InsightsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <RouteErrorBoundary routeName="Analytics">
+                <AnalyticsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/recap"
+            element={
+              <RouteErrorBoundary routeName="Recap">
+                <RecapPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/global-mirror"
+            element={
+              <RouteErrorBoundary routeName="Global Mirror">
+                <GlobalMirrorPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RouteErrorBoundary routeName="Settings">
+                <SettingsPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/leaderboard"
+            element={
+              <RouteErrorBoundary routeName="Leaderboard">
+                <LeaderboardPage />
+              </RouteErrorBoundary>
+            }
+          />
+          <Route
+            path="/achievements"
+            element={
+              <RouteErrorBoundary routeName="Achievements">
+                <AchievementsPage />
+              </RouteErrorBoundary>
+            }
+          />
+        </Route>
+
+        <Route
+          path="*"
+          element={
+            <RouteErrorBoundary routeName="404">
+              <NotFoundPage />
+            </RouteErrorBoundary>
+          }
+        />
+      </Routes>
+      </Suspense>
+    </>
   )
 }

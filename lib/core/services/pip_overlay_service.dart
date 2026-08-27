@@ -1,13 +1,28 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../themes/app_theme.dart';
 
 /// Service for managing in-app Picture-in-Picture overlay
-class PipOverlayService {
+class PipOverlayService with WidgetsBindingObserver {
   static final PipOverlayService _instance = PipOverlayService._internal();
   factory PipOverlayService() => _instance;
-  PipOverlayService._internal();
+  PipOverlayService._internal() {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Last-resort safety net: if the app is torn down while a call is
+    // still running in the PiP overlay and the user never tapped the
+    // overlay's close button, release the Agora engine here instead of
+    // leaking the connection (and its paid seat).
+    if (state == AppLifecycleState.detached) {
+      disposeOverlay();
+    }
+  }
 
   OverlayEntry? _overlayEntry;
   bool _isShowing = false;
@@ -83,12 +98,22 @@ class PipOverlayService {
   /// Clean up and dispose the overlay (when ending the call)
   void disposeOverlay() {
     hidePipOverlay();
+    final engine = _engine;
     _engine = null;
     _remoteUid = null;
     _sessionId = null;
     _hostName = null;
     _onTapToExpand = null;
     _onLeaveCall = null;
+
+    if (engine != null) {
+      // Best-effort release — the call's own screen may already have torn
+      // this engine down (e.g. via _leaveCall), so failures here are
+      // expected and safe to ignore.
+      unawaited(
+        engine.leaveChannel().then((_) => engine.release()).catchError((_) {}),
+      );
+    }
   }
 
   /// Update remote video state
@@ -285,11 +310,7 @@ class _PipOverlayWidgetState extends State<_PipOverlayWidget> {
                         color: Colors.red,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      child: Icon(Icons.close, color: Colors.white, size: 16),
                     ),
                   ),
                 ),

@@ -16,6 +16,9 @@ export function LoginPage() {
   })
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [rememberMe, setRememberMe] = useState(
+    () => localStorage.getItem('echo-remember-me') !== 'false',
+  )
 
   const validateForm = (): string | null => {
     if (!credentials.email) return 'Email is required'
@@ -71,7 +74,7 @@ export function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input
             label="Email"
-            type="email"
+            type="email" autoComplete="email"
             value={credentials.email}
             onChange={(e) =>
               setCredentials({ ...credentials, email: e.target.value })
@@ -82,7 +85,7 @@ export function LoginPage() {
 
           <Input
             label="Password"
-            type="password"
+            type="password" autoComplete="current-password"
             value={credentials.password}
             onChange={(e) =>
               setCredentials({ ...credentials, password: e.target.value })
@@ -96,6 +99,26 @@ export function LoginPage() {
               {error}
             </div>
           )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input
+              id="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => {
+                const val = e.target.checked
+                setRememberMe(val)
+                localStorage.setItem('echo-remember-me', String(val))
+              }}
+              style={{ accentColor: 'var(--brand)', width: '1rem', height: '1rem', cursor: 'pointer' }}
+            />
+            <label
+              htmlFor="remember-me"
+              style={{ fontSize: '0.875rem', color: 'var(--muted)', cursor: 'pointer', userSelect: 'none' }}
+            >
+              Keep me signed in
+            </label>
+          </div>
 
           <Button
             type="submit"

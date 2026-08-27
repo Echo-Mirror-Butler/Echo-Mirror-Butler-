@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/themes/app_theme.dart';
 import '../../../../core/viewmodel/providers/theme_provider.dart';
 import '../../../../core/viewmodel/providers/notification_provider.dart';
+import '../../../../core/widgets/notification_permission_banner.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../global_mirror/viewmodel/providers/gift_provider.dart';
+import '../../../socials/viewmodel/providers/follow_provider.dart';
+import '../../../../core/viewmodel/providers/haptics_provider.dart';
 
 /// Modern settings screen with improved UI/UX
 class SettingsScreen extends ConsumerWidget {
@@ -21,6 +24,7 @@ class SettingsScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isDark = theme.brightness == Brightness.dark;
     final echoBalance = ref.watch(giftProvider).echoBalance;
+    final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -34,19 +38,19 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.palette,
-            title: 'Appearance',
+            icon: FontAwesomeIcons.palette.data,
+            title: 'Appearance & Feedback',
             subtitle: 'Customize your app experience',
           ),
           const SizedBox(height: 12),
-          _buildThemeCard(context, theme, themeMode, ref, isDark),
+          _buildThemeCard(context, theme, themeMode, hapticsEnabled, ref, isDark),
           const SizedBox(height: 24),
 
           // Notifications Section
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.bell,
+            icon: FontAwesomeIcons.bell.data,
             title: 'Reminders',
             subtitle: 'Stay on track with daily reflections',
           ),
@@ -54,11 +58,23 @@ class SettingsScreen extends ConsumerWidget {
           _buildNotificationsCard(context, theme, ref),
           const SizedBox(height: 24),
 
+          // Privacy Section
+          _buildSectionHeader(
+            context,
+            theme,
+            icon: FontAwesomeIcons.shield.data,
+            title: 'Privacy',
+            subtitle: 'Control your visibility to followers',
+          ),
+          const SizedBox(height: 12),
+          _buildPrivacyCard(context, theme, ref, authState),
+          const SizedBox(height: 24),
+
           // Account Section
           _buildSectionHeader(
             context,
             theme,
-            icon: FontAwesomeIcons.user,
+            icon: FontAwesomeIcons.user.data,
             title: 'Account',
             subtitle: 'Manage your account settings',
           ),
@@ -81,10 +97,10 @@ class SettingsScreen extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: FaIcon(icon, color: AppTheme.primaryColor, size: 20),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 20),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -110,6 +126,7 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context,
     ThemeData theme,
     ThemeMode themeMode,
+    bool hapticsEnabled,
     WidgetRef ref,
     bool isDark,
   ) {
@@ -129,7 +146,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.moon,
+              icon: FontAwesomeIcons.moon.data,
               iconColor: Colors.indigo,
               title: 'Dark Mode',
               subtitle: 'Switch to dark theme',
@@ -149,7 +166,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.circleHalfStroke,
+              icon: FontAwesomeIcons.circleHalfStroke.data,
               iconColor: Colors.blue,
               title: 'System Theme',
               subtitle: 'Follow system appearance',
@@ -162,7 +179,83 @@ class SettingsScreen extends ConsumerWidget {
                 },
               ),
             ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+            ),
+            _buildModernListTile(
+              context,
+              theme,
+              icon: FontAwesomeIcons.mobileScreenButton.data,
+              iconColor: Colors.teal,
+              title: 'Haptics & Sound',
+              subtitle: 'Enable app-wide haptic feedback and sounds',
+              trailing: Switch(
+                value: hapticsEnabled,
+                onChanged: (value) {
+                  ref.read(hapticsEnabledProvider.notifier).setEnabled(value);
+                },
+              ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyCard(
+    BuildContext context,
+    ThemeData theme,
+    WidgetRef ref,
+    dynamic authState,
+  ) {
+    final isPublicProfile = ref.watch(isPublicProfileProvider);
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: isPublicProfile.when(
+          data: (isPublic) => Column(
+            children: [
+              _buildModernListTile(
+                context,
+                theme,
+                icon: FontAwesomeIcons.earthAmericas.data,
+                iconColor: Colors.green,
+                title: 'Public Profile',
+                subtitle: isPublic
+                    ? 'Friends can see your habits and notes'
+                    : 'Friends can only see your mood emoji',
+                trailing: Switch(
+                  value: isPublic,
+                  onChanged: (value) async {
+                    if (authState.user != null) {
+                      await Supabase.instance.client
+                          .from('profiles')
+                          .update({'public_profile': value})
+                          .eq('id', authState.user!.id);
+                      ref.invalidate(isPublicProfileProvider);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          loading: () => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(child: ShimmerLoading(width: 24, height: 24)),
+          ),
+          error: (_, __) => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('Could not load privacy settings'),
+          ),
         ),
       ),
     );
@@ -177,147 +270,160 @@ class SettingsScreen extends ConsumerWidget {
     final notificationTime = ref.watch(notificationTimeProvider);
     final notificationService = ref.watch(notificationServiceProvider);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: theme.colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: notificationEnabled.when(
-        data: (enabled) => notificationTime.when(
-          data: (time) => Padding(
-            padding: const EdgeInsets.all(4),
-            child: Column(
-              children: [
-                _buildModernListTile(
-                  context,
-                  theme,
-                  icon: FontAwesomeIcons.bell,
-                  iconColor: Colors.orange,
-                  title: 'Daily Reflection Reminder',
-                  subtitle: enabled
-                      ? 'Reminder at ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
-                      : 'Get reminded to log your daily reflections',
-                  trailing: Switch(
-                    value: enabled,
-                    onChanged: (value) async {
-                      if (value) {
-                        await notificationService.scheduleDailyReminder(
-                          hour: time.hour,
-                          minute: time.minute,
-                        );
-                      } else {
-                        await notificationService.cancelDailyReminder();
-                      }
-                      ref.invalidate(notificationEnabledProvider);
-                    },
-                  ),
-                ),
-                if (enabled) ...[
-                  Divider(
-                    height: 1,
-                    color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                  ),
-                  _buildModernListTile(
-                    context,
-                    theme,
-                    icon: FontAwesomeIcons.clock,
-                    iconColor: Colors.teal,
-                    title: 'Reminder Time',
-                    subtitle:
-                        '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-                    trailing: FaIcon(
-                      FontAwesomeIcons.chevronRight,
-                      size: 14,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                    ),
-                    onTap: () async {
-                      final TimeOfDay? picked = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay(
-                          hour: time.hour,
-                          minute: time.minute,
-                        ),
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: ColorScheme.light(
-                                primary: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── OS-level permission banner ──────────────────────────────────
+        // Visible only when the user has denied or revoked notification
+        // permission at the OS level. Guides them to re-enable in Settings.
+        const NotificationPermissionBanner(),
 
-                      if (picked != null) {
-                        await notificationService.scheduleDailyReminder(
-                          hour: picked.hour,
-                          minute: picked.minute,
-                        );
-                        ref.invalidate(notificationTimeProvider);
-                      }
-                    },
+        // ── Reminder toggle card ────────────────────────────────────────
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: theme.colorScheme.outline.withValues(alpha: 0.1),
+              width: 1,
+            ),
+          ),
+          child: notificationEnabled.when(
+            data: (enabled) => notificationTime.when(
+              data: (time) => Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  children: [
+                    _buildModernListTile(
+                      context,
+                      theme,
+                      icon: FontAwesomeIcons.bell.data,
+                      iconColor: Colors.orange,
+                      title: 'Daily Reflection Reminder',
+                      subtitle: enabled
+                          ? 'Reminder at ${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}'
+                          : 'Get reminded to log your daily reflections',
+                      trailing: Switch(
+                        value: enabled,
+                        onChanged: (value) async {
+                          if (value) {
+                            await notificationService.scheduleDailyReminder(
+                              hour: time.hour,
+                              minute: time.minute,
+                            );
+                          } else {
+                            await notificationService.cancelDailyReminder();
+                          }
+                          ref.invalidate(notificationEnabledProvider);
+                        },
+                      ),
+                    ),
+                    if (enabled) ...[
+                      Divider(
+                        height: 1,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                      ),
+                      _buildModernListTile(
+                        context,
+                        theme,
+                        icon: FontAwesomeIcons.clock.data,
+                        iconColor: Colors.teal,
+                        title: 'Reminder Time',
+                        subtitle:
+                            '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                        trailing: Icon(
+                          FontAwesomeIcons.chevronRight.data,
+                          size: 14,
+                          color:
+                              theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                        onTap: () async {
+                          final TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay(
+                              hour: time.hour,
+                              minute: time.minute,
+                            ),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(
+                                    primary:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+
+                          if (picked != null) {
+                            await notificationService.scheduleDailyReminder(
+                              hour: picked.hour,
+                              minute: picked.minute,
+                            );
+                            ref.invalidate(notificationTimeProvider);
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              loading: () => Padding(
+                padding: const EdgeInsets.all(20),
+                child: Center(child: ShimmerLoading(width: 24, height: 24)),
+              ),
+              error: (_, _) => Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Icon(
+                      FontAwesomeIcons.triangleExclamation.data,
+                      color: theme.colorScheme.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Error loading reminder time',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            loading: () => Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(child: ShimmerLoading(width: 24, height: 24)),
+            ),
+            error: (_, _) => Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.triangleExclamation.data,
+                    color: theme.colorScheme.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Error loading reminder settings',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
                   ),
                 ],
-              ],
-            ),
-          ),
-          loading: () => Padding(
-            padding: const EdgeInsets.all(20),
-            child: Center(child: ShimmerLoading(width: 24, height: 24)),
-          ),
-          error: (_, __) => Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.triangleExclamation,
-                  color: theme.colorScheme.error,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Error loading reminder time',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-        loading: () => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Center(child: ShimmerLoading(width: 24, height: 24)),
-        ),
-        error: (_, __) => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              FaIcon(
-                FontAwesomeIcons.triangleExclamation,
-                color: theme.colorScheme.error,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Error loading reminder settings',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      ],
     );
   }
 
@@ -344,12 +450,12 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.coins,
-              iconColor: AppTheme.primaryColor,
+              icon: FontAwesomeIcons.coins.data,
+              iconColor: theme.colorScheme.primary,
               title: 'ECHO Balance',
               subtitle: '${echoBalance.toStringAsFixed(0)} ECHO available',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -363,7 +469,7 @@ class SettingsScreen extends ConsumerWidget {
               _buildModernListTile(
                 context,
                 theme,
-                icon: FontAwesomeIcons.envelope,
+                icon: FontAwesomeIcons.envelope.data,
                 iconColor: Colors.blue,
                 title: 'Email',
                 subtitle: authState.user!.email,
@@ -377,12 +483,12 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.key,
+              icon: FontAwesomeIcons.key.data,
               iconColor: Colors.purple,
               title: 'Change Password',
               subtitle: 'Update your account password',
-              trailing: FaIcon(
-                FontAwesomeIcons.chevronRight,
+              trailing: Icon(
+                FontAwesomeIcons.chevronRight.data,
                 size: 14,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -397,7 +503,7 @@ class SettingsScreen extends ConsumerWidget {
             _buildModernListTile(
               context,
               theme,
-              icon: FontAwesomeIcons.rightFromBracket,
+              icon: FontAwesomeIcons.rightFromBracket.data,
               iconColor: Colors.red,
               title: AppStrings.logout,
               subtitle: 'Sign out of your account',
@@ -437,7 +543,7 @@ class SettingsScreen extends ConsumerWidget {
                   color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: FaIcon(icon, color: iconColor, size: 18),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
               const SizedBox(width: 16),
               Expanded(

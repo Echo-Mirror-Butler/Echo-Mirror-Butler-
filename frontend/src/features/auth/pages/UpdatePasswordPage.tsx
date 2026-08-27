@@ -1,97 +1,255 @@
-import { useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
-import type { UpdatePasswordCredentials } from '@/types/auth'
+import { supabase } from '../../../lib/supabase'
+import { useAuth } from '../../../lib/auth-context'
+import '../../landing/landing-page.css'
 
+/**
+ * Set a new password after recovery, or change password while logged in.
+ * Issue #634: do not trust raw access_token query params. Accept only a
+ * live session established via PKCE code exchange (PASSWORD_RECOVERY) or
+ * an already-authenticated user.
+ */
 export function UpdatePasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const accessToken = searchParams.get('access_token')
+  const { user } = useAuth()
 
-  const [credentials, setCredentials] = useState<UpdatePasswordCredentials>({
-    password: '',
-  })
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [ready, setReady] = useState(Boolean(user))
+  const [isRecovery, setIsRecovery] = useState(false)
 
-  const validateForm = (): string | null => {
-    if (!credentials.password) return 'Password is required'
-    if (credentials.password.length < 6) return 'Password must be at least 6 characters'
-    return null
-  }
+  useEffect(() => {
+    let cancelled = false
+    let recoveryDetected = false
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        recoveryDetected = true
+        if (!cancelled) {
+          setIsRecovery(true)
+          setReady(true)
+          setError(null)
+        }
+      }
+    })
+
+    const bootstrap = async () => {
+      // Reject legacy / tampered query tokens — never establish a session from them
+      const tamperedToken =
+        searchParams.get('access_token') ||
+        searchParams.get('refresh_token') ||
+        searchParams.get('token')
+      if (tamperedToken && !searchParams.get('code')) {
+        if (!cancelled) {
+          setError('Invalid or expired reset link')
+          setReady(false)
+        }
+        return
+      }
+
+      const code = searchParams.get('code')
+      if (code) {
+        try {
+          await supabase.auth.signOut({ scope: 'local' })
+        } catch {
+          // ignore
+        }
+        const { data, error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code)
+        try {
+          window.history.replaceState({}, document.title, '/update-password')
+        } catch {
+          // ignore
+        }
+        if (cancelled) return
+        if (exchangeError || !data.session) {
+          setError('Invalid or expired reset link')
+          setReady(false)
+          return
+        }
+        setIsRecovery(true)
+        setReady(true)
+        return
+      }
+
+      // Already authenticated (settings → change password)
+      const { data } = await supabase.auth.getSession()
+      if (cancelled) return
+      if (data.session?.user || user) {
+        setReady(true)
+        return
+      }
+
+      // Wait briefly for PASSWORD_RECOVERY event from hash fragment flows
+      await new Promise((r) => setTimeout(r, 400))
+      if (cancelled) return
+      if (recoveryDetected) return
+
+      const again = await supabase.auth.getSession()
+      if (cancelled) return
+      if (again.data.session?.user) {
+        setReady(true)
+      } else {
+        setError('Invalid or expired reset link')
+        setReady(false)
+      }
+    }
+
+    void bootstrap()
+
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
+  }, [searchParams, user])
+
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError('')
-
-    const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
+    setError(null)
+    setSuccess(null)
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
       return
     }
 
-    if (!accessToken) {
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (!sessionData.session) {
       setError('Invalid or expired reset link')
       return
     }
 
-    setIsLoading(true)
+    setIsSubmitting(true)
+    const { error: err } = await supabase.auth.updateUser({ password })
+    setIsSubmitting(false)
+    if (err) {
+      setError(err.message)
+      return
+    }
 
-    try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: credentials.password,
-      })
-
-      if (updateError) throw updateError
-
+    setSuccess('Password updated successfully.')
+    setPassword('')
+    setConfirmPassword('')
+    if (isRecovery || !user) {
+      // Force a clean re-login after recovery
+      await supabase.auth.signOut()
       navigate('/login')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update password')
-    } finally {
-      setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="text-3xl font-bold text-center text-primary">
-            Set New Password
-          </h2>
-          <p className="mt-2 text-center text-gray-600">
-            Enter your new password below
-          </p>
+    <div className="lp-auth-overlay">
+      <div className="lp-auth-left">
+        <div className="lp-auth-mesh" />
+        <div className="lp-auth-lines">
+          <div className="lp-auth-line" />
+          <div className="lp-auth-line" />
+          <div className="lp-auth-line" />
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <Input
-            label="New Password"
-            type="password"
-            value={credentials.password}
-            onChange={(e) =>
-              setCredentials({ ...credentials, password: e.target.value })
-            }
-            error={error}
-            placeholder="••••••••"
-          />
+        <div className="lp-auth-brand">
+          <div className="lp-auth-mark">
+            <img src="/app-icon.png" alt="EchoMirror" />
+          </div>
+          <span className="lp-auth-wordmark">EchoMirror</span>
+        </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
+        <div className="lp-auth-hero-copy">
+          <div className="lp-auth-hero-eyebrow">Almost there</div>
+          <h2 className="lp-auth-hero-title">
+            Set your
+            <br />
+            <em>new password.</em>
+          </h2>
+          <p className="lp-auth-hero-body">
+            Choose something strong. Your account and all your data will be right where you left
+            them.
+          </p>
+        </div>
+      </div>
+
+      <div className="lp-auth-right">
+        <div className="lp-auth-card">
+          <h2 className="lp-auth-card-title">New password</h2>
+          <p className="lp-auth-card-sub">At least 6 characters. Make it count.</p>
+
+          {!ready && error ? (
+            <div className="lp-auth-error">{error}</div>
+          ) : (
+            <form onSubmit={onSubmit} className="lp-auth-form">
+              <div className="lp-auth-field">
+                <label className="lp-auth-label" htmlFor="up-pass">
+                  New password
+                </label>
+                <input
+                  id="up-pass"
+                  className="lp-auth-input"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  disabled={!ready}
+                />
+              </div>
+              <div className="lp-auth-field">
+                <label className="lp-auth-label" htmlFor="up-confirm">
+                  Confirm password
+                </label>
+                <input
+                  id="up-confirm"
+                  className="lp-auth-input"
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  disabled={!ready}
+                />
+              </div>
+              {error && <div className="lp-auth-error">{error}</div>}
+              {success && (
+                <div
+                  style={{
+                    color: 'var(--success, #22c55e)',
+                    fontSize: '0.88rem',
+                    margin: '0.5rem 0',
+                  }}
+                >
+                  {success}
+                </div>
+              )}
+              <button
+                type="submit"
+                className="lp-auth-submit"
+                disabled={isSubmitting || !ready}
+              >
+                {isSubmitting ? 'Updating…' : 'Update password'}
+              </button>
+              {user && !isRecovery && (
+                <button
+                  type="button"
+                  className="lp-auth-link"
+                  onClick={() => navigate('/settings')}
+                >
+                  Back to settings
+                </button>
+              )}
+            </form>
           )}
-
-          <Button
-            type="submit"
-            isLoading={isLoading}
-            className="w-full"
-          >
-            Update Password
-          </Button>
-        </form>
+        </div>
       </div>
     </div>
   )

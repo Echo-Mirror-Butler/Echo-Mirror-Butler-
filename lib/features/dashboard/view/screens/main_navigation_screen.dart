@@ -8,6 +8,7 @@ import '../../../global_mirror/view/screens/globe_screen.dart';
 import '../../../socials/view/screens/socials_screen.dart';
 import '../../../logging/view/screens/logging_screen.dart';
 import '../../../settings/view/screens/settings_screen.dart';
+import '../../../leaderboard/view/screens/leaderboard_screen.dart';
 import 'dashboard_screen.dart';
 
 /// Main navigation screen with tabs
@@ -27,6 +28,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     DashboardScreen(),
     GlobeScreen(),
     SocialsScreen(),
+    LeaderboardScreen(),
     LoggingScreen(),
     SettingsScreen(),
   ];
@@ -92,38 +94,45 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               children: [
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.gaugeHigh,
+                  icon: FontAwesomeIcons.gaugeHigh.data,
                   label: 'Home',
                   index: 0,
                   isSelected: _selectedIndex == 0,
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.earthAmericas,
+                  icon: FontAwesomeIcons.earthAmericas.data,
                   label: 'Globe',
                   index: 1,
                   isSelected: _selectedIndex == 1,
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.users,
+                  icon: FontAwesomeIcons.users.data,
                   label: 'Socials',
                   index: 2,
                   isSelected: _selectedIndex == 2,
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.book,
-                  label: 'Log',
+                  icon: FontAwesomeIcons.trophy.data,
+                  label: 'Leaderboard',
                   index: 3,
                   isSelected: _selectedIndex == 3,
                 ),
                 _buildNavItem(
                   context: context,
-                  icon: FontAwesomeIcons.gear,
-                  label: 'Settings',
+                  icon: FontAwesomeIcons.book.data,
+                  label: 'Log',
                   index: 4,
                   isSelected: _selectedIndex == 4,
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: FontAwesomeIcons.gear.data,
+                  label: 'Settings',
+                  index: 5,
+                  isSelected: _selectedIndex == 5,
                 ),
               ],
             ),
@@ -158,7 +167,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              FaIcon(
+              Icon(
                 icon,
                 size: 20,
                 color: isSelected

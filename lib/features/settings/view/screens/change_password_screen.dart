@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../auth/view/widgets/custom_text_field.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
@@ -53,16 +54,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           _newPasswordController.clear();
           _confirmPasswordController.clear();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password updated successfully')),
-          );
+          ErrorHandler.showSuccess(context, 'Password updated successfully');
           context.pop();
         } else {
           final error =
               ref.read(authProvider).error ?? 'Failed to update password';
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(error)));
+          ErrorHandler.showError(context, error);
         }
       }
     }
@@ -75,7 +72,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
         title: const Text('Change Password'),
@@ -91,7 +88,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Icon(
-                    FontAwesomeIcons.key,
+                    FontAwesomeIcons.key.data,
                     size: 64,
                     color: AppTheme.primaryColor,
                   ),
@@ -107,12 +104,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     label: 'Current Password',
                     hint: 'Enter current password',
                     obscureText: _obscureCurrent,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureCurrent
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () =>
                           setState(() => _obscureCurrent = !_obscureCurrent),
@@ -130,12 +127,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     label: 'New Password',
                     hint: 'Enter new password',
                     obscureText: _obscureNew,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureNew
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () =>
                           setState(() => _obscureNew = !_obscureNew),
@@ -156,12 +153,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     label: 'Confirm New Password',
                     hint: 'Confirm new password',
                     obscureText: _obscureConfirm,
-                    prefixIcon: FontAwesomeIcons.lock,
+                    prefixIcon: FontAwesomeIcons.lock.data,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
-                            ? FontAwesomeIcons.eye
-                            : FontAwesomeIcons.eyeSlash,
+                            ? FontAwesomeIcons.eye.data
+                            : FontAwesomeIcons.eyeSlash.data,
                       ),
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
@@ -181,7 +178,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     onPressed: _isLoading ? null : _handleChangePassword,
                     text: 'Update Password',
                     isLoading: _isLoading,
-                    icon: FontAwesomeIcons.check,
+                    icon: FontAwesomeIcons.check.data,
                   ),
                 ],
               ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
-import '../themes/app_theme.dart';
 
 /// Reusable no internet connection empty state widget
 class NoConnectionWidget extends StatelessWidget {
@@ -31,12 +30,12 @@ class NoConnectionWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   ),
                   child: Icon(
-                    FontAwesomeIcons.wifi,
+                    FontAwesomeIcons.wifi.data,
                     size: isMobile ? 48 : 64,
-                    color: AppTheme.primaryColor,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -80,7 +79,7 @@ class NoConnectionWidget extends StatelessWidget {
                 duration: const Duration(milliseconds: 600),
                 child: ElevatedButton.icon(
                   onPressed: onRetry,
-                  icon: const FaIcon(FontAwesomeIcons.rotateRight, size: 18),
+                  icon: Icon(FontAwesomeIcons.rotateRight.data, size: 18),
                   label: Text(
                     'Try Again',
                     style: GoogleFonts.poppins(
@@ -93,7 +92,7 @@ class NoConnectionWidget extends StatelessWidget {
                       horizontal: isMobile ? 24 : 32,
                       vertical: isMobile ? 12 : 16,
                     ),
-                    backgroundColor: AppTheme.primaryColor,
+                    backgroundColor: theme.colorScheme.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

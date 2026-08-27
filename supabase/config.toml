@@ -212,7 +212,8 @@ enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
-max_frequency = "1s"
+# Issue #633: raise above 1s so recovery spam is throttled even without the edge function.
+max_frequency = "60s"
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
@@ -356,6 +357,10 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+# Public health-check endpoint backing /status — no auth required.
+[functions.health]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
@@ -367,8 +372,10 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+[edge_runtime.secrets]
+RESEND_API_KEY = "env(RESEND_API_KEY)"
+UNSUBSCRIBE_SECRET = "env(UNSUBSCRIBE_SECRET)"
+APP_URL = "env(APP_URL)"
 
 [analytics]
 enabled = true

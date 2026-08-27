@@ -5,12 +5,16 @@ import '../../features/auth/view/screens/login_screen.dart';
 import '../../features/auth/view/screens/signup_screen.dart';
 import '../../features/auth/view/screens/forgot_password_screen.dart';
 import '../../features/auth/view/screens/reset_password_screen.dart';
+import '../../features/auth/view/screens/verify_email_screen.dart';
+import '../../features/auth/view/verify_email_confirmed_screen.dart';
 import '../../features/settings/view/screens/change_password_screen.dart';
+import '../../features/settings/view/screens/security_screen.dart';
 import '../../features/auth/viewmodel/providers/auth_provider.dart';
 import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
 import '../../features/logging/view/screens/create_entry_screen.dart';
 import '../../features/logging/view/screens/entry_detail_screen.dart';
 import '../../features/logging/data/models/log_entry_model.dart';
+import '../../features/logging/data/models/quick_check_in_data.dart';
 import '../../features/onboarding/view/screens/onboarding_screen.dart';
 import '../../features/onboarding/viewmodel/providers/onboarding_provider.dart';
 import '../../features/dashboard/view/screens/main_navigation_screen.dart';
@@ -18,8 +22,13 @@ import '../../features/global_mirror/view/screens/mood_comment_notifications_scr
 import '../../features/ai/view/screens/breathing_exercise_screen.dart';
 import '../../features/ai/view/screens/music_recommendations_screen.dart';
 import '../../features/global_mirror/view/screens/gift_screen.dart';
+import '../../features/global_mirror/view/screens/wallet_screen.dart';
+import '../../features/profile/view/screens/profile_screen.dart';
+import '../../features/habits/view/screens/habits_screen.dart';
+import '../../features/leaderboard/view/screens/leaderboard_screen.dart';
+import '../services/deep_link_service.dart';
 
-/// Refresh notifier for GoRouter
+/// Refresh notifier for GoRouter.
 class GoRouterRefreshNotifier extends ChangeNotifier {
   GoRouterRefreshNotifier(this.ref) {
     ref.listen(
@@ -31,61 +40,51 @@ class GoRouterRefreshNotifier extends ChangeNotifier {
   final Ref ref;
 }
 
-/// App router configuration with GoRouter
+/// App router configuration with GoRouter.
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = GoRouterRefreshNotifier(ref);
-
   return GoRouter(
     initialLocation: '/onboarding',
     refreshListenable: notifier,
     redirect: (context, state) async {
-      // Wait for auth check to complete if it's still loading
       final authState = ref.read(authProvider);
       if (authState.isLoading) {
-        // Wait for auth check to complete
         await ref.read(authProvider.notifier).checkAuthStatus();
       }
-
       final updatedAuthState = ref.read(authProvider);
       final isAuthenticated = updatedAuthState.isAuthenticated;
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       final isSigningUp = state.matchedLocation == '/signup';
+      final isVerifyEmail = state.matchedLocation == '/verify-email';
+      final isVerifyEmailConfirmed = state.matchedLocation == '/verify-email-confirmed';
       final isAuthRoute = isLoggingIn || isSigningUp;
 
-      // Check if onboarding is completed
-      // Use try-catch to handle any errors gracefully
+      // /verify-email and /verify-email-confirmed are always accessible
+      if (isVerifyEmail || isVerifyEmailConfirmed) return null;
+
       bool onboardingCompleted = false;
       try {
         onboardingCompleted = await ref.read(
           onboardingCompletedProvider.future,
         );
       } catch (e) {
-        // If there's an error reading, assume not completed to be safe
         onboardingCompleted = false;
       }
 
-      // If onboarding not completed and not on onboarding screen, redirect to onboarding
-      if (!onboardingCompleted && !isOnboarding) {
-        return '/onboarding';
-      }
-
-      // If onboarding completed and on onboarding screen, redirect to login
-      if (onboardingCompleted && isOnboarding) {
-        return '/login';
-      }
-
-      // If authenticated and on auth pages, redirect to dashboard
+      if (!onboardingCompleted && !isOnboarding) return '/onboarding';
+      if (onboardingCompleted && isOnboarding) return '/login';
       if (isAuthenticated && isAuthRoute) {
+        // Check for pending deep link before defaulting to dashboard
+        final pendingRoute = await DeepLinkService().consumePendingRoute();
+        if (pendingRoute != null && pendingRoute != '/login' && pendingRoute != '/') {
+          return pendingRoute;
+        }
         return '/dashboard';
       }
-
-      // If not authenticated and trying to access protected route
       if (!isAuthenticated && !isAuthRoute && !isOnboarding) {
         return '/login';
       }
-
-      // Allow navigation between auth screens when not authenticated
       return null;
     },
     routes: [
@@ -103,6 +102,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/signup',
         name: 'signup',
         builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/verify-email',
+        name: 'verify-email',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return VerifyEmailScreen(email: email);
+        },
+      ),
+      GoRoute(
+        path: '/verify-email-confirmed',
+        name: 'verify-email-confirmed',
+        builder: (context, state) => const VerifyEmailConfirmedScreen(),
       ),
       GoRoute(
         path: '/forgot-password',
@@ -138,16 +150,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/logging/create',
         name: 'create-entry',
-        builder: (context, state) => const CreateEntryScreen(),
+        builder: (context, state) {
+          final prefill = state.extra as QuickCheckInData?;
+          return CreateEntryScreen(prefill: prefill);
+        },
       ),
       GoRoute(
         path: '/logging/detail/:id',
         name: 'entry-detail',
         builder: (context, state) {
-          // Get entry from extra parameter passed during navigation
           final entry = state.extra as LogEntryModel?;
           if (entry == null) {
-            // If no extra data, we'll handle it in the screen
             return Scaffold(
               appBar: AppBar(title: const Text('Entry Detail')),
               body: const Center(child: Text('Entry not found')),
@@ -164,15 +177,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/settings/change-password',
         name: 'change-password',
-        builder: (context, state) {
-          // Import needed
-          return const ChangePasswordScreen();
-        },
+        builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: '/settings/security',
+        name: 'security',
+        builder: (context, state) => const SecurityScreen(),
       ),
       GoRoute(
         path: '/notifications',
         name: 'notifications',
-        builder: (context, state) => const MoodCommentNotificationsScreen(),
+        builder: (context, state) =>
+            const MoodCommentNotificationsScreen(),
       ),
       GoRoute(
         path: '/breathing',
@@ -182,13 +198,35 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/music-recommendations',
         name: 'music-recommendations',
-        builder: (context, state) => const MusicRecommendationsScreen(),
+        builder: (context, state) =>
+            const MusicRecommendationsScreen(),
+      ),
+      GoRoute(
+        path: '/wallet',
+        name: 'wallet',
+        builder: (context, state) => const WalletScreen(),
       ),
       GoRoute(
         path: '/gift/:userId',
         name: 'gift',
-        builder: (context, state) =>
-            GiftScreen(recipientUserId: state.pathParameters['userId']!),
+        builder: (context, state) => GiftScreen(
+          recipientUserId: state.pathParameters['userId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/habits',
+        name: 'habits',
+        builder: (context, state) => const HabitsScreen(),
+      ),
+      GoRoute(
+        path: '/leaderboard',
+        name: 'leaderboard',
+        builder: (context, state) => const LeaderboardScreen(),
       ),
     ],
   );

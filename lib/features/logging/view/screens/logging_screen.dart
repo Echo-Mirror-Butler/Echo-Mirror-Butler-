@@ -11,8 +11,9 @@ import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/log_entry_model.dart';
 import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/logging_calendar.dart';
+import '../widgets/pending_sync_badge.dart';
 
-/// Daily logging screen
+/// Daily logging screen with infinite-scroll pagination (Issue #637).
 class LoggingScreen extends ConsumerStatefulWidget {
   const LoggingScreen({super.key});
 
@@ -21,9 +22,12 @@ class LoggingScreen extends ConsumerStatefulWidget {
 }
 
 class _LoggingScreenState extends ConsumerState<LoggingScreen> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authState = ref.read(authProvider);
       final userId = authState.user?.id;
@@ -34,18 +38,35 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      ref.read(loggingProvider.notifier).loadMoreLogEntries();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final loggingState = ref.watch(loggingProvider);
     final authState = ref.watch(authProvider);
     final userId = authState.user?.id;
     final theme = Theme.of(context);
+    final notifier = ref.read(loggingProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Logging'),
         actions: [
+          const Center(child: PendingSyncBadge()),
           IconButton(
-            icon: const Icon(FontAwesomeIcons.calendar),
+            icon: Icon(FontAwesomeIcons.calendar.data),
             onPressed: () {
               final entries = loggingState.value ?? <LogEntryModel>[];
               _showCalendar(context, entries);
@@ -54,10 +75,13 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         ],
       ),
       body: RefreshIndicator(
+        color: AppTheme.primaryColor,
         onRefresh: () async {
-          await ref
-              .read(loggingProvider.notifier)
-              .loadLogEntries(userId: userId);
+          if (userId != null && userId.isNotEmpty) {
+            await ref
+                .read(loggingProvider.notifier)
+                .loadLogEntries(userId: userId, force: true);
+          }
         },
         child: loggingState.when(
           data: (entries) {
@@ -72,7 +96,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            FontAwesomeIcons.book,
+                            FontAwesomeIcons.book.data,
                             size: 64,
                             color: theme.colorScheme.primary.withValues(
                               alpha: 0.5,
@@ -95,11 +119,27 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                 ],
               );
             }
+            final showFooter = notifier.hasMore || notifier.isLoadingMore;
             return ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: entries.length,
+              itemCount: entries.length + (showFooter ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index >= entries.length) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: notifier.isLoadingMore
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  );
+                }
                 final entry = entries[index];
                 return Hero(
                   tag: 'log_entry_${entry.id}',
@@ -107,7 +147,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: EdgeInsets.zero,
                     animationDuration: Duration(
-                      milliseconds: 300 + (index * 50),
+                      milliseconds: 300 + (index.clamp(0, 10) * 50),
                     ),
                     child: ListTile(
                       leading: CircleAvatar(
@@ -130,7 +170,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
                         style: theme.textTheme.bodySmall,
                       ),
                       trailing: Icon(
-                        FontAwesomeIcons.chevronRight,
+                        FontAwesomeIcons.chevronRight.data,
                         size: 16,
                         color: theme.colorScheme.onSurface.withValues(
                           alpha: 0.5,
@@ -150,12 +190,20 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
           },
           loading: () =>
               const Center(child: ShimmerLoading(width: 40, height: 40)),
-          error: (error, stack) => NoConnectionWidget(
-            message:
-                'We could not load your daily logs. '
-                'This can happen when Supabase tables are missing. '
-                'Run migrations and try again.',
-            onRetry: () => _retryLoadEntries(userId),
+          error: (error, stack) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Center(
+                child: NoConnectionWidget(
+                  message:
+                      'We could not load your daily logs. '
+                      'This can happen when Supabase tables are missing. '
+                      'Run migrations and try again.',
+                  onRetry: () => _retryLoadEntries(userId),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -163,9 +211,9 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         onPressed: () {
           context.push('/logging/create');
         },
-        icon: const Icon(FontAwesomeIcons.plus),
+        icon: Icon(FontAwesomeIcons.plus.data),
         label: const Text('New Entry'),
-        backgroundColor: AppTheme.primaryColor,
+        backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
       ),
     );
@@ -173,26 +221,28 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
 
   void _retryLoadEntries(String? userId) {
     if (userId == null || userId.isEmpty) return;
-    ref.read(loggingProvider.notifier).loadLogEntries(userId: userId);
+    ref
+        .read(loggingProvider.notifier)
+        .loadLogEntries(userId: userId, force: true);
   }
 
   IconData _getMoodIcon(int? mood) {
     if (mood == null) {
-      return FontAwesomeIcons.faceSmile;
+      return FontAwesomeIcons.faceSmile.data;
     }
     switch (mood) {
       case 1:
-        return FontAwesomeIcons.faceFrown;
+        return FontAwesomeIcons.faceFrown.data;
       case 2:
-        return FontAwesomeIcons.faceMeh;
+        return FontAwesomeIcons.faceMeh.data;
       case 3:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
       case 4:
-        return FontAwesomeIcons.faceSmileBeam;
+        return FontAwesomeIcons.faceSmileBeam.data;
       case 5:
-        return FontAwesomeIcons.faceGrinStars;
+        return FontAwesomeIcons.faceGrinStars.data;
       default:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
     }
   }
 

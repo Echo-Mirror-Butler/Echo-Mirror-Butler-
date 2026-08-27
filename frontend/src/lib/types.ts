@@ -6,8 +6,16 @@ export type AppUser = {
 export type WalletRecord = {
   id: string
   user_id: string
-  public_key: string
+  public_key: string | null
   balance?: number | null
+}
+
+export type EchoReward = {
+  id: string
+  user_id: string
+  amount: number
+  reason: string
+  created_at: string
 }
 
 export type GiftTransaction = {
@@ -28,6 +36,7 @@ export type LogEntry = {
   mood: number | null
   habits: string[]
   notes: string | null
+  image_path: string | null
   created_at: string
   updated_at: string
 }
@@ -41,5 +50,19 @@ export type Insight = {
   stress_level: number
   calming_message?: string
   music_recommendations?: string[]
+  mood_drivers?: { label: string; percentage: number }[]
+  best_time_of_day?: string | null
+  worst_time_of_day?: string | null
+  recommendations?: string[]
+  mood_score?: number
+  personal_note?: string
   created_at: string
 }
+
+export type InsightAction = {
+  insight_id: string
+  recommendation_index: number
+  followed: boolean
+  created_at?: string
+}
+

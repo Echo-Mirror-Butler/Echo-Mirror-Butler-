@@ -1,4 +1,5 @@
 import '../../../logging/data/models/log_entry_model.dart';
+import '../../../../core/utils/date_formatter.dart';
 
 /// Model for mood analytics calculations
 class MoodAnalyticsModel {
@@ -24,57 +25,37 @@ class MoodAnalyticsModel {
     this.monthlyAverage,
   });
 
-  /// Computes the current mood streak (consecutive days with a mood entry),
-  /// counting backward from today.
-  ///
-  /// Rules:
-  /// - Counts unique calendar days only (multiple entries on same day = 1 day)
-  /// - Uses local dates for comparison
-  /// - Requires a mood value to count as a mood entry
-  /// - If there is no mood entry for today, streak is 0
+  /// Compute streak from log entries
   static int computeStreak(
     List<LogEntryModel> entries, {
     DateTime? referenceDate,
+    String timezone = 'UTC',
   }) {
-    final moodEntryDates = entries.where((entry) => entry.mood != null).map((
-      entry,
-    ) {
-      final localDate = entry.date.isUtc ? entry.date.toLocal() : entry.date;
-      return DateTime(localDate.year, localDate.month, localDate.day);
-    });
+    if (entries.isEmpty) return 0;
 
-    return _computeStreakFromDates(
-      moodEntryDates,
-      referenceDate: referenceDate,
-    );
-  }
+    final refDate = referenceDate ?? DateFormatter.daysAgo(0, timezone);
+    final ref = DateTime(refDate.year, refDate.month, refDate.day);
 
-  static int _computeStreakFromDates(
-    Iterable<DateTime> dates, {
-    DateTime? referenceDate,
-  }) {
-    final uniqueDates = dates.toSet();
-    if (uniqueDates.isEmpty) return 0;
+    // Get unique dates with non-null mood, normalized to midnight
+    final uniqueDates = entries
+        .where((e) => e.mood != null)
+        .map((e) => DateTime(e.date.year, e.date.month, e.date.day))
+        .toSet();
 
-    final baseDate = referenceDate ?? DateTime.now();
-    final localBaseDate = baseDate.isUtc ? baseDate.toLocal() : baseDate;
-    var cursor = DateTime(
-      localBaseDate.year,
-      localBaseDate.month,
-      localBaseDate.day,
-    );
+    if (!uniqueDates.contains(ref)) return 0;
 
-    var streak = 0;
-    while (uniqueDates.contains(cursor)) {
+    int streak = 1;
+    var currentDay = ref.subtract(const Duration(days: 1));
+    while (uniqueDates.contains(currentDay)) {
       streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
+      currentDay = currentDay.subtract(const Duration(days: 1));
     }
 
     return streak;
   }
 
   /// Create analytics from log entries
-  factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries) {
+  factory MoodAnalyticsModel.fromEntries(List<MoodEntry> entries, {String timezone = 'UTC'}) {
     if (entries.isEmpty) {
       return const MoodAnalyticsModel(
         averageMood: 0,
@@ -99,7 +80,7 @@ class MoodAnalyticsModel {
     }
 
     // Calculate trends
-    final now = DateTime.now();
+    final now = DateFormatter.daysAgo(0, timezone);
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
 
@@ -113,7 +94,7 @@ class MoodAnalyticsModel {
             )
             .toList()
           ..sort((a, b) => a.date.compareTo(b.date));
-    final weeklyTrend = _calculateTrend(weeklyEntries, 7);
+    final weeklyTrend = _calculateTrend(weeklyEntries, 7, timezone: timezone);
 
     // Monthly trend (last 30 days)
     final monthlyEntries =
@@ -125,7 +106,7 @@ class MoodAnalyticsModel {
             )
             .toList()
           ..sort((a, b) => a.date.compareTo(b.date));
-    final monthlyTrend = _calculateTrend(monthlyEntries, 30);
+    final monthlyTrend = _calculateTrend(monthlyEntries, 30, timezone: timezone);
 
     // Calculate weekly and monthly averages
     final weeklyMoods = weeklyEntries
@@ -172,16 +153,17 @@ class MoodAnalyticsModel {
   /// Calculate trend data points for a given period
   static List<MoodDataPoint> _calculateTrend(
     List<MoodEntry> entries,
-    int days,
-  ) {
+    int days, {
+    String timezone = 'UTC',
+  }) {
     final trend = <MoodDataPoint>[];
-    final now = DateTime.now();
+    final today = DateFormatter.daysAgo(0, timezone);
 
     for (int i = days - 1; i >= 0; i--) {
       final date = DateTime(
-        now.year,
-        now.month,
-        now.day,
+        today.year,
+        today.month,
+        today.day,
       ).subtract(Duration(days: i));
       final normalizedDate = DateTime(date.year, date.month, date.day);
 

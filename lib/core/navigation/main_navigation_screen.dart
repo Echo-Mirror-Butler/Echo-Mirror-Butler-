@@ -7,6 +7,7 @@ import '../../core/themes/app_theme.dart';
 import '../../features/dashboard/view/screens/dashboard_screen.dart';
 import '../../features/logging/view/screens/logging_screen.dart';
 import '../../features/settings/view/screens/settings_screen.dart';
+import '../viewmodel/providers/haptics_provider.dart';
 
 /// Main navigation screen with bottom navigation bar
 class MainNavigationScreen extends ConsumerStatefulWidget {
@@ -23,19 +24,19 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
-      icon: FontAwesomeIcons.chartLine,
+      icon: FontAwesomeIcons.chartLine.data,
       label: 'Dashboard',
       route: '/dashboard',
       screen: const DashboardScreen(),
     ),
     NavigationItem(
-      icon: FontAwesomeIcons.book,
+      icon: FontAwesomeIcons.book.data,
       label: 'Logging',
       route: '/logging',
       screen: const LoggingScreen(),
     ),
     NavigationItem(
-      icon: FontAwesomeIcons.gear,
+      icon: FontAwesomeIcons.gear.data,
       label: 'Settings',
       route: '/settings',
       screen: const SettingsScreen(),
@@ -102,6 +103,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
     return Scaffold(
       body: PageView(
@@ -116,11 +118,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         },
         children: _navigationItems.map((item) => item.screen).toList(),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(theme, isDark),
+      bottomNavigationBar: _buildBottomNavigationBar(theme, isDark, hapticsEnabled),
     );
   }
 
-  Widget _buildBottomNavigationBar(ThemeData theme, bool isDark) {
+  Widget _buildBottomNavigationBar(ThemeData theme, bool isDark, bool hapticsEnabled) {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkSurfaceColor : AppTheme.surfaceColor,
@@ -137,14 +139,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           child: GNav(
-            rippleColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-            hoverColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+            rippleColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+            hoverColor: theme.colorScheme.primary.withValues(alpha: 0.1),
             gap: 6,
-            activeColor: AppTheme.primaryColor,
+            activeColor: theme.colorScheme.primary,
             iconSize: 26,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             duration: const Duration(milliseconds: 400),
-            tabBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+            tabBackgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
             color: isDark
                 ? Colors.white.withValues(alpha: 0.5)
                 : Colors.black.withValues(alpha: 0.5),
@@ -152,7 +154,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             onTabChange: _onItemTapped,
             tabs: [
               GButton(
-                icon: FontAwesomeIcons.chartLine,
+                icon: FontAwesomeIcons.chartLine.data,
                 text: 'Dashboard',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -160,7 +162,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
               GButton(
-                icon: FontAwesomeIcons.book,
+                icon: FontAwesomeIcons.book.data,
                 text: 'Logging',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -168,7 +170,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
               GButton(
-                icon: FontAwesomeIcons.gear,
+                icon: FontAwesomeIcons.gear.data,
                 text: 'Settings',
                 textStyle: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
@@ -177,7 +179,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               ),
             ],
             curve: Curves.easeInOutCubic,
-            haptic: true,
+            haptic: hapticsEnabled,
           ),
         ),
       ),

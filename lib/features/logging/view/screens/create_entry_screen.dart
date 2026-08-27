@@ -1,23 +1,26 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/viewmodel/providers/timezone_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../../auth/view/widgets/custom_button.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 import '../../data/models/log_entry_model.dart';
+import '../../data/models/quick_check_in_data.dart';
 import '../../viewmodel/providers/logging_provider.dart';
 import '../widgets/voice_input_button.dart';
 import '../../../global_mirror/viewmodel/providers/global_mirror_provider.dart';
 
 /// Screen for creating a new log entry
 class CreateEntryScreen extends ConsumerStatefulWidget {
-  const CreateEntryScreen({super.key});
+  const CreateEntryScreen({super.key, this.prefill});
+
+  /// Mood/note carried over from the QuickCheckInWidget on the dashboard.
+  final QuickCheckInData? prefill;
 
   @override
   ConsumerState<CreateEntryScreen> createState() => _CreateEntryScreenState();
@@ -30,11 +33,26 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
 
   DateTime _selectedDate = DateTime.now();
   int? _selectedMood;
+  String _timezone = 'UTC';
   final List<String> _selectedHabits = [];
   bool _isSubmitting = false;
   bool _isListening = false;
   String _voiceTranscription = '';
   bool _shareAnonymously = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timezone = ref.read(timezoneStringProvider);
+
+    final prefill = widget.prefill;
+    if (prefill != null) {
+      _selectedMood = prefill.mood;
+      if (prefill.note != null) {
+        _notesController.text = prefill.note!;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -48,7 +66,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateFormatter.daysAgo(0, _timezone).add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -94,12 +112,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
     final authState = ref.read(authProvider);
     if (!authState.isAuthenticated || authState.user == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please log in to create entries'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
+        ErrorHandler.showError(context, 'Please log in to create entries');
       }
       return;
     }
@@ -149,14 +162,9 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                 .shareMood(sentiment);
             debugPrint('[CreateEntryScreen] Share mood result: $shareResult');
             if (!shareResult && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    'Failed to share mood. Check location permissions.',
-                  ),
-                  backgroundColor: Colors.orange,
-                  duration: const Duration(seconds: 3),
-                ),
+              ErrorHandler.showError(
+                context,
+                'Failed to share mood. Check location permissions.',
               );
             }
           } else {
@@ -170,7 +178,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
           final allLogs = loggingState.value ?? [];
           if (allLogs.length >= 3) {
             // Get recent logs (last 7-14 days)
-            final now = DateTime.now();
+            final now = DateFormatter.daysAgo(0, _timezone);
             final recentLogs =
                 allLogs
                     .where(
@@ -188,7 +196,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
           }
 
           if (!mounted) return;
-          context.pop();
+          Navigator.of(context).pop();
         } else {
           // Get error message from provider state
           final loggingState = ref.read(loggingProvider);
@@ -250,8 +258,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        FontAwesomeIcons.pen,
+                      child: Icon(
+                        FontAwesomeIcons.pen.data,
                         size: 36,
                         color: Colors.white,
                       ),
@@ -279,8 +287,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
-                                  FontAwesomeIcons.calendar,
+                                child: Icon(
+                                  FontAwesomeIcons.calendar.data,
                                   color: AppTheme.primaryColor,
                                   size: 20,
                                 ),
@@ -312,7 +320,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                 ),
                               ),
                               Icon(
-                                FontAwesomeIcons.chevronRight,
+                                FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                                 color: theme.colorScheme.onSurface.withValues(
                                   alpha: 0.5,
@@ -414,8 +422,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                             decoration: InputDecoration(
                               labelText: 'Add a habit',
                               hintText: 'e.g., Exercise, Meditation',
-                              prefixIcon: const Icon(
-                                FontAwesomeIcons.plus,
+                              prefixIcon: Icon(
+                                FontAwesomeIcons.plus.data,
                                 size: 18,
                               ),
                             ),
@@ -434,7 +442,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Icon(FontAwesomeIcons.plus, size: 18),
+                          child: Icon(FontAwesomeIcons.plus.data, size: 18),
                         ),
                       ],
                     ),
@@ -447,8 +455,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                           return Chip(
                             label: Text(habit),
                             onDeleted: () => _removeHabit(habit),
-                            deleteIcon: const Icon(
-                              FontAwesomeIcons.xmark,
+                            deleteIcon: Icon(
+                              FontAwesomeIcons.xmark.data,
                               size: 16,
                             ),
                             backgroundColor: AppTheme.primaryColor.withValues(
@@ -480,8 +488,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                             onPressed: () {
                               // Voice button will handle this
                             },
-                            icon: const Icon(
-                              FontAwesomeIcons.microphone,
+                            icon: Icon(
+                              FontAwesomeIcons.microphone.data,
                               size: 16,
                             ),
                             label: const Text('Voice'),
@@ -498,8 +506,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       decoration: InputDecoration(
                         hintText:
                             'Write about your day, thoughts, or anything else...',
-                        prefixIcon: const Icon(
-                          FontAwesomeIcons.noteSticky,
+                        prefixIcon: Icon(
+                          FontAwesomeIcons.noteSticky.data,
                           size: 18,
                         ),
                         suffixIcon: _isListening
@@ -554,7 +562,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                                   Row(
                                     children: [
                                       Icon(
-                                        FontAwesomeIcons.globe,
+                                        FontAwesomeIcons.globe.data,
                                         size: 16,
                                         color: AppTheme.primaryColor,
                                       ),
@@ -583,8 +591,8 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(
-                                FontAwesomeIcons.circleInfo,
+                              icon: Icon(
+                                FontAwesomeIcons.circleInfo.data,
                                 size: 18,
                               ),
                               color: AppTheme.primaryColor,
@@ -618,7 +626,7 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
                       onPressed: _isSubmitting ? null : _handleSubmit,
                       text: 'Create Entry',
                       isLoading: _isSubmitting,
-                      icon: FontAwesomeIcons.check,
+                      icon: FontAwesomeIcons.check.data,
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -672,17 +680,17 @@ class _CreateEntryScreenState extends ConsumerState<CreateEntryScreen> {
   IconData _getMoodIcon(int mood) {
     switch (mood) {
       case 1:
-        return FontAwesomeIcons.faceFrown;
+        return FontAwesomeIcons.faceFrown.data;
       case 2:
-        return FontAwesomeIcons.faceMeh;
+        return FontAwesomeIcons.faceMeh.data;
       case 3:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
       case 4:
-        return FontAwesomeIcons.faceSmileBeam;
+        return FontAwesomeIcons.faceSmileBeam.data;
       case 5:
-        return FontAwesomeIcons.faceGrinStars;
+        return FontAwesomeIcons.faceGrinStars.data;
       default:
-        return FontAwesomeIcons.faceSmile;
+        return FontAwesomeIcons.faceSmile.data;
     }
   }
 

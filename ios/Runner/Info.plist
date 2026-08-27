@@ -49,6 +49,8 @@
 	<string>EchoMirror uses speech recognition to help you quickly log your daily mood and thoughts by voice. This makes it easier to capture your reflections without typing.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>EchoMirror needs microphone access to convert your voice into text for quick mood and habit logging.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>EchoMirror would like to send you daily reflection reminders and nudges so you never miss a moment to check in with your future self. You can change this at any time in Settings.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
@@ -62,5 +64,22 @@
 	<string>EchoMirror needs camera access to record mood videos that you can share anonymously with the global community.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>EchoMirror needs photo library access to let you choose videos to share with the community.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.echomirror.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>echomirror</string>
+			</array>
+		</dict>
+	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:echomirrorbutler.vercel.app</string>
+	</array>
 </dict>
 </plist>

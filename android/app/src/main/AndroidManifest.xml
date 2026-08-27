@@ -11,7 +11,14 @@
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
     
-    <!-- Notifications -->
+    <!-- Notifications
+         POST_NOTIFICATIONS: required at runtime on Android 13+ (API 33+) for local and push
+         notifications. Handled at runtime by NotificationPermissionService via permission_handler.
+         SCHEDULE_EXACT_ALARM: allows exact scheduling on Android 12 (API 31-32); triggers a
+         Settings prompt on those versions.
+         USE_EXACT_ALARM: permission granted automatically (no runtime dialog) on Android 13+;
+         covers exact alarms for reminders without the user flow required by SCHEDULE_EXACT_ALARM.
+    -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
@@ -55,6 +62,20 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Deep linking for email verification and password reset -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="echomirror" android:host="auth"/>
+            </intent-filter>
+            <!-- App Links for HTTPS -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="echomirrorbutler.vercel.app"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

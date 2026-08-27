@@ -34,9 +34,6 @@ class FakeFutureLettersBuilder extends Fake
   }) => this;
 
   @override
-  PostgrestTransformBuilder<PostgrestList> limit(int count) => this;
-
-  @override
   Future<U> then<U>(
     FutureOr<U> Function(PostgrestList) onValue, {
     Function? onError,
@@ -335,13 +332,76 @@ void main() {
         ).thenAnswer((_) async => entries);
 
         final insights = await repository.getInsights(userId);
-        expect(
-          insights.any(
-            (i) =>
-                i.title == 'Pattern Detected' &&
-                i.type == InsightType.prediction,
+        final pattern = insights.singleWhere(
+          (i) =>
+              i.title == 'Pattern Detected' &&
+              i.type == InsightType.prediction,
+        );
+        expect(pattern.description, contains('Mondays'));
+        expect(pattern.description, contains('average 5.0 across 2 entries'));
+        expect(pattern.description, contains('2.0 points above'));
+      },
+    );
+
+    test(
+      'does not predict a weekday pattern from single observations',
+      () async {
+        final monday = DateTime(2026, 3, 23);
+        final entries = List.generate(
+          5,
+          (index) => _entry(
+            userId: userId,
+            date: monday.add(Duration(days: index)),
+            mood: index == 0 ? 5 : 3,
           ),
-          isTrue,
+        );
+        when(
+          () => loggingRepository.getLogEntries(userId),
+        ).thenAnswer((_) async => entries);
+
+        final insights = await repository.getInsights(userId);
+        expect(
+          insights.where((i) => i.title == 'Pattern Detected'),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'does not predict a weekday pattern when averages are too close',
+      () async {
+        final monday = DateTime(2026, 3, 23);
+        final entries = <LogEntryModel>[
+          _entry(userId: userId, date: monday, mood: 4),
+          _entry(
+            userId: userId,
+            date: monday.subtract(const Duration(days: 7)),
+            mood: 4,
+          ),
+          _entry(
+            userId: userId,
+            date: monday.add(const Duration(days: 1)),
+            mood: 4,
+          ),
+          _entry(
+            userId: userId,
+            date: monday.add(const Duration(days: 2)),
+            mood: 3,
+          ),
+          _entry(
+            userId: userId,
+            date: monday.add(const Duration(days: 3)),
+            mood: 4,
+          ),
+        ];
+        when(
+          () => loggingRepository.getLogEntries(userId),
+        ).thenAnswer((_) async => entries);
+
+        final insights = await repository.getInsights(userId);
+        expect(
+          insights.where((i) => i.title == 'Pattern Detected'),
+          isEmpty,
         );
       },
     );
@@ -370,7 +430,6 @@ void main() {
           data: {
             'prediction':
                 'Your recent consistency suggests your mood will stay steady if you keep journaling and meditation in place.',
-            'futureLetter': 'Keep going.',
           },
           status: 200,
         ),

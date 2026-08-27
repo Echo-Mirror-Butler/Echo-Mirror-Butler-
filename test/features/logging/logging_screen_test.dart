@@ -18,26 +18,27 @@ class MockLoggingRepository extends Mock implements LoggingRepository {}
 class MockAuthRepository extends Mock implements AuthRepository {}
 
 class _FakeLoggingNotifier extends LoggingNotifier {
-  _FakeLoggingNotifier(
-    AsyncValue<List<LogEntryModel>> initialState,
-  ) : super(MockLoggingRepository()) {
+  _FakeLoggingNotifier(AsyncValue<List<LogEntryModel>> initialState)
+    : super(MockLoggingRepository()) {
     state = initialState;
   }
 
   @override
-  Future<void> loadLogEntries({String? userId}) async {
+  Future<void> loadLogEntries({String? userId, bool force = false}) async {
     // Do nothing in tests to prevent state changes unless intended
   }
 }
 
 class _FakeAuthNotifier extends AuthNotifier {
-  _FakeAuthNotifier(AuthState initialState) : super(MockAuthRepository()) {
+  _FakeAuthNotifier._(MockAuthRepository repo, Ref ref, AuthState initialState)
+    : super(repo, ref) {
     state = initialState;
   }
 
-  @override
-  Future<void> _checkAuthStatus() async {
-    // Do nothing in tests
+  factory _FakeAuthNotifier(Ref ref, AuthState initialState) {
+    final repo = MockAuthRepository();
+    when(() => repo.isAuthenticated()).thenAnswer((_) async => false);
+    return _FakeAuthNotifier._(repo, ref, initialState);
   }
 }
 
@@ -59,15 +60,11 @@ void main() {
       initialLocation: '/',
       observers: navigatorObserver != null ? [navigatorObserver] : [],
       routes: [
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const LoggingScreen(),
-        ),
+        GoRoute(path: '/', builder: (context, state) => const LoggingScreen()),
         GoRoute(
           path: '/logging/create',
-          builder: (context, state) => const Scaffold(
-            body: Text('Target: /logging/create'),
-          ),
+          builder: (context, state) =>
+              const Scaffold(body: Text('Target: /logging/create')),
         ),
         GoRoute(
           path: '/logging/detail/:id',
@@ -83,13 +80,9 @@ void main() {
         loggingProvider.overrideWith(
           (ref) => _FakeLoggingNotifier(loggingState),
         ),
-        authProvider.overrideWith(
-          (ref) => _FakeAuthNotifier(authState),
-        ),
+        authProvider.overrideWith((ref) => _FakeAuthNotifier(ref, authState)),
       ],
-      child: MaterialApp.router(
-        routerConfig: router,
-      ),
+      child: MaterialApp.router(routerConfig: router),
     );
   }
 
@@ -110,8 +103,9 @@ void main() {
   );
 
   group('LoggingScreen Widget Tests', () {
-    testWidgets('Empty state is shown when there are no log entries',
-        (tester) async {
+    testWidgets('Empty state is shown when there are no log entries', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildScreen(
           loggingState: const AsyncValue.data([]),
@@ -124,17 +118,13 @@ void main() {
         find.text('Start logging your daily mood and habits'),
         findsOneWidget,
       );
-      expect(find.byIcon(FontAwesomeIcons.book), findsOneWidget);
+      expect(find.byIcon(FontAwesomeIcons.book.data), findsOneWidget);
     });
 
     testWidgets('Entry cards are rendered when entries exist', (tester) async {
       final entries = [
         testEntry,
-        testEntry.copyWith(
-          id: 'entry-2',
-          date: DateTime(2026, 4, 23),
-          mood: 3,
-        ),
+        testEntry.copyWith(id: 'entry-2', date: DateTime(2026, 4, 23), mood: 3),
       ];
 
       await tester.pumpWidget(
@@ -148,14 +138,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListTile), findsNWidgets(2));
-      expect(find.text('April 24, 2026'), findsOneWidget);
-      expect(find.text('April 23, 2026'), findsOneWidget);
+      expect(find.text('Apr 24, 2026'), findsOneWidget);
+      expect(find.text('Apr 23, 2026'), findsOneWidget);
       expect(find.text('Mood: 4/5'), findsOneWidget);
       expect(find.text('Mood: 3/5'), findsOneWidget);
     });
 
-    testWidgets('Loading spinner shown while entries are loading',
-        (tester) async {
+    testWidgets('Loading spinner shown while entries are loading', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildScreen(
           loggingState: const AsyncValue.loading(),
@@ -166,8 +157,9 @@ void main() {
       expect(find.byType(ShimmerLoading), findsOneWidget);
     });
 
-    testWidgets('Tapping the FAB navigates to CreateEntryScreen',
-        (tester) async {
+    testWidgets('Tapping the FAB navigates to CreateEntryScreen', (
+      tester,
+    ) async {
       final observer = MockNavigatorObserver();
       await tester.pumpWidget(
         buildScreen(
@@ -186,8 +178,9 @@ void main() {
       expect(find.text('Target: /logging/create'), findsOneWidget);
     });
 
-    testWidgets('Tapping an entry card navigates to EntryDetailScreen',
-        (tester) async {
+    testWidgets('Tapping an entry card navigates to EntryDetailScreen', (
+      tester,
+    ) async {
       final observer = MockNavigatorObserver();
       await tester.pumpWidget(
         buildScreen(

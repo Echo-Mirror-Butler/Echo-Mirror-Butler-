@@ -31,6 +31,12 @@ class FakePostgrestBuilder extends Fake
     String? referencedTable,
   }) => this;
   @override
+  PostgrestTransformBuilder<PostgrestList> range(
+    int from,
+    int to, {
+    String? referencedTable,
+  }) => this;
+  @override
   PostgrestTransformBuilder<PostgrestList> select([String columns = '*']) =>
       this;
   @override
@@ -156,6 +162,31 @@ void main() {
       expect(() => repository.createLogEntry(entry), throwsA(isA<Exception>()));
     });
 
+    test(
+      'createLogEntry throws MoodLogRateLimitException when the '
+      'enforce_mood_log_rate_limit trigger raises PT429',
+      () async {
+        final entry = buildEntry();
+        when(() => mockSupabase.from('log_entries')).thenThrow(
+          PostgrestException(
+            message: '{"error":"rate_limit_exceeded","retry_after_seconds":42}',
+            code: 'PT429',
+          ),
+        );
+
+        await expectLater(
+          () => repository.createLogEntry(entry),
+          throwsA(
+            isA<MoodLogRateLimitException>().having(
+              (e) => e.retryAfterSeconds,
+              'retryAfterSeconds',
+              42,
+            ),
+          ),
+        );
+      },
+    );
+
     test('updateLogEntry returns updated model on success', () async {
       final entry = buildEntry().copyWith(mood: 5, notes: 'updated');
       final fakeBuilder = FakePostgrestBuilder(buildLogJson(mood: 5));
@@ -221,6 +252,28 @@ void main() {
 
       // Verification of filters would require capturing calls on Fake,
       // but the main goal here is keeping CI green with stable builder fakes.
+    });
+
+    test('getLogEntriesPage returns a bounded page of entries', () async {
+      final rows = List.generate(
+        30,
+        (i) => buildLogJson(id: 'log-$i', date: now.subtract(Duration(days: i))),
+      );
+      final fakeBuilder = FakePostgrestBuilder(rows);
+
+      when(
+        () => mockSupabase.from('log_entries'),
+      ).thenAnswer((_) => mockQueryBuilder);
+      when(() => mockQueryBuilder.select()).thenAnswer((_) => fakeBuilder);
+
+      final page = await repository.getLogEntriesPage(
+        userId,
+        offset: 0,
+        limit: 30,
+      );
+
+      expect(page.length, 30);
+      expect(page.first.id, 'log-0');
     });
   });
 }

@@ -97,15 +97,15 @@ Widget _buildScreenWithRouter({MockAuthRepository? authRepo}) {
   final router = GoRouter(
     initialLocation: '/settings',
     routes: [
-      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+      GoRoute(path: '/settings', builder: (_, gs) => const SettingsScreen()),
       GoRoute(
         path: '/settings/change-password',
-        builder: (_, __) =>
+        builder: (_, gs) =>
             const Scaffold(body: Text('Change Password Screen')),
       ),
       GoRoute(
         path: '/gift/:userId',
-        builder: (_, __) => const Scaffold(body: Text('Gift Screen')),
+        builder: (_, gs) => const Scaffold(body: Text('Gift Screen')),
       ),
     ],
   );
@@ -126,8 +126,18 @@ Widget _buildScreenWithRouter({MockAuthRepository? authRepo}) {
 // ---------------------------------------------------------------------------
 
 void main() {
-  setUpAll(() {
-    SharedPreferences.setMockInitialValues({});
+  // Per-test, not setUpAll: ThemeNotifier.setThemeMode() persists the chosen
+  // mode to SharedPreferences under 'theme_mode', so a store shared across the
+  // whole file lets the dark-mode toggle test below leak its result into every
+  // test that runs after it. Seeding a fresh store per test also pins the
+  // starting mode to light — matching _buildScreen()'s initialThemeMode — so
+  // both Appearance switches deterministically start off regardless of the
+  // order the tests run in. (Without the seed, ThemeNotifier keeps its
+  // ThemeMode.system default and the System Theme switch starts *on*.)
+  setUp(() {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'theme_mode': ThemeMode.light.index,
+    });
   });
 
   testWidgets('renders all section headers and key setting tiles', (
@@ -137,13 +147,19 @@ void main() {
     await tester.pumpAndSettle();
 
     // Section headers
-    expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('Appearance & Feedback'), findsOneWidget);
     expect(find.text('Reminders'), findsOneWidget);
-    expect(find.text('Account'), findsOneWidget);
 
     // Key tiles
     expect(find.text('Dark Mode'), findsOneWidget);
     expect(find.text('System Theme'), findsOneWidget);
+
+    // The Account section is further down the ListView than the default
+    // test viewport, so its sliver children aren't mounted until scrolled
+    // into view.
+    await tester.scrollUntilVisible(find.text('Account'), 300);
+    expect(find.text('Account'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Change Password'), 300);
     expect(find.text('Change Password'), findsOneWidget);
   });
 
@@ -175,7 +191,7 @@ void main() {
 
     expect(find.text('System Theme'), findsOneWidget);
 
-    // There are two switches in the Appearance card — System Theme is second
+    // There are two switches in the Appearance card â€” System Theme is second
     final switches = tester.widgetList<Switch>(find.byType(Switch)).toList();
     expect(switches.length, greaterThanOrEqualTo(2));
 
@@ -190,7 +206,7 @@ void main() {
       await tester.pumpWidget(_buildScreenWithRouter());
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Change Password'));
+      await tester.scrollUntilVisible(find.text('Change Password'), 300);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Change Password'), warnIfMissed: false);
       await tester.pumpAndSettle();
@@ -218,6 +234,7 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('ECHO Balance'), 300);
     expect(find.text('ECHO Balance'), findsOneWidget);
     expect(find.textContaining('75'), findsOneWidget);
   });
@@ -226,6 +243,7 @@ void main() {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('tester@example.com'), 300);
     expect(find.text('tester@example.com'), findsOneWidget);
   });
 }

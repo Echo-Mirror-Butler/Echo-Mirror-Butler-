@@ -1,3 +1,4 @@
+@Tags(['integration'])
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 import 'package:http/http.dart' as http;
@@ -52,7 +53,7 @@ void main() {
     });
 
     test(
-      'Step 1 — createWallet: generate keypair and fund via Friendbot',
+      'Step 1 â€” createWallet: generate keypair and fund via Friendbot',
       () async {
         userKeypair = KeyPair.random();
         expect(userKeypair.accountId, startsWith('G'));
@@ -88,11 +89,11 @@ void main() {
     );
 
     test(
-      'Step 2 — establishTrustline: add ECHO trustline to user wallet',
+      'Step 2 â€” establishTrustline: add ECHO trustline to user wallet',
       () async {
         final account = await sdk.accounts.account(userKeypair.accountId);
 
-        // ECHO is 4 characters → must use AssetTypeCreditAlphaNum4
+        // ECHO is 4 characters â†’ must use AssetTypeCreditAlphaNum4
         final echoAsset = AssetTypeCreditAlphaNum4(
           assetCode,
           issuerKeypair.accountId,
@@ -114,7 +115,7 @@ void main() {
       },
     );
 
-    test('Step 3 — verify trustline appears on the account', () async {
+    test('Step 3 â€” verify trustline appears on the account', () async {
       final account = await sdk.accounts.account(userKeypair.accountId);
 
       final echoBalances = account.balances.where(
@@ -133,7 +134,7 @@ void main() {
     });
 
     test(
-      'Step 4 — getEchoBalance: should return 0.0 after trustline setup',
+      'Step 4 â€” getEchoBalance: should return 0.0 after trustline setup',
       () async {
         final account = await sdk.accounts.account(userKeypair.accountId);
 
@@ -154,9 +155,9 @@ void main() {
     );
 
     test(
-      'Step 5 — confirm AssetTypeCreditAlphaNum4 is used (not AlphaNum12)',
+      'Step 5 â€” confirm AssetTypeCreditAlphaNum4 is used (not AlphaNum12)',
       () {
-        // ECHO has 4 characters — must be AlphaNum4
+        // ECHO has 4 characters â€” must be AlphaNum4
         expect(assetCode.length, lessThanOrEqualTo(4));
 
         final asset = AssetTypeCreditAlphaNum4(

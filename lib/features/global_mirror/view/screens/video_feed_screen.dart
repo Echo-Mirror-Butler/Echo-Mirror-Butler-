@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/widgets/no_connection_widget.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../widgets/video_recorder_sheet.dart';
 
@@ -76,81 +77,86 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
     final hasFeedError = state.error != null && state.error!.isNotEmpty;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Video feed
-          isInitialFeedLoading
-              ? const _VideoFeedLoadingState()
-              : hasFeedError && videos.isEmpty
-              ? _buildErrorState(state.error!)
-              : videos.isEmpty
-              ? _buildEmptyState()
-              : PageView.builder(
-                  controller: _pageController,
-                  scrollDirection: Axis.vertical,
-                  itemCount: videos.length,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
+      body: RefreshIndicator(
+        onRefresh: _refreshVideos,
+        child: Stack(
+          children: [
+            // Video feed
+            isInitialFeedLoading
+                ? const _VideoFeedLoadingState()
+                : hasFeedError && videos.isEmpty
+                ? _buildErrorState(state.error!)
+                : videos.isEmpty
+                ? _buildEmptyState()
+                : PageView.builder(
+                    controller: _pageController,
+                    scrollDirection: Axis.vertical,
+                    itemCount: videos.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
 
-                    // Load more when near end
-                    if (index >= videos.length - 2) {
-                      ref.read(globalMirrorProvider.notifier).loadMoreVideos();
-                    }
-                  },
-                  itemBuilder: (context, index) {
-                    final video = videos[index];
-                    return VideoReelItem(
-                      video: video,
-                      isActive: index == _currentPage,
-                    );
-                  },
-                ),
-
-          // Record button
-          Positioned(
-            bottom: 100,
-            right: 16,
-            child: FadeInRight(
-              child: FloatingActionButton.extended(
-                onPressed: _showRecorder,
-                backgroundColor: AppTheme.primaryColor,
-                icon: const FaIcon(FontAwesomeIcons.video, color: Colors.white),
-                label: Text(
-                  'Share',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+                      // Load more when near end
+                      if (index >= videos.length - 2) {
+                        ref
+                            .read(globalMirrorProvider.notifier)
+                            .loadMoreVideos();
+                      }
+                    },
+                    itemBuilder: (context, index) {
+                      final video = videos[index];
+                      return VideoReelItem(
+                        video: video,
+                        isActive: index == _currentPage,
+                      );
+                    },
                   ),
-                ),
-              ),
-            ),
-          ),
 
-          // Page indicator
-          if (videos.isNotEmpty)
+            // Record button
             Positioned(
+              bottom: 100,
               right: 16,
-              top: MediaQuery.of(context).size.height / 2 - 50,
-              child: Column(
-                children: List.generate(
-                  videos.length.clamp(0, 5),
-                  (index) => Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    width: 8,
-                    height: index == _currentPage ? 24 : 8,
-                    decoration: BoxDecoration(
-                      color: index == _currentPage
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(4),
+              child: FadeInRight(
+                child: FloatingActionButton.extended(
+                  onPressed: _showRecorder,
+                  backgroundColor: AppTheme.primaryColor,
+                  icon: Icon(FontAwesomeIcons.video.data, color: Colors.white),
+                  label: Text(
+                    'Share',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
             ),
-        ],
+
+            // Page indicator
+            if (videos.isNotEmpty)
+              Positioned(
+                right: 16,
+                top: MediaQuery.of(context).size.height / 2 - 50,
+                child: Column(
+                  children: List.generate(
+                    videos.length.clamp(0, 5),
+                    (index) => Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      width: 8,
+                      height: index == _currentPage ? 24 : 8,
+                      decoration: BoxDecoration(
+                        color: index == _currentPage
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -162,7 +168,11 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FaIcon(FontAwesomeIcons.video, size: 64, color: Colors.grey[400]),
+            Icon(
+              FontAwesomeIcons.video.data,
+              size: 64,
+              color: Colors.grey[400],
+            ),
             const SizedBox(height: 24),
             Text(
               'No Videos Yet',
@@ -191,7 +201,7 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              icon: const FaIcon(FontAwesomeIcons.video),
+              icon: Icon(FontAwesomeIcons.video.data),
               label: Text(
                 'Record Video',
                 style: GoogleFonts.poppins(
@@ -209,63 +219,17 @@ class _VideoFeedScreenState extends ConsumerState<VideoFeedScreen>
   Widget _buildErrorState(String errorMessage) {
     return Center(
       key: const Key('video-feed-error-state'),
-      child: FadeIn(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FaIcon(
-                FontAwesomeIcons.triangleExclamation,
-                size: 56,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Could not load videos',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                errorMessage,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => ref
-                    .read(globalMirrorProvider.notifier)
-                    .loadVideoFeed(refresh: true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                icon: const FaIcon(FontAwesomeIcons.rotateRight, size: 16),
-                label: Text(
-                  'Try Again',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: NoConnectionWidget(
+        message: errorMessage,
+        onRetry: () => ref
+            .read(globalMirrorProvider.notifier)
+            .loadVideoFeed(refresh: true),
       ),
     );
+  }
+
+  Future<void> _refreshVideos() async {
+    await ref.read(globalMirrorProvider.notifier).loadVideoFeed(refresh: true);
   }
 }
 
@@ -511,8 +475,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const FaIcon(
-                                FontAwesomeIcons.triangleExclamation,
+                              Icon(
+                                FontAwesomeIcons.triangleExclamation.data,
                                 color: Colors.white70,
                                 size: 48,
                               ),
@@ -632,8 +596,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
                     color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
-                  child: const FaIcon(
-                    FontAwesomeIcons.play,
+                  child: Icon(
+                    FontAwesomeIcons.play.data,
                     color: Colors.white,
                     size: 40,
                   ),
@@ -658,8 +622,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(
-                      FontAwesomeIcons.image,
+                    Icon(
+                      FontAwesomeIcons.image.data,
                       color: Colors.white,
                       size: 14,
                     ),
@@ -721,8 +685,8 @@ class _VideoReelItemState extends State<VideoReelItem> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const FaIcon(
-            FontAwesomeIcons.circleExclamation,
+          Icon(
+            FontAwesomeIcons.circleExclamation.data,
             color: Colors.white70,
             size: 48,
           ),
@@ -739,7 +703,7 @@ class _VideoReelItemState extends State<VideoReelItem> {
                 _initializeVideo();
               });
             },
-            icon: const FaIcon(FontAwesomeIcons.rotateRight, size: 14),
+            icon: Icon(FontAwesomeIcons.rotateRight.data, size: 14),
             label: const Text('Retry'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,

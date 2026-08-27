@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../viewmodel/providers/streak_freeze_provider.dart';
 
-/// Card showing the user's current consecutive mood logging streak.
 class MoodStreakCard extends StatelessWidget {
-  const MoodStreakCard({super.key, required this.streak});
+  const MoodStreakCard({
+    super.key,
+    required this.streak,
+    this.showFreezeButton = false,
+    this.onFreezeTap,
+  });
 
   final int streak;
+  final bool showFreezeButton;
+  final VoidCallback? onFreezeTap;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +24,7 @@ class MoodStreakCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
         elevation: 3,
-        shadowColor: Colors.orange.withValues(alpha: 0.25),
+        shadowColor: Colors.orange.withOpacity(0.25),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           decoration: BoxDecoration(
@@ -25,8 +33,8 @@ class MoodStreakCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.orange.withValues(alpha: 0.15),
-                AppTheme.accentColor.withValues(alpha: 0.08),
+                Colors.orange.withOpacity(0.15),
+                AppTheme.accentColor.withOpacity(0.08),
               ],
             ),
           ),
@@ -36,7 +44,7 @@ class MoodStreakCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.2),
+                  color: Colors.orange.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -63,11 +71,28 @@ class MoodStreakCard extends StatelessWidget {
                       _subtitle,
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.7,
-                        ),
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
+                    if (showFreezeButton && onFreezeTap != null) ...[
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: onFreezeTap,
+                          icon: const Text('\u2744\uFE0F', style: TextStyle(fontSize: 14)),
+                          label: const Text('Protect my streak (5 ECHO)'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primaryColor,
+                            side: BorderSide(color: AppTheme.primaryColor),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -82,5 +107,45 @@ class MoodStreakCard extends StatelessWidget {
     if (streak >= 3) return 'Keep it up!';
     if (streak == 0) return 'Start your streak today!';
     return 'Great start, keep going!';
+  }
+}
+
+class MoodStreakFreezeBadge extends ConsumerWidget {
+  const MoodStreakFreezeBadge({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final freezeState = ref.watch(streakFreezeProvider);
+
+    if (!freezeState.hasActiveFreeze) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('\u2744\uFE0F', style: TextStyle(fontSize: 14)),
+            const SizedBox(width: 8),
+            Text(
+              freezeState.freezeDate != null
+                  ? 'Streak protected for ${freezeState.freezeDate!}'
+                  : 'Streak protected',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
