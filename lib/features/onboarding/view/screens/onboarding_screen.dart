@@ -1,17 +1,37 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// ignore: unused_import
 import 'package:lottie/lottie.dart';
 import '../../../../core/themes/app_theme.dart';
+// ignore: unused_import
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/animations/lottie_animations.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/notification_permission_service.dart';
 import '../../viewmodel/providers/onboarding_provider.dart';
 
-/// Onboarding screen with PageView
+// ─── Step indices ────────────────────────────────────────────────────────────
+// 0 - Welcome + habit presets
+// 1 - Feature carousel
+// 2 - Wallet explainer (custodial Stellar wallet + ECHO)
+// 3 - Reminder time picker
+// 4 - Intro pages (3 slides, handled inside _IntroPages)
+
+const _kHabitPresets = [
+  'Morning meditation',
+  'Exercise',
+  'Journaling',
+  'Reading',
+  'Hydration',
+  'Gratitude',
+  'Healthy eating',
+  'Sleep by 10pm',
+];
+
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -19,17 +39,43 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+class OnboardingPageData {
+  const OnboardingPageData({
+    required this.title,
+    this.subtitle,
+    required this.description,
+    required this.icon,
+    required this.imageUrl,
+    required this.lottieAsset,
+    required this.gradient,
+  });
+
+  final String title;
+  final String? subtitle;
+  final String description;
+  final IconData icon;
+  final String imageUrl;
+  final String lottieAsset;
+  final List<Color> gradient;
+}
+
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  // Step 0 — habit presets
+  final Set<String> _selectedHabits = {};
+
+  // Data for the "Intro pages" step (see step index comment above) — not
+  // yet wired into a widget, kept here for whoever builds _IntroPages next.
+  // ignore: unused_field
   final List<OnboardingPageData> _pages = [
     OnboardingPageData(
       title: 'Meet EchoMirror',
       subtitle: 'Your Future Self as a Butler',
       description:
           'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
-      icon: FontAwesomeIcons.userTie,
+      icon: FontAwesomeIcons.userTie.data,
       imageUrl:
           'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
       lottieAsset: LottieAnimations.mirrorReflection,
@@ -39,7 +85,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Log Daily Moods & Habits',
       description:
           'Capture your daily reflections, track your mood, and build meaningful habits. Your journey starts with a single entry.',
-      icon: FontAwesomeIcons.book,
+      icon: FontAwesomeIcons.book.data,
       imageUrl:
           'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
       lottieAsset: LottieAnimations.habitCheck,
@@ -49,7 +95,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       title: 'Receive Predictions & Letters',
       description:
           'Get AI-powered insights about your patterns, predictions for your future, and motivational letters from your future self.',
-      icon: FontAwesomeIcons.envelopeOpen,
+      icon: FontAwesomeIcons.envelopeOpen.data,
       imageUrl:
           'https://images.unsplash.com/photo-1516534775068-ba3e7458af70?w=800&q=80',
       lottieAsset: LottieAnimations.envelopeOpen,
@@ -57,69 +103,118 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ),
   ];
 
+  // Step 2 — reminder time
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
+  bool _permissionDenied = false;
+  bool _permissionPermanentlyDenied = false;
+
+  static const int _totalSteps = 4; // welcome, features, wallet, reminder
+
+  Future<void> _completeOnboarding() async {
+    try {
+      await saveHabitPresets(_selectedHabits.toList());
+      await markOnboardingCompleted();
+      ref.invalidate(onboardingCompletedProvider);
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (mounted) context.go('/login');
+    } catch (e) {
+      debugPrint('[OnboardingScreen] Error: $e');
+      if (mounted) context.go('/login');
+    }
+  }
+
+  Future<void> _requestReminderPermission() async {
+    final permSvc = NotificationPermissionService();
+    final status = await permSvc.checkPermissionStatus();
+
+    if (status == NotificationPermissionStatus.permanentlyDenied ||
+        status == NotificationPermissionStatus.restricted) {
+      // System dialog won't show — send user to OS App Settings directly.
+      await permSvc.openOsAppSettings();
+      // After returning from settings, re-check in case they enabled it.
+      final updated = await permSvc.checkPermissionStatus();
+      if (updated == NotificationPermissionStatus.granted) {
+        final svc = NotificationService();
+        await svc.initialize();
+        await svc.scheduleDailyReminder(
+          hour: _reminderTime.hour,
+          minute: _reminderTime.minute,
+        );
+        setState(() {
+          _permissionDenied = false;
+          _permissionPermanentlyDenied = false;
+        });
+      } else {
+        setState(() {
+          _permissionDenied = false;
+          _permissionPermanentlyDenied = true;
+        });
+      }
+      return;
+    }
+
+    final svc = NotificationService();
+    await svc.initialize();
+    final granted = await svc.requestPermissions();
+    if (granted) {
+      await svc.scheduleDailyReminder(
+        hour: _reminderTime.hour,
+        minute: _reminderTime.minute,
+      );
+      setState(() {
+        _permissionDenied = false;
+        _permissionPermanentlyDenied = false;
+      });
+    } else {
+      // Check whether it is now permanently denied (user tapped "Don't ask again").
+      final updated = await permSvc.checkPermissionStatus();
+      setState(() {
+        _permissionPermanentlyDenied =
+            updated == NotificationPermissionStatus.permanentlyDenied;
+        _permissionDenied = !_permissionPermanentlyDenied;
+      });
+    }
+  }
+
+  void _next() {
+    if (_currentPage < _totalSteps - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _completeOnboarding();
+    }
+  }
+
+  void _previous() {
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  void _onPageChanged(int index) {
-    setState(() {
-      _currentPage = index;
-    });
-  }
-
-  Future<void> _completeOnboarding() async {
-    try {
-      // Mark onboarding as completed
-      await markOnboardingCompleted();
-
-      // Invalidate the provider to refresh the router's redirect logic
-      ref.invalidate(onboardingCompletedProvider);
-
-      // Wait a bit longer to ensure SharedPreferences write completes
-      // and the provider state is refreshed
-      await Future.delayed(const Duration(milliseconds: 200));
-
-      if (mounted) {
-        // Navigate to login - the router redirect should now allow this
-        context.go('/login');
-      }
-    } catch (e, stackTrace) {
-      debugPrint('[OnboardingScreen] Error completing onboarding: $e');
-      debugPrint('[OnboardingScreen] Stack trace: $stackTrace');
-      // Fallback: try to navigate anyway after marking as completed
-      if (mounted) {
-        try {
-          await markOnboardingCompleted();
-          await Future.delayed(const Duration(milliseconds: 100));
-          context.go('/login');
-        } catch (e2) {
-          debugPrint('[OnboardingScreen] Fallback navigation also failed: $e2');
-        }
-      }
-    }
-  }
-
-  void _skipOnboarding() {
-    _completeOnboarding();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isLastPage = _currentPage == _pages.length - 1;
+    final isLast = _currentPage == _totalSteps - 1;
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            // Skip button
+            // Skip
             Positioned(
               top: 16,
               right: 16,
               child: TextButton(
-                onPressed: _skipOnboarding,
+                onPressed: _completeOnboarding,
                 child: Text(
                   'Skip',
                   style: GoogleFonts.poppins(
@@ -131,36 +226,46 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
 
-            // PageView content
-            PageView.builder(
+            PageView(
               controller: _pageController,
-              onPageChanged: _onPageChanged,
-              itemCount: _pages.length,
-              itemBuilder: (context, index) {
-                return _OnboardingPage(
-                  data: _pages[index],
-                  isLastPage: index == _pages.length - 1,
-                  onGetStarted: _completeOnboarding,
-                );
-              },
+              onPageChanged: (i) => setState(() => _currentPage = i),
+              children: [
+                _WelcomeStep(
+                  selectedHabits: _selectedHabits,
+                  onToggle: (h) => setState(() {
+                    if (_selectedHabits.contains(h)) {
+                      _selectedHabits.remove(h);
+                    } else if (_selectedHabits.length < 3) {
+                      _selectedHabits.add(h);
+                    }
+                  }),
+                ),
+                _FeatureCarouselStep(onSkip: _next),
+                const _WalletIntroStep(),
+                _ReminderStep(
+                  reminderTime: _reminderTime,
+                  permissionDenied: _permissionDenied,
+                  permissionPermanentlyDenied: _permissionPermanentlyDenied,
+                  onTimeChanged: (t) => setState(() => _reminderTime = t),
+                  onRequestPermission: _requestReminderPermission,
+                ),
+              ],
             ),
 
-            // Page indicator and navigation buttons
+            // Bottom nav
             Positioned(
               bottom: 40,
               left: 0,
               right: 0,
               child: Column(
                 children: [
-                  // Page indicator
                   SmoothPageIndicator(
                     controller: _pageController,
-                    count: _pages.length,
+                    count: _totalSteps,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.2,
-                      ),
+                      dotColor: theme.colorScheme.onSurface
+                          .withValues(alpha: 0.2),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,
@@ -168,46 +273,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Navigation buttons
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Previous button (hidden on first page)
                         if (_currentPage > 0)
                           TextButton(
-                            onPressed: () {
-                              _pageController.previousPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            },
+                            onPressed: _previous,
                             child: Text(
                               'Previous',
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface.withValues(
-                                  alpha: 0.7,
-                                ),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
                               ),
                             ),
                           )
                         else
                           const SizedBox(width: 80),
-
-                        // Next/Get Started button
                         ElevatedButton(
-                          onPressed: isLastPage
-                              ? _completeOnboarding
-                              : () {
-                                  _pageController.nextPage(
-                                    duration: const Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
-                                },
+                          onPressed: _next,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             foregroundColor: Colors.white,
@@ -224,7 +311,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                isLastPage ? 'Start Reflecting' : 'Next',
+                                isLast ? 'Start Reflecting' : 'Next',
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -232,9 +319,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               ),
                               const SizedBox(width: 8),
                               Icon(
-                                isLastPage
-                                    ? FontAwesomeIcons.arrowRight
-                                    : FontAwesomeIcons.chevronRight,
+                                isLast
+                                    ? FontAwesomeIcons.arrowRight.data
+                                    : FontAwesomeIcons.chevronRight.data,
                                 size: 16,
                               ),
                             ],
@@ -253,220 +340,853 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-/// Individual onboarding page widget
-class _OnboardingPage extends StatelessWidget {
-  final OnboardingPageData data;
-  final bool isLastPage;
-  final VoidCallback onGetStarted;
+// ─── Step 0: Welcome + Habit Presets ─────────────────────────────────────────
 
-  const _OnboardingPage({
-    required this.data,
-    required this.isLastPage,
-    required this.onGetStarted,
+class _WelcomeStep extends StatelessWidget {
+  final Set<String> selectedHabits;
+  final void Function(String) onToggle;
+
+  const _WelcomeStep({
+    required this.selectedHabits,
+    required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 80, 24, 120),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Spacer(flex: 2),
-
-          // Image with Lottie animation overlay
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // Background image
-              Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: data.gradient.first.withValues(alpha: 0.3),
-                      blurRadius: 30,
-                      spreadRadius: 10,
-                    ),
-                  ],
+          Center(
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
                 ),
-                child: ClipOval(
-                  child: data.imageUrl != null
-                      ? Image.network(
-                          data.imageUrl!,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: data.gradient,
-                                ),
-                              ),
-                              child: Center(
-                                child:
-                                    loadingProgress.expectedTotalBytes != null
-                                    ? ShimmerLoading(
-                                        width: 40,
-                                        height: 40,
-                                        baseColor: Colors.white24,
-                                        highlightColor: Colors.white70,
-                                      )
-                                    : const ShimmerLoading(
-                                        width: 40,
-                                        height: 40,
-                                        baseColor: Colors.white24,
-                                        highlightColor: Colors.white70,
-                                      ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            // Fallback to gradient if image fails
-                            return Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: data.gradient,
-                                ),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  data.icon,
-                                  size: 120,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: data.gradient,
-                            ),
-                          ),
-                        ),
-                ),
-              ),
-
-              // Gradient overlay for better Lottie visibility
-              Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.3),
-                      Colors.black.withValues(alpha: 0.2),
-                    ],
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 30,
+                    spreadRadius: 10,
                   ),
-                ),
+                ],
               ),
-
-              // Lottie animation overlay
-              if (data.lottieAsset != null)
-                SizedBox(
-                  width: 200,
-                  height: 200,
-                  child: Lottie.asset(
-                    data.lottieAsset!,
-                    fit: BoxFit.contain,
-                    repeat: true,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback to nothing if Lottie fails (image is still visible)
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ),
-            ],
+              child: Icon(
+                FontAwesomeIcons.userTie.data,
+                size: 80,
+                color: Colors.white,
+              ),
+            ),
           ),
-
-          const Spacer(flex: 2),
-
-          // Title
+          const SizedBox(height: 32),
           Text(
-            data.title,
+            'Meet EchoMirror',
             style: GoogleFonts.poppins(
               fontSize: 32,
               fontWeight: FontWeight.w700,
               color: theme.colorScheme.onSurface,
-              height: 1.2,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          if (data.subtitle != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              data.subtitle!,
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
-                height: 1.2,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-
-          const SizedBox(height: 24),
-
-          // Description
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              data.description,
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.normal,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                height: 1.6,
-              ),
-              textAlign: TextAlign.center,
             ),
           ),
-
-          const SizedBox(height: 80), // Add extra spacing before page indicator
-          const Spacer(flex: 2),
+          Text(
+            'Your Future Self as a Butler',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(height: 32),
+          Text(
+            'Pick 2–3 habits to track',
+            style: GoogleFonts.poppins(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'These will be pre-selected on your first log.',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: _kHabitPresets.map((habit) {
+              final selected = selectedHabits.contains(habit);
+              return GestureDetector(
+                onTap: () => onToggle(habit),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppTheme.primaryColor
+                        : theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: selected
+                          ? AppTheme.primaryColor
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                    ),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (selected) ...[
+                        Icon(
+                          FontAwesomeIcons.check.data,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        habit,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: selected
+                              ? Colors.white
+                              : theme.colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          if (selectedHabits.length >= 3)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                'Max 3 selected. Tap one to deselect.',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppTheme.accentColor,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-/// Data class for onboarding pages
-class OnboardingPageData {
-  final String title;
-  final String? subtitle;
-  final String description;
-  final IconData icon;
-  final String? imageUrl;
-  final String? lottieAsset;
-  final List<Color> gradient;
+// ─── Step 1: Feature Carousel ─────────────────────────────────────────────────
 
-  OnboardingPageData({
-    required this.title,
-    this.subtitle,
-    required this.description,
+class _FeatureCarouselStep extends StatefulWidget {
+  final VoidCallback onSkip;
+  const _FeatureCarouselStep({required this.onSkip});
+
+  @override
+  State<_FeatureCarouselStep> createState() => _FeatureCarouselStepState();
+}
+
+class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
+  final PageController _cardController = PageController(viewportFraction: 0.85);
+  int _cardIndex = 0;
+
+  static final _cards = [
+    _FeatureCard(
+      icon: FontAwesomeIcons.faceSmile.data,
+      title: 'Log your mood daily',
+      description: 'Takes just 2 minutes — capture how you feel and what matters.',
+      gradient: [Color(0xFF6D5CE8), Color(0xFF8B5CF6)],
+    ),
+    _FeatureCard(
+      icon: FontAwesomeIcons.star.data,
+      title: 'Earn ECHO tokens on Stellar',
+      description: 'Stay consistent and earn crypto rewards for your growth journey.',
+      gradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+    ),
+    _FeatureCard(
+      icon: FontAwesomeIcons.lightbulb.data,
+      title: 'Unlock AI insights',
+      description: 'After just 3 logs, your future self starts sending insights.',
+      gradient: [Color(0xFFEC4899), Color(0xFF6D5CE8)],
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _cardController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 80, 0, 120),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'What you\'ll get',
+              style: GoogleFonts.poppins(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              'Swipe to explore the key features',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: 280,
+            child: PageView.builder(
+              controller: _cardController,
+              itemCount: _cards.length,
+              onPageChanged: (i) => setState(() => _cardIndex = i),
+              itemBuilder: (context, i) {
+                final card = _cards[i];
+                return AnimatedScale(
+                  scale: _cardIndex == i ? 1.0 : 0.92,
+                  duration: const Duration(milliseconds: 200),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: card.gradient,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: card.gradient.first.withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              card.icon,
+                              size: 32,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            card.title,
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            card.description,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.85),
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Card dots
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_cards.length, (i) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: _cardIndex == i ? 20 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _cardIndex == i
+                      ? AppTheme.primaryColor
+                      : AppTheme.primaryColor.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureCard {
+  final IconData icon;
+  final String title;
+  final String description;
+  final List<Color> gradient;
+  const _FeatureCard({
     required this.icon,
-    this.imageUrl,
-    this.lottieAsset,
+    required this.title,
+    required this.description,
     required this.gradient,
   });
+}
+
+// ─── Step 2: Wallet Explainer ─────────────────────────────────────────────────
+//
+// Every new user gets a Stellar wallet created automatically and custodially
+// (see WalletNotifier.createWallet / the create-stellar-wallet edge function).
+// This step tells them that plainly, in plain language, before they can ever
+// see an ECHO balance elsewhere in the app.
+
+class _WalletIntroStep extends StatelessWidget {
+  const _WalletIntroStep();
+
+  void _showLearnMore(BuildContext context) {
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Your ECHO wallet, in detail',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _LearnMoreSection(
+                    icon: FontAwesomeIcons.wallet.data,
+                    title: 'It\'s a real Stellar wallet',
+                    body:
+                        'When you created your account, EchoMirror generated a '
+                        'real wallet for you on the Stellar blockchain. It has '
+                        'a public address like any other crypto wallet.',
+                  ),
+                  _LearnMoreSection(
+                    icon: FontAwesomeIcons.coins.data,
+                    title: 'ECHO is a real token',
+                    body:
+                        'The ECHO you earn by logging your mood and habits '
+                        'isn\'t a points system — it\'s an actual token on '
+                        'Stellar. You can send it to other users as a gift.',
+                  ),
+                  _LearnMoreSection(
+                    icon: FontAwesomeIcons.shieldHalved.data,
+                    title: 'EchoMirror holds the keys',
+                    body:
+                        'Your wallet is custodial: EchoMirror\'s servers '
+                        'generate and store the private key for you, so you '
+                        'don\'t manage a seed phrase yourself. That also means '
+                        'EchoMirror — not you alone — controls access to the '
+                        'funds, similar to how a bank holds your money rather '
+                        'than you holding the cash yourself.',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You can find your wallet address and balance anytime from '
+                    'My Wallet.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 80, 24, 120),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [AppTheme.secondaryColor, AppTheme.accentColor],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                  blurRadius: 24,
+                  spreadRadius: 8,
+                ),
+              ],
+            ),
+            child: Icon(
+              FontAwesomeIcons.wallet.data,
+              size: 56,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'You have a Stellar wallet',
+            style: GoogleFonts.poppins(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'EchoMirror automatically created a real Stellar wallet for you. '
+            'ECHO — the token you earn by logging and can gift to others — '
+            'lives in it.',
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              height: 1.6,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.primaryColor.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  FontAwesomeIcons.circleInfo.data,
+                  color: AppTheme.primaryColor,
+                  size: 16,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'It\'s custodial — EchoMirror holds the keys on your '
+                    'behalf, so you don\'t manage a seed phrase yourself.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          TextButton(
+            onPressed: () => _showLearnMore(context),
+            child: Text(
+              'Learn more',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LearnMoreSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _LearnMoreSection({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 16, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Step 3: Reminder Time Picker ────────────────────────────────────────────
+
+class _ReminderStep extends StatelessWidget {
+  final TimeOfDay reminderTime;
+  final bool permissionDenied;
+  final bool permissionPermanentlyDenied;
+  final void Function(TimeOfDay) onTimeChanged;
+  final VoidCallback onRequestPermission;
+
+  const _ReminderStep({
+    required this.reminderTime,
+    required this.permissionDenied,
+    required this.permissionPermanentlyDenied,
+    required this.onTimeChanged,
+    required this.onRequestPermission,
+  });
+
+  String _formatTime(TimeOfDay t) {
+    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+    final minute = t.minute.toString().padLeft(2, '0');
+    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 80, 24, 120),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [AppTheme.accentColor, AppTheme.primaryColor],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  blurRadius: 24,
+                  spreadRadius: 8,
+                ),
+              ],
+            ),
+            child: Icon(
+              FontAwesomeIcons.bell.data,
+              size: 48,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 28),
+          Text(
+            'Set your daily reminder',
+            style: GoogleFonts.poppins(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We\'ll nudge you to log your mood at this time every day.',
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 36),
+          // Time display + picker button
+          GestureDetector(
+            onTap: () async {
+              final picked = await showTimePicker(
+                context: context,
+                initialTime: reminderTime,
+                builder: (context, child) => Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: Theme.of(context).colorScheme.copyWith(
+                          primary: AppTheme.primaryColor,
+                        ),
+                  ),
+                  child: child!,
+                ),
+              );
+              if (picked != null) onTimeChanged(picked);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    FontAwesomeIcons.clock.data,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    _formatTime(reminderTime),
+                    style: GoogleFonts.poppins(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    FontAwesomeIcons.penToSquare.data,
+                    color: AppTheme.primaryColor,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          // Permission button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onRequestPermission,
+              icon: Icon(
+                permissionPermanentlyDenied
+                    ? FontAwesomeIcons.arrowUpRightFromSquare.data
+                    : FontAwesomeIcons.bell.data,
+                size: 16,
+              ),
+              label: Text(
+                permissionPermanentlyDenied
+                    ? 'Open Settings to Enable'
+                    : 'Enable Reminders',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+          ),
+          // ── Denied (soft) ──────────────────────────────────────────────
+          if (permissionDenied && !permissionPermanentlyDenied) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.accentColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.circleInfo.data,
+                    color: AppTheme.accentColor,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'You can enable reminders later in Settings.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppTheme.accentColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          // ── Permanently denied ─────────────────────────────────────────
+          if (permissionPermanentlyDenied) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.red.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    FontAwesomeIcons.bellSlash.data,
+                    color: Colors.red,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Notification permission was denied. Tap "Open Settings to Enable" above to allow notifications for EchoMirror in your device settings.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.red.shade700,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
