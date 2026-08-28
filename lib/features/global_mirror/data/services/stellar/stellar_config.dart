@@ -14,7 +14,10 @@ class StellarConfig {
   /// Friendbot URL â€” funds new testnet accounts with XLM
   static const String friendbotUrl = 'https://friendbot.stellar.org';
 
-  /// Issuer public key â€” set via environment variable at runtime
+  /// Whether the current configuration points to testnet
+  static bool get isTestnet => horizonUrl.contains('testnet');
+
+  /// Issuer public key — set via environment variable at runtime
   /// In production, load from a secrets manager, never hardcode
   static const String issuerPublicKey = String.fromEnvironment(
     'STELLAR_ISSUER_PUBLIC',

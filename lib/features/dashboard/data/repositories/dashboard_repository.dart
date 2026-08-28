@@ -1,6 +1,7 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/services/field_encryption_service.dart';
 import '../models/insight_model.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 import '../../../logging/data/repositories/logging_repository.dart';
@@ -335,17 +336,20 @@ class DashboardRepository {
           row['date'] ??
           row['created_at'],
     );
+    final rawDescription = (row['content'] ??
+            row['letter'] ??
+            row['future_letter'] ??
+            row['futureLetter'] ??
+            row['description'] ??
+            '')
+        .toString();
+    final description = FieldEncryptionService.instance.decryptSync(rawDescription);
+
     return InsightModel(
       id: row['id'].toString(),
       userId: (row['user_id'] ?? row['userId'] ?? '').toString(),
       title: (row['title'] ?? 'Future Letter').toString(),
-      description: (row['content'] ??
-              row['letter'] ??
-              row['future_letter'] ??
-              row['futureLetter'] ??
-              row['description'] ??
-              '')
-          .toString(),
+      description: description,
       date: date,
       type: InsightType.general,
       createdAt: createdAt,
