@@ -72,6 +72,8 @@ dependencies:
   app_links: ^6.3.2
   # Google Sign-In
   google_sign_in: ^6.2.2
+  crypto: ^3.0.7
+  encrypt: ^5.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
