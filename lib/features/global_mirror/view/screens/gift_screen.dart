@@ -109,10 +109,8 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         // Get recipient name from Supabase
         String recipientName = 'User';
         try {
-          final authState = ref.read(authStateProvider);
-          final supabaseUser = authState.whenData((auth) => auth?.user);
-          if (supabaseUser != null) {
-            final profiles = await supabaseUser.value.client
+          if (true) {
+            final profiles = await Supabase.instance.client
                 .from('user_profiles')
                 .select('display_name')
                 .eq('id', widget.recipientUserId)
