@@ -69,8 +69,7 @@ class StellarService {
   static Future<void> fundWithFriendbot(
     String publicKey, {
     http_client.Client? httpClient,
-  }) async =>
-      _fundViaFriendbot(publicKey, httpClient: httpClient);
+  }) async => _fundViaFriendbot(publicKey, httpClient: httpClient);
 
   /// Funds a testnet account with XLM via Stellar Friendbot.
   static Future<void> _fundViaFriendbot(
@@ -234,11 +233,7 @@ class StellarService {
           echo = double.tryParse(balance.balance) ?? 0.0;
         }
       }
-      return LiveAccountBalances(
-        publicKey: publicKey,
-        xlm: xlm,
-        echo: echo,
-      );
+      return LiveAccountBalances(publicKey: publicKey, xlm: xlm, echo: echo);
     } catch (e) {
       if (_isNotFoundError(e)) {
         throw AccountNotFoundException(publicKey);
@@ -267,9 +262,10 @@ class StellarService {
     StellarSDK? sdk,
   }) async {
     try {
-      final response = await (sdk ?? _sdk).payments.forAccount(publicKey)
+      final response = await (sdk ?? _sdk).payments
+          .forAccount(publicKey)
           .limit(limit.clamp(1, 200))
-          .order(OrderDirection.DESC)
+          .order(RequestBuilderOrder.DESC)
           .execute();
 
       final transactions = <OnChainTransactionModel>[];
