@@ -2,6 +2,8 @@
 class StellarConfig {
   StellarConfig._();
 
+  static const bool isTestnet = true;
+
   /// Horizon API endpoint (testnet)
   static const String horizonUrl = 'https://horizon-testnet.stellar.org';
 

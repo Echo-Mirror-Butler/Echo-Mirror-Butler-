@@ -17,9 +17,6 @@ import '../../viewmodel/providers/onboarding_provider.dart';
 // ─── Step indices ────────────────────────────────────────────────────────────
 // 0 - Welcome + habit presets
 // 1 - Feature carousel
-// 2 - Wallet explainer (custodial Stellar wallet + ECHO)
-// 3 - Reminder time picker
-// 4 - Intro pages (3 slides, handled inside _IntroPages)
 // 2 - Reminder time picker
 // 3 - Intro pages (3 slides, handled inside _IntroPages)
 
@@ -110,7 +107,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   bool _permissionDenied = false;
   bool _permissionPermanentlyDenied = false;
 
-  static const int _totalSteps = 4; // welcome, features, wallet, reminder
   static const int _totalSteps = 3; // welcome, features, reminder
 
   Future<void> _completeOnboarding() async {
@@ -244,7 +240,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   }),
                 ),
                 _FeatureCarouselStep(onSkip: _next),
-                const _WalletIntroStep(),
                 _ReminderStep(
                   reminderTime: _reminderTime,
                   permissionDenied: _permissionDenied,
@@ -267,8 +262,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     count: _totalSteps,
                     effect: ExpandingDotsEffect(
                       activeDotColor: AppTheme.primaryColor,
-                      dotColor: theme.colorScheme.onSurface
-                          .withValues(alpha: 0.2),
+                      dotColor: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.2,
+                      ),
                       dotHeight: 8,
                       dotWidth: 8,
                       expansionFactor: 4,
@@ -289,8 +285,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.7),
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.7,
+                                ),
                               ),
                             ),
                           )
@@ -349,15 +346,7 @@ class _WelcomeStep extends StatelessWidget {
   final Set<String> selectedHabits;
   final void Function(String) onToggle;
 
-
-class _WelcomeStep extends StatelessWidget {
-  final Set<String> selectedHabits;
-  final void Function(String) onToggle;
-
-  const _WelcomeStep({
-    required this.selectedHabits,
-    required this.onToggle,
-  });
+  const _WelcomeStep({required this.selectedHabits, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -461,8 +450,9 @@ class _WelcomeStep extends StatelessWidget {
                     boxShadow: selected
                         ? [
                             BoxShadow(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                              color: AppTheme.primaryColor.withValues(
+                                alpha: 0.3,
+                              ),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -531,19 +521,22 @@ class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
     _FeatureCard(
       icon: FontAwesomeIcons.faceSmile.data,
       title: 'Log your mood daily',
-      description: 'Takes just 2 minutes — capture how you feel and what matters.',
+      description:
+          'Takes just 2 minutes — capture how you feel and what matters.',
       gradient: [Color(0xFF6D5CE8), Color(0xFF8B5CF6)],
     ),
     _FeatureCard(
       icon: FontAwesomeIcons.star.data,
       title: 'Earn ECHO tokens on Stellar',
-      description: 'Stay consistent and earn crypto rewards for your growth journey.',
+      description:
+          'Stay consistent and earn crypto rewards for your growth journey.',
       gradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
     ),
     _FeatureCard(
       icon: FontAwesomeIcons.lightbulb.data,
       title: 'Unlock AI insights',
-      description: 'After just 3 logs, your future self starts sending insights.',
+      description:
+          'After just 3 logs, your future self starts sending insights.',
       gradient: [Color(0xFFEC4899), Color(0xFF6D5CE8)],
     ),
   ];
@@ -700,802 +693,6 @@ class _FeatureCard {
     required this.description,
     required this.gradient,
   });
-}
-
-// ─── Step 2: Wallet Explainer ─────────────────────────────────────────────────
-//
-// Every new user gets a Stellar wallet created automatically and custodially
-// (see WalletNotifier.createWallet / the create-stellar-wallet edge function).
-// This step tells them that plainly, in plain language, before they can ever
-// see an ECHO balance elsewhere in the app.
-
-class _WalletIntroStep extends StatelessWidget {
-  const _WalletIntroStep();
-
-  void _showLearnMore(BuildContext context) {
-    final theme = Theme.of(context);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-              ),
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Your ECHO wallet, in detail',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _LearnMoreSection(
-                    icon: FontAwesomeIcons.wallet.data,
-                    title: 'It\'s a real Stellar wallet',
-                    body:
-                        'When you created your account, EchoMirror generated a '
-                        'real wallet for you on the Stellar blockchain. It has '
-                        'a public address like any other crypto wallet.',
-                  ),
-                  _LearnMoreSection(
-                    icon: FontAwesomeIcons.coins.data,
-                    title: 'ECHO is a real token',
-                    body:
-                        'The ECHO you earn by logging your mood and habits '
-                        'isn\'t a points system — it\'s an actual token on '
-                        'Stellar. You can send it to other users as a gift.',
-                  ),
-                  _LearnMoreSection(
-                    icon: FontAwesomeIcons.shieldHalved.data,
-                    title: 'EchoMirror holds the keys',
-                    body:
-                        'Your wallet is custodial: EchoMirror\'s servers '
-                        'generate and store the private key for you, so you '
-                        'don\'t manage a seed phrase yourself. That also means '
-                        'EchoMirror — not you alone — controls access to the '
-                        'funds, similar to how a bank holds your money rather '
-                        'than you holding the cash yourself.',
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'You can find your wallet address and balance anytime from '
-                    'My Wallet.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 80, 24, 120),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 140,
-            height: 140,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [AppTheme.secondaryColor, AppTheme.accentColor],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
-                  blurRadius: 24,
-                  spreadRadius: 8,
-                ),
-              ],
-            ),
-            child: Icon(
-              FontAwesomeIcons.wallet.data,
-              size: 56,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'You have a Stellar wallet',
-                  ),
-                ],
-              ),
-              child: Icon(
-                FontAwesomeIcons.userTie.data,
-                size: 80,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Meet EchoMirror',
-            style: GoogleFonts.poppins(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'EchoMirror automatically created a real Stellar wallet for you. '
-            'ECHO — the token you earn by logging and can gift to others — '
-            'lives in it.',
-          Text(
-            'Your Future Self as a Butler',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'A personal growth assistant that helps you reflect, track your journey, and receive insights from your future self.',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppTheme.primaryColor.withValues(alpha: 0.2),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Pick 2–3 habits to track',
-            style: GoogleFonts.poppins(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'These will be pre-selected on your first log.',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: _kHabitPresets.map((habit) {
-              final selected = selectedHabits.contains(habit);
-              return GestureDetector(
-                onTap: () => onToggle(habit),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppTheme.primaryColor
-                        : theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: selected
-                          ? AppTheme.primaryColor
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                    ),
-                    boxShadow: selected
-                        ? [
-                            BoxShadow(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (selected) ...[
-                        Icon(
-                          FontAwesomeIcons.check.data,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Text(
-                        habit,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: selected
-                              ? Colors.white
-                              : theme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-          if (selectedHabits.length >= 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                'Max 3 selected. Tap one to deselect.',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: AppTheme.accentColor,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Step 1: Feature Carousel ─────────────────────────────────────────────────
-
-class _FeatureCarouselStep extends StatefulWidget {
-  final VoidCallback onSkip;
-  const _FeatureCarouselStep({required this.onSkip});
-
-  @override
-  State<_FeatureCarouselStep> createState() => _FeatureCarouselStepState();
-}
-
-class _FeatureCarouselStepState extends State<_FeatureCarouselStep> {
-  final PageController _cardController = PageController(viewportFraction: 0.85);
-  int _cardIndex = 0;
-
-  static final _cards = [
-    _FeatureCard(
-      icon: FontAwesomeIcons.faceSmile.data,
-      title: 'Log your mood daily',
-      description: 'Takes just 2 minutes — capture how you feel and what matters.',
-      gradient: [Color(0xFF6D5CE8), Color(0xFF8B5CF6)],
-    ),
-    _FeatureCard(
-      icon: FontAwesomeIcons.star.data,
-      title: 'Earn ECHO tokens on Stellar',
-      description: 'Stay consistent and earn crypto rewards for your growth journey.',
-      gradient: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
-    ),
-    _FeatureCard(
-      icon: FontAwesomeIcons.lightbulb.data,
-      title: 'Unlock AI insights',
-      description: 'After just 3 logs, your future self starts sending insights.',
-      gradient: [Color(0xFFEC4899), Color(0xFF6D5CE8)],
-    ),
-  ];
-
-  @override
-  void dispose() {
-    _cardController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 80, 0, 120),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'What you\'ll get',
-              style: GoogleFonts.poppins(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  FontAwesomeIcons.circleInfo.data,
-                  color: AppTheme.primaryColor,
-                  size: 16,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'It\'s custodial — EchoMirror holds the keys on your '
-                    'behalf, so you don\'t manage a seed phrase yourself.',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                      height: 1.5,
-                    ),
-                    textAlign: TextAlign.left,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          TextButton(
-            onPressed: () => _showLearnMore(context),
-            child: Text(
-              'Learn more',
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'Swipe to explore the key features',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LearnMoreSection extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String body;
-
-  const _LearnMoreSection({
-    required this.icon,
-    required this.title,
-    required this.body,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 16, color: AppTheme.primaryColor),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  body,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Step 3: Reminder Time Picker ────────────────────────────────────────────
-
-class _ReminderStep extends StatelessWidget {
-  final TimeOfDay reminderTime;
-  final bool permissionDenied;
-  final bool permissionPermanentlyDenied;
-  final void Function(TimeOfDay) onTimeChanged;
-  final VoidCallback onRequestPermission;
-
-  const _ReminderStep({
-    required this.reminderTime,
-    required this.permissionDenied,
-    required this.permissionPermanentlyDenied,
-    required this.onTimeChanged,
-    required this.onRequestPermission,
-          const SizedBox(height: 32),
-          SizedBox(
-            height: 280,
-            child: PageView.builder(
-              controller: _cardController,
-              itemCount: _cards.length,
-              onPageChanged: (i) => setState(() => _cardIndex = i),
-              itemBuilder: (context, i) {
-                final card = _cards[i];
-                return AnimatedScale(
-                  scale: _cardIndex == i ? 1.0 : 0.92,
-                  duration: const Duration(milliseconds: 200),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: card.gradient,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: card.gradient.first.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(28),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              card.icon,
-                              size: 32,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            card.title,
-                            style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            card.description,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.white.withValues(alpha: 0.85),
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Card dots
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_cards.length, (i) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _cardIndex == i ? 20 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _cardIndex == i
-                      ? AppTheme.primaryColor
-                      : AppTheme.primaryColor.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeatureCard {
-  final IconData icon;
-  final String title;
-  final String description;
-  final List<Color> gradient;
-  const _FeatureCard({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.gradient,
-  });
-
-  String _formatTime(TimeOfDay t) {
-    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
-    final minute = t.minute.toString().padLeft(2, '0');
-    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
-    return '$hour:$minute $period';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 80, 24, 120),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [AppTheme.accentColor, AppTheme.primaryColor],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                  blurRadius: 24,
-                  spreadRadius: 8,
-                ),
-              ],
-            ),
-            child: Icon(
-              FontAwesomeIcons.bell.data,
-              size: 48,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'Set your daily reminder',
-            style: GoogleFonts.poppins(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurface,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We\'ll nudge you to log your mood at this time every day.',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 36),
-          // Time display + picker button
-          GestureDetector(
-            onTap: () async {
-              final picked = await showTimePicker(
-                context: context,
-                initialTime: reminderTime,
-                builder: (context, child) => Theme(
-                  data: Theme.of(context).copyWith(
-                    colorScheme: Theme.of(context).colorScheme.copyWith(
-                          primary: AppTheme.primaryColor,
-                        ),
-                  ),
-                  child: child!,
-                ),
-              );
-              if (picked != null) onTimeChanged(picked);
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    FontAwesomeIcons.clock.data,
-                    color: AppTheme.primaryColor,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    _formatTime(reminderTime),
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(
-                    FontAwesomeIcons.penToSquare.data,
-                    color: AppTheme.primaryColor,
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          // Permission button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onRequestPermission,
-              icon: Icon(
-                permissionPermanentlyDenied
-                    ? FontAwesomeIcons.arrowUpRightFromSquare.data
-                    : FontAwesomeIcons.bell.data,
-                size: 16,
-              ),
-              label: Text(
-                permissionPermanentlyDenied
-                    ? 'Open Settings to Enable'
-                    : 'Enable Reminders',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          ),
-          // ── Denied (soft) ──────────────────────────────────────────────
-          if (permissionDenied && !permissionPermanentlyDenied) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.accentColor.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    FontAwesomeIcons.circleInfo.data,
-                    color: AppTheme.accentColor,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'You can enable reminders later in Settings.',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: AppTheme.accentColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          // ── Permanently denied ─────────────────────────────────────────
-          if (permissionPermanentlyDenied) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: 0.25),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    FontAwesomeIcons.bellSlash.data,
-                    color: Colors.red,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Notification permission was denied. Tap "Open Settings to Enable" above to allow notifications for EchoMirror in your device settings.',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: Colors.red.shade700,
-                        height: 1.45,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 // ─── Step 2: Reminder Time Picker ────────────────────────────────────────────
@@ -1581,9 +778,9 @@ class _ReminderStep extends StatelessWidget {
                 initialTime: reminderTime,
                 builder: (context, child) => Theme(
                   data: Theme.of(context).copyWith(
-                    colorScheme: Theme.of(context).colorScheme.copyWith(
-                          primary: AppTheme.primaryColor,
-                        ),
+                    colorScheme: Theme.of(
+                      context,
+                    ).colorScheme.copyWith(primary: AppTheme.primaryColor),
                   ),
                   child: child!,
                 ),
@@ -1698,9 +895,7 @@ class _ReminderStep extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.red.withValues(alpha: 0.25),
-                ),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,

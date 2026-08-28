@@ -1,4 +1,6 @@
 @Tags(['integration'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart';
 
@@ -20,123 +22,103 @@ void main() {
   const issuerSecret = String.fromEnvironment('STELLAR_ISSUER_SECRET');
 
   group('ECHO Gift Integration Test', () {
-    test(
-      'Send 5 ECHO gift between two testnet wallets',
-      () async {
-        // 1. Create two freshly funded wallets via Friendbot
-        final walletA = await StellarService.createWallet();
-        final walletB = await StellarService.createWallet();
+    test('Send 5 ECHO gift between two testnet wallets', () async {
+      // 1. Create two freshly funded wallets via Friendbot
+      final walletA = await StellarService.createWallet();
+      final walletB = await StellarService.createWallet();
 
-        expect(walletA.accountId, isNotEmpty);
-        expect(walletB.accountId, isNotEmpty);
+      expect(walletA.accountId, isNotEmpty);
+      expect(walletB.accountId, isNotEmpty);
 
-        // 2. Establish trustlines for ECHO on both wallets
-        final trustA = await StellarService.establishTrustline(
-          walletA.secretSeed,
+      // 2. Establish trustlines for ECHO on both wallets
+      final trustA = await StellarService.establishTrustline(
+        walletA.secretSeed,
+      );
+      final trustB = await StellarService.establishTrustline(
+        walletB.secretSeed,
+      );
+
+      expect(trustA, isTrue, reason: 'Trustline creation for wallet A failed');
+      expect(trustB, isTrue, reason: 'Trustline creation for wallet B failed');
+
+      // 3. Setup: Issue 10 ECHO tokens to wallet A so it can send a gift
+      // We must issue directly via the SDK using the ISSUER secret
+      if (issuerSecret.isEmpty) {
+        fail(
+          'STELLAR_ISSUER_SECRET must be provided via --dart-define '
+          'to run this integration test.',
         );
-        final trustB = await StellarService.establishTrustline(
-          walletB.secretSeed,
-        );
+      }
 
-        expect(
-          trustA,
-          isTrue,
-          reason: 'Trustline creation for wallet A failed',
-        );
-        expect(
-          trustB,
-          isTrue,
-          reason: 'Trustline creation for wallet B failed',
-        );
+      final issuerKp = KeyPair.fromSecretSeed(issuerSecret);
+      final echoAsset = AssetTypeCreditAlphaNum4(
+        EchoToken.code,
+        issuerKp.accountId,
+      );
 
-        // 3. Setup: Issue 10 ECHO tokens to wallet A so it can send a gift
-        // We must issue directly via the SDK using the ISSUER secret
-        if (issuerSecret.isEmpty) {
-          fail(
-            'STELLAR_ISSUER_SECRET must be provided via --dart-define '
-            'to run this integration test.',
-          );
-        }
+      // Issue 10.0 ECHO
+      final issuerAccount = await sdk.accounts.account(issuerKp.accountId);
+      final txIssue = TransactionBuilder(issuerAccount)
+          .addOperation(
+            PaymentOperationBuilder(
+              walletA.accountId,
+              echoAsset,
+              '10.0000000',
+            ).build(),
+          )
+          .build();
 
-        final issuerKp = KeyPair.fromSecretSeed(issuerSecret);
-        final echoAsset = AssetTypeCreditAlphaNum4(
-          EchoToken.code,
-          issuerKp.accountId,
-        );
+      txIssue.sign(issuerKp, network);
+      final responseIssue = await sdk.submitTransaction(txIssue);
+      expect(
+        responseIssue.success,
+        isTrue,
+        reason: 'Initial ECHO issuance from issuer to wallet A failed',
+      );
 
-        // Issue 10.0 ECHO
-        final issuerAccount = await sdk.accounts.account(issuerKp.accountId);
-        final txIssue = TransactionBuilder(issuerAccount)
-            .addOperation(
-              PaymentOperationBuilder(
-                walletA.accountId,
-                echoAsset,
-                '10.0000000',
-              ).build(),
-            )
-            .build();
+      // Wait for ledger settle
+      await Future.delayed(const Duration(seconds: 5));
 
-        txIssue.sign(issuerKp, network);
-        final responseIssue = await sdk.submitTransaction(txIssue);
-        expect(
-          responseIssue.success,
-          isTrue,
-          reason: 'Initial ECHO issuance from issuer to wallet A failed',
-        );
+      // 4. Record initial balances
+      final initialBalA = await StellarService.getEchoBalance(
+        walletA.accountId,
+      );
+      final initialBalB = await StellarService.getEchoBalance(
+        walletB.accountId,
+      );
 
-        // Wait for ledger settle
-        await Future.delayed(const Duration(seconds: 5));
+      expect(
+        initialBalA,
+        10.0,
+        reason: 'Wallet A should start with 10.0 initial ECHO',
+      );
+      expect(
+        initialBalB,
+        0.0,
+        reason: 'Wallet B should start with 0.0 initial ECHO',
+      );
 
-        // 4. Record initial balances
-        final initialBalA = await StellarService.getEchoBalance(
-          walletA.accountId,
-        );
-        final initialBalB = await StellarService.getEchoBalance(
-          walletB.accountId,
-        );
+      // 5. Send 5 ECHO gift from wallet A to wallet B using StellarService
+      final txHash = await StellarService.sendEcho(
+        senderSecret: walletA.secretSeed,
+        recipientPublicKey: walletB.accountId,
+        amount: 5.0,
+        memo: 'Test gift',
+      );
 
-        expect(
-          initialBalA,
-          10.0,
-          reason: 'Wallet A should start with 10.0 initial ECHO',
-        );
-        expect(
-          initialBalB,
-          0.0,
-          reason: 'Wallet B should start with 0.0 initial ECHO',
-        );
+      // 6. Assertions
+      expect(txHash, isNotNull, reason: 'Transaction failed - check SDK logs');
+      expect(txHash, isNotEmpty);
 
-        // 5. Send 5 ECHO gift from wallet A to wallet B using StellarService
-        final txHash = await StellarService.sendEcho(
-          senderSecret: walletA.secretSeed,
-          recipientPublicKey: walletB.accountId,
-          amount: 5.0,
-          memo: 'Test gift',
-        );
+      // Wait for ledger settle
+      await Future.delayed(const Duration(seconds: 5));
 
-        // 6. Assertions
-        expect(
-          txHash,
-          isNotNull,
-          reason: 'Transaction failed - check SDK logs',
-        );
-        expect(txHash, isNotEmpty);
+      final finalBalA = await StellarService.getEchoBalance(walletA.accountId);
+      final finalBalB = await StellarService.getEchoBalance(walletB.accountId);
 
-        // Wait for ledger settle
-        await Future.delayed(const Duration(seconds: 5));
-
-        final finalBalA = await StellarService.getEchoBalance(
-          walletA.accountId,
-        );
-        final finalBalB = await StellarService.getEchoBalance(
-          walletB.accountId,
-        );
-
-        // Verify the math: 10 - 5 = 5
-        expect(finalBalA, 5.0, reason: 'Wallet A balance failed to decrease');
-        expect(finalBalB, 5.0, reason: 'Wallet B balance failed to increase');
-      },
-      timeout: const Timeout(Duration(minutes: 5)),
-    );
+      // Verify the math: 10 - 5 = 5
+      expect(finalBalA, 5.0, reason: 'Wallet A balance failed to decrease');
+      expect(finalBalB, 5.0, reason: 'Wallet B balance failed to increase');
+    }, timeout: const Timeout(Duration(minutes: 5)));
   });
 }

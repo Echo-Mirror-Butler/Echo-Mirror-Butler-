@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/local_models.dart';
+import 'conflict_resolution_service.dart';
 import 'offline_storage_service.dart';
 
 /// Outcome of a [SyncService.syncPendingEntries] run.
@@ -9,11 +10,13 @@ class SyncResult {
   const SyncResult({
     this.syncedCount = 0,
     this.failedCount = 0,
+    this.conflictsResolved = 0,
     this.rateLimited = false,
   });
 
   final int syncedCount;
   final int failedCount;
+  final int conflictsResolved;
 
   /// True when the run stopped early because the server-side mood log rate
   /// limit (Postgres trigger on `log_entries`, error code PT429) was hit.
@@ -23,12 +26,17 @@ class SyncResult {
   bool get allSynced => failedCount == 0 && !rateLimited;
 }
 
-/// Pushes locally queued log entries to Supabase.
+/// Pushes locally queued log entries to Supabase with intelligent conflict resolution (Issue #702).
 class SyncService {
-  SyncService({required this.offlineStorage, SupabaseClient? supabase})
-    : _injectedClient = supabase;
+  SyncService({
+    required this.offlineStorage,
+    SupabaseClient? supabase,
+    ConflictResolutionService? conflictResolver,
+  })  : _injectedClient = supabase,
+        _conflictResolver = conflictResolver ?? ConflictResolutionService.instance;
 
   final OfflineStorageService offlineStorage;
+  final ConflictResolutionService _conflictResolver;
 
   /// Resolved lazily so constructing the service (e.g. from a provider in
   /// tests) doesn't require an initialized Supabase singleton.
@@ -46,9 +54,11 @@ class SyncService {
 
     var synced = 0;
     var failed = 0;
+    var conflicts = 0;
     for (final entry in pendingEntries) {
       try {
-        await _syncLogEntry(entry);
+        final hadConflict = await _syncLogEntry(entry);
+        if (hadConflict) conflicts++;
         await offlineStorage.deleteLogEntry(entry.id);
         synced++;
       } on PostgrestException catch (e) {
@@ -57,6 +67,7 @@ class SyncService {
           return SyncResult(
             syncedCount: synced,
             failedCount: failed + (pendingEntries.length - synced - failed),
+            conflictsResolved: conflicts,
             rateLimited: true,
           );
         }
@@ -67,34 +78,37 @@ class SyncService {
         failed++;
       }
     }
-    return SyncResult(syncedCount: synced, failedCount: failed);
+    return SyncResult(syncedCount: synced, failedCount: failed, conflictsResolved: conflicts);
   }
 
-  /// Upload one entry, deduplicating against the server: if a row already
-  /// exists for this user and date (e.g. logged from another device, or a
-  /// previous sync run crashed after inserting), that row is updated instead
-  /// of inserting a duplicate. New rows are upserted under the entry's
-  /// client-generated UUID so retrying the same entry is idempotent.
-  Future<void> _syncLogEntry(LocalLogEntry entry) async {
+  /// Upload one entry, deduplicating against the server and resolving any divergence.
+  ///
+  /// If a row already exists for this user and date (e.g. edited on another device
+  /// or modified while offline), applies the defined conflict resolution strategy
+  /// to ensure data integrity without silent clobbering.
+  ///
+  /// Returns `true` if a conflict was detected and resolved.
+  Future<bool> _syncLogEntry(LocalLogEntry entry) async {
     final existing = await supabase
         .from('log_entries')
-        .select('id')
+        .select('id, mood, habits, notes, created_at, updated_at')
         .eq('user_id', entry.userId)
         .eq('date', entry.date)
         .maybeSingle();
 
     if (existing != null) {
+      final resolution = _conflictResolver.resolveLogEntry(
+        local: entry,
+        server: existing,
+      );
+
       await supabase
           .from('log_entries')
-          .update({
-            'mood': entry.mood,
-            'habits': entry.habits,
-            'notes': entry.notes,
-            'updated_at': entry.updatedAt.toIso8601String(),
-          })
+          .update(resolution.resolvedPayload)
           .eq('id', existing['id'] as String)
           .eq('user_id', entry.userId);
-      return;
+
+      return resolution.hadConflict;
     }
 
     await supabase.from('log_entries').upsert({
@@ -107,6 +121,8 @@ class SyncService {
       'created_at': entry.createdAt.toIso8601String(),
       'updated_at': entry.updatedAt.toIso8601String(),
     });
+
+    return false;
   }
 
   Future<void> syncUserProfile(LocalUserProfile profile) async {
