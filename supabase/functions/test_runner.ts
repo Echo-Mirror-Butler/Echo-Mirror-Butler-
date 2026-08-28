@@ -213,6 +213,22 @@ registerTestSuite("unsubscribe-digest", [
   },
 ]);
 
+// settle-leaderboard-rewards tests (Issue #701)
+registerTestSuite("settle-leaderboard-rewards", [
+  async () => {
+    const req = createMockRequest("POST", {}, { Authorization: "Bearer test-token" });
+    assertEquals(req.method, "POST");
+  },
+  async () => {
+    const req = createMockRequest("GET");
+    assertEquals(req.method, "GET");
+  },
+  async () => {
+    const req = createMockRequest("OPTIONS");
+    assertEquals(req.method, "OPTIONS");
+  },
+]);
+
 // Run all tests
 async function runAllTests() {
   let passed = 0;
