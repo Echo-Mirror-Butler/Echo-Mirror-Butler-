@@ -6,11 +6,14 @@ list(APPEND FLUTTER_PLUGIN_LIST
   agora_rtc_engine
   app_links
   audioplayers_windows
+  connectivity_plus
   file_selector_windows
   flutter_tts
   geolocator_windows
   iris_method_channel
+  local_auth_windows
   permission_handler_windows
+  sentry_flutter
   speech_to_text_windows
   url_launcher_windows
 )
