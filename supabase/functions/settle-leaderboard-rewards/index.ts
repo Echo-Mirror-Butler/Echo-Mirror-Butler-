@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as StellarSdk from "https://esm.sh/stellar-sdk@11";
+import { auditLeaderboardCollusion } from "../_shared/collusion-detector.ts";
 
 const FRIENDBOT_URL = "https://friendbot.stellar.org/?addr=";
 const ISSUER_PUBLIC_KEY = Deno.env.get("STELLAR_ISSUER_PUBLIC_KEY") ?? "";
@@ -111,6 +112,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, payouts: 0 }));
     }
 
+    // 2. Pre-flight Collusion & Anomaly Detection (Issue #701)
+    console.log("[settle-leaderboard-rewards] Running anti-collusion fraud audit");
+    const collusionAudit = await auditLeaderboardCollusion(supabase, topUsers);
+
     const stellarSettings = resolveStellarSettings();
     const server = new StellarSdk.Horizon.Server(stellarSettings.horizonUrl);
     const issuerKeypair = StellarSdk.Keypair.fromSecret(ISSUER_SECRET_KEY);
@@ -119,10 +124,38 @@ serve(async (req) => {
 
     const payoutResults = [];
 
-    // 2. For each top-ranked user, calculate payout and send ECHO
+    // 3. For each top-ranked user, calculate payout and send ECHO if cleared
     for (const entry of topUsers) {
       const payoutAmount = getPayoutAmount(entry.rank);
       if (!payoutAmount) continue;
+
+      const audit = collusionAudit.get(entry.user_id);
+      if (audit && audit.action === "WITHHOLD_FOR_REVIEW") {
+        console.warn(
+          `[settle-leaderboard-rewards] Collusion risk detected for user ${entry.user_id} (Rank ${entry.rank}). Withholding payout. Reasons: ${audit.reasons.join("; ")}`
+        );
+
+        // Record withheld status in rewards audit ledger
+        await supabase
+          .from("echo_rewards")
+          .insert({
+            user_id: entry.user_id,
+            reason: `leaderboard_bonus_rank_${entry.rank}_withheld_collusion_review`,
+            amount: payoutAmount,
+            stellar_tx_hash: null,
+            created_at: new Date().toISOString(),
+          });
+
+        payoutResults.push({
+          rank: entry.rank,
+          userId: entry.user_id,
+          amount: payoutAmount,
+          status: "WITHHELD_FOR_REVIEW",
+          success: false,
+          audit,
+        });
+        continue;
+      }
 
       try {
         const rewardReason = getSettlementReason(entry.rank, weekStart);

@@ -15,6 +15,13 @@ analyzer:
     # server-side packages (serverpod, serverpod_auth_idp) not available
     # in the Flutter app context. Exclude it from flutter analyze.
     - echomirror_server/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
   # No global ignores here. Suppressions should be done per-file or per-line.
 
 linter:

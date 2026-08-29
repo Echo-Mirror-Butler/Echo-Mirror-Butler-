@@ -34,8 +34,7 @@ insert into auth.users (
   updated_at,
   raw_app_meta_data,
   raw_user_meta_data,
-  is_super_admin,
-  is_anonymous
+  is_super_admin
 ) values
   (
     '00000000-0000-0000-0000-000000000000',
@@ -49,7 +48,6 @@ insert into auth.users (
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"full_name":"Wallet Test User"}'::jsonb,
-    false,
     false
   ),
   (
@@ -64,7 +62,6 @@ insert into auth.users (
     now(),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"full_name":"Recipient Test User"}'::jsonb,
-    false,
     false
   );
 
