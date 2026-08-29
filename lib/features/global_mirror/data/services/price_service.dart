@@ -1,23 +1,21 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http_client;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Service for fetching crypto prices from CoinGecko API (free, no authentication).
+/// Service for fetching crypto prices via backend proxy/cache.
+/// Prices are fetched from Supabase edge function which maintains a
+/// server-side cache and handles CoinGecko rate limits gracefully.
 class PriceService {
   PriceService._();
 
-  static const _baseUrl = 'https://api.coingecko.com/api/v3';
   static const _cacheDuration = Duration(minutes: 5);
   static DateTime? _lastFetchTime;
-  static Map<String, double>? _priceCache;
+  static Map<String, PriceData>? _priceCache;
 
   /// Fetches the current USD price for a given cryptocurrency.
-  /// Returns the price or null if the fetch fails.
+  /// Returns the price data or null if the fetch fails.
   /// Results are cached for [_cacheDuration].
-  static Future<double?> getUsdPrice(
-    String coinId, {
-    http_client.Client? httpClient,
-  }) async {
+  static Future<PriceData?> getUsdPrice(String coinId) async {
     try {
       // Return cached price if available and not expired
       if (_priceCache != null &&
@@ -26,52 +24,42 @@ class PriceService {
         return _priceCache![coinId];
       }
 
-      final client = httpClient ?? http_client.Client();
-      try {
-        final url = Uri.parse(
-          '$_baseUrl/simple/price?ids=stellar&vs_currencies=usd',
-        );
-        final response = await client.get(url);
+      final supabase = Supabase.instance.client;
+      final response = await supabase.functions.invoke(
+        'get-crypto-price',
+        body: {'coin': coinId},
+      );
 
-        if (response.statusCode == 200) {
-          final json = response.body;
-          final price = _parsePrice(json, coinId);
-          if (price != null) {
-            _priceCache = {coinId: price};
-            _lastFetchTime = DateTime.now();
-            debugPrint('[PriceService] Fetched $coinId price: \$$price');
-            return price;
+      if (response.status == 200 && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        final price = (data['usd_price'] as num?)?.toDouble();
+        
+        if (price != null) {
+          final priceData = PriceData(
+            price: price,
+            cached: data['cached'] as bool? ?? false,
+            stale: data['stale'] as bool? ?? false,
+            ageMinutes: data['age_minutes'] as int?,
+            warning: data['warning'] as String?,
+          );
+          
+          _priceCache = {coinId: priceData};
+          _lastFetchTime = DateTime.now();
+          
+          if (priceData.stale) {
+            debugPrint(
+              '[PriceService] Fetched $coinId price: \$${price} '
+              '(stale, age: ${priceData.ageMinutes}min)',
+            );
+          } else {
+            debugPrint('[PriceService] Fetched $coinId price: \$${price}');
           }
-        }
-      } finally {
-        if (httpClient == null) {
-          client.close();
+          
+          return priceData;
         }
       }
     } catch (e) {
       debugPrint('[PriceService] getUsdPrice error: $e');
-    }
-    return null;
-  }
-
-  /// Parses the price from the raw JSON response.
-  static double? _parsePrice(String jsonString, String coinId) {
-    try {
-      if (jsonString.contains('"usd"')) {
-        final usdIndex = jsonString.indexOf('"usd"');
-        final colonIndex = jsonString.indexOf(':', usdIndex);
-        final commaOrBrace = jsonString.indexOf(
-          RegExp('[,}]'),
-          colonIndex,
-        );
-        if (colonIndex != -1 && commaOrBrace != -1) {
-          final priceStr =
-              jsonString.substring(colonIndex + 1, commaOrBrace).trim();
-          return double.tryParse(priceStr);
-        }
-      }
-    } catch (e) {
-      debugPrint('[PriceService] _parsePrice error: $e');
     }
     return null;
   }
@@ -82,4 +70,21 @@ class PriceService {
     _priceCache = null;
     _lastFetchTime = null;
   }
+}
+
+/// Price data with metadata about cache state
+class PriceData {
+  final double price;
+  final bool cached;
+  final bool stale;
+  final int? ageMinutes;
+  final String? warning;
+
+  const PriceData({
+    required this.price,
+    this.cached = false,
+    this.stale = false,
+    this.ageMinutes,
+    this.warning,
+  });
 }
