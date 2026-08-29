@@ -20,7 +20,11 @@ class NotificationService {
   static const int _inactiveNudgeId = 3;
   static const int _noLogTodayId = 4;
   static const int _activeSessionId = 5;
+  // Reserved for the streak-freeze notification scheduling work (issue #683
+  // follow-up); not wired up yet.
+  // ignore: unused_field
   static const int _freezeReminderId = 6;
+  // ignore: unused_field
   static const int _streakLossNudgeId = 7;
   static const int _scheduledSessionBaseId =
       1000; // Base ID for scheduled sessions
@@ -35,8 +39,11 @@ class NotificationService {
   static const String _keyLastLogCheckDate = 'last_log_check_date';
   static const String _keyLastActiveSessionNotification =
       'last_active_session_notification';
+  // ignore: unused_field
   static const String _keyFreezeReminderEnabled = 'freeze_reminder_enabled';
+  // ignore: unused_field
   static const String _keyStreakLossNudgeEnabled = 'streak_loss_nudge_enabled';
+  // ignore: unused_field
   static const String _keyLastFreezeCheckDate = 'last_freeze_check_date';
 
   /// Initialize the notification service
