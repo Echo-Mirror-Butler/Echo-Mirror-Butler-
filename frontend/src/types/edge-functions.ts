@@ -39,17 +39,26 @@ export interface SendEchoResponse {
 // Generates AI insights from recent mood logs.
 // Auth: JWT
 export interface GenerateInsightRequest {
-  recentLogs: Array<{
+  recentLogs?: Array<{
     date: string
     mood: number
     habits?: string[]
     notes?: string
   }>
+  privacyMode?: boolean
+  moodTrend?: Record<string, unknown>
+  habitFrequencies?: Record<string, number>
+  habitMoodCorrelations?: Record<string, number>
+  temporalPatterns?: Record<string, unknown>
+  sanitizedLogs?: Array<Record<string, unknown>>
+  clusters?: Array<Record<string, unknown>>
+  similarityHighlights?: Array<Record<string, unknown>>
   previousFollowThroughRate?: {
     acted: number
     total: number
   }
 }
+
 
 export interface GenerateInsightResponse {
   prediction: string

@@ -73,18 +73,45 @@ class SendEchoResponse {
 
 // ── generate-insight ──────────────────────────────────────────────────────────
 // Generates AI insights from recent mood logs.
+// Supports both privacy-preserving on-device embedding payloads and legacy payloads.
 // Auth: JWT
 class GenerateInsightRequest {
-  final List<Map<String, dynamic>> recentLogs;
+  final List<Map<String, dynamic>>? recentLogs;
+  final bool privacyMode;
+  final Map<String, dynamic>? moodTrend;
+  final Map<String, int>? habitFrequencies;
+  final Map<String, double>? habitMoodCorrelations;
+  final Map<String, dynamic>? temporalPatterns;
+  final List<Map<String, dynamic>>? sanitizedLogs;
+  final List<Map<String, dynamic>>? clusters;
+  final List<Map<String, dynamic>>? similarityHighlights;
   final Map<String, int>? previousFollowThroughRate;
 
   GenerateInsightRequest({
-    required this.recentLogs,
+    this.recentLogs,
+    this.privacyMode = false,
+    this.moodTrend,
+    this.habitFrequencies,
+    this.habitMoodCorrelations,
+    this.temporalPatterns,
+    this.sanitizedLogs,
+    this.clusters,
+    this.similarityHighlights,
     this.previousFollowThroughRate,
   });
 
   Map<String, dynamic> toJson() => {
-    'recentLogs': recentLogs,
+    if (recentLogs != null) 'recentLogs': recentLogs,
+    'privacyMode': privacyMode,
+    if (moodTrend != null) 'moodTrend': moodTrend,
+    if (habitFrequencies != null) 'habitFrequencies': habitFrequencies,
+    if (habitMoodCorrelations != null)
+      'habitMoodCorrelations': habitMoodCorrelations,
+    if (temporalPatterns != null) 'temporalPatterns': temporalPatterns,
+    if (sanitizedLogs != null) 'sanitizedLogs': sanitizedLogs,
+    if (clusters != null) 'clusters': clusters,
+    if (similarityHighlights != null)
+      'similarityHighlights': similarityHighlights,
     if (previousFollowThroughRate != null)
       'previousFollowThroughRate': previousFollowThroughRate,
   };
@@ -120,7 +147,8 @@ class GenerateInsightResponse {
   factory GenerateInsightResponse.fromJson(Map<String, dynamic> json) {
     return GenerateInsightResponse(
       prediction: json['prediction'] as String? ?? '',
-      suggestions: (json['suggestions'] as List<dynamic>?)
+      suggestions:
+          (json['suggestions'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
@@ -130,13 +158,15 @@ class GenerateInsightResponse {
       musicRecommendations: (json['musicRecommendations'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList(),
-      moodDrivers: (json['moodDrivers'] as List<dynamic>?)
+      moodDrivers:
+          (json['moodDrivers'] as List<dynamic>?)
               ?.map((e) => MoodDriver.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       bestTimeOfDay: json['bestTimeOfDay'] as String? ?? '',
       worstTimeOfDay: json['worstTimeOfDay'] as String? ?? '',
-      recommendations: (json['recommendations'] as List<dynamic>?)
+      recommendations:
+          (json['recommendations'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],
@@ -262,15 +292,9 @@ class GetAgoraCredentialsRequest {
   final String sessionId;
   final String userId;
 
-  GetAgoraCredentialsRequest({
-    required this.sessionId,
-    required this.userId,
-  });
+  GetAgoraCredentialsRequest({required this.sessionId, required this.userId});
 
-  Map<String, dynamic> toJson() => {
-    'sessionId': sessionId,
-    'userId': userId,
-  };
+  Map<String, dynamic> toJson() => {'sessionId': sessionId, 'userId': userId};
 }
 
 class GetAgoraCredentialsResponse {

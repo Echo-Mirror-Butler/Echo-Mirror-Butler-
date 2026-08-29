@@ -104,11 +104,19 @@ registerTestSuite("generate-encouragement", [
 // generate-insight tests
 registerTestSuite("generate-insight", [
   async () => {
-    const req = createMockRequest("POST", { period: "weekly" }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      {
+        privacyMode: true,
+        moodTrend: { average: 4.2, slope: 0.25, direction: "improving" },
+        sanitizedLogs: [{ id: "log-1", mood: 4, habits: ["meditate"] }],
+      },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
-    const req = createMockRequest("POST", {});
+    const req = createMockRequest("POST", { recentLogs: [{ id: "log-1", mood: 3 }] });
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -116,6 +124,7 @@ registerTestSuite("generate-insight", [
     assertEquals(req.method, "GET");
   },
 ]);
+
 
 // get-agora-credentials tests
 registerTestSuite("get-agora-credentials", [
