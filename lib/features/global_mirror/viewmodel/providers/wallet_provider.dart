@@ -74,8 +74,7 @@ class WalletState {
   bool get hasStreakBonus {
     return history.any(
       (reward) =>
-          reward.reason.contains('streak') ||
-          reward.reason.contains('bonus'),
+          reward.reason.contains('streak') || reward.reason.contains('bonus'),
     );
   }
 
@@ -123,7 +122,9 @@ class WalletState {
       isOnChainHistoryLoading:
           isOnChainHistoryLoading ?? this.isOnChainHistoryLoading,
       error: clearError ? null : error ?? this.error,
-      fundingError: clearFundingError ? null : fundingError ?? this.fundingError,
+      fundingError: clearFundingError
+          ? null
+          : fundingError ?? this.fundingError,
       funded: funded ?? this.funded,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       stellarError: stellarError ?? this.stellarError,
@@ -186,16 +187,14 @@ class WalletNotifier extends StateNotifier<WalletState> {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      final history = (historyData as List<dynamic>?)
-              ?.map((item) {
-                return WalletReward(
-                  reason: item['reason'] as String? ?? 'Unknown',
-                  amount:
-                      double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
-                  createdAt: DateTime.parse(item['created_at'] as String),
-                );
-              })
-              .toList() ??
+      final history =
+          (historyData as List<dynamic>?)?.map((item) {
+            return WalletReward(
+              reason: item['reason'] as String? ?? 'Unknown',
+              amount: double.tryParse(item['amount']?.toString() ?? '') ?? 0.0,
+              createdAt: DateTime.parse(item['created_at'] as String),
+            );
+          }).toList() ??
           [];
 
       final balance =
@@ -271,7 +270,10 @@ class WalletNotifier extends StateNotifier<WalletState> {
     final publicKey = state.publicKey;
     if (publicKey == null || publicKey.isEmpty) return;
 
-    state = state.copyWith(isLiveBalancesLoading: true, clearFundingError: true);
+    state = state.copyWith(
+      isLiveBalancesLoading: true,
+      clearFundingError: true,
+    );
 
     try {
       final balances = await StellarService.getLiveBalances(publicKey);
@@ -315,7 +317,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
     try {
       final price = await PriceService.getUsdPrice('stellar');
       if (price != null) {
-        state = state.copyWith(xlmPrice: price, isPriceLoading: false);
+        state = state.copyWith(xlmPrice: price.price, isPriceLoading: false);
       } else {
         state = state.copyWith(isPriceLoading: false);
       }
@@ -351,16 +353,11 @@ class WalletNotifier extends StateNotifier<WalletState> {
   Future<bool> fundWithFriendbot() async {
     final publicKey = state.publicKey;
     if (publicKey == null || publicKey.isEmpty) {
-      state = state.copyWith(
-        fundingError: 'No wallet to fund yet.',
-      );
+      state = state.copyWith(fundingError: 'No wallet to fund yet.');
       return false;
     }
 
-    state = state.copyWith(
-      isFunding: true,
-      clearFundingError: true,
-    );
+    state = state.copyWith(isFunding: true, clearFundingError: true);
 
     try {
       await StellarService.fundWithFriendbot(publicKey);
@@ -385,7 +382,8 @@ class WalletNotifier extends StateNotifier<WalletState> {
   }
 }
 
-final walletProvider =
-    StateNotifierProvider<WalletNotifier, WalletState>((ref) {
+final walletProvider = StateNotifierProvider<WalletNotifier, WalletState>((
+  ref,
+) {
   return WalletNotifier();
 });

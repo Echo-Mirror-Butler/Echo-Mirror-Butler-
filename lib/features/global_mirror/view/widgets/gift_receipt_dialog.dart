@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/environment_config.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../data/models/gift_transaction_model.dart';
-import '../../data/services/stellar/stellar_config.dart';
 
 class GiftReceiptDialog extends StatelessWidget {
   const GiftReceiptDialog({
@@ -21,7 +21,7 @@ class GiftReceiptDialog extends StatelessWidget {
       return '';
     }
     final txHash = transaction.stellarTxHash!;
-    if (StellarConfig.isTestnet) {
+    if (EnvironmentConfig.isTestnet) {
       return 'https://stellar.expert/explorer/testnet/tx/$txHash';
     } else {
       return 'https://stellar.expert/explorer/public/tx/$txHash';

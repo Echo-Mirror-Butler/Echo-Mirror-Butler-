@@ -1,10 +1,7 @@
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 
-enum AgoraErrorSeverity {
-  transient,
-  fatal,
-}
+enum AgoraErrorSeverity { transient, fatal }
 
 class AgoraErrorInfo {
   final ErrorCodeType code;
@@ -27,7 +24,6 @@ class AgoraErrorHandler {
     switch (err) {
       // Transient/Recoverable Errors
       case ErrorCodeType.errNetDown:
-      case ErrorCodeType.errNetNoroute:
         return AgoraErrorInfo(
           code: err,
           message: msg,
@@ -106,7 +102,7 @@ class AgoraErrorHandler {
           shouldRetry: false,
         );
 
-      case ErrorCodeType.errClientIsUnauthorized:
+      case ErrorCodeType.errSetClientRoleNotAuthorized:
         return AgoraErrorInfo(
           code: err,
           message: msg,
@@ -147,9 +143,7 @@ class AgoraErrorHandler {
             Expanded(
               child: Text(
                 errorInfo.userMessage,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
             ),
           ],
