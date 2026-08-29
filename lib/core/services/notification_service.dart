@@ -20,6 +20,8 @@ class NotificationService {
   static const int _inactiveNudgeId = 3;
   static const int _noLogTodayId = 4;
   static const int _activeSessionId = 5;
+  static const int _freezeReminderId = 6;
+  static const int _streakLossNudgeId = 7;
   static const int _scheduledSessionBaseId =
       1000; // Base ID for scheduled sessions
   static const String _logNowActionId = 'log_now';
@@ -33,6 +35,9 @@ class NotificationService {
   static const String _keyLastLogCheckDate = 'last_log_check_date';
   static const String _keyLastActiveSessionNotification =
       'last_active_session_notification';
+  static const String _keyFreezeReminderEnabled = 'freeze_reminder_enabled';
+  static const String _keyStreakLossNudgeEnabled = 'streak_loss_nudge_enabled';
+  static const String _keyLastFreezeCheckDate = 'last_freeze_check_date';
 
   /// Initialize the notification service
   Future<bool> initialize() async {
