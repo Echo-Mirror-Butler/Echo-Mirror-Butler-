@@ -3,6 +3,7 @@
     "react-simple-maps": "^3.0.0"
   },
   "devDependencies": {
+    "@types/node": "^26.4.0",
     "@types/react-simple-maps": "^3.0.6"
   }
 }

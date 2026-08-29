@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import * as StellarSdk from "https://esm.sh/stellar-sdk@11";
 
-const HORIZON_TESTNET_URL = "https://horizon-testnet.stellar.org";
 const FRIENDBOT_URL = "https://friendbot.stellar.org/?addr=";
 const ISSUER_PUBLIC_KEY = Deno.env.get("STELLAR_ISSUER_PUBLIC_KEY") ?? "";
 const ISSUER_SECRET_KEY = Deno.env.get("STELLAR_ISSUER_SECRET_KEY") ?? "";
@@ -27,6 +26,58 @@ const PAYOUT_STRUCTURE: PayoutTier[] = [
   { minRank: 3, maxRank: 3, amount: 50 },
   { minRank: 4, maxRank: 10, amount: 25 },
 ];
+
+export function resolveStellarSettings() {
+  const network = (Deno.env.get("STELLAR_NETWORK") ?? "testnet").toLowerCase();
+  const isMainnet = network === "mainnet";
+
+  return {
+    horizonUrl: isMainnet ? "https://horizon.stellar.org" : "https://horizon-testnet.stellar.org",
+    networkPassphrase: isMainnet
+      ? StellarSdk.Networks.PUBLIC
+      : StellarSdk.Networks.TESTNET,
+    isTestnet: !isMainnet,
+  };
+}
+
+export function getSettlementWeekStart(date = new Date()): string {
+  const weekStart = new Date(date);
+  const day = weekStart.getUTCDay();
+  const daysSinceMonday = (day + 6) % 7;
+  weekStart.setUTCDate(weekStart.getUTCDate() - daysSinceMonday);
+  weekStart.setUTCHours(0, 0, 0, 0);
+  return weekStart.toISOString().slice(0, 10);
+}
+
+export function getSettlementReason(rank: number, weekStart: string): string {
+  return `leaderboard_bonus_rank_${rank}_week_${weekStart}`;
+}
+
+export function buildPayoutResult(
+  rank: number,
+  userId: string,
+  amount: number,
+  txHash: string,
+  insertError?: string,
+): {
+  rank: number;
+  userId: string;
+  amount: number;
+  txHash: string;
+  success: boolean;
+  error?: string;
+} {
+  return insertError
+    ? {
+      rank,
+      userId,
+      amount,
+      txHash,
+      success: false,
+      error: `Payment succeeded but payout recording failed: ${insertError}`,
+    }
+    : { rank, userId, amount, txHash, success: true };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -60,9 +111,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, payouts: 0 }));
     }
 
-    const server = new StellarSdk.Horizon.Server(HORIZON_TESTNET_URL);
+    const stellarSettings = resolveStellarSettings();
+    const server = new StellarSdk.Horizon.Server(stellarSettings.horizonUrl);
     const issuerKeypair = StellarSdk.Keypair.fromSecret(ISSUER_SECRET_KEY);
     let issuerAccount = await server.loadAccount(issuerKeypair.publicKey());
+    const weekStart = getSettlementWeekStart();
 
     const payoutResults = [];
 
@@ -72,6 +125,23 @@ serve(async (req) => {
       if (!payoutAmount) continue;
 
       try {
+        const rewardReason = getSettlementReason(entry.rank, weekStart);
+        const { data: existingReward, error: rewardLookupError } = await supabase
+          .from("echo_rewards")
+          .select("id")
+          .eq("user_id", entry.user_id)
+          .eq("reason", rewardReason)
+          .maybeSingle();
+
+        if (rewardLookupError) {
+          throw new Error(`Failed to check existing payout: ${rewardLookupError.message}`);
+        }
+
+        if (existingReward) {
+          console.log(`[settle-leaderboard-rewards] Payout already recorded for rank ${entry.rank} user`);
+          continue;
+        }
+
         // Get user's public key
         const { data: wallet } = await supabase
           .from("stellar_wallets")
@@ -92,6 +162,9 @@ serve(async (req) => {
           recipientAccount = await server.loadAccount(recipientPublicKey);
         } catch (e) {
           console.log(`[settle-leaderboard-rewards] Recipient unfunded, attempting Friendbot...`);
+          if (!stellarSettings.isTestnet) {
+            throw new Error("Recipient account is not funded on Stellar mainnet");
+          }
           const friendbotRes = await fetch(`${FRIENDBOT_URL}${recipientPublicKey}`);
           if (!friendbotRes.ok) {
             console.error(`[settle-leaderboard-rewards] Friendbot failed for ${recipientPublicKey}`);
@@ -110,7 +183,7 @@ serve(async (req) => {
               amount: payoutAmount.toString(),
             })
           )
-          .setNetworkPassphrase(StellarSdk.Networks.TESTNET_NETWORK_PASSPHRASE)
+          .setNetworkPassphrase(stellarSettings.networkPassphrase)
           .setTimeout(30)
           .build();
 
@@ -125,7 +198,7 @@ serve(async (req) => {
           .from("echo_rewards")
           .insert({
             user_id: entry.user_id,
-            reason: `leaderboard_bonus_rank_${entry.rank}`,
+            reason: rewardReason,
             amount: payoutAmount,
             stellar_tx_hash: txHash,
             created_at: new Date().toISOString(),
@@ -133,18 +206,25 @@ serve(async (req) => {
 
         if (insertError) {
           console.error(`[settle-leaderboard-rewards] Failed to record payout: ${insertError.message}`);
+          payoutResults.push(buildPayoutResult(
+            entry.rank,
+            entry.user_id,
+            payoutAmount,
+            txHash,
+            insertError.message,
+          ));
+          continue;
         }
 
         // Refresh issuer account for next transaction
         issuerAccount = await server.loadAccount(issuerKeypair.publicKey());
 
-        payoutResults.push({
-          rank: entry.rank,
-          userId: entry.user_id,
-          amount: payoutAmount,
+        payoutResults.push(buildPayoutResult(
+          entry.rank,
+          entry.user_id,
+          payoutAmount,
           txHash,
-          success: true,
-        });
+        ));
 
       } catch (e) {
         console.error(`[settle-leaderboard-rewards] Error processing rank ${entry.rank}: ${e}`);
