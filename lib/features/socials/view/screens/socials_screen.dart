@@ -6,6 +6,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../../../core/viewmodel/providers/main_tab_index_provider.dart';
 import '../../../global_mirror/view/screens/mood_comment_notifications_screen.dart';
 import '../../../global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
@@ -591,7 +592,6 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
           }
         },
         onScheduleSession: (title, isVoiceOnly, scheduledTime) async {
-          final messenger = ScaffoldMessenger.of(context);
           final scheduled = await ref
               .read(socialsProvider.notifier)
               .scheduleSession(
@@ -599,26 +599,20 @@ class _SocialsScreenState extends ConsumerState<SocialsScreen>
                 isVoiceOnly: isVoiceOnly,
                 scheduledTime: scheduledTime,
               );
-          if (!mounted) return;
+          if (!context.mounted) return;
           if (scheduled != null) {
             final day = scheduledTime.day;
             final month = scheduledTime.month;
             final hour = scheduledTime.hour;
             final minute = scheduledTime.minute.toString().padLeft(2, '0');
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Session scheduled for $day/$month at $hour:$minute',
-                ),
-                backgroundColor: AppTheme.successColor,
-              ),
+            ToastService.success(
+              context,
+              'Session scheduled for $day/$month at $hour:$minute',
             );
           } else {
-            messenger.showSnackBar(
-              const SnackBar(
-                content: Text('Failed to schedule session. Please try again.'),
-                backgroundColor: AppTheme.errorColor,
-              ),
+            ToastService.errorMessage(
+              context,
+              'Failed to schedule session. Please try again.',
             );
           }
         },
@@ -906,21 +900,17 @@ class _StartSessionBottomSheetState extends State<_StartSessionBottomSheet> {
             child: ElevatedButton(
               onPressed: () async {
                 if (_titleController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a session title'),
-                      backgroundColor: AppTheme.errorColor,
-                    ),
+                  ToastService.errorMessage(
+                    context,
+                    'Please enter a session title',
                   );
                   return;
                 }
 
                 if (_scheduleForLater && _scheduledTime == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please select a date and time'),
-                      backgroundColor: AppTheme.errorColor,
-                    ),
+                  ToastService.errorMessage(
+                    context,
+                    'Please select a date and time',
                   );
                   return;
                 }

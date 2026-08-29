@@ -11,6 +11,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../../../core/services/pip_service.dart';
 import '../../../../core/services/pip_overlay_service.dart';
 import '../../../../core/services/agora_error_handler.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 
@@ -192,13 +193,11 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
         _isInitialized = true;
       });
     } catch (e) {
-      debugPrint('[VideoCallScreen] Error initializing Agora: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error initializing video call: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[VideoCallScreen] Error initializing Agora',
         );
       }
     }
@@ -277,16 +276,20 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           _handleAgoraError(err, msg);
         },
         onConnectionStateChanged:
-            (RtcConnection connection, ConnectionStateType state,
-                ConnectionChangedReasonType reason) {
-          debugPrint('Connection state changed: $state, reason: $reason');
-          if (state == ConnectionStateType.connectionStateDisconnected ||
-              state == ConnectionStateType.connectionStateFailed) {
-            _handleConnectionLoss();
-          } else if (state == ConnectionStateType.connectionStateConnected) {
-            _handleConnectionRestored();
-          }
-        },
+            (
+              RtcConnection connection,
+              ConnectionStateType state,
+              ConnectionChangedReasonType reason,
+            ) {
+              debugPrint('Connection state changed: $state, reason: $reason');
+              if (state == ConnectionStateType.connectionStateDisconnected ||
+                  state == ConnectionStateType.connectionStateFailed) {
+                _handleConnectionLoss();
+              } else if (state ==
+                  ConnectionStateType.connectionStateConnected) {
+                _handleConnectionRestored();
+              }
+            },
       ),
     );
   }
@@ -453,13 +456,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               '[VideoCallScreen] PiP ready - will activate when app backgrounds',
             );
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Press home button to activate Picture-in-Picture',
-                  ),
-                  duration: Duration(seconds: 3),
-                ),
+              ToastService.info(
+                context,
+                'Press home button to activate Picture-in-Picture',
               );
             }
           } else {
@@ -468,25 +467,16 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               '[VideoCallScreen] Entered PiP mode - you can now navigate the app',
             );
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Call minimized to Picture-in-Picture. Navigate freely!',
-                  ),
-                  duration: Duration(seconds: 3),
-                ),
+              ToastService.info(
+                context,
+                'Call minimized to Picture-in-Picture. Navigate freely!',
               );
             }
           }
         } else {
           debugPrint('[VideoCallScreen] Failed to enter PiP mode');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('PiP mode not available'),
-                backgroundColor: AppTheme.errorColor,
-              ),
-            );
+            ToastService.errorMessage(context, 'PiP mode not available');
           }
         }
       } else {
@@ -495,12 +485,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           '[VideoCallScreen] Already in PiP mode - tap the floating window to expand',
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tap the floating window to expand'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          ToastService.info(context, 'Tap the floating window to expand');
         }
       }
     } catch (e) {
@@ -788,7 +773,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            _isReconnecting ? 'Reconnecting...' : 'Connecting...',
+                            _isReconnecting
+                                ? 'Reconnecting...'
+                                : 'Connecting...',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               color: Colors.white,

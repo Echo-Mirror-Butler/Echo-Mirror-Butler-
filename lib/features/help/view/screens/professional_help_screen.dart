@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../../ai/viewmodel/providers/ai_provider.dart';
 
 /// Professional help screen with Gemini-powered resource recommendations
@@ -237,17 +238,16 @@ class _ProfessionalHelpScreenState
         await launchUrl(url, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not open this resource')),
-          );
+          ToastService.errorMessage(context, 'Could not open this resource');
         }
       }
     } catch (e) {
-      debugPrint('[ProfessionalHelpScreen] Error launching URL: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
+        ToastService.error(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Error opening resource')));
+          e,
+          label: '[ProfessionalHelpScreen] launchUrl',
+        );
       }
     }
   }

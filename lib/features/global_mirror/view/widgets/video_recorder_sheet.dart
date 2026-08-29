@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 
 /// Video recorder bottom sheet
@@ -57,9 +58,11 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
+        ToastService.error(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error recording video: $e')));
+          e,
+          label: '[VideoRecorderSheet] recordVideo',
+        );
       }
     }
   }
@@ -95,15 +98,12 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         );
       }
     } catch (e, stackTrace) {
-      debugPrint('[VideoRecorderSheet] Error loading video preview: $e');
-      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading video preview: $e'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 3),
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[VideoRecorderSheet] loadVideoPreview',
+          stackTrace: stackTrace,
         );
       }
     }
@@ -162,18 +162,15 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         }
       }
     } catch (e, stackTrace) {
-      debugPrint('[VideoRecorderSheet] Error picking video: $e');
-      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isPickingMedia = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking video: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[VideoRecorderSheet] pickVideo',
+          stackTrace: stackTrace,
         );
       }
     }
@@ -239,18 +236,15 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         }
       }
     } catch (e, stackTrace) {
-      debugPrint('[VideoRecorderSheet] Error picking image: $e');
-      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isPickingMedia = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error picking image: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[VideoRecorderSheet] pickImage',
+          stackTrace: stackTrace,
         );
       }
     }
@@ -347,18 +341,15 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
         }
       }
     } catch (e, stackTrace) {
-      debugPrint('[VideoRecorderSheet] Error taking photo: $e');
-      debugPrint('[VideoRecorderSheet] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isPickingMedia = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error taking photo: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[VideoRecorderSheet] takePhoto',
+          stackTrace: stackTrace,
         );
       }
     }
@@ -367,12 +358,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
   Future<void> _uploadVideo() async {
     if (_selectedVideo == null && _selectedImage == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No media selected'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        ToastService.errorMessage(context, 'No media selected');
       }
       return;
     }
@@ -382,13 +368,9 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
     final file = File(filePath);
     if (!await file.exists()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${_isImage ? "Image" : "Video"} file not found. Please select again.',
-            ),
-            backgroundColor: Colors.red,
-          ),
+        ToastService.errorMessage(
+          context,
+          '${_isImage ? "Image" : "Video"} file not found. Please select again.',
         );
       }
       return;
@@ -497,13 +479,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload error: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        ToastService.error(context, e, label: '[VideoRecorderSheet] upload');
       }
     }
   }

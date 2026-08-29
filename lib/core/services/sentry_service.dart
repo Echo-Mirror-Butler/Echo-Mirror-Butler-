@@ -9,20 +9,22 @@ class SentryService {
   static Future<void> init({String environment = 'development'}) async {
     if (_initialized) return;
 
-    await SentryFlutter.init(
-      (options) {
-        options.dsn = const String.fromEnvironment(
-          'SENTRY_DSN',
-          defaultValue: '',
-        );
-        options.environment = environment;
-        options.tracesSampleRate = environment == 'production' ? 0.2 : 1.0;
-        options.debug = kDebugMode;
-        // Never send email or user metadata. This is also the SDK default,
-        // but set explicitly so the intent is clear to future readers.
-        options.sendDefaultPii = false;
-      },
-    );
+    await SentryFlutter.init((options) {
+      options.dsn = const String.fromEnvironment(
+        'SENTRY_DSN',
+        defaultValue: '',
+      );
+      options.environment = environment;
+      options.tracesSampleRate = environment == 'production' ? 0.2 : 1.0;
+      options.debug = kDebugMode;
+      // Never send email or user metadata. This is also the SDK default,
+      // but set explicitly so the intent is clear to future readers.
+      options.sendDefaultPii = false;
+      options.beforeSend = (event, hint) {
+        // Defense in depth — strip any user metadata that slips through.
+        return event.copyWith(user: SentryUser(id: 'redacted'));
+      };
+    });
 
     _initialized = true;
   }
@@ -37,9 +39,7 @@ class SentryService {
     await Sentry.captureException(
       exception,
       stackTrace: stackTrace,
-      hint: Hint.withMap({
-        if (extra != null) 'extra': extra,
-      }),
+      hint: Hint.withMap({if (extra != null) 'extra': extra}),
     );
   }
 
