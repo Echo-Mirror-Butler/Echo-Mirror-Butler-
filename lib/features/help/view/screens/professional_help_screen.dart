@@ -769,6 +769,7 @@ class _ProfessionalHelpScreenState
                         Icons.close,
                         color: theme.colorScheme.onPrimary,
                       ),
+                      tooltip: 'Close',
                       onPressed: () {
                         setState(() {
                           _isChatOpen = false;
@@ -968,6 +969,7 @@ class _ProfessionalHelpScreenState
                           Icons.send,
                           color: theme.colorScheme.onPrimary,
                         ),
+                        tooltip: 'Send',
                         onPressed: _isSendingMessage
                             ? null
                             : () {

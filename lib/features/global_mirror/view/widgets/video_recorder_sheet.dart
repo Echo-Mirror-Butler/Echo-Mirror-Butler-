@@ -912,6 +912,7 @@ class _VideoRecorderSheetState extends ConsumerState<VideoRecorderSheet> {
               suffixIcon: IconButton(
                 icon: Icon(FontAwesomeIcons.xmark.data, size: 16),
                 color: Colors.grey[600],
+                tooltip: 'Close',
                 onPressed: () {
                   setState(() {
                     _isUsingCustomTag = false;

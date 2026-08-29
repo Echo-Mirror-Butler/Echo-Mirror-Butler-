@@ -1,0 +1,17 @@
+name: Icon button accessibility
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  icon-buttons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check icon-only controls
+        run: python3 scripts/check-icon-button-labels.py

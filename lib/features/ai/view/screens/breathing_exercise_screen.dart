@@ -291,6 +291,7 @@ class _BreathingExerciseScreenState
                       children: [
                         IconButton(
                           icon: Icon(Icons.arrow_back, color: Colors.white),
+                          tooltip: 'Back',
                           onPressed: () {
                             _audioPlayer.stop();
                             Navigator.of(context).pop();

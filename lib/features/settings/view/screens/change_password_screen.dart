@@ -76,6 +76,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => context.pop(),
         ),
         title: const Text('Change Password'),
@@ -114,6 +115,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                             ? FontAwesomeIcons.eye.data
                             : FontAwesomeIcons.eyeSlash.data,
                       ),
+                      tooltip: 'Show or hide password',
                       onPressed: () =>
                           setState(() => _obscureCurrent = !_obscureCurrent),
                     ),
@@ -137,6 +139,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                             ? FontAwesomeIcons.eye.data
                             : FontAwesomeIcons.eyeSlash.data,
                       ),
+                      tooltip: 'Show or hide password',
                       onPressed: () =>
                           setState(() => _obscureNew = !_obscureNew),
                     ),
@@ -163,6 +166,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                             ? FontAwesomeIcons.eye.data
                             : FontAwesomeIcons.eyeSlash.data,
                       ),
+                      tooltip: 'Show or hide password',
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
