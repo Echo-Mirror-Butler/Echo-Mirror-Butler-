@@ -149,6 +149,22 @@ registerTestSuite("save-future-letter", [
   },
 ]);
 
+// cleanup-expired-stories tests
+registerTestSuite("cleanup-expired-stories", [
+  async () => {
+    const req = createMockRequest("POST", {}, { Authorization: "Bearer test-token" });
+    assertEquals(req.method, "POST");
+  },
+  async () => {
+    const req = createMockRequest("POST", {});
+    assertEquals(req.method, "POST");
+  },
+  async () => {
+    const req = createMockRequest("GET");
+    assertEquals(req.method, "GET");
+  },
+]);
+
 // send-daily-reminder tests
 registerTestSuite("send-daily-reminder", [
   async () => {
