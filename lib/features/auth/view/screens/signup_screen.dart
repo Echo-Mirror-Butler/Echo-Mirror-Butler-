@@ -192,6 +192,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             ? FontAwesomeIcons.eye.data
                             : FontAwesomeIcons.eyeSlash.data,
                       ),
+                      tooltip: 'Show or hide password',
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
@@ -230,6 +231,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             ? FontAwesomeIcons.eye.data
                             : FontAwesomeIcons.eyeSlash.data,
                       ),
+                      tooltip: 'Show or hide password',
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),

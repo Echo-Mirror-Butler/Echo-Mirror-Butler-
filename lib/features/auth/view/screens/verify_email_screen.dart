@@ -95,6 +95,7 @@ class _VerifyEmailScreenState extends ConsumerState<VerifyEmailScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => context.go('/login'),
         ),
         title: const Text('Verify Email'),

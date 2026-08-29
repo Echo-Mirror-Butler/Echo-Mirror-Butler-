@@ -46,6 +46,7 @@ class _LoggingScreenState extends ConsumerState<LoggingScreen> {
         actions: [
           IconButton(
             icon: Icon(FontAwesomeIcons.calendar.data),
+            tooltip: 'Open calendar',
             onPressed: () {
               final entries = loggingState.value ?? <LogEntryModel>[];
               _showCalendar(context, entries);

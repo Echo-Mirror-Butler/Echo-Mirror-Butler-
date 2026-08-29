@@ -290,6 +290,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                   ),
                   IconButton(
                     icon: Icon(Icons.close),
+                    tooltip: 'Close',
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -506,6 +507,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                               color: Colors.white,
                               size: 18,
                             ),
+                      tooltip: 'Activate control',
                       onPressed: _isSubmitting ? null : _submitComment,
                     ),
                   ),
