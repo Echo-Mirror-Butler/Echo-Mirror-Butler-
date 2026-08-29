@@ -16,7 +16,11 @@ class FakeAiRepository extends AiRepository {
   FakeAiRepository() : super();
 
   @override
-  Future<AiInsightModel> generateInsight(List<LogEntryModel> recentLogs) async {
+  Future<AiInsightModel> generateInsight(
+    List<LogEntryModel> recentLogs, {
+    Map<String, int>? previousFollowThroughRate,
+    bool privacyPreserving = true,
+  }) async {
     generateInsightCalled = true;
     lastLogs = recentLogs;
 

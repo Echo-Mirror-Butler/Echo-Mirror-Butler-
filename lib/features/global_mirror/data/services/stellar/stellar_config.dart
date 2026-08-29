@@ -5,6 +5,9 @@ class StellarConfig {
   /// Horizon API endpoint (testnet)
   static const String horizonUrl = 'https://horizon-testnet.stellar.org';
 
+  /// Whether configured for testnet
+  static const bool isTestnet = true;
+
   /// Stellar testnet network passphrase
   static const String networkPassphrase = 'Test SDF Network ; September 2015';
 

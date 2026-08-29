@@ -334,8 +334,7 @@ void main() {
         final insights = await repository.getInsights(userId);
         final pattern = insights.singleWhere(
           (i) =>
-              i.title == 'Pattern Detected' &&
-              i.type == InsightType.prediction,
+              i.title == 'Pattern Detected' && i.type == InsightType.prediction,
         );
         expect(pattern.description, contains('Mondays'));
         expect(pattern.description, contains('average 5.0 across 2 entries'));
@@ -360,10 +359,7 @@ void main() {
         ).thenAnswer((_) async => entries);
 
         final insights = await repository.getInsights(userId);
-        expect(
-          insights.where((i) => i.title == 'Pattern Detected'),
-          isEmpty,
-        );
+        expect(insights.where((i) => i.title == 'Pattern Detected'), isEmpty);
       },
     );
 
@@ -399,10 +395,7 @@ void main() {
         ).thenAnswer((_) async => entries);
 
         final insights = await repository.getInsights(userId);
-        expect(
-          insights.where((i) => i.title == 'Pattern Detected'),
-          isEmpty,
-        );
+        expect(insights.where((i) => i.title == 'Pattern Detected'), isEmpty);
       },
     );
 

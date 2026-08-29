@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
@@ -109,10 +110,9 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         // Get recipient name from Supabase
         String recipientName = 'User';
         try {
-          final authState = ref.read(authStateProvider);
-          final supabaseUser = authState.whenData((auth) => auth?.user);
-          if (supabaseUser != null) {
-            final profiles = await supabaseUser.value.client
+          final authState = ref.read(authProvider);
+          if (authState.isAuthenticated) {
+            final profiles = await Supabase.instance.client
                 .from('user_profiles')
                 .select('display_name')
                 .eq('id', widget.recipientUserId)
