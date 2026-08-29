@@ -269,7 +269,7 @@ class StellarService {
     try {
       final response = await (sdk ?? _sdk).payments.forAccount(publicKey)
           .limit(limit.clamp(1, 200))
-          .order(OrderDirection.DESC)
+          .order(RequestBuilderOrder.DESC)
           .execute();
 
       final transactions = <OnChainTransactionModel>[];
