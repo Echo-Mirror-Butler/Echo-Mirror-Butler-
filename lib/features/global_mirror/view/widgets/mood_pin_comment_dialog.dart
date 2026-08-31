@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../data/models/mood_pin_comment_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
@@ -70,9 +71,10 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
           .eq('following_id', pinUserId);
       setState(() => _isFollowing = false);
     } else {
-      await Supabase.instance.client
-          .from('user_follows')
-          .insert({'follower_id': currentUserId, 'following_id': pinUserId});
+      await Supabase.instance.client.from('user_follows').insert({
+        'follower_id': currentUserId,
+        'following_id': pinUserId,
+      });
       setState(() => _isFollowing = true);
     }
   }
@@ -144,31 +146,20 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
         if (success) {
           _commentController.clear();
           _loadComments(); // Reload comments
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Comment sent! ðŸ’™'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
+          ToastService.success(context, 'Comment sent! ðŸ’™');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to send comment. Please try again.'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.red,
-            ),
+          ToastService.errorMessage(
+            context,
+            'Failed to send comment. Please try again.',
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[MoodPinCommentDialog] addComment',
         );
       }
     } finally {
@@ -278,16 +269,16 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
                       compact: true,
                     ),
                   if (_isFollowing != null && widget.pin.userId != null)
-                  IconButton(
-                    icon: Icon(
-                      _isFollowing!
-                          ? FontAwesomeIcons.solidUser.data
-                          : FontAwesomeIcons.userPlus.data,
-                      size: 18,
+                    IconButton(
+                      icon: Icon(
+                        _isFollowing!
+                            ? FontAwesomeIcons.solidUser.data
+                            : FontAwesomeIcons.userPlus.data,
+                        size: 18,
+                      ),
+                      onPressed: _toggleFollow,
+                      tooltip: _isFollowing! ? 'Unfollow' : 'Follow',
                     ),
-                    onPressed: _toggleFollow,
-                    tooltip: _isFollowing! ? 'Unfollow' : 'Follow',
-                  ),
                   IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => Navigator.pop(context),

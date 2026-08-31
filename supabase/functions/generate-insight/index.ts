@@ -107,15 +107,67 @@ serve(async (req) => {
       );
     }
 
-    const { recentLogs, previousFollowThroughRate } = await req.json();
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    const reqBody = await req.json();
+    const {
+      privacyMode,
+      recentLogs,
+      sanitizedLogs,
+      moodTrend,
+      habitFrequencies,
+      habitMoodCorrelations,
+      temporalPatterns,
+      clusters,
+      similarityHighlights,
+      previousFollowThroughRate,
+    } = reqBody;
 
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
-    let prompt = `Analyze these recent logs and generate a structured JSON response with:
-- prediction: concise paragraph
+    let prompt = "";
+
+    if (privacyMode || sanitizedLogs || moodTrend) {
+      // Privacy-preserving prompt construction: derived metrics + on-device clusters
+      prompt = `Analyze these privacy-preserving user behavioral metrics, mood trajectories, and on-device embedding clusters (reflection notes were embedded locally and strictly kept on-device; no raw text is provided) to generate a deeply personalized and empathetic structured JSON insight response:
+
+1. Mood Metrics & Trajectory:
+- Average Mood: ${moodTrend?.average ?? "N/A"}/5 (Range: ${moodTrend?.min ?? "N/A"} to ${moodTrend?.max ?? "N/A"})
+- Trend Direction: ${moodTrend?.direction ?? "stable"} (Linear Slope: ${moodTrend?.slope ?? 0}, Volatility: ${moodTrend?.volatility ?? 0})
+
+2. Habit & Behavior Statistics:
+- Habit Completion Counts: ${JSON.stringify(habitFrequencies ?? {})}
+- Habit Mood Correlations (Avg mood when performed): ${JSON.stringify(habitMoodCorrelations ?? {})}
+
+3. Temporal Dynamics:
+- Peak Active / Positive Time: ${temporalPatterns?.bestTimeOfDay ?? "Morning"}
+- Challenging / Low Energy Time: ${temporalPatterns?.worstTimeOfDay ?? "Night"}
+- Day of Week Averages: ${JSON.stringify(temporalPatterns?.weekdayAverages ?? {})}
+
+4. On-Device Semantic Clusters & Similarity Recurrences:
+- Behavioral & Theme Clusters: ${JSON.stringify(clusters ?? [])}
+- Similarity Pattern Matches: ${JSON.stringify(similarityHighlights ?? [])}
+
+5. Chronological Log History:
+${JSON.stringify(sanitizedLogs ?? [])}
+
+Generate a structured JSON response with:
+- prediction: concise paragraph (at least 200 characters) forecasting next month's trajectory referencing patterns, habits, and mood trends
+- suggestions: string[] (at least 30 characters each) with context-aware, actionable suggestions
+- futureLetter: an encouraging letter (at least 300 characters) from their future self referencing specific dates, habits, and milestones
+- stressLevel: number from 0 to 5 based on mood volatility and trend decline
+- calmingMessage: soothing message
+- musicRecommendations: string[]
+- moodDrivers: array of { label: string, percentage: number } where percentages total around 100
+- bestTimeOfDay: one of Morning, Afternoon, Evening, Night
+- worstTimeOfDay: one of Morning, Afternoon, Evening, Night
+- recommendations: actionable recommendation strings
+- moodScore: integer from 1 to 5 representing overall mood of user`;
+    } else {
+      // Legacy plaintext logs prompt
+      prompt = `Analyze these recent logs and generate a structured JSON response with:
+- prediction: concise paragraph (at least 200 characters)
 - suggestions: string[]
-- futureLetter: string
+- futureLetter: string (at least 300 characters)
 - stressLevel: number from 0 to 5
 - calmingMessage: string
 - musicRecommendations: string[]
@@ -125,7 +177,8 @@ serve(async (req) => {
 - recommendations: actionable recommendation strings
 - moodScore: integer from 1 to 5 representing overall mood of user
 
-Logs: ${JSON.stringify(recentLogs)}`;
+Logs: ${JSON.stringify(recentLogs ?? [])}`;
+    }
 
     if (previousFollowThroughRate) {
       prompt += `\n\nNote: In the previous cycle, the user followed ${previousFollowThroughRate.acted} out of ${previousFollowThroughRate.total} recommendations. Please adjust your recommendations to be more achievable, encouraging, or tailored based on this follow-through rate.`;

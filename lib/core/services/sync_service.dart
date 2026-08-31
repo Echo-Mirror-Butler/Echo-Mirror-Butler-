@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/local_models.dart';
+import '../sync/conflict_policy.dart';
+import '../sync/hlc.dart';
+import '../sync/sync_mutation.dart';
 import 'offline_storage_service.dart';
 
 /// Outcome of a [SyncService.syncPendingEntries] run.
@@ -78,19 +81,46 @@ class SyncService {
   Future<void> _syncLogEntry(LocalLogEntry entry) async {
     final existing = await supabase
         .from('log_entries')
-        .select('id')
+        .select('id, user_id, date, mood, habits, notes, updated_at')
         .eq('user_id', entry.userId)
         .eq('date', entry.date)
         .maybeSingle();
 
     if (existing != null) {
+      final policy = ConflictPolicyRegistry.getPolicy(SyncEntityType.moodEntry);
+      final localHlc = Hlc(
+        millis: entry.updatedAt.toUtc().millisecondsSinceEpoch,
+        counter: 0,
+        nodeId: 'local',
+      );
+      final remoteUpdated = DateTime.tryParse(existing['updated_at']?.toString() ?? '') ??
+          DateTime.now().toUtc();
+      final remoteHlc = Hlc(
+        millis: remoteUpdated.millisecondsSinceEpoch,
+        counter: 0,
+        nodeId: 'server',
+      );
+
+      final resolution = policy.resolve(
+        local: {
+          'mood': entry.mood,
+          'habits': entry.habits,
+          'notes': entry.notes,
+          'updated_at': entry.updatedAt.toIso8601String(),
+        },
+        remote: existing,
+        localHlc: localHlc,
+        remoteHlc: remoteHlc,
+      );
+
+      final merged = resolution.resolvedData;
       await supabase
           .from('log_entries')
           .update({
-            'mood': entry.mood,
-            'habits': entry.habits,
-            'notes': entry.notes,
-            'updated_at': entry.updatedAt.toIso8601String(),
+            'mood': merged['mood'],
+            'habits': merged['habits'] ?? [],
+            'notes': merged['notes'],
+            'updated_at': merged['updated_at'] ?? DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', existing['id'] as String)
           .eq('user_id', entry.userId);

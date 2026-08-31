@@ -190,24 +190,69 @@ void main() {
         );
       });
 
-      test('sends correct prompts with log data to API', () async {
-        final logs = [buildLogEntry(id: 'test-log-1')];
-        when(
-          () => mockFunctions.invoke(any(), body: any(named: 'body')),
-        ).thenAnswer(
-          (_) async =>
-              FunctionResponse(data: buildInsightResponse(), status: 200),
-        );
+      test(
+        'sends privacy-preserving payload by default with zero plaintext notes',
+        () async {
+          final logs = [
+            buildLogEntry(id: 'test-log-1', notes: 'Private reflection notes'),
+            buildLogEntry(
+              id: 'test-log-2',
+              mood: 5,
+              notes: 'Another confidential entry',
+            ),
+          ];
+          Map<String, dynamic>? capturedBody;
+          when(
+            () => mockFunctions.invoke(any(), body: any(named: 'body')),
+          ).thenAnswer((invocation) async {
+            capturedBody =
+                invocation.namedArguments[#body] as Map<String, dynamic>?;
+            return FunctionResponse(data: buildInsightResponse(), status: 200);
+          });
 
-        await repository.generateInsight(logs);
+          await repository.generateInsight(logs);
 
-        verify(
-          () => mockFunctions.invoke(
-            'generate-insight',
-            body: any(named: 'body'),
-          ),
-        ).called(1);
-      });
+          expect(capturedBody, isNotNull);
+          expect(capturedBody!['privacyMode'], isTrue);
+          expect(capturedBody!['moodTrend'], isNotNull);
+          expect(capturedBody!['sanitizedLogs'], isNotNull);
+
+          final sanitized = capturedBody!['sanitizedLogs'] as List;
+          expect(sanitized.length, equals(2));
+          for (final entry in sanitized) {
+            final entryMap = entry as Map<String, dynamic>;
+            expect(entryMap.containsKey('noteEmbedding'), isTrue);
+            expect(entryMap.containsKey('notes'), isFalse);
+          }
+
+          // Verify zero plaintext appears anywhere in the captured payload
+          final serialized = capturedBody.toString();
+          expect(serialized.contains('Private reflection notes'), isFalse);
+          expect(serialized.contains('confidential entry'), isFalse);
+        },
+      );
+
+      test(
+        'sends legacy plaintext payload when privacyPreserving is false',
+        () async {
+          final logs = [
+            buildLogEntry(id: 'legacy-log-1', notes: 'Plaintext note'),
+          ];
+          Map<String, dynamic>? capturedBody;
+          when(
+            () => mockFunctions.invoke(any(), body: any(named: 'body')),
+          ).thenAnswer((invocation) async {
+            capturedBody =
+                invocation.namedArguments[#body] as Map<String, dynamic>?;
+            return FunctionResponse(data: buildInsightResponse(), status: 200);
+          });
+
+          await repository.generateInsight(logs, privacyPreserving: false);
+
+          expect(capturedBody, isNotNull);
+          expect(capturedBody!.containsKey('recentLogs'), isTrue);
+        },
+      );
     });
 
     group('generateChatResponse', () {

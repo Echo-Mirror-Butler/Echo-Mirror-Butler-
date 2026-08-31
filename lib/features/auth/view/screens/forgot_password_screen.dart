@@ -6,6 +6,7 @@ import '../../../../core/themes/app_theme.dart';
 import '../../viewmodel/providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
+import '../../../../core/services/toast_service.dart';
 
 /// Forgot password screen
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -46,24 +47,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           if (!success) {
             // Show a message even on "failure" to prevent email enumeration
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'If an account exists with this email, you will receive a reset link.',
-                ),
-                duration: Duration(seconds: 5),
-              ),
+            ToastService.info(
+              context,
+              'If an account exists with this email, you will receive a reset link.',
             );
           }
         }
       } catch (e) {
         if (mounted) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${e.toString()}'),
-              backgroundColor: AppTheme.errorColor,
-            ),
+          ToastService.error(
+            context,
+            e,
+            label: '[ForgotPasswordScreen] requestPasswordReset',
           );
         }
       }

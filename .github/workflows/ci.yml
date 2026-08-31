@@ -17,7 +17,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 1.145.4
 
       - name: Start Supabase local stack
         run: supabase start

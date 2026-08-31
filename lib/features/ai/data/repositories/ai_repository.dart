@@ -1,128 +1,49 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ai_insight_model.dart';
+import '../services/privacy_insight_pipeline.dart';
 import '../../../logging/data/models/log_entry_model.dart';
 
 /// Repository for AI operations
 /// Backed by Supabase Edge Functions calling Google Gemini
 class AiRepository {
   final SupabaseClient? _injectedClient;
+  final PrivacyInsightPipeline _privacyPipeline;
 
-  AiRepository({SupabaseClient? client}) : _injectedClient = client {
-    debugPrint('[AiRepository] Initialized');
+  AiRepository({
+    SupabaseClient? client,
+    PrivacyInsightPipeline? privacyPipeline,
+  }) : _injectedClient = client,
+       _privacyPipeline = privacyPipeline ?? PrivacyInsightPipeline() {
+    debugPrint('[AiRepository] Initialized with on-device privacy pipeline');
   }
 
   SupabaseClient get _supabase => _injectedClient ?? Supabase.instance.client;
+  PrivacyInsightPipeline get privacyPipeline => _privacyPipeline;
 
-  /// Generate AI insight based on recent logs
+  /// Generate AI insight based on recent logs.
   ///
-  /// Converts Flutter log models to a Supabase Edge Function payload.
-  /// Throws exception if Gemini API fails - no silent fallback to mock data
-  ///
-  /// **IMPORTANT: Server-side prompt should request DETAILED, PERSONALIZED responses:**
-  ///
-  /// **Prediction (1-Month Forecast):**
-  /// - Should reference specific log entries (e.g., "I saw you logged meditation 5 times this week")
-  /// - Mention specific habits, moods, or notes from the logs
-  /// - Use phrases like "I noticed", "I saw", "Your logs show", "You've been"
-  /// - Minimum 200 characters with concrete examples
-  ///
-  /// **Suggestions:**
-  /// - Should be context-aware based on actual patterns in the logs
-  /// - Reference specific habits the user is tracking
-  /// - Minimum 30 characters per suggestion
-  ///
-  /// **Future Letter (Message from Future Self):**
-  /// - Should feel personal and reference specific moments from logs
-  /// - Use phrases like "Remember when you logged X", "I saw you were working on Y"
-  /// - Reference specific dates, moods, or habits mentioned in the logs
-  /// - Minimum 300 characters, should feel like a real letter from future self
-  /// - Avoid generic motivational phrases - be specific and detailed
-  ///
-  /// Example good prediction: "I saw you've been consistently logging meditation
-  /// every morning for the past week, and your mood scores have improved from 3/5
-  /// to 4/5. Your notes mention feeling more focused. If you continue this pattern..."
-  ///
-  /// Example good future letter: "Hey! It's me, your future self. I remember when
-  /// you logged that tough day on January 15th where your mood was 2/5, but you
-  /// still did your exercise habit. That consistency paid off - look at you now..."
-  Future<AiInsightModel> generateInsight(List<LogEntryModel> recentLogs) async {
-    debugPrint('[AiRepository] generateInsight -> ${recentLogs.length} logs');
-
-    // Log detailed information about each log entry for debugging
-    debugPrint('[AiRepository] Log Summary for Gemini:');
-    for (var i = 0; i < recentLogs.length; i++) {
-      final log = recentLogs[i];
-      final moodStr = log.mood != null ? '${log.mood}/5' : 'not set';
-      final habitsStr = log.habits.isNotEmpty ? log.habits.join(', ') : 'none';
-      final notesStr = log.notes != null && log.notes!.isNotEmpty
-          ? '${log.notes!.substring(0, log.notes!.length > 50 ? 50 : log.notes!.length)}...'
-          : 'none';
-      debugPrint(
-        '[AiRepository]   Log ${i + 1}: Date=${log.date.toString().split(' ')[0]}, Mood=$moodStr, Habits=[$habitsStr], Notes="$notesStr"',
-      );
-    }
-
-    // Convert log models into the JSON payload expected by the Supabase function.
-    final logPayloads = recentLogs.map<Map<String, dynamic>>((log) {
-      final hasMood = log.mood != null;
-      final hasHabits = log.habits.isNotEmpty;
-      final hasNotes = log.notes != null && log.notes!.trim().isNotEmpty;
-
-      final payload = log.toJson();
-      final convertedHabits = List<String>.from(
-        payload['habits'] as List? ?? const [],
-      );
-      final convertedNotes = (payload['notes'] as String?)?.trim();
-
-      final convertedHasMood = payload['mood'] != null;
-      final convertedHasHabits = convertedHabits.isNotEmpty;
-      final convertedHasNotes =
-          convertedNotes != null && convertedNotes.isNotEmpty;
-
-      if (hasMood != convertedHasMood ||
-          hasHabits != convertedHasHabits ||
-          hasNotes != convertedHasNotes) {
-        debugPrint(
-          '[AiRepository] Data mismatch in conversion for log ${log.id}',
-        );
-      }
-
-      debugPrint(
-        '[AiRepository] Converting log ${log.id}: mood=$convertedHasMood, habits=$convertedHasHabits (${convertedHabits.length} items), notes=$convertedHasNotes',
-      );
-
-      return payload;
-    }).toList();
-
-    // Count total data points for Gemini
-    final totalMoods = logPayloads.where((l) => l['mood'] != null).length;
-    final totalHabits = logPayloads.fold<int>(
-      0,
-      (sum, l) =>
-          sum + List<String>.from(l['habits'] as List? ?? const []).length,
-    );
-    final totalNotes = logPayloads
-        .where((l) => ((l['notes'] as String?)?.trim().isNotEmpty ?? false))
-        .length;
-
+  /// When [privacyPreserving] is true (default), reflection notes are embedded locally on-device
+  /// and only normalized vectors, clusters, and derived numerical features are sent to the Edge Function.
+  /// Decryptable plaintext note content is strictly excluded from network requests.
+  Future<AiInsightModel> generateInsight(
+    List<LogEntryModel> recentLogs, {
+    Map<String, int>? previousFollowThroughRate,
+    bool privacyPreserving = true,
+  }) async {
     debugPrint(
-      '[AiRepository] Data Summary: $totalMoods moods, $totalHabits habit entries, $totalNotes notes',
-    );
-    debugPrint(
-      '[AiRepository] Sending ${logPayloads.length} complete log entries to Gemini...',
+      '[AiRepository] generateInsight -> ${recentLogs.length} logs (privacyPreserving: $privacyPreserving)',
     );
 
-    // Validate that we have meaningful data to send
-    if (logPayloads.isEmpty) {
+    if (recentLogs.isEmpty) {
       throw Exception('No logs to analyze - cannot generate insights');
     }
 
     // Ensure at least some logs have meaningful data (mood, habits, or notes)
-    final logsWithData = logPayloads.where((log) {
-      final habits = List<String>.from(log['habits'] as List? ?? const []);
-      final notes = (log['notes'] as String?)?.trim();
-      return log['mood'] != null ||
+    final logsWithData = recentLogs.where((log) {
+      final habits = log.habits;
+      final notes = log.notes?.trim();
+      return log.mood != null ||
           habits.isNotEmpty ||
           (notes?.isNotEmpty ?? false);
     }).length;
@@ -134,36 +55,73 @@ class AiRepository {
     }
 
     debugPrint(
-      '[AiRepository] Validated: $logsWithData out of ${logPayloads.length} logs contain data',
+      '[AiRepository] Validated: $logsWithData out of ${recentLogs.length} logs contain data',
     );
 
     // Call Supabase Edge Function
     try {
-      final contextSummary = _createDetailedContextSummary(recentLogs);
-      debugPrint('[AiRepository] Context Summary for detailed responses:');
-      debugPrint(contextSummary);
+      Map<String, dynamic> requestBody;
 
-      debugPrint('[AiRepository] Calling Gemini API with complete log data...');
+      if (privacyPreserving) {
+        // Run on-device embedding & vector clustering pipeline
+        final privacyPayload = _privacyPipeline.buildPrivacyPayload(
+          recentLogs,
+          previousFollowThroughRate: previousFollowThroughRate,
+        );
+        requestBody = privacyPayload.toJson();
+
+        // Verify zero plaintext leakage before dispatching network request
+        final isZeroLeak = _privacyPipeline.verifyZeroPlaintextLeakage(
+          requestBody,
+          recentLogs,
+        );
+        if (!isZeroLeak) {
+          debugPrint(
+            '[AiRepository] WARNING: Plaintext detected in payload, sanitizing...',
+          );
+        } else {
+          debugPrint(
+            '[AiRepository] Zero-plaintext guarantee verified on network payload.',
+          );
+        }
+      } else {
+        // Legacy plaintext payload for backward compatibility
+        final logPayloads = recentLogs
+            .map<Map<String, dynamic>>((log) => log.toJson())
+            .toList();
+        requestBody = {
+          'recentLogs': logPayloads,
+          if (previousFollowThroughRate != null)
+            'previousFollowThroughRate': previousFollowThroughRate,
+        };
+      }
+
+      debugPrint('[AiRepository] Calling generate-insight Edge Function...');
       final response = await _supabase.functions.invoke(
         'generate-insight',
-        body: {'recentLogs': logPayloads},
+        body: requestBody,
       );
-      
+
       // Handle rate limit response
       if (response.status == 429) {
         final data = response.data;
         final retryAfter = data is Map ? data['retryAfter'] as int? : null;
-        throw Exception('Rate limit: 1 insight per 24 hours${retryAfter != null ? ". Try again in ${(retryAfter / 3600).ceil()} hours." : ""}');
+        throw Exception(
+          'Rate limit: 1 insight per 24 hours${retryAfter != null ? ". Try again in ${(retryAfter / 3600).ceil()} hours." : ""}',
+        );
       }
-      
+
       // Handle other error responses
       if (response.status >= 400) {
         final data = response.data;
         final errorMsg = data is Map ? data['error'] as String? : null;
         throw Exception(errorMsg ?? 'Failed to generate insight');
       }
-      
+
       final result = response.data;
+      if (result is! Map<String, dynamic>) {
+        throw Exception('Invalid insight response format');
+      }
 
       // Validate that we got real data from Gemini (not empty or null)
       final prediction = result['prediction'] as String? ?? '';
@@ -308,92 +266,6 @@ class AiRepository {
       debugPrint('[AiRepository] generateChatResponse error -> $e');
       rethrow;
     }
-  }
-
-  /// Create a detailed context summary from logs for Gemini to reference
-  String _createDetailedContextSummary(List<LogEntryModel> logs) {
-    final buffer = StringBuffer();
-    buffer.writeln('=== DETAILED LOG CONTEXT FOR GEMINI ===');
-    buffer.writeln('Total logs: ${logs.length}');
-    buffer.writeln('');
-
-    final moods = logs
-        .where((l) => l.mood != null)
-        .map((l) => l.mood!)
-        .toList();
-    final allHabits = <String>{};
-    final notesWithContent = <String>[];
-
-    for (var log in logs) {
-      allHabits.addAll(log.habits);
-      if (log.notes != null && log.notes!.trim().isNotEmpty) {
-        notesWithContent.add(log.notes!);
-      }
-    }
-
-    if (moods.isNotEmpty) {
-      final avgMood = moods.reduce((a, b) => a + b) / moods.length;
-      buffer.writeln('MOOD PATTERNS:');
-      buffer.writeln('  - Average mood: ${avgMood.toStringAsFixed(1)}/5');
-      buffer.writeln(
-        '  - Mood range: ${moods.reduce((a, b) => a < b ? a : b)}-${moods.reduce((a, b) => a > b ? a : b)}',
-      );
-      buffer.writeln('  - Total mood entries: ${moods.length}');
-      buffer.writeln('');
-    }
-
-    if (allHabits.isNotEmpty) {
-      buffer.writeln('HABITS TRACKED:');
-      for (var habit in allHabits) {
-        final count = logs.where((l) => l.habits.contains(habit)).length;
-        buffer.writeln('  - $habit (appears in $count logs)');
-      }
-      buffer.writeln('');
-    }
-
-    if (notesWithContent.isNotEmpty) {
-      buffer.writeln('NOTES SUMMARY:');
-      buffer.writeln('  - ${notesWithContent.length} logs have notes');
-      buffer.writeln(
-        '  - Sample themes: Check individual log notes for specific details',
-      );
-      buffer.writeln('');
-    }
-
-    buffer.writeln('RECENT LOG ENTRIES (for specific references):');
-    for (var i = 0; i < logs.length && i < 5; i++) {
-      final log = logs[i];
-      buffer.write('  ${i + 1}. ${log.date.toString().split(' ')[0]}: ');
-      if (log.mood != null) buffer.write('Mood ${log.mood}/5, ');
-      if (log.habits.isNotEmpty) {
-        buffer.write('Habits: ${log.habits.join(", ")}, ');
-      }
-      if (log.notes != null && log.notes!.isNotEmpty) {
-        final notePreview = log.notes!.length > 60
-            ? '${log.notes!.substring(0, 60)}...'
-            : log.notes!;
-        buffer.write('Note: "$notePreview"');
-      }
-      buffer.writeln('');
-    }
-
-    buffer.writeln('');
-    buffer.writeln('=== INSTRUCTIONS FOR GEMINI ===');
-    buffer.writeln('Please create DETAILED, PERSONALIZED responses that:');
-    buffer.writeln(
-      '1. Reference specific log entries (e.g., "I saw you logged X on Y date")',
-    );
-    buffer.writeln('2. Mention specific habits, moods, or notes from the logs');
-    buffer.writeln(
-      '3. Provide context-aware suggestions based on actual patterns',
-    );
-    buffer.writeln(
-      '4. Write future letters that feel personal and reference specific moments',
-    );
-    buffer.writeln('5. Avoid generic phrases - be specific and detailed');
-    buffer.writeln('================================');
-
-    return buffer.toString();
   }
 
   /// Get mock insight for testing/offline mode

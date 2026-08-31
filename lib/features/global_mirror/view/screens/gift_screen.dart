@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../../../core/viewmodel/providers/haptics_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 import '../../data/models/gift_transaction_model.dart';
@@ -60,18 +62,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-      ),
-    );
+    ToastService.errorMessage(context, message);
   }
 
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
+    ToastService.success(context, message);
   }
 
   Future<void> _handleSend() async {
@@ -109,17 +104,13 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
         // Get recipient name from Supabase
         String recipientName = 'User';
         try {
-          final authState = ref.read(authStateProvider);
-          final supabaseUser = authState.whenData((auth) => auth?.user);
-          if (supabaseUser != null) {
-            final profiles = await supabaseUser.value.client
-                .from('user_profiles')
-                .select('display_name')
-                .eq('id', widget.recipientUserId)
-                .maybeSingle();
-            if (profiles != null && profiles['display_name'] != null) {
-              recipientName = profiles['display_name'] as String;
-            }
+          final profiles = await Supabase.instance.client
+              .from('user_profiles')
+              .select('display_name')
+              .eq('id', widget.recipientUserId)
+              .maybeSingle();
+          if (profiles != null && profiles['display_name'] != null) {
+            recipientName = profiles['display_name'] as String;
           }
         } catch (e) {
           debugPrint('Error fetching recipient name: $e');

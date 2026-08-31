@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../data/models/mood_pin_model.dart';
 import '../../viewmodel/providers/global_mirror_provider.dart';
 import '../../viewmodel/providers/mood_comment_notification_provider.dart';
@@ -219,13 +220,10 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                           if (!context.mounted) return;
 
                           if (pin == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Unable to locate the related mood pin '
-                                  'right now.',
-                                ),
-                              ),
+                            ToastService.errorMessage(
+                              context,
+                              'Unable to locate the related mood pin '
+                              'right now.',
                             );
                             return;
                           }

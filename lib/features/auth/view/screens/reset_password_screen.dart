@@ -7,6 +7,8 @@ import '../../../../core/themes/app_theme.dart';
 import '../../viewmodel/providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/custom_text_field.dart';
+import '../../../../core/services/toast_service.dart';
+import '../../../../core/utils/error_message_mapper.dart';
 
 /// Reset password screen
 class ResetPasswordScreen extends ConsumerStatefulWidget {
@@ -55,7 +57,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           return 'generic';
       }
     }
-    
+
     final msg = e.toString().toLowerCase();
     if (msg.contains('network') || msg.contains('connection')) {
       return 'network';
@@ -66,7 +68,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     if (msg.contains('invalid') || msg.contains('token')) {
       return 'invalid';
     }
-    
+
     return 'generic';
   }
 
@@ -85,13 +87,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Password reset successfully! Please log in with your new password.',
-              ),
-              backgroundColor: AppTheme.successColor,
-            ),
+          ToastService.success(
+            context,
+            'Password reset successfully! Please log in with your new password.',
           );
           context.go('/login');
         } else {
@@ -107,7 +105,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             _linkExpired = true;
           }
         });
-        
+
         if (!_linkExpired) {
           String message;
           switch (errorType) {
@@ -116,16 +114,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               break;
             case 'generic':
             default:
-              message = 'Error: ${e.toString()}';
+              message = friendlyErrorMessage(e);
               break;
           }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
+
+          ToastService.errorMessage(context, message);
         }
       }
     }
@@ -321,11 +314,9 @@ class _ExpiredLinkView extends ConsumerWidget {
       final repo = ref.read(authRepositoryProvider);
       await repo.requestPasswordReset(email);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('A new reset link has been sent to your inbox.'),
-            backgroundColor: AppTheme.successColor,
-          ),
+        ToastService.success(
+          context,
+          'A new reset link has been sent to your inbox.',
         );
         context.go('/forgot-password');
       }

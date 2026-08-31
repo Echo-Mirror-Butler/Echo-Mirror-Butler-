@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/viewmodel/providers/biometric_provider.dart';
 import '../../../../core/utils/error_handler.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
+import '../../../../core/services/toast_service.dart';
 
 class SecurityScreen extends ConsumerStatefulWidget {
   const SecurityScreen({super.key});
@@ -49,7 +50,8 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
             .eq('user_id', userId)
             .order('last_active', ascending: false);
 
-        final sessions = (res as List<dynamic>?)
+        final sessions =
+            (res as List<dynamic>?)
                 ?.map((s) => Map<String, dynamic>.from(s as Map))
                 .toList() ??
             [];
@@ -66,7 +68,8 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         } else {
           final lastSignInAt = currentSession?.user.lastSignInAt;
           _sessions = sessions.map((s) {
-            s['is_current'] = s['created_at'] != null &&
+            s['is_current'] =
+                s['created_at'] != null &&
                 lastSignInAt != null &&
                 _closeTimestamps(
                   DateTime.parse(s['created_at'] as String),
@@ -77,15 +80,12 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
 
           if (_sessions.every((s) => s['is_current'] != true) &&
               currentSession != null) {
-            _sessions.insert(
-              0,
-              {
-                'id': 'current',
-                'device_name': 'This device',
-                'last_active': DateTime.now(),
-                'is_current': true,
-              },
-            );
+            _sessions.insert(0, {
+              'id': 'current',
+              'device_name': 'This device',
+              'last_active': DateTime.now(),
+              'is_current': true,
+            });
           }
         }
       }
@@ -121,7 +121,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       if (sessionId == 'current') {
         await ref.read(authProvider.notifier).signOut();
         if (mounted) {
-          ErrorHandler.showSuccess(context, 'Signed out successfully');
+          ToastService.success(context, 'Signed out successfully');
         }
         return;
       }
@@ -133,12 +133,12 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           .eq('user_id', client.auth.currentUser!.id);
 
       if (mounted) {
-        ErrorHandler.showSuccess(context, 'Session revoked');
+        ToastService.success(context, 'Session revoked');
         await _loadSessions();
       }
     } catch (e) {
       if (mounted) {
-        ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
+        ToastService.error(context, e, label: '[SecurityScreen] revokeSession');
       }
     }
   }
@@ -181,7 +181,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         }
 
         if (mounted) {
-          ErrorHandler.showSuccess(
+          ToastService.success(
             context,
             'All other sessions have been signed out',
           );
@@ -189,7 +189,11 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ErrorHandler.showError(context, ErrorHandler.getErrorMessage(e));
+          ToastService.error(
+            context,
+            e,
+            label: '[SecurityScreen] signOutAllOtherSessions',
+          );
         }
       } finally {
         if (mounted) setState(() => _isSigningOutAll = false);
@@ -223,10 +227,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ErrorHandler.showError(
-          context,
-          'Error enabling 2FA: ${ErrorHandler.getErrorMessage(e)}',
-        );
+        ToastService.error(context, e, label: '[SecurityScreen] enrollMfa');
       }
     }
   }
@@ -329,7 +330,9 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
 
         if (factors.totp.isNotEmpty) {
           final factor = factors.totp.first;
-          final challenge = await client.auth.mfa.challenge(factorId: factor.id);
+          final challenge = await client.auth.mfa.challenge(
+            factorId: factor.id,
+          );
           await client.auth.mfa.verify(
             factorId: factor.id,
             challengeId: challenge.id,
@@ -347,16 +350,13 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
           }
 
           if (mounted) {
-            ErrorHandler.showSuccess(context, '2FA disabled successfully');
+            ToastService.success(context, '2FA disabled successfully');
             await _checkMfaStatus();
           }
         }
       } catch (e) {
         if (mounted) {
-          ErrorHandler.showError(
-            context,
-            'Error disabling 2FA: ${ErrorHandler.getErrorMessage(e)}',
-          );
+          ToastService.error(context, e, label: '[SecurityScreen] disableMfa');
         }
       }
     }
@@ -382,9 +382,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                 size: 200.0,
               ),
             const SizedBox(height: 16),
-            const Text(
-              '2. Enter the 6-digit code from your app to verify:',
-            ),
+            const Text('2. Enter the 6-digit code from your app to verify:'),
             const SizedBox(height: 8),
             TextField(
               controller: totpController,
@@ -433,9 +431,10 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
 
               Navigator.pop(context, true);
             } catch (e) {
-              ErrorHandler.showError(
+              ToastService.error(
                 context,
-                'Verification failed: ${ErrorHandler.getErrorMessage(e)}',
+                e,
+                label: '[SecurityScreen] verifyMfaEnrollment',
               );
             }
           },
@@ -486,10 +485,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
     final isAppLockEnabled = ref.watch(biometricEnabledProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Security'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Security'), elevation: 0),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -556,16 +552,21 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                       color: theme.colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(FontAwesomeIcons.fingerprint.data,
-                        color: theme.colorScheme.primary, size: 18),
+                    child: Icon(
+                      FontAwesomeIcons.fingerprint.data,
+                      color: theme.colorScheme.primary,
+                      size: 18,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Biometric Unlock',
-                            style: theme.textTheme.titleMedium),
+                        Text(
+                          'Biometric Unlock',
+                          style: theme.textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           'Use device biometrics to unlock',
@@ -587,7 +588,8 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                                'Authentication failed or not available.'),
+                              'Authentication failed or not available.',
+                            ),
                           ),
                         );
                       }
@@ -659,8 +661,8 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
               )
             else
               ..._sessions.map((session) {
-                final isCurrent = session['is_current'] == true ||
-                    session['id'] == 'current';
+                final isCurrent =
+                    session['is_current'] == true || session['id'] == 'current';
                 return ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(10),
@@ -708,8 +710,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed:
-                      _isSigningOutAll ? null : _signOutAllOtherSessions,
+                  onPressed: _isSigningOutAll ? null : _signOutAllOtherSessions,
                   icon: _isSigningOutAll
                       ? const SizedBox(
                           width: 16,
@@ -719,10 +720,7 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : Icon(
-                          FontAwesomeIcons.rightFromBracket.data,
-                          size: 16,
-                        ),
+                      : Icon(FontAwesomeIcons.rightFromBracket.data, size: 16),
                   label: Text(
                     _isSigningOutAll
                         ? 'Signing out...'

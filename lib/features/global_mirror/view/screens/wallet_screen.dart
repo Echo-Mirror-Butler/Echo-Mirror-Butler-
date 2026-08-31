@@ -9,6 +9,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/environment_config.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/services/toast_service.dart';
+import '../../../../core/utils/error_message_mapper.dart';
 import '../../../../core/widgets/no_connection_widget.dart';
 import '../../widgets/send_confirmation_dialog.dart';
 import '../../viewmodel/providers/wallet_provider.dart';
@@ -186,12 +188,7 @@ class WalletScreen extends ConsumerWidget {
       await ref.read(walletProvider.notifier).loadWallet();
       if (context.mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ECHO sent successfully.'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
+        ToastService.success(context, 'ECHO sent successfully.');
       }
     }
 
@@ -422,10 +419,7 @@ class WalletScreen extends ConsumerWidget {
                                 await sendEcho();
                               } catch (e) {
                                 setState(() {
-                                  errorMessage = e.toString().replaceFirst(
-                                    'Exception: ',
-                                    '',
-                                  );
+                                  errorMessage = friendlyErrorMessage(e);
                                 });
                               }
                               setState(() => isSending = false);
@@ -989,7 +983,8 @@ class WalletScreen extends ConsumerWidget {
             Column(
               children: walletState.onChainHistory.map((tx) {
                 final isIncoming = tx.isIncoming(walletState.publicKey ?? '');
-                final amountText = '${isIncoming ? '+' : '-'}${tx.amount} ${tx.asset}';
+                final amountText =
+                    '${isIncoming ? '+' : '-'}${tx.amount} ${tx.asset}';
                 return Column(
                   children: [
                     ListTile(

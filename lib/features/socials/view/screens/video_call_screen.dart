@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,8 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../../../core/services/pip_service.dart';
 import '../../../../core/services/pip_overlay_service.dart';
+import '../../../../core/services/agora_error_handler.dart';
+import '../../../../core/services/toast_service.dart';
 import '../../viewmodel/providers/socials_provider.dart';
 import '../../../auth/viewmodel/providers/auth_provider.dart';
 
@@ -48,6 +51,10 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   bool _isInPipMode = false;
   bool _isNavigatingAway =
       false; // Track if we're navigating away to keep call alive
+  bool _isReconnecting = false;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 3;
 
   @override
   void initState() {
@@ -186,13 +193,11 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
         _isInitialized = true;
       });
     } catch (e) {
-      debugPrint('[VideoCallScreen] Error initializing Agora: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error initializing video call: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        ToastService.error(
+          context,
+          e,
+          label: '[VideoCallScreen] Error initializing Agora',
         );
       }
     }
@@ -268,7 +273,23 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
             },
         onError: (ErrorCodeType err, String msg) {
           debugPrint('Agora error: $err - $msg');
+          _handleAgoraError(err, msg);
         },
+        onConnectionStateChanged:
+            (
+              RtcConnection connection,
+              ConnectionStateType state,
+              ConnectionChangedReasonType reason,
+            ) {
+              debugPrint('Connection state changed: $state, reason: $reason');
+              if (state == ConnectionStateType.connectionStateDisconnected ||
+                  state == ConnectionStateType.connectionStateFailed) {
+                _handleConnectionLoss();
+              } else if (state ==
+                  ConnectionStateType.connectionStateConnected) {
+                _handleConnectionRestored();
+              }
+            },
       ),
     );
   }
@@ -435,13 +456,9 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               '[VideoCallScreen] PiP ready - will activate when app backgrounds',
             );
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Press home button to activate Picture-in-Picture',
-                  ),
-                  duration: Duration(seconds: 3),
-                ),
+              ToastService.info(
+                context,
+                'Press home button to activate Picture-in-Picture',
               );
             }
           } else {
@@ -450,25 +467,16 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
               '[VideoCallScreen] Entered PiP mode - you can now navigate the app',
             );
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Call minimized to Picture-in-Picture. Navigate freely!',
-                  ),
-                  duration: Duration(seconds: 3),
-                ),
+              ToastService.info(
+                context,
+                'Call minimized to Picture-in-Picture. Navigate freely!',
               );
             }
           }
         } else {
           debugPrint('[VideoCallScreen] Failed to enter PiP mode');
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('PiP mode not available'),
-                backgroundColor: AppTheme.errorColor,
-              ),
-            );
+            ToastService.errorMessage(context, 'PiP mode not available');
           }
         }
       } else {
@@ -477,12 +485,7 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
           '[VideoCallScreen] Already in PiP mode - tap the floating window to expand',
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tap the floating window to expand'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          ToastService.info(context, 'Tap the floating window to expand');
         }
       }
     } catch (e) {
@@ -493,6 +496,10 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
   Future<void> _leaveCall() async {
     try {
       WakelockPlus.disable(); // Allow screen to sleep when leaving call
+
+      // Cancel any pending reconnect timers
+      _reconnectTimer?.cancel();
+      _reconnectTimer = null;
 
       // Clean up the PiP overlay and engine
       PipOverlayService().disposeOverlay();
@@ -517,8 +524,160 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
     }
   }
 
+  void _handleAgoraError(ErrorCodeType err, String msg) {
+    final errorInfo = AgoraErrorHandler.classifyError(err, msg);
+
+    // Show user-facing error message
+    if (mounted) {
+      AgoraErrorHandler.showErrorSnackBar(context, errorInfo);
+    }
+
+    // Log structured error for debugging
+    debugPrint(
+      '[VideoCallScreen] Agora Error - Code: $err, Severity: ${errorInfo.severity}, Message: $msg',
+    );
+
+    if (errorInfo.severity == AgoraErrorSeverity.fatal) {
+      // Fatal error - end call with explanation
+      _handleFatalError(errorInfo);
+    } else if (errorInfo.shouldRetry) {
+      // Transient error - attempt recovery
+      _attemptRecovery();
+    }
+  }
+
+  void _handleFatalError(AgoraErrorInfo errorInfo) {
+    // Cancel any reconnection attempts
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
+    // Wait a moment for the snackbar to be visible
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        _leaveCall();
+      }
+    });
+  }
+
+  void _handleConnectionLoss() {
+    if (_isReconnecting) return; // Already trying to reconnect
+
+    debugPrint('[VideoCallScreen] Connection lost, attempting recovery');
+    if (mounted) {
+      setState(() {
+        _isReconnecting = true;
+      });
+    }
+
+    _attemptRecovery();
+  }
+
+  void _handleConnectionRestored() {
+    debugPrint('[VideoCallScreen] Connection restored');
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    _reconnectAttempts = 0;
+
+    if (mounted) {
+      setState(() {
+        _isReconnecting = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Connection restored'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _attemptRecovery() {
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      debugPrint(
+        '[VideoCallScreen] Max reconnection attempts reached, ending call',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to restore connection. Call ended.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        _leaveCall();
+      }
+      return;
+    }
+
+    _reconnectAttempts++;
+    debugPrint(
+      '[VideoCallScreen] Reconnection attempt $_reconnectAttempts/$_maxReconnectAttempts',
+    );
+
+    // Try to rejoin the channel after a brief delay
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(Duration(seconds: 2 * _reconnectAttempts), () {
+      if (mounted && _engine != null) {
+        _rejoinChannel();
+      }
+    });
+  }
+
+  Future<void> _rejoinChannel() async {
+    try {
+      debugPrint('[VideoCallScreen] Attempting to rejoin channel');
+
+      await _engine?.leaveChannel();
+
+      final channelName = _agoraAppId != null ? widget.sessionId : null;
+      if (channelName == null) {
+        throw Exception('No channel name available');
+      }
+
+      await _engine?.joinChannel(
+        token: (_agoraToken == null || _agoraToken!.isEmpty)
+            ? ''
+            : _agoraToken!,
+        channelId: channelName,
+        uid: widget.isHost ? 0 : 1,
+        options: const ChannelMediaOptions(
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[VideoCallScreen] Error rejoining channel: $e');
+      if (_reconnectAttempts < _maxReconnectAttempts) {
+        _attemptRecovery();
+      } else {
+        _handleFatalError(
+          const AgoraErrorInfo(
+            code: ErrorCodeType.errFailed,
+            message: 'Failed to reconnect',
+            severity: AgoraErrorSeverity.fatal,
+            userMessage: 'Unable to restore connection',
+            shouldRetry: false,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
+    // Cancel any pending timers
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
     // Only end the call if we're not navigating away (PiP mode)
     if (!_isNavigatingAway) {
       WakelockPlus.disable(); // Allow screen to sleep again
@@ -614,11 +773,74 @@ class _VideoCallScreenState extends ConsumerState<VideoCallScreen> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Connecting...',
+                            _isReconnecting
+                                ? 'Reconnecting...'
+                                : 'Connecting...',
                             style: GoogleFonts.poppins(
                               fontSize: 18,
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (_isReconnecting)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                'Attempt $_reconnectAttempts of $_maxReconnectAttempts',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+              // Reconnection banner (shown when reconnecting during an active call)
+              if (_isReconnecting && _isConnected && _remoteUid != null)
+                Positioned(
+                  top: 80,
+                  left: 16,
+                  right: 16,
+                  child: FadeInDown(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade700,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Connection issue, reconnecting...',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
