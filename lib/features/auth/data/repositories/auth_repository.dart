@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/session_tracking_service.dart';
 
 /// Repository for authentication operations backed by Supabase
 class AuthRepository {
@@ -38,6 +39,9 @@ class AuthRepository {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', email);
       await prefs.setString('user_id', user.id);
+
+      // Track this session for security management
+      await SessionTrackingService.trackCurrentSession();
 
       debugPrint('[AuthRepository] signIn success -> ${user.id}');
       return user.id;
@@ -89,6 +93,10 @@ class AuthRepository {
   Future<void> signOut() async {
     try {
       debugPrint('[AuthRepository] signOut');
+      
+      // Clear session tracking before signing out
+      await SessionTrackingService.clearCurrentSession();
+      
       await _client.auth.signOut();
 
       final prefs = await SharedPreferences.getInstance();
@@ -239,6 +247,9 @@ class AuthRepository {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_email', user.email ?? '');
       await prefs.setString('user_id', user.id);
+
+      // Track this session for security management
+      await SessionTrackingService.trackCurrentSession();
 
       debugPrint('[AuthRepository] signInWithGoogle success -> ${user.id}');
       return user.id;

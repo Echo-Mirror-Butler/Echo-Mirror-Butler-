@@ -1,0 +1,39 @@
+name: Lint debugPrint Usage
+
+on:
+  pull_request:
+    paths:
+      - 'lib/**/*.dart'
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - 'lib/**/*.dart'
+
+jobs:
+  check-debugprint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check for debugPrint outside app_logger.dart
+        run: |
+          # Search for debugPrint( in lib directory, excluding app_logger.dart
+          MATCHES=$(grep -rn "debugPrint(" lib --exclude="app_logger.dart" || true)
+          
+          if [ -n "$MATCHES" ]; then
+            echo "❌ Error: debugPrint() found outside of app_logger.dart"
+            echo ""
+            echo "Please use AppLogger instead:"
+            echo "  - AppLogger.error(label, error, stackTrace) for errors"
+            echo "  - AppLogger.warning(label, message) for warnings"
+            echo "  - AppLogger.info(label, message) for info"
+            echo "  - AppLogger.debug(label, message) for debug"
+            echo ""
+            echo "Found in:"
+            echo "$MATCHES"
+            exit 1
+          fi
+          
+          echo "✅ No inappropriate debugPrint() usage found"

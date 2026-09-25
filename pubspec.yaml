@@ -1,12 +1,14 @@
 name: echomirror
 description: "EchoMirror Butler - A personal growth assistant with daily logging, AI predictions, and automated habit tweaks."
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+8
 environment:
   sdk: ^3.8.0
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   # State Management
   flutter_riverpod: ^2.6.1
@@ -28,7 +30,7 @@ dependencies:
   # Backend
   supabase_flutter: ^2.9.1
   # Utilities
-  intl: ^0.19.0
+  intl: ^0.20.2
   shared_preferences: ^2.3.2
   local_auth: ^2.2.0
   speech_to_text: ^7.3.0

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/app_logger.dart';
 
 /// Service for fetching crypto prices via backend proxy/cache.
 /// Prices are fetched from Supabase edge function which maintains a
@@ -43,23 +44,25 @@ class PriceService {
             warning: data['warning'] as String?,
           );
           
-          _priceCache = {coinId: priceData};
+          // Merge into existing cache instead of replacing it
+          _priceCache = {...?_priceCache, coinId: priceData};
           _lastFetchTime = DateTime.now();
           
           if (priceData.stale) {
-            debugPrint(
-              '[PriceService] Fetched $coinId price: \$${price} '
+            AppLogger.warning(
+              'PriceService',
+              'Fetched $coinId price: \$${price} '
               '(stale, age: ${priceData.ageMinutes}min)',
             );
           } else {
-            debugPrint('[PriceService] Fetched $coinId price: \$${price}');
+            AppLogger.info('PriceService', 'Fetched $coinId price: \$${price}');
           }
           
           return priceData;
         }
       }
-    } catch (e) {
-      debugPrint('[PriceService] getUsdPrice error: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('PriceService', e, stackTrace);
     }
     return null;
   }

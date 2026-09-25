@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'core/routing/app_router.dart';
 import 'core/themes/app_theme.dart';
 import 'core/viewmodel/providers/theme_provider.dart';
@@ -84,6 +86,16 @@ class _EchoMirrorAppState extends ConsumerState<EchoMirrorApp> {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('es'),
+      ],
       builder: (context, child) {
         return BiometricLockWrapper(
           child: child ?? const SizedBox.shrink(),
