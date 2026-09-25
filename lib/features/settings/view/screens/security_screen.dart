@@ -126,14 +126,20 @@ class _SecurityScreenState extends ConsumerState<SecurityScreen> {
         return;
       }
 
-      await client
-          .from('user_sessions')
-          .delete()
-          .eq('id', sessionId)
-          .eq('user_id', client.auth.currentUser!.id);
+      // Call edge function to properly revoke the session's auth token
+      final response = await client.functions.invoke(
+        'revoke-session',
+        body: {'session_id': sessionId},
+      );
+
+      if (response.status != 200) {
+        throw Exception(
+          response.data?['error'] ?? 'Failed to revoke session',
+        );
+      }
 
       if (mounted) {
-        ToastService.success(context, 'Session revoked');
+        ToastService.success(context, 'Session revoked successfully');
         await _loadSessions();
       }
     } catch (e) {

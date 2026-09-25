@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/l10n_extensions.dart';
 import '../../../../core/themes/app_theme.dart';
 import '../../viewmodel/providers/auth_provider.dart';
 import '../widgets/custom_button.dart';
@@ -49,7 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final success = await authNotifier.signInWithGoogle();
     if (mounted && !success) {
       final error = ref.read(authProvider).error;
-      ErrorHandler.showError(context, error ?? AppStrings.errorAuth);
+      ErrorHandler.showError(context, error ?? context.l10n.errorAuth);
     }
   }
 
@@ -66,13 +66,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (mounted) {
         if (success) {
-          ErrorHandler.showSuccess(context, AppStrings.successLogin);
+          ErrorHandler.showSuccess(context, context.l10n.successLogin);
           // Navigation will be handled by router
           debugPrint('[LoginScreen] Login success');
         } else {
           final error = ref.read(authProvider).error;
           debugPrint('[LoginScreen] Login failed -> $error');
-          ErrorHandler.showError(context, error ?? AppStrings.errorAuth);
+          ErrorHandler.showError(context, error ?? context.l10n.errorAuth);
         }
       }
     }
@@ -82,6 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final theme = Theme.of(context);
+    final l10n = context.l10n;
 
     return Scaffold(
       body: SafeArea(
@@ -103,13 +104,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 24),
                   // Title
                   Text(
-                    AppStrings.appName,
+                    l10n.appName,
                     style: theme.textTheme.headlineLarge,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    AppStrings.appTagline,
+                    l10n.appTagline,
                     style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -117,7 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Email field
                   CustomTextField(
                     controller: _emailController,
-                    label: AppStrings.email,
+                    label: l10n.email,
                     hint: 'Enter your email',
                     keyboardType: TextInputType.emailAddress,
                     prefixIcon: FontAwesomeIcons.envelope.data,
@@ -135,7 +136,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Password field
                   CustomTextField(
                     controller: _passwordController,
-                    label: AppStrings.password,
+                    label: l10n.password,
                     hint: 'Enter your password',
                     obscureText: _obscurePassword,
                     prefixIcon: FontAwesomeIcons.lock.data,
@@ -181,7 +182,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // Login button
                   CustomButton(
                     onPressed: authState.isLoading ? null : _handleLogin,
-                    text: AppStrings.login,
+                    text: l10n.login,
                     isLoading: authState.isLoading,
                     icon: FontAwesomeIcons.rightToBracket.data,
                   ),
@@ -228,7 +229,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextButton(
                     onPressed: () => context.go('/signup'),
                     child: Text(
-                      'Don\'t have an account? ${AppStrings.signUp}',
+                      'Don\'t have an account? ${l10n.signUp}',
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
