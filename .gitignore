@@ -65,3 +65,9 @@ build/
 *.iml
 *.lock
 node_modules/
+
+# Redis dump and scratch/scratch files
+dump.rdb
+*.rdb
+pr_msg_*.txt
+*_config.txt
