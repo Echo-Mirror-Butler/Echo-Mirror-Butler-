@@ -88,23 +88,28 @@ export function fakeSupabase(script: {
   }
   builder.upsert = (payload: unknown) => {
     calls.upsert.push(payload);
-    return Object.assign(Promise.resolve(take("upsert")), builder);
+    lastResult = take("upsert");
+    return Object.assign(Promise.resolve(lastResult), builder);
   };
   builder.insert = (payload: unknown) => {
     calls.insert.push(payload);
-    return Object.assign(Promise.resolve(take("insert")), builder);
+    lastResult = take("insert");
+    return Object.assign(Promise.resolve(lastResult), builder);
   };
   builder.update = (payload: unknown) => {
     calls.update.push(payload);
-    return Object.assign(Promise.resolve(take("update")), builder);
+    lastResult = take("update");
+    return Object.assign(Promise.resolve(lastResult), builder);
   };
   builder.delete = () => {
     calls.delete.push({});
-    return Object.assign(Promise.resolve(take("delete")), builder);
+    lastResult = take("delete");
+    return Object.assign(Promise.resolve(lastResult), builder);
   };
   builder.rpc = (name: string, args?: unknown) => {
     calls.rpc.push({ name, args });
-    return Object.assign(Promise.resolve(take("rpc")), builder);
+    lastResult = take("rpc");
+    return Object.assign(Promise.resolve(lastResult), builder);
   };
   // `select()` starts the chain and its result is what an `await` on the built
   // query returns, so the script entry is consumed exactly once per awaited call.
