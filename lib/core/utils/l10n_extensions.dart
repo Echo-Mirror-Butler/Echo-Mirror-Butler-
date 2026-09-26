@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:echomirror/l10n/app_localizations.dart';
 
 /// Extension to easily access AppLocalizations from BuildContext
 extension LocalizationExtension on BuildContext {
