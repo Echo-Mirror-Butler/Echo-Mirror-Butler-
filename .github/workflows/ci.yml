@@ -60,7 +60,8 @@ jobs:
             supabase/functions/generate-insight/index_test.ts \
             supabase/functions/export-user-data/index_test.ts \
             supabase/functions/delete-account/index_test.ts \
-            supabase/functions/request-password-reset/index_test.ts
+            supabase/functions/request-password-reset/index_test.ts \
+            supabase/functions/save-future-letter/index_test.ts
 
   flutter-ci:
     name: Format · Analyze · Test
