@@ -1,0 +1,106 @@
+name: Flutter Build
+
+# Compiling the app for a real platform is what catches Gradle/manifest problems,
+# plugin-registration errors and web-only breakage; analysis and unit tests do
+# not. This file only adds jobs — the existing workflows are untouched.
+
+on:
+  pull_request:
+    branches: [main, development]
+    paths:
+      - 'lib/**'
+      - 'pubspec.*'
+      - 'android/**'
+      - 'web/**'
+      - '.github/workflows/flutter-build.yml'
+  push:
+    branches: [main, development]
+    paths:
+      - 'lib/**'
+      - 'pubspec.*'
+      - 'android/**'
+      - 'web/**'
+  schedule:
+    # Weekly, so an iOS-only break is noticed without paying for a macOS runner
+    # on every pull request.
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: flutter-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-web:
+    name: Build web
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: flutter pub get
+      - name: Build web
+        run: flutter build web --release
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+          retention-days: 7
+
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+      - name: Dependencies
+        run: flutter pub get
+      - name: Build debug APK
+        run: flutter build apk --debug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+  build-ios:
+    # Deliberately not on every PR: a macOS runner costs ~10x the minutes of
+    # Linux and contributions have no signing story, so this runs weekly and on
+    # demand instead — enough to catch a break early without slowing each PR.
+    name: Build iOS without signing (weekly/manual)
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Dependencies
+        run: flutter pub get
+      - name: Build iOS (no codesign)
+        run: flutter build ios --no-codesign

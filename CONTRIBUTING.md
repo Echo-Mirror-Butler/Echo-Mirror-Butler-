@@ -156,3 +156,28 @@ Quick start:
 supabase start   # starts local Postgres, Auth, Storage, Studio
 supabase db reset  # apply all migrations
 ```
+
+---
+
+## 8. Continuous integration
+
+On top of the existing checks (formatting, analysis, unit/widget tests, Supabase
+tests, Playwright), `.github/workflows/flutter-build.yml` compiles the app for a
+real platform on pull requests that touch `lib/`, `pubspec.*`, `android/` or
+`web/`:
+
+| Job | What it proves | When |
+| --- | --- | --- |
+| `Build web` | `flutter build web --release` succeeds (web-only breakage) | every matching PR/push |
+| `Build Android APK` | `flutter build apk --debug` succeeds (Gradle, manifest, plugin registration); the APK is uploaded as an artifact | every matching PR/push |
+| `Build iOS without signing` | `flutter build ios --no-codesign` succeeds | weekly (Mon 04:00 UTC) and on demand |
+
+The iOS job is intentionally not on every PR — a macOS runner costs roughly ten
+times the minutes of Linux, and contributions have no signing story — so it runs
+on a schedule and via *Run workflow* instead. All jobs can be started manually
+from the Actions tab; `build-web` and `build-android` can also be dispatched for
+a quick check without opening a PR.
+
+Dependency updates are automated in `.github/dependabot.yml`: weekly grouped PRs
+for `pub` (root), `npm` (`frontend/` and `server/`), and `github-actions`, capped
+at five open PRs each so the queue stays reviewable.
