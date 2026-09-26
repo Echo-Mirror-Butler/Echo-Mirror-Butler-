@@ -6,6 +6,7 @@ import { fakeSupabase, jsonRequest, malformedJsonRequest, optionsRequest } from 
 const USER = "11111111-2222-3333-4444-555555555555";
 const PHRASE = "DELETE MY ACCOUNT";
 const PINNED_NOW = new Date("2026-09-26T12:00:00.000Z");
+const TOKEN = "valid.jwt.token";
 
 function build(script: Parameters<typeof fakeSupabase>[0] = {}, supabase: unknown | null = undefined) {
   const db = fakeSupabase(script);
@@ -14,11 +15,17 @@ function build(script: Parameters<typeof fakeSupabase>[0] = {}, supabase: unknow
     supabase: client as never,
     logger: createLogger("delete-account"),
     now: () => new Date(PINNED_NOW),
+    // Default fake auth: only the good token resolves to USER.
+    getUser: async (token: string) =>
+      token === TOKEN ? { user: { id: USER } } : { user: null, error: { message: "invalid token" } },
   };
   return { db, deps };
 }
 
-function deleteReq(body: unknown, headers: Record<string, string> = {}): Request {
+function deleteReq(
+  body: unknown,
+  headers: Record<string, string> = { Authorization: `Bearer ${TOKEN}` },
+): Request {
   return jsonRequest(body, { headers });
 }
 
@@ -144,4 +151,80 @@ Deno.test("an unexpected throw inside the handler is a 500, not a success", asyn
   const res = await handleRequest(deleteReq({ userId: USER, confirmationPhrase: PHRASE }), deps);
   assertEquals(res.status, 500);
   assertEquals((await res.json()).error, "Internal server error");
+});
+
+// ── Authorization (issue #742) ─────────────────────────────────────────────
+
+Deno.test("a missing Authorization header is 401 and no database write happens", async () => {
+  const { deps, db } = build({ update: [{ error: null }, { error: null }] });
+  const res = await handleRequest(deleteReq({ userId: USER, confirmationPhrase: PHRASE }, {}), deps);
+  assertEquals(res.status, 401);
+  const payload = await res.json();
+  assertEquals(payload.error, "Missing or invalid Authorization header");
+  assertEquals(db.calls.update.length, 0);
+  assertEquals(db.calls.rpc.length, 0);
+});
+
+Deno.test("a non-Bearer Authorization header is 401", async () => {
+  const { deps, db } = build();
+  const res = await handleRequest(
+    deleteReq({ userId: USER, confirmationPhrase: PHRASE }, { Authorization: `Basic ${TOKEN}` }),
+    deps,
+  );
+  assertEquals(res.status, 401);
+  assertEquals((await res.json()).error, "Missing or invalid Authorization header");
+  assertEquals(db.calls.update.length, 0);
+});
+
+Deno.test("an empty bearer token is 401", async () => {
+  const { deps, db } = build();
+  const res = await handleRequest(
+    deleteReq({ userId: USER, confirmationPhrase: PHRASE }, { Authorization: "Bearer " }),
+    deps,
+  );
+  assertEquals(res.status, 401);
+  assertEquals(db.calls.update.length, 0);
+});
+
+Deno.test("when getUser returns an error the request is 401 and nothing is written", async () => {
+  const { deps, db } = build();
+  deps.getUser = async () => ({ user: null, error: { message: "JWT expired" } });
+  const res = await handleRequest(deleteReq({ userId: USER, confirmationPhrase: PHRASE }), deps);
+  assertEquals(res.status, 401);
+  assertEquals((await res.json()).error, "Unauthorized");
+  assertEquals(db.calls.update.length, 0);
+});
+
+Deno.test("when getUser returns a different user the request is 403 with no writes", async () => {
+  const { deps, db } = build({ update: [{ error: null }, { error: null }] });
+  const other = "99999999-8888-7777-6666-555555555555";
+  deps.getUser = async () => ({ user: { id: other } });
+  const res = await handleRequest(deleteReq({ userId: USER, confirmationPhrase: PHRASE }), deps);
+  assertEquals(res.status, 403);
+  const payload = await res.json();
+  assertEquals(payload.error, "User mismatch");
+  assertEquals(db.calls.update.length, 0);
+  assertEquals(db.calls.rpc.length, 0);
+});
+
+Deno.test("authorization is checked BEFORE the confirmation phrase", async () => {
+  // A bad phrase with no token must answer 401, not 400.
+  const { deps, db } = build();
+  const res = await handleRequest(
+    deleteReq({ userId: USER, confirmationPhrase: "wrong" }, {}),
+    deps,
+  );
+  assertEquals(res.status, 401);
+  assertEquals(db.calls.update.length, 0);
+});
+
+Deno.test("a valid token for the same user deletes successfully", async () => {
+  const { deps, db } = build({ update: [{ error: null }, { error: null }] });
+  const res = await handleRequest(deleteReq({ userId: USER, confirmationPhrase: PHRASE }), deps);
+  assertEquals(res.status, 200);
+  const payload = await res.json();
+  assertEquals(payload.success, true);
+  // Both writes happen: the auth.users soft-delete and the profile hide.
+  assertEquals(db.calls.update.length, 2);
+  assertEquals(db.calls.update[1], { hidden: true });
 });

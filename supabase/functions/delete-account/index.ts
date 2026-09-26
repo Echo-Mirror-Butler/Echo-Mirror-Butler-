@@ -13,5 +13,11 @@ Deno.serve((req) => {
     supabaseUrl && supabaseKey
       ? (createClient(supabaseUrl, supabaseKey) as unknown as Parameters<typeof handleRequest>[1]['supabase'])
       : null;
-  return handleRequest(req, { supabase, logger });
+  // Token validation (issue #742): the bearer token is checked against Supabase
+  // Auth before the handler touches the database.
+  const getUser: Parameters<typeof handleRequest>[1]['getUser'] = (token) =>
+    (supabase as unknown as {
+      auth: { getUser: (t: string) => Promise<{ user?: { id: string } | null; error?: unknown }> };
+    }).auth.getUser(token);
+  return handleRequest(req, { supabase, logger, getUser });
 });

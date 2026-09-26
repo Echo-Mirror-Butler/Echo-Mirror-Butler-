@@ -24,6 +24,8 @@ export interface DeleteAccountDeps {
   logger: ReturnType<typeof createLogger>;
   /** Injectable clock so tests pin the grace-period dates. */
   now?: () => Date;
+  /** Validates a bearer token and returns the authenticated user (issue #742). */
+  getUser: (token: string) => Promise<{ user?: { id: string } | null; error?: unknown }>;
 }
 
 function jsonError(error: string, traceId: string, status: number): Response {
@@ -84,6 +86,28 @@ export async function handleRequest(req: Request, deps: DeleteAccountDeps): Prom
       const errorTraceId = logger.warn("Invalid userId", { userId }, traceId);
       traceId = errorTraceId;
       return jsonError("Invalid userId", traceId, 400);
+    }
+
+    // ── Authentication (issue #742): who is calling, before what they ask ──
+    // Without this check anyone who knew a userId could delete that account.
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ") || authHeader.slice("Bearer ".length).trim().length === 0) {
+      const errorTraceId = logger.warn("Missing or invalid Authorization header", undefined, traceId);
+      traceId = errorTraceId;
+      return jsonError("Missing or invalid Authorization header", traceId, 401);
+    }
+
+    const { user, error: authError } = await deps.getUser(authHeader.slice("Bearer ".length));
+    if (authError || !user) {
+      const errorTraceId = logger.warn("Authorization failed", { authError }, traceId);
+      traceId = errorTraceId;
+      return jsonError("Unauthorized", traceId, 401);
+    }
+
+    if (user.id !== userId) {
+      const errorTraceId = logger.warn("User mismatch", { authenticatedUserId: user.id, userId }, traceId);
+      traceId = errorTraceId;
+      return jsonError("User mismatch", traceId, 403);
     }
 
     if (confirmationPhrase !== CONFIRMATION_PHRASE) {
