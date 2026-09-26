@@ -55,7 +55,12 @@ jobs:
           deno test --allow-all --no-check \
             supabase/functions/get-crypto-price/index_test.ts \
             supabase/functions/generate-encouragement/index_test.ts \
-            supabase/functions/unsubscribe-digest/index_test.ts
+            supabase/functions/unsubscribe-digest/index_test.ts \
+            supabase/functions/send-echo/index_test.ts \
+            supabase/functions/generate-insight/index_test.ts \
+            supabase/functions/export-user-data/index_test.ts \
+            supabase/functions/delete-account/index_test.ts \
+            supabase/functions/request-password-reset/index_test.ts
 
   flutter-ci:
     name: Format · Analyze · Test

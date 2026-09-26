@@ -28,7 +28,7 @@
  * Issue #639
  */
 
-import { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
