@@ -156,3 +156,17 @@ Quick start:
 supabase start   # starts local Postgres, Auth, Storage, Studio
 supabase db reset  # apply all migrations
 ```
+
+---
+
+## 8. Continuous Integration & Platform Builds
+
+All pull requests targeting `development` run automated CI checks defined in `.github/workflows/ci.yml`:
+- **Code Quality**: Dart formatting, `flutter analyze`, and unit/widget tests with minimum coverage gating.
+- **Supabase Stack**: pgTAP database tests and Deno edge function unit test suite (`deno test --allow-all supabase/functions/test_runner.ts`).
+- **Platform Compilation**:
+  - `build-android`: Compiles `flutter build apk --debug` with Gradle caching and uploads the debug APK as a workflow artifact.
+  - `build-web`: Compiles `flutter build web` to ensure web builds and plugin imports do not break.
+  - iOS compilation (`flutter build ios --no-codesign`) is reserved for scheduled/release workflows to optimize PR turnaround time.
+- **Automated Dependency Updates**:
+  - Managed by Dependabot via `.github/dependabot.yml` covering `pub` (Flutter root), `github-actions`, and `npm` (`frontend/`, `server/`) on weekly grouped schedules.

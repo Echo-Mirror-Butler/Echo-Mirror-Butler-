@@ -109,7 +109,10 @@ async function decryptSecret(encryptedPayload: string, rawKey: string) {
   return new TextDecoder().decode(plainBytes);
 }
 
-Deno.serve(async (req) => {
+export async function sendEchoFunction(
+  req: Request,
+  injectedClients?: { supabaseClient?: any; supabaseAdmin?: any },
+): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return jsonResponse({ ok: true });
   }
@@ -128,22 +131,25 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
     const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      return jsonResponse({
-        error: 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required',
-        code: 'SERVER_CONFIG_ERROR',
-      }, 500);
+    let supabaseClient = injectedClients?.supabaseClient;
+    let supabaseAdmin = injectedClients?.supabaseAdmin;
+
+    if (!supabaseClient || !supabaseAdmin) {
+      if (!supabaseUrl || !serviceRoleKey) {
+        return jsonResponse({
+          error: 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required',
+          code: 'SERVER_CONFIG_ERROR',
+        }, 500);
+      }
+
+      supabaseClient = supabaseClient || createClient(supabaseUrl, supabaseAnonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+
+      supabaseAdmin = supabaseAdmin || createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
     }
-
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    // Create the admin client early so it can be shared across all DB calls,
-    // including the idempotency cache lookup that happens before payload parsing.
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
       authHeader.replace('Bearer ', ''),
@@ -406,4 +412,6 @@ Deno.serve(async (req) => {
       code: 'INTERNAL_ERROR',
     }, 500);
   }
-});
+}
+
+Deno.serve(sendEchoFunction);

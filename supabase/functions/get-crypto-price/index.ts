@@ -12,11 +12,39 @@ interface CachedPrice {
   created_at: string;
 }
 
-serve(async (req) => {
-  try {
-    const { coin = "stellar" } = await req.json();
+export async function getCryptoPriceFunction(
+  req: Request,
+  injectedClient?: any,
+  injectedFetch?: typeof fetch,
+): Promise<Response> {
+  const customFetch = injectedFetch || fetch;
 
-    const supabaseClient = createClient(
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 405,
+    });
+  }
+
+  try {
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {
+      // default body
+    }
+    const { coin = "stellar" } = body;
+
+    const supabaseClient = injectedClient || createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
@@ -55,9 +83,8 @@ serve(async (req) => {
       }
     }
 
-    // Cache is stale or doesn't exist - fetch fresh price from CoinGecko
     try {
-      const coingeckoResponse = await fetch(
+      const coingeckoResponse = await customFetch(
         `${COINGECKO_API_URL}?ids=${coin}&vs_currencies=usd`,
         {
           headers: {
@@ -169,4 +196,6 @@ serve(async (req) => {
       },
     );
   }
-});
+}
+
+serve(getCryptoPriceFunction);

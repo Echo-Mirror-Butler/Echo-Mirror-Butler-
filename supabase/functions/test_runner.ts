@@ -1,8 +1,20 @@
-// Issue #590: Automated test coverage for Supabase Edge Functions
+// Issue #590 & Issue #735: Automated test coverage for Supabase Edge Functions
 import {
   assertEquals,
   assertStringIncludes,
 } from "https://deno.land/std@0.192.0/testing/asserts.ts";
+
+// Register individual unit test suites (Issue #735)
+import "./settle-leaderboard-rewards.test.ts";
+import "./delete-account.test.ts";
+import "./request-password-reset.test.ts";
+import "./export-user-data.test.ts";
+import "./send-echo.test.ts";
+import "./save-future-letter.test.ts";
+import "./generate-encouragement.test.ts";
+import "./generate-insight.test.ts";
+import "./get-crypto-price.test.ts";
+import "./unsubscribe-digest.test.ts";
 
 // Test utilities
 function createMockRequest(
