@@ -1,11 +1,14 @@
 /**
- * Issue #592: Account Deletion Flow - Soft Delete Function
+ * Issue #592 & Issue #742: Account Deletion Flow - Soft Delete Function
  *
  * This Edge Function handles the soft deletion of user accounts.
  * Soft-deleted accounts are flagged in the database but not permanently removed.
  * After a grace period (14 days), a scheduled job performs hard deletion.
  *
+ * Security: Requires valid Authorization Bearer token matching the target userId.
+ *
  * POST /delete-account
+ * Headers: Authorization: Bearer <user_token>
  * Request body: { userId: string, confirmationPhrase: string }
  * Response: { success: boolean, traceId: string, gracePeriodEndsAt: string }
  */
@@ -17,10 +20,20 @@ const logger = createLogger('delete-account');
 const GRACE_PERIOD_DAYS = 14;
 const CONFIRMATION_PHRASE = 'DELETE MY ACCOUNT'; // User must type this exactly
 
-export async function deleteAccountFunction(req: Request): Promise<Response> {
+export async function deleteAccountFunction(req: Request, injectedClient?: any): Promise<Response> {
   // Extract trace ID from incoming request
   const incomingTraceId = extractTraceId(Object.fromEntries(req.headers));
   let traceId = incomingTraceId;
+
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    });
+  }
 
   try {
     // Verify request method
@@ -36,8 +49,35 @@ export async function deleteAccountFunction(req: Request): Promise<Response> {
       );
     }
 
+    // Authorization header verification (Issue #742)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      const errorTraceId = logger.warn('Missing or invalid authorization header', {}, traceId);
+      traceId = errorTraceId;
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', message: 'Authentication required', traceId }),
+        {
+          status: 401,
+          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+        }
+      );
+    }
+
     // Parse request body
-    const { userId, confirmationPhrase } = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body', traceId }),
+        {
+          status: 400,
+          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+        }
+      );
+    }
+
+    const { userId, confirmationPhrase } = body || {};
 
     traceId = logger.info('Delete account request received', { userId }, traceId);
 
@@ -66,28 +106,59 @@ export async function deleteAccountFunction(req: Request): Promise<Response> {
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Initialize or resolve Supabase client
+    let supabase = injectedClient;
+    if (!supabase) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!supabaseUrl || !supabaseKey) {
-      const errorTraceId = logger.error(
-        'Missing Supabase credentials',
-        'Configuration error',
-        {},
-        traceId
-      );
+      if (!supabaseUrl || !supabaseKey) {
+        const errorTraceId = logger.error(
+          'Missing Supabase credentials',
+          'Configuration error',
+          {},
+          traceId
+        );
+        traceId = errorTraceId;
+        return new Response(
+          JSON.stringify({ error: 'Server configuration error', traceId }),
+          {
+            status: 500,
+            headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+          }
+        );
+      }
+
+      supabase = createClient(supabaseUrl, supabaseKey);
+    }
+
+    // Verify session and caller identity (Issue #742)
+    const token = authHeader.slice(7);
+    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !userData?.user) {
+      const errorTraceId = logger.warn('Invalid authorization token', { error: authError?.message }, traceId);
       traceId = errorTraceId;
       return new Response(
-        JSON.stringify({ error: 'Server configuration error', traceId }),
+        JSON.stringify({ error: 'Unauthorized', message: 'Invalid or expired session', traceId }),
         {
-          status: 500,
+          status: 401,
           headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
         }
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    if (userData.user.id !== userId) {
+      const errorTraceId = logger.warn('Forbidden: User ID mismatch', { callerId: userData.user.id, targetId: userId }, traceId);
+      traceId = errorTraceId;
+      return new Response(
+        JSON.stringify({ error: 'Forbidden', message: 'Cannot delete another user account', traceId }),
+        {
+          status: 403,
+          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
+        }
+      );
+    }
 
     // Calculate grace period end date
     const gracePeriodEndsAt = new Date();

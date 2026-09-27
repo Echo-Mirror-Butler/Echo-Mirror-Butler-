@@ -15,9 +15,10 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET') ?? 'default-unsubscribe-secret'
 
-async function verifyToken(userId: string, tokenHash: string): Promise<boolean> {
+export async function verifyToken(userId: string, tokenHash: string, secretOverride?: string): Promise<boolean> {
+  const secret = secretOverride ?? Deno.env.get('UNSUBSCRIBE_SECRET') ?? 'default-unsubscribe-secret'
   const encoder = new TextEncoder()
-  const keyData = encoder.encode(UNSUBSCRIBE_SECRET)
+  const keyData = encoder.encode(secret)
   const data = encoder.encode(userId)
 
   const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
@@ -60,7 +61,7 @@ const HTML_FAILED = `<!DOCTYPE html>
 </body>
 </html>`
 
-Deno.serve(async (req) => {
+export async function unsubscribeDigestFunction(req: Request, injectedClient?: any): Promise<Response> {
   const url = new URL(req.url)
   const userId = url.searchParams.get('user_id')
   const token = url.searchParams.get('token')
@@ -82,7 +83,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const supabase = injectedClient || createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
   const { error } = await supabase
     .from('profiles')
@@ -101,4 +102,6 @@ Deno.serve(async (req) => {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   })
-})
+}
+
+Deno.serve(unsubscribeDigestFunction);

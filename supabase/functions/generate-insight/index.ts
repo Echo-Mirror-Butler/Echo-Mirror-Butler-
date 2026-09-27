@@ -7,9 +7,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+export async function generateInsightFunction(
+  req: Request,
+  injectedClient?: any,
+  injectedFetch?: typeof fetch,
+): Promise<Response> {
+  const customFetch = injectedFetch || fetch;
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 405,
+    });
   }
 
   try {
@@ -26,9 +39,9 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const supabase = injectedClient || createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify user and get user ID
     const token = authHeader.replace("Bearer ", "");
@@ -185,7 +198,7 @@ Logs: ${JSON.stringify(recentLogs ?? [])}`;
     }
 
     // Call Gemini
-    const response = await fetch(
+    const response = await customFetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
       {
         method: "POST",
@@ -261,4 +274,6 @@ Logs: ${JSON.stringify(recentLogs ?? [])}`;
       status: 400,
     });
   }
-});
+}
+
+serve(generateInsightFunction);

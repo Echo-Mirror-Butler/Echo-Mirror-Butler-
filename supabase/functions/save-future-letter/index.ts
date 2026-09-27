@@ -77,9 +77,11 @@ function encodeFilterValue(value: string) {
   return encodeURIComponent(value)
     .replace(/%20/g, '+')
     .replace(/%2C/g, '%2C');
-}
-
-serve(async (req) => {
+export async function saveFutureLetterFunction(
+  req: Request,
+  injectedFetch?: typeof fetch,
+): Promise<Response> {
+  const customFetch = injectedFetch || fetch;
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -123,7 +125,7 @@ serve(async (req) => {
       userId,
     )}&content=eq.${encodeFilterValue(content)}`;
 
-    const existingResponse = await fetch(`${baseUrl}?${filterQuery}`, {
+    const existingResponse = await customFetch(`${baseUrl}?${filterQuery}`, {
       method: 'GET',
       headers: {
         apikey: serviceRoleKey,
@@ -155,7 +157,7 @@ serve(async (req) => {
       Date.parse(generatedAt) + 30 * 24 * 60 * 60 * 1000,
     ).toISOString();
 
-    const insertResponse = await fetch(baseUrl, {
+    const insertResponse = await customFetch(baseUrl, {
       method: 'POST',
       headers: {
         apikey: serviceRoleKey,
@@ -193,4 +195,6 @@ serve(async (req) => {
     const message = error instanceof Error ? error.message : String(error);
     return jsonResponse({ error: message }, 400);
   }
-});
+}
+
+serve(saveFutureLetterFunction);

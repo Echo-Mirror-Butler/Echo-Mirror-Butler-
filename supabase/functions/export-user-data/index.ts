@@ -19,9 +19,19 @@ import { createLogger, extractTraceId, addTraceIdToResponse } from '../_shared/l
 
 const logger = createLogger('export-user-data');
 
-export async function exportUserDataFunction(req: Request): Promise<Response> {
+export async function exportUserDataFunction(req: Request, injectedClient?: any): Promise<Response> {
   const incomingTraceId = extractTraceId(Object.fromEntries(req.headers));
   let traceId = incomingTraceId;
+
+  // Handle OPTIONS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    });
+  }
 
   try {
     // Verify request method
@@ -51,24 +61,27 @@ export async function exportUserDataFunction(req: Request): Promise<Response> {
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    let supabase = injectedClient;
+    if (!supabase) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!supabaseUrl || !supabaseKey) {
-      const errorTraceId = logger.error(
-        'Missing Supabase credentials',
-        'Configuration error',
-        {},
-        traceId
-      );
-      traceId = errorTraceId;
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error', traceId }),
-        { status: 500, headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId) }
-      );
+      if (!supabaseUrl || !supabaseKey) {
+        const errorTraceId = logger.error(
+          'Missing Supabase credentials',
+          'Configuration error',
+          {},
+          traceId
+        );
+        traceId = errorTraceId;
+        return new Response(
+          JSON.stringify({ error: 'Server configuration error', traceId }),
+          { status: 500, headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId) }
+        );
+      }
+
+      supabase = createClient(supabaseUrl, supabaseKey);
     }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get authenticated user from JWT
     const token = authHeader.slice(7);
