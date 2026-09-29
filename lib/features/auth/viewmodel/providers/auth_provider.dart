@@ -13,6 +13,8 @@ import '../../../global_mirror/viewmodel/providers/global_mirror_provider.dart';
 import '../../../global_mirror/viewmodel/providers/mood_comment_notification_provider.dart';
 import '../../../logging/viewmodel/providers/logging_provider.dart';
 import '../../../socials/viewmodel/providers/socials_provider.dart';
+import '../../../../core/services/offline_storage_service.dart';
+import '../../../../core/sync/local_first_storage_service.dart';
 
 /// Auth state class
 class AuthState {
@@ -35,7 +37,10 @@ class AuthState {
 
 /// Auth repository provider
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository();
+  return AuthRepository(
+    offlineStorage: ref.watch(offlineStorageServiceProvider),
+    localFirstStorage: ref.watch(localFirstStorageServiceProvider),
+  );
 });
 
 /// Auth state notifier

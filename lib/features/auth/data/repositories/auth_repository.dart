@@ -3,17 +3,26 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/services/session_tracking_service.dart';
+import '../../../../core/services/offline_storage_service.dart';
+import '../../../../core/services/on_device_vector_index.dart';
+import '../../../../core/sync/local_first_storage_service.dart';
 
 /// Repository for authentication operations backed by Supabase
 class AuthRepository {
   final SupabaseClient? _injectedClient;
   final GoogleSignIn? _injectedGoogleSignIn;
+  final OfflineStorageService _offlineStorage;
+  final LocalFirstStorageService _localFirstStorage;
 
   AuthRepository({
     SupabaseClient? supabaseClient,
     GoogleSignIn? googleSignIn,
+    OfflineStorageService? offlineStorage,
+    LocalFirstStorageService? localFirstStorage,
   }) : _injectedClient = supabaseClient,
-       _injectedGoogleSignIn = googleSignIn {
+       _injectedGoogleSignIn = googleSignIn,
+       _offlineStorage = offlineStorage ?? OfflineStorageService(),
+       _localFirstStorage = localFirstStorage ?? LocalFirstStorageService() {
     debugPrint('[AuthRepository] Initialized');
   }
 
@@ -98,6 +107,14 @@ class AuthRepository {
       await SessionTrackingService.clearCurrentSession();
       
       await _client.auth.signOut();
+
+      if (_offlineStorage.isInitialized) {
+        await _offlineStorage.clearAll();
+      }
+      if (_localFirstStorage.isInitialized) {
+        await _localFirstStorage.clearAll();
+      }
+      OnDeviceVectorIndex.clearAll();
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_email');
