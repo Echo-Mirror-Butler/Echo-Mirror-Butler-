@@ -169,25 +169,26 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
     }
   }
 
-  Color _getSentimentColor(String sentiment) {
+  Color _getSentimentColor(BuildContext context, String sentiment) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     switch (sentiment.toLowerCase()) {
       case 'positive':
       case 'happy':
       case 'excited':
-        return Colors.green;
+        return colors.moodExcellent;
       case 'calm':
       case 'grateful':
-        return Colors.blue;
+        return colors.moodGood;
       case 'neutral':
       case 'reflective':
-        return Colors.amber;
+        return colors.moodNeutral;
       case 'negative':
       case 'sad':
-        return Colors.red;
+        return colors.moodAwful;
       case 'anxious':
-        return Colors.red;
+        return colors.moodBad;
       default:
-        return Colors.grey;
+        return Theme.of(context).disabledColor;
     }
   }
 
@@ -209,7 +210,7 @@ class _MoodPinCommentDialogState extends ConsumerState<MoodPinCommentDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final sentimentColor = _getSentimentColor(widget.pin.sentiment);
+    final sentimentColor = _getSentimentColor(context, widget.pin.sentiment);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

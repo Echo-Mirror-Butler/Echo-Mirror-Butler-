@@ -122,26 +122,28 @@ class StatisticsPanel extends StatelessWidget {
     return pins.where((pin) => pin.timestamp.isAfter(fiveMinutesAgo)).length;
   }
 
-  Color _getSentimentColor(String sentiment) {
+  Color _getSentimentColor(BuildContext context, String sentiment) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     switch (sentiment) {
       case 'Happy':
-        return Colors.green;
+        return colors.moodExcellent;
       case 'Calm':
-        return Colors.blue;
+        return colors.moodGood;
       case 'Stressed':
-        return Colors.orange;
+        return colors.warning;
       case 'Anxious':
-        return Colors.red.shade300;
+        return colors.moodBad;
       case 'Sad':
-        return Colors.red;
+        return colors.moodAwful;
       default:
-        return Colors.amber;
+        return colors.moodNeutral;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.extension<AppColorsExtension>()!;
     final totalPins = pins.length;
     final liveUsers = _getLiveUsersCount();
     final dominantMood = _getDominantMood();
@@ -172,28 +174,28 @@ class StatisticsPanel extends StatelessWidget {
                   label: 'Total Pins',
                   value: totalPins.toString(),
                   icon: Icons.push_pin,
-                  color: AppTheme.primaryColor,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 16),
                 _StatItem(
                   label: 'Live Now',
                   value: liveUsers.toString(),
                   icon: Icons.person,
-                  color: Colors.green,
+                  color: colors.success,
                 ),
                 const SizedBox(width: 16),
                 _StatItem(
                   label: 'Trending',
                   value: dominantMood.split(' ').first,
                   icon: Icons.trending_up,
-                  color: Colors.orange,
+                  color: colors.warning,
                 ),
                 const SizedBox(width: 16),
                 _StatItem(
                   label: 'Active',
                   value: mostActiveRegion,
                   icon: Icons.public,
-                  color: Colors.blue,
+                  color: colors.info,
                   isWide: true,
                 ),
               ],
@@ -231,21 +233,21 @@ class StatisticsPanel extends StatelessWidget {
                   label: 'Total Pins',
                   value: totalPins.toString(),
                   icon: Icons.push_pin,
-                  color: AppTheme.primaryColor,
+                  color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 16),
                 _StatCard(
                   label: 'Live Users',
                   value: liveUsers.toString(),
                   icon: Icons.person,
-                  color: Colors.green,
+                  color: colors.success,
                 ),
                 const SizedBox(width: 16),
                 _StatCard(
                   label: 'Most Active',
                   value: mostActiveRegion,
                   icon: Icons.public,
-                  color: Colors.blue,
+                  color: colors.info,
                   isWide: true,
                 ),
               ],
@@ -284,7 +286,7 @@ class StatisticsPanel extends StatelessWidget {
               _SentimentBreakdownChart(
                 sentimentCounts: sentimentCounts,
                 total: totalPins,
-                getSentimentColor: _getSentimentColor,
+                getSentimentColor: (sentiment) => _getSentimentColor(context, sentiment),
               ),
             ],
           ],

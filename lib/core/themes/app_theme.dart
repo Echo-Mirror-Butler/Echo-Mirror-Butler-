@@ -105,6 +105,20 @@ class AppTheme {
         ),
       ),
       iconTheme: const IconThemeData(color: Colors.black87, size: 24),
+      extensions: const <ThemeExtension<dynamic>>[
+        AppColorsExtension(
+          success: successColor,
+          warning: Color(0xFFF59E0B),
+          danger: errorColor,
+          info: Color(0xFF3B82F6),
+          elevatedSurface: Color(0xFFF1F5F9),
+          moodAwful: Color(0xFFEF4444),
+          moodBad: Color(0xFFF87171),
+          moodNeutral: Color(0xFFFBBF24),
+          moodGood: Color(0xFF3B82F6),
+          moodExcellent: Color(0xFF10B981),
+        ),
+      ],
     );
   }
 
@@ -182,6 +196,20 @@ class AppTheme {
         ),
       ),
       iconTheme: const IconThemeData(color: Colors.white, size: 24),
+      extensions: const <ThemeExtension<dynamic>>[
+        AppColorsExtension(
+          success: successColor,
+          warning: Color(0xFFF59E0B),
+          danger: errorColor,
+          info: Color(0xFF3B82F6),
+          elevatedSurface: Color(0xFF334155),
+          moodAwful: Color(0xFFEF4444),
+          moodBad: Color(0xFFF87171),
+          moodNeutral: Color(0xFFFBBF24),
+          moodGood: Color(0xFF60A5FA),
+          moodExcellent: Color(0xFF10B981),
+        ),
+      ],
     );
   }
 
@@ -284,6 +312,80 @@ class AppTheme {
         color: baseColor.withValues(alpha: 0.7),
         letterSpacing: 0.5,
       ),
+    );
+  }
+}
+
+class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
+  final Color success;
+  final Color warning;
+  final Color danger;
+  final Color info;
+  final Color elevatedSurface;
+
+  // Mood palette
+  final Color moodAwful;
+  final Color moodBad;
+  final Color moodNeutral;
+  final Color moodGood;
+  final Color moodExcellent;
+
+  const AppColorsExtension({
+    required this.success,
+    required this.warning,
+    required this.danger,
+    required this.info,
+    required this.elevatedSurface,
+    required this.moodAwful,
+    required this.moodBad,
+    required this.moodNeutral,
+    required this.moodGood,
+    required this.moodExcellent,
+  });
+
+  @override
+  AppColorsExtension copyWith({
+    Color? success,
+    Color? warning,
+    Color? danger,
+    Color? info,
+    Color? elevatedSurface,
+    Color? moodAwful,
+    Color? moodBad,
+    Color? moodNeutral,
+    Color? moodGood,
+    Color? moodExcellent,
+  }) {
+    return AppColorsExtension(
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      danger: danger ?? this.danger,
+      info: info ?? this.info,
+      elevatedSurface: elevatedSurface ?? this.elevatedSurface,
+      moodAwful: moodAwful ?? this.moodAwful,
+      moodBad: moodBad ?? this.moodBad,
+      moodNeutral: moodNeutral ?? this.moodNeutral,
+      moodGood: moodGood ?? this.moodGood,
+      moodExcellent: moodExcellent ?? this.moodExcellent,
+    );
+  }
+
+  @override
+  AppColorsExtension lerp(ThemeExtension<AppColorsExtension>? other, double t) {
+    if (other is! AppColorsExtension) {
+      return this;
+    }
+    return AppColorsExtension(
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
+      info: Color.lerp(info, other.info, t)!,
+      elevatedSurface: Color.lerp(elevatedSurface, other.elevatedSurface, t)!,
+      moodAwful: Color.lerp(moodAwful, other.moodAwful, t)!,
+      moodBad: Color.lerp(moodBad, other.moodBad, t)!,
+      moodNeutral: Color.lerp(moodNeutral, other.moodNeutral, t)!,
+      moodGood: Color.lerp(moodGood, other.moodGood, t)!,
+      moodExcellent: Color.lerp(moodExcellent, other.moodExcellent, t)!,
     );
   }
 }

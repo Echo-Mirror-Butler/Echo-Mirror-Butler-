@@ -290,11 +290,11 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
               confettiController: _confettiController,
               blastDirectionality: BlastDirectionality.explosive,
               numberOfParticles: 30,
-              colors: const [
+              colors: [
                 AppTheme.primaryColor,
                 AppTheme.secondaryColor,
                 AppTheme.accentColor,
-                Colors.amber,
+                theme.extension<AppColorsExtension>()!.moodNeutral,
               ],
             ),
           ),
@@ -558,13 +558,13 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
             leading: CircleAvatar(
               backgroundColor: isSent
                   ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                  : Colors.green.withValues(alpha: 0.1),
+                  : theme.extension<AppColorsExtension>()!.success.withValues(alpha: 0.1),
               child: Icon(
                 isSent
                     ? FontAwesomeIcons.gift.data
                     : FontAwesomeIcons.handHoldingHeart.data,
                 size: 16,
-                color: isSent ? theme.colorScheme.primary : Colors.green,
+                color: isSent ? theme.colorScheme.primary : theme.extension<AppColorsExtension>()!.success,
               ),
             ),
             title: Row(
@@ -584,7 +584,7 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
                     fontWeight: FontWeight.bold,
                     color: isSent
                         ? theme.colorScheme.onSurface
-                        : Colors.green[700],
+                        : theme.extension<AppColorsExtension>()!.success,
                   ),
                 ),
               ],
@@ -628,24 +628,25 @@ class _GiftScreenState extends ConsumerState<GiftScreen> {
   }
 
   Widget _buildStatusBadge(ThemeData theme, String status) {
+    final colors = theme.extension<AppColorsExtension>()!;
     Color color;
     IconData icon;
 
     switch (status.toLowerCase()) {
       case 'completed':
-        color = Colors.green;
+        color = colors.success;
         icon = Icons.check_circle;
         break;
       case 'pending':
-        color = Colors.orange;
+        color = colors.warning;
         icon = Icons.access_time;
         break;
       case 'failed':
-        color = Colors.red;
+        color = colors.danger;
         icon = Icons.error;
         break;
       default:
-        color = Colors.grey;
+        color = theme.disabledColor;
         icon = Icons.help;
     }
 

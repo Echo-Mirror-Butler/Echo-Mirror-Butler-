@@ -130,15 +130,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery, 
+      maxWidth: 512, 
+      maxHeight: 512,
+      imageQuality: 70, // compress to improve user experience
+    );
     if (picked == null) return;
 
     final user = _client.auth.currentUser;
     if (user == null) return;
 
+    final bytes = await File(picked.path).readAsBytes();
+    if (bytes.length > 400 * 1024) {
+      if (mounted) ErrorHandler.showError(context, 'Image is too large (max 400KB). Please select a smaller file.');
+      return;
+    }
+
     setState(() => _uploadingAvatar = true);
     try {
-      final bytes = await File(picked.path).readAsBytes();
       final ext = picked.path.split('.').last.toLowerCase();
       final path = '${user.id}/avatar.$ext';
 

@@ -36,3 +36,32 @@ jobs:
                 'Add the "large-pr-approved" label to bypass this check.'
               );
             }
+
+  color-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for hardcoded colors
+        run: |
+          echo "Checking for hardcoded Color(0x literals in lib/features..."
+          # Allow list: globe_3d_widget and wallet_qr_sheet
+          if grep -r "Color(0x" lib/features | grep -v "globe_3d_widget.dart" | grep -v "wallet_qr_sheet.dart"; then
+            echo "Error: Hardcoded Color(0x literals found in lib/features. Please use AppColorsExtension or ColorScheme instead."
+            exit 1
+          fi
+          echo "No unauthorized hardcoded colors found."
+
+  version-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version match
+        run: |
+          PUBSPEC_VERSION=$(grep -E "^version: " pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
+          CHANGELOG_VERSION=$(grep -E "^## \[[0-9]+\.[0-9]+\.[0-9]+\]" CHANGELOG.md | head -n 1 | awk '{print $2}' | tr -d '[]')
+          
+          if [ "$PUBSPEC_VERSION" != "$CHANGELOG_VERSION" ]; then
+            echo "Error: Version mismatch! pubspec.yaml says $PUBSPEC_VERSION but CHANGELOG.md says $CHANGELOG_VERSION."
+            exit 1
+          fi
+          echo "Versions match: $PUBSPEC_VERSION"

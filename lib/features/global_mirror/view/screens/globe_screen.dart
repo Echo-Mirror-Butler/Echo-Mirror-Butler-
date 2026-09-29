@@ -72,25 +72,26 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
     super.dispose();
   }
 
-  Color _getSentimentColor(String sentiment) {
+  Color _getSentimentColor(BuildContext context, String sentiment) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     switch (sentiment.toLowerCase()) {
       case 'positive':
       case 'happy':
       case 'excited':
-        return Colors.green;
+        return colors.moodExcellent;
       case 'calm':
       case 'grateful':
-        return Colors.blue;
+        return colors.moodGood;
       case 'neutral':
       case 'reflective':
-        return Colors.amber;
+        return colors.moodNeutral;
       case 'negative':
       case 'sad':
-        return Colors.red;
+        return colors.moodAwful;
       case 'anxious':
-        return Colors.red;
+        return colors.moodBad;
       default:
-        return Colors.grey;
+        return Theme.of(context).disabledColor;
     }
   }
 
@@ -307,7 +308,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
               Positioned(
                 bottom: 16,
                 right: 16,
-                child: FadeInUp(child: _buildLegend(theme)),
+                child: FadeInUp(child: _buildLegend(context, theme)),
               ),
 
               // Touch gesture hint overlay
@@ -355,7 +356,7 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
               height: 30,
               child: MoodPinWidget(
                 pin: pin,
-                color: _getSentimentColor(pin.sentiment),
+                color: _getSentimentColor(context, pin.sentiment),
               ),
             );
           }).toList(),
@@ -364,13 +365,14 @@ class _GlobeScreenState extends ConsumerState<GlobeScreen> {
     );
   }
 
-  Widget _buildLegend(ThemeData theme) {
+  Widget _buildLegend(BuildContext context, ThemeData theme) {
+    final colors = theme.extension<AppColorsExtension>()!;
     final sentiments = [
-      {'name': 'Positive', 'color': Colors.green},
-      {'name': 'Calm', 'color': Colors.blue},
-      {'name': 'Neutral', 'color': Colors.amber},
-      {'name': 'Negative', 'color': Colors.red},
-      {'name': 'Anxious', 'color': Colors.red},
+      {'name': 'Positive', 'color': colors.moodExcellent},
+      {'name': 'Calm', 'color': colors.moodGood},
+      {'name': 'Neutral', 'color': colors.moodNeutral},
+      {'name': 'Negative', 'color': colors.moodAwful},
+      {'name': 'Anxious', 'color': colors.moodBad},
     ];
 
     return Container(
