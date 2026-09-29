@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,7 @@ const corsHeaders = {
 export async function generateEncouragementFunction(
   req: Request,
   injectedFetch?: typeof fetch,
+  injectedSupabase?: any,
 ): Promise<Response> {
   const customFetch = injectedFetch || fetch;
 
@@ -23,6 +25,39 @@ export async function generateEncouragementFunction(
   }
 
   try {
+    const authorization = req.headers.get('Authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    const supabase = injectedSupabase || createClient(
+      Deno.env.get('SUPABASE_URL') || '',
+      Deno.env.get('SUPABASE_ANON_KEY') || '',
+      { global: { headers: { Authorization: authorization } } },
+    );
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    const { data: allowed, error: rateLimitError } = await supabase.rpc(
+      'check_rate_limit',
+      { p_user_id: user.id, p_action: 'generate_encouragement', p_max_count: 10, p_window_hours: 1.0 },
+    );
+    if (rateLimitError) throw rateLimitError;
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '3600' },
+        status: 429,
+      });
+    }
+
     let body: any;
     try {
       body = await req.json();
