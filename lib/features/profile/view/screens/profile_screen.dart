@@ -5,7 +5,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/avatar_upload.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/error_message_mapper.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -149,19 +151,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     setState(() => _uploadingAvatar = true);
     try {
-      final ext = picked.path.split('.').last.toLowerCase();
+      final String contentType;
+      try {
+        contentType = normalizeAvatarContentType(picked.path);
+      } on UnsupportedAvatarFormatException catch (e) {
+        if (mounted) ErrorHandler.showError(context, e.message);
+        return;
+      }
+      final ext = avatarExtensionForContentType(contentType);
       final path = '${user.id}/avatar.$ext';
 
       await _client.storage
           .from('avatars')
-          .uploadBinary(path, bytes, fileOptions: FileOptions(upsert: true, contentType: 'image/$ext'));
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(upsert: true, contentType: contentType),
+          );
 
       final url = _client.storage.from('avatars').getPublicUrl(path);
       await _client.from('profiles').upsert({'id': user.id, 'avatar_url': url});
       setState(() => _avatarUrl = '$url?t=${DateTime.now().millisecondsSinceEpoch}');
       if (mounted) ErrorHandler.showSuccess(context, 'Avatar updated');
     } catch (e) {
-      if (mounted) ErrorHandler.showError(context, 'Avatar upload failed');
+      if (mounted) ErrorHandler.showError(context, friendlyErrorMessage(e));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
