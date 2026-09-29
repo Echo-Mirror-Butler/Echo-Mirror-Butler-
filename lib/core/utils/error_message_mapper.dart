@@ -20,7 +20,7 @@ String friendlyErrorMessage(Object error) {
   }
 
   if (error is StorageException) {
-    return 'We could not upload that file. Please try again.';
+    return _storageErrorMessage(error);
   }
 
   final raw = error.toString().toLowerCase();
@@ -46,4 +46,30 @@ String friendlyErrorMessage(Object error) {
   }
 
   return 'Something went wrong. Please try again.';
+}
+
+String _storageErrorMessage(StorageException error) {
+  final message = error.message.toLowerCase();
+  if (message.contains('mime') ||
+      message.contains('content-type') ||
+      message.contains('content type') ||
+      message.contains('unsupported') ||
+      message.contains('not allowed')) {
+    return 'That image type is not supported. Please use a PNG or JPEG image.';
+  }
+  if (message.contains('network') ||
+      message.contains('connection') ||
+      message.contains('socket')) {
+    return 'Could not connect. Check your internet and try again.';
+  }
+  if (message.contains('timeout')) {
+    return 'That took too long to respond. Please try again.';
+  }
+  if (message.contains('unauthorized') ||
+      message.contains('jwt') ||
+      message.contains('permission') ||
+      message.contains('forbidden')) {
+    return 'You do not have permission to upload this file. Please sign in again.';
+  }
+  return 'We could not upload that file. Please try again.';
 }
