@@ -15,6 +15,7 @@ import "./generate-encouragement.test.ts";
 import "./generate-insight.test.ts";
 import "./get-crypto-price.test.ts";
 import "./unsubscribe-digest.test.ts";
+import "./env-fallback-guard.test.ts";
 
 // Test utilities
 function createMockRequest(
