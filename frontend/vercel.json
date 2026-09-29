@@ -2,5 +2,41 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://wornmnmswuofodkjupfc.supabase.co https://api.qrserver.com https://images.pexels.com https://avatars.githubusercontent.com; media-src 'self' https://videos.pexels.com; connect-src 'self' https://wornmnmswuofodkjupfc.supabase.co wss://wornmnmswuofodkjupfc.supabase.co https://api.github.com https://cdn.jsdelivr.net https://horizon-testnet.stellar.org https://horizon.stellar.org https://*.ingest.sentry.io; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "accelerometer=(), camera=(), clipboard-read=(), clipboard-write=(self), geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), web-share=(self)"
+        }
+      ]
+    }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
