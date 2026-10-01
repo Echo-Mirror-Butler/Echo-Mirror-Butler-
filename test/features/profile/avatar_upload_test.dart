@@ -1,8 +1,12 @@
-import 'package:flutter/test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:app/core/utils/avatar_upload.dart';
-import 'package:app/core/utils/error_message_mapper.dart';
+import 'package:echomirror/core/utils/avatar_upload.dart';
+import 'package:echomirror/core/utils/error_message_mapper.dart';
+
+final throwsUnsupportedAvatarError = throwsA(
+  isA<UnsupportedAvatarFormatException>(),
+);
 
 void main() {
   group('normalizeAvatarContentType', () {

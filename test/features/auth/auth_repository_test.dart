@@ -4,6 +4,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:echomirror/core/services/offline_storage_service.dart';
+import 'package:echomirror/core/services/on_device_vector_index.dart';
+import 'package:echomirror/core/sync/local_first_storage_service.dart';
 
 class MockSupabaseClient extends Mock implements SupabaseClient {}
 
@@ -21,6 +24,11 @@ class MockGoogleSignInAccount extends Mock implements GoogleSignInAccount {}
 
 class MockGoogleSignInAuthentication extends Mock
     implements GoogleSignInAuthentication {}
+
+class MockOfflineStorageService extends Mock implements OfflineStorageService {}
+
+class MockLocalFirstStorageService extends Mock
+  implements LocalFirstStorageService {}
 
 void main() {
   late MockSupabaseClient mockSupabase;
@@ -270,6 +278,28 @@ void main() {
       await repo.signOut();
 
       verify(() => mockAuth.signOut()).called(1);
+    });
+
+    test('signOut clears initialized local caches and vector indexes', () async {
+      final offlineStorage = MockOfflineStorageService();
+      final localFirstStorage = MockLocalFirstStorageService();
+      final vectorIndex = OnDeviceVectorIndex();
+      when(() => offlineStorage.isInitialized).thenReturn(true);
+      when(() => localFirstStorage.isInitialized).thenReturn(true);
+      when(() => offlineStorage.clearAll()).thenAnswer((_) async {});
+      when(() => localFirstStorage.clearAll()).thenAnswer((_) async {});
+      when(() => mockAuth.signOut()).thenAnswer((_) async {});
+
+      final repo = AuthRepository(
+        supabaseClient: mockSupabase,
+        offlineStorage: offlineStorage,
+        localFirstStorage: localFirstStorage,
+      );
+      await repo.signOut();
+
+      verify(() => offlineStorage.clearAll()).called(1);
+      verify(() => localFirstStorage.clearAll()).called(1);
+      expect(vectorIndex.size, 0);
     });
 
     test(

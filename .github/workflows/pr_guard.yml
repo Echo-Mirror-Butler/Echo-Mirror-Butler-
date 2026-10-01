@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check PR size
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const pr = context.payload.pull_request;
@@ -36,3 +36,28 @@ jobs:
                 'Add the "large-pr-approved" label to bypass this check.'
               );
             }
+
+  # NOTE: a color-guard job (failing on any lib/features Color(0x literal
+  # outside an allow-list) was proposed alongside the AppColorsExtension
+  # theming work in #755/#738, but the migration it was applied with only
+  # covered 6 of the ~12 affected files. Turning the guard on now would fail
+  # every future PR — including ones unrelated to theming — until the
+  # remaining files (login_screen.dart, dashboard_stats.dart,
+  # breathing_exercise_screen.dart, video_call_screen.dart,
+  # onboarding_screen.dart, professional_help_screen.dart) are migrated too.
+  # Add it back once that's done.
+
+  version-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check version match
+        run: |
+          PUBSPEC_VERSION=$(grep -E "^version: " pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
+          CHANGELOG_VERSION=$(grep -E "^## \[[0-9]+\.[0-9]+\.[0-9]+\]" CHANGELOG.md | head -n 1 | awk '{print $2}' | tr -d '[]')
+          
+          if [ "$PUBSPEC_VERSION" != "$CHANGELOG_VERSION" ]; then
+            echo "Error: Version mismatch! pubspec.yaml says $PUBSPEC_VERSION but CHANGELOG.md says $CHANGELOG_VERSION."
+            exit 1
+          fi
+          echo "Versions match: $PUBSPEC_VERSION"

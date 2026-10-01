@@ -25,25 +25,26 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
     return null;
   }
 
-  Color _getSentimentColor(String sentiment) {
+  Color _getSentimentColor(BuildContext context, String sentiment) {
+    final colors = Theme.of(context).extension<AppColorsExtension>()!;
     switch (sentiment.toLowerCase()) {
       case 'positive':
       case 'happy':
       case 'excited':
-        return Colors.green;
+        return colors.moodExcellent;
       case 'calm':
       case 'grateful':
-        return Colors.blue;
+        return colors.moodGood;
       case 'neutral':
       case 'reflective':
-        return Colors.amber;
+        return colors.moodNeutral;
       case 'negative':
       case 'sad':
-        return Colors.red;
+        return colors.moodAwful;
       case 'anxious':
-        return Colors.red;
+        return colors.moodBad;
       default:
-        return Colors.grey;
+        return Theme.of(context).disabledColor;
     }
   }
 
@@ -183,6 +184,7 @@ class MoodCommentNotificationsScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final notification = notifications[index];
                   final sentimentColor = _getSentimentColor(
+                    context,
                     notification.sentiment,
                   );
 

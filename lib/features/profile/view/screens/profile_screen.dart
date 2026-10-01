@@ -6,7 +6,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/themes/app_theme.dart';
+import '../../../../core/utils/avatar_upload.dart';
 import '../../../../core/utils/error_handler.dart';
+import '../../../../core/utils/error_message_mapper.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -166,27 +168,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _pickAndUploadAvatar() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, maxWidth: 512, maxHeight: 512);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery, 
+      maxWidth: 512, 
+      maxHeight: 512,
+      imageQuality: 70, // compress to improve user experience
+    );
     if (picked == null) return;
 
     final user = _client.auth.currentUser;
     if (user == null) return;
 
+    final bytes = await File(picked.path).readAsBytes();
+    if (bytes.length > 400 * 1024) {
+      if (mounted) ErrorHandler.showError(context, 'Image is too large (max 400KB). Please select a smaller file.');
+      return;
+    }
+
     setState(() => _uploadingAvatar = true);
     try {
-      final contentType = _normalizeContentType(picked.path);
-      if (contentType == null) {
-        if (mounted) {
-          ErrorHandler.showError(
-            context,
-            'Unsupported image format. Please use a JPG or PNG.',
-          );
-        }
+final String contentType;
+      try {
+        contentType = normalizeAvatarContentType(picked.path);
+      } on UnsupportedAvatarFormatException catch (e) {
+        if (mounted) ErrorHandler.showError(context, e.message);
         return;
       }
 
       final Uint8List bytes = await File(picked.path).readAsBytes();
-      final ext = contentType == 'image/png' ? 'png' : 'jpg';
+      final ext = avatarExtensionForContentType(contentType);
       final path = '${user.id}/avatar.$ext';
 
       await _client.storage
@@ -202,7 +212,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() => _avatarUrl = '$url?t=${DateTime.now().millisecondsSinceEpoch}');
       if (mounted) ErrorHandler.showSuccess(context, 'Avatar updated');
     } catch (e) {
-      if (mounted) ErrorHandler.showError(context, _describeUploadError(e));
+if (mounted) ErrorHandler.showError(context, _describeUploadError(e));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }

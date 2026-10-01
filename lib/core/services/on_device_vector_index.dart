@@ -99,7 +99,18 @@ class VectorClusterSummary {
 /// recurrence tracking, and semantic clustering without server-side plaintext access.
 class OnDeviceVectorIndex {
   OnDeviceVectorIndex({OnDeviceEmbeddingService? embeddingService})
-    : _embeddingService = embeddingService ?? OnDeviceEmbeddingService();
+    : _embeddingService = embeddingService ?? OnDeviceEmbeddingService() {
+    _instances.add(this);
+  }
+
+  static final Set<OnDeviceVectorIndex> _instances = {};
+
+  /// Clears all indexes held by the current process when the user signs out.
+  static void clearAll() {
+    for (final index in _instances) {
+      index.clear();
+    }
+  }
 
   final OnDeviceEmbeddingService _embeddingService;
   final Map<String, VectorIndexEntry> _entries = {};

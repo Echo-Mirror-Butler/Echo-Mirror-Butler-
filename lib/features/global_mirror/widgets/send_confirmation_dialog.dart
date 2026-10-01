@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../../../core/themes/app_theme.dart';
 class SendConfirmationDialog extends StatelessWidget {
   final String recipientName;
   final String recipientAddress;
@@ -36,9 +36,9 @@ class SendConfirmationDialog extends StatelessWidget {
             _buildInfoRow('Message:', message),
           ],
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'This transaction cannot be reversed.',
-            style: TextStyle(color: Colors.red, fontSize: 12),
+            style: TextStyle(color: Theme.of(context).extension<AppColorsExtension>()!.danger, fontSize: 12),
           ),
         ],
       ),
@@ -47,7 +47,7 @@ class SendConfirmationDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: onConfirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).extension<AppColorsExtension>()!.success,
             foregroundColor: Colors.white,
           ),
           child: const Text('Confirm Send'),
