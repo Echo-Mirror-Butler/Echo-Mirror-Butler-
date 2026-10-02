@@ -8,6 +8,7 @@ import '../../features/auth/view/screens/reset_password_screen.dart';
 import '../../features/auth/view/screens/verify_email_screen.dart';
 import '../../features/auth/view/verify_email_confirmed_screen.dart';
 import '../../features/settings/view/screens/change_password_screen.dart';
+import '../../features/settings/view/screens/delete_account_screen.dart';
 import '../../features/settings/view/screens/security_screen.dart';
 import '../../features/auth/viewmodel/providers/auth_provider.dart';
 import '../../features/dashboard/view/screens/mood_analytics_screen.dart';
@@ -183,6 +184,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings/security',
         name: 'security',
         builder: (context, state) => const SecurityScreen(),
+      ),
+      GoRoute(
+        path: '/settings/delete-account',
+        name: 'delete-account',
+        builder: (context, state) => const DeleteAccountScreen(),
       ),
       GoRoute(
         path: '/notifications',
