@@ -99,6 +99,21 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           _buildAboutCard(context, theme, packageInfoAsync),
           const SizedBox(height: 24),
+
+          // Danger Zone Section (Issue #759: in-app account deletion).
+          // Only shown to signed-in users.
+          if (authState.user != null) ...[
+            _buildSectionHeader(
+              context,
+              theme,
+              icon: FontAwesomeIcons.triangleExclamation.data,
+              title: 'Danger Zone',
+              subtitle: 'Irreversible account actions',
+            ),
+            const SizedBox(height: 12),
+            _buildDangerZoneCard(context, theme),
+            const SizedBox(height: 24),
+          ],
         ],
       ),
     );
@@ -532,6 +547,38 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDangerZoneCard(BuildContext context, ThemeData theme) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: theme.colorScheme.error.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: _buildModernListTile(
+          context,
+          theme,
+          icon: FontAwesomeIcons.trash.data,
+          iconColor: theme.colorScheme.error,
+          title: 'Delete my account',
+          subtitle:
+              'Permanently delete your account and data after a 14-day '
+              'grace period',
+          trailing: Icon(
+            FontAwesomeIcons.chevronRight.data,
+            size: 14,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+          ),
+          onTap: () => context.push('/settings/delete-account'),
         ),
       ),
     );
