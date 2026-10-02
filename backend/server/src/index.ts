@@ -11,6 +11,7 @@ const REQUIRED_ENV_VARS = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'STELLAR_SECRET_KEY',
   'ECHO_ASSET_ISSUER',
+  'UNSUBSCRIBE_SECRET',
 ];
 
 const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);

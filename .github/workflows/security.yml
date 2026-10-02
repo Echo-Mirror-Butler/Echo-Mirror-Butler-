@@ -17,3 +17,19 @@ jobs:
     with:
       scan-args: |-
         --lockfile=pubspec.lock
+
+  hardcoded-secret-guard:
+    name: Fail on hardcoded fallback secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject hardcoded default secrets in edge functions
+        run: |
+          set -euo pipefail
+          # Fail if any Deno.env.get(...) uses a hardcoded string fallback.
+          # Regression guard for the unsubscribe-digest default-secret bug.
+          if grep -RInE "Deno\.env\.get\([^)]*\)\s*\?\?\s*['\"][^'\"]+['\"]" supabase/functions; then
+            echo "::error::Hardcoded fallback secret detected in supabase/functions. Remove the '?? \"...\"' default and fail loudly when the env var is missing."
+            exit 1
+          fi
+          echo "No hardcoded fallback secrets found."
