@@ -1,7 +1,8 @@
 /**
  * Guard against secret fallbacks reappearing (Issue #762).
  *
- * The bug was `Deno.env.get('UNSUBSCRIBE_SECRET') ?? 'default-unsubscribe-secret'`:
+ * The bug was an unset `UNSUBSCRIBE_SECRET` silently becoming the literal string
+ * `default-unsubscribe-secret`:
  * a missing environment variable silently switched two functions to a publicly
  * visible HMAC key, so anyone could forge an unsubscribe link. The request paths
  * now fail closed and a start-up assertion logs the problem, but the *pattern*
@@ -26,7 +27,7 @@ const FUNCTIONS_DIR = new URL("./", import.meta.url);
 /** Env names that must never have a literal fallback. */
 const SECRET_LIKE = /(SECRET|PASSWORD|_KEY|_TOKEN|_CERT)/i;
 
-/** `Deno.env.get('NAME') ?? 'literal'` and the `||` variant. */
+/** An env lookup immediately followed by a non-empty string literal (`??` or `||`). */
 const FALLBACK_PATTERN =
   /Deno\.env\.get\(\s*["']([A-Z0-9_]+)["']\s*\)\s*(?:\?\?|\|\|)\s*(["'])(.*?)\2/gs;
 

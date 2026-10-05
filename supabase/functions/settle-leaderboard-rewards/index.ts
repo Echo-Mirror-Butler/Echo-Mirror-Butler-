@@ -28,9 +28,33 @@ const PAYOUT_STRUCTURE: PayoutTier[] = [
   { minRank: 4, maxRank: 10, amount: 25 },
 ];
 
+/** Environment variable naming the network rewards are settled on. */
+const STELLAR_NETWORK_ENV = "STELLAR_NETWORK";
+
+export class StellarNetworkConfigError extends Error {
+  constructor(detail: string) {
+    super(
+      `${STELLAR_NETWORK_ENV} is not usable: ${detail}. ` +
+        "Set it to `mainnet` or `testnet` — settlement decides which network it pays on " +
+        "from this value, so an unset or unrecognised one must fail here instead of " +
+        "silently falling back to testnet.",
+    );
+    this.name = "StellarNetworkConfigError";
+  }
+}
+
 export function resolveStellarSettings() {
-  const network = (Deno.env.get("STELLAR_NETWORK") ?? "testnet").toLowerCase();
-  const isMainnet = network === "mainnet";
+  const configured = Deno.env.get(STELLAR_NETWORK_ENV)?.trim().toLowerCase();
+
+  if (configured !== "mainnet" && configured !== "testnet") {
+    throw new StellarNetworkConfigError(
+      configured === undefined || configured === ""
+        ? "it is unset or empty"
+        : `it is "${configured}", not "mainnet" or "testnet"`,
+    );
+  }
+
+  const isMainnet = configured === "mainnet";
 
   return {
     horizonUrl: isMainnet ? "https://horizon.stellar.org" : "https://horizon-testnet.stellar.org",

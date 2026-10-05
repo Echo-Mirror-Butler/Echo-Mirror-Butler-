@@ -3,8 +3,9 @@
  *
  * `unsubscribe-digest` and `send-weekly-digest` must sign and verify with the
  * *same* secret, and that secret must never fall back to a built-in default: the
- * previous `Deno.env.get('UNSUBSCRIBE_SECRET') ?? 'default-unsubscribe-secret'`
- * meant that a fresh deploy, a preview environment or a rotation that missed
+ * previous behaviour — an unset `UNSUBSCRIBE_SECRET` silently becoming the literal
+ * string `default-unsubscribe-secret` — meant that a fresh deploy, a preview
+ * environment or a rotation that missed
  * this one variable silently switched both functions to a publicly visible
  * string — and anyone could then forge a valid unsubscribe link.
  *

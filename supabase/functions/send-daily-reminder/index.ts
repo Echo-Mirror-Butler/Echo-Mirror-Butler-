@@ -23,7 +23,6 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY')!
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY')!
-const VAPID_SUBJECT = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:hello@echomirror.app'
 
 type PushSubscription = {
   id: string
@@ -32,6 +31,25 @@ type PushSubscription = {
   p256dh: string
   auth: string
   reminder_time: string
+}
+
+/**
+ * The VAPID `sub` claim (RFC 8292) — how a push service reaches the sender.
+ * It used to fall back to a hardcoded `mailto:` address, so a deployment that
+ * never configured one advertised a contact nobody owns. Resolve it here and
+ * fail loudly instead, so the misconfiguration surfaces at the first send.
+ */
+function resolveVapidSubject(): string {
+  const subject = Deno.env.get('VAPID_SUBJECT')?.trim()
+  if (!subject) {
+    throw new Error(
+      'VAPID_SUBJECT is not configured. Set it to a mailto: or https: contact ' +
+        '(supabase secrets set VAPID_SUBJECT=mailto:ops@your-domain) — it is the ' +
+        'RFC 8292 sub claim, so an unset value must fail here rather than ship a ' +
+        'hardcoded address.',
+    )
+  }
+  return subject
 }
 
 /**
@@ -45,7 +63,7 @@ async function buildVapidAuthHeader(audience: string): Promise<string> {
   const header = btoa(JSON.stringify({ typ: 'JWT', alg: 'ES256' }))
     .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
 
-  const payload = btoa(JSON.stringify({ aud: audience, exp, sub: VAPID_SUBJECT }))
+  const payload = btoa(JSON.stringify({ aud: audience, exp, sub: resolveVapidSubject() }))
     .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
 
   const signingInput = `${header}.${payload}`
