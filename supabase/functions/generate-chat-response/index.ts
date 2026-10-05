@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+if (shouldServe()) serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }

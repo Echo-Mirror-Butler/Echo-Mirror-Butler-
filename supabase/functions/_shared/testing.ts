@@ -90,7 +90,22 @@ export function createMockSupabaseClient(options: MockSupabaseOptions = {}) {
         },
         order: (_col: string, _opts?: any) => builder,
         limit: (_n: number) => builder,
+        // PostgREST filter methods. The mock returns the table's rows unfiltered
+        // (see `then` below); they exist so a function that builds its query with
+        // them can be exercised at all — without `or`, export-user-data threw
+        // "supabase.from(...).select(...).or is not a function" and answered 500.
+        filter: (_col: string, _op: string, _val: any) => builder,
+        or: (_filter: string) => builder,
+        in: (_col: string, _vals: any[]) => builder,
+        gte: (_col: string, _val: any) => builder,
+        gt: (_col: string, _val: any) => builder,
+        lt: (_col: string, _val: any) => builder,
+        lte: (_col: string, _val: any) => builder,
         single: async () => {
+          if (error) return { data: null, error };
+          return { data: rows[0] || null, error: null };
+        },
+        maybeSingle: async () => {
           if (error) return { data: null, error };
           return { data: rows[0] || null, error: null };
         },

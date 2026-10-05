@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import * as StellarSdk from 'npm:@stellar/stellar-sdk';
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 type ExportRequest = {
   password?: string;
@@ -87,7 +88,7 @@ async function resolveSecret(encryptedSecret: string, encryptionKey: string) {
   return new TextDecoder().decode(plaintext);
 }
 
-Deno.serve(async request => {
+if (shouldServe()) Deno.serve(async request => {
   if (request.method !== 'POST') {
     return json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' }, 405);
   }

@@ -50,6 +50,11 @@ app.*.map.json
 **/.env.*
 !**/.env.example
 **/*secret*
+# ...but code may legitimately name a secret: issue #763 adds
+# supabase/functions/_shared/require-cron-secret.ts, and a source file that was
+# silently ignored (and therefore never compiled by the job that runs it) is
+# worse than the rule is useful. Credential *files* stay ignored.
+!supabase/functions/**/*.ts
 **/config/passwords.yaml
 
 # Documentation files (except README.md)

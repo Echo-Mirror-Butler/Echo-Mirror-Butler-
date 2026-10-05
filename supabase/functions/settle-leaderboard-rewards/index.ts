@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as StellarSdk from "https://esm.sh/stellar-sdk@11";
+import * as StellarSdk from "npm:@stellar/stellar-sdk@11";
 import { auditLeaderboardCollusion } from "../_shared/collusion-detector.ts";
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const FRIENDBOT_URL = "https://friendbot.stellar.org/?addr=";
 const ISSUER_PUBLIC_KEY = Deno.env.get("STELLAR_ISSUER_PUBLIC_KEY") ?? "";
@@ -80,7 +81,7 @@ export function buildPayoutResult(
     : { rank, userId, amount, txHash, success: true };
 }
 
-serve(async (req) => {
+if (shouldServe()) serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok");
   }

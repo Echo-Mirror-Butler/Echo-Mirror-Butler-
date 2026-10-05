@@ -5,6 +5,7 @@
  * reachability, and reports a simple aggregate status. Backs the /status page.
  */
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const jsonHeaders = {
   'Content-Type': 'application/json',
@@ -59,7 +60,7 @@ async function checkHorizon() {
   return { status: error ? ('down' as const) : ('up' as const), latency_ms: ms, error }
 }
 
-Deno.serve(async (req: Request) => {
+if (shouldServe()) Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: jsonHeaders })
   }

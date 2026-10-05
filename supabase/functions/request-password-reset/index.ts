@@ -8,6 +8,7 @@
  */
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const jsonHeaders = {
   'Content-Type': 'application/json',
@@ -210,4 +211,4 @@ export async function requestPasswordResetFunction(req: Request, injectedClient?
   return jsonResponse(GENERIC_SUCCESS)
 }
 
-Deno.serve(requestPasswordResetFunction)
+if (shouldServe()) Deno.serve(requestPasswordResetFunction)

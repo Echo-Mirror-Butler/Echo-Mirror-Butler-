@@ -6,6 +6,7 @@ import {
   storeIdempotencyResult,
   buildReplayedResponse,
 } from '../_shared/idempotency.ts';
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 type SendEchoPayload = {
   recipient_id?: string;
@@ -68,7 +69,7 @@ function resolveStellarSettings() {
 }
 
 async function importDecryptionKey(rawKey: string) {
-  let decoded: Uint8Array;
+  let decoded: Uint8Array<ArrayBuffer>;
 
   try {
     decoded = decodeBase64(rawKey);
@@ -414,4 +415,4 @@ export async function sendEchoFunction(
   }
 }
 
-Deno.serve(sendEchoFunction);
+if (shouldServe()) Deno.serve((req: Request) => sendEchoFunction(req));

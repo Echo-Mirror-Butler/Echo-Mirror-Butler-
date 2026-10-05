@@ -52,6 +52,9 @@ Deno.test("export-user-data: returns full user data bundle for authenticated use
   assertEquals(res.status, 200);
   const body = await getResponseBody(res);
   assertEquals(body.userId, "user-123");
-  assertEquals(body.data.profiles.length, 1);
-  assertEquals(body.data.logs.length, 1);
+  // The export shape is the one the download actually serves: a single
+  // `profile`, `moodLogs`, and a `summary` with the counts.
+  assertEquals(body.data.profile.username, "alex");
+  assertEquals(body.data.moodLogs.length, 1);
+  assertEquals(body.summary.totalMoodLogs, 1);
 });

@@ -1,16 +1,16 @@
-/**
- * send-daily-reminder — Supabase Edge Function
- * Issue #303
- *
- * Sends Web Push notifications to all users who have:
- * - reminder_enabled = true
- * - reminder_time matching the current UTC hour (±5 min window)
- *
- * Schedule via pg_cron or Supabase scheduled functions to run every 5 minutes:
- *   SELECT cron.schedule('send-daily-reminder', '*/5 * * * *',
- *     $$SELECT net.http_post(url := '<SUPABASE_URL>/functions/v1/send-daily-reminder',
- *       headers := '{"Authorization": "Bearer <SERVICE_ROLE_KEY>"}'::jsonb)$$);
- */
+// send-daily-reminder — Supabase Edge Function
+// Issue #303
+//
+// Sends Web Push notifications to all users who have:
+// - reminder_enabled = true
+// - reminder_time matching the current UTC hour (±5 min window)
+//
+// Schedule via pg_cron or Supabase scheduled functions to run every 5 minutes
+// (the cron expression is `*/5 * * * *` — spelled out here because that literal
+// inside a block comment closes the comment early and the file stops parsing):
+//   SELECT cron.schedule('send-daily-reminder', '<cron>',
+//     $$SELECT net.http_post(url := '<SUPABASE_URL>/functions/v1/send-daily-reminder',
+//       headers := '{"Authorization": "Bearer <SERVICE_ROLE_KEY>"}'::jsonb)$$);
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
@@ -18,6 +18,7 @@ import {
   nextQuietHoursEnd,
   type QuietHours,
 } from '../_shared/notification-scheduling.ts'
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -98,7 +99,7 @@ async function sendPushNotification(sub: PushSubscription): Promise<boolean> {
   return response.ok || response.status === 201
 }
 
-Deno.serve(async (req) => {
+if (shouldServe()) Deno.serve(async (req) => {
   // Allow manual POST trigger or scheduled invocation
   if (req.method !== 'POST' && req.method !== 'GET') {
     return new Response('Method not allowed', { status: 405 })

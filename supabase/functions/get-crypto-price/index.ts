@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price";
 const CACHE_TTL_MINUTES = 5;
@@ -175,7 +176,7 @@ export async function getCryptoPriceFunction(
       return new Response(
         JSON.stringify({
           error: "Failed to fetch price data and no cached data available",
-          details: fetchError.message,
+          details: fetchError instanceof Error ? fetchError.message : String(fetchError),
         }),
         {
           headers: { "Content-Type": "application/json" },
@@ -188,7 +189,7 @@ export async function getCryptoPriceFunction(
     return new Response(
       JSON.stringify({
         error: "Internal server error",
-        details: error.message,
+        details: error instanceof Error ? error.message : String(error),
       }),
       {
         headers: { "Content-Type": "application/json" },
@@ -198,4 +199,4 @@ export async function getCryptoPriceFunction(
   }
 }
 
-serve(getCryptoPriceFunction);
+if (shouldServe()) serve(getCryptoPriceFunction);

@@ -16,6 +16,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createLogger, extractTraceId, addTraceIdToResponse } from '../_shared/logger.ts';
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const logger = createLogger('export-user-data');
 
@@ -200,4 +201,4 @@ export async function exportUserDataFunction(req: Request, injectedClient?: any)
 }
 
 // Export for Supabase Edge Functions
-Deno.serve(exportUserDataFunction);
+if (shouldServe()) Deno.serve(exportUserDataFunction);

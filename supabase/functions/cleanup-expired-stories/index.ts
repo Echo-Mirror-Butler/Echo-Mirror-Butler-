@@ -1,11 +1,41 @@
+/**
+ * cleanup-expired-stories — Supabase Edge Function
+ *
+ * Issue #763: this cron-only job had no caller check, so any unauthenticated
+ * client could trigger it and force early deletion of stories that are already
+ * past `expires_at` minus the grace window. The work itself is idempotent and
+ * destroys nothing that was not already scheduled to go away, but it is still
+ * an admin operation reachable by the public.
+ *
+ * The request path now runs `cronDenialResponse(req)` first (see
+ * `../_shared/require-cron-secret.ts`): a missing `CRON_SECRET` fails closed
+ * with 500, a caller without the credential gets 401, and the scheduled
+ * invocation authenticates with `Authorization: Bearer <CRON_SECRET>` or
+ * `x-cron-secret: <CRON_SECRET>`.
+ */
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  assertCronSecretConfigured,
+  cronDenialResponse,
+  type EnvLike,
+} from '../_shared/require-cron-secret.ts'
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 type SupabaseLike = any
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const STORY_BUCKET = 'stories'
 const GRACE_PERIOD_MINUTES = 30
+
+export interface CleanupDeps {
+  createClientImpl?: typeof createClient
+}
+
+assertCronSecretConfigured((message) => {
+  // Fail closed on the request path, but say it at boot as well so a
+  // misconfigured deployment is visible in the logs before the first cron tick.
+  console.error(`cleanup-expired-stories: ${message}`)
+})
 
 export function extractStorageObjectPaths(urls: unknown): string[] {
   if (!Array.isArray(urls)) return []
@@ -67,21 +97,42 @@ async function deleteStoryRow(
   }
 }
 
-Deno.serve(async (req) => {
+/**
+ * The whole request path, exported so tests can drive it without binding a
+ * port. `env` and the Supabase client factory are injectable for the same
+ * reason.
+ */
+export async function handleCleanupRequest(
+  req: Request,
+  env: EnvLike = Deno.env,
+  deps: CleanupDeps = {},
+): Promise<Response> {
   if (req.method !== 'POST' && req.method !== 'GET') {
     return new Response('Method not allowed', { status: 405 })
   }
 
-  const supabase = createClient(
-    SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
+  const denial = cronDenialResponse(req, env)
+  if (denial) return denial
+
+  const supabaseUrl = env.get('SUPABASE_URL')
+  const supabaseServiceRoleKey = env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    return new Response(
+      JSON.stringify({
+        error: 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured',
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  const clientFactory = deps.createClientImpl ?? createClient
+  const supabase = clientFactory(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
     },
-  )
+  }) as SupabaseLike
 
   const cutoff = new Date(Date.now() - GRACE_PERIOD_MINUTES * 60_000).toISOString()
 
@@ -136,6 +187,8 @@ Deno.serve(async (req) => {
     }),
     { headers: { 'Content-Type': 'application/json' } },
   )
-})
+}
 
-export default {} 
+if (shouldServe()) Deno.serve((req) => handleCleanupRequest(req))
+
+export default {}

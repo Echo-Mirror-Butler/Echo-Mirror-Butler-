@@ -16,6 +16,7 @@ import {
   resolveUnsubscribeSecret,
   UnsubscribeSecretMissingError,
 } from "../_shared/unsubscribe-hmac.ts";
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -212,7 +213,7 @@ assertUnsubscribeSecretConfigured((message) => {
   console.error(JSON.stringify({ function: "send-weekly-digest", message }));
 });
 
-Deno.serve(async (req) => {
+if (shouldServe()) Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }

@@ -16,6 +16,7 @@ import {
   resolveUnsubscribeSecret,
   UnsubscribeSecretMissingError,
 } from "../_shared/unsubscribe-hmac.ts";
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const logger = createLogger("unsubscribe-digest");
 
@@ -165,4 +166,4 @@ export async function unsubscribeDigestFunction(
   });
 }
 
-Deno.serve(unsubscribeDigestFunction);
+if (shouldServe()) Deno.serve(unsubscribeDigestFunction);

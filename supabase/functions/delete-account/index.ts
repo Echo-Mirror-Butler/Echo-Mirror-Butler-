@@ -15,6 +15,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createLogger, extractTraceId, addTraceIdToResponse } from '../_shared/logger.ts';
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const logger = createLogger('delete-account');
 const GRACE_PERIOD_DAYS = 14;
@@ -23,7 +24,7 @@ const CONFIRMATION_PHRASE = 'DELETE MY ACCOUNT'; // User must type this exactly
 export async function deleteAccountFunction(req: Request, injectedClient?: any): Promise<Response> {
   // Extract trace ID from incoming request
   const incomingTraceId = extractTraceId(Object.fromEntries(req.headers));
-  let traceId = incomingTraceId;
+  let traceId: string = incomingTraceId ?? crypto.randomUUID();
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -254,4 +255,4 @@ export async function deleteAccountFunction(req: Request, injectedClient?: any):
 }
 
 // Export for Supabase Edge Functions
-Deno.serve(deleteAccountFunction);
+if (shouldServe()) Deno.serve(deleteAccountFunction);

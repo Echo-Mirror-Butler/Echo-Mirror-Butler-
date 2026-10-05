@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-import-prefix
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts';
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 type SaveFutureLetterBody = {
   userId?: string;
@@ -77,6 +78,8 @@ function encodeFilterValue(value: string) {
   return encodeURIComponent(value)
     .replace(/%20/g, '+')
     .replace(/%2C/g, '%2C');
+}
+
 export async function saveFutureLetterFunction(
   req: Request,
   injectedFetch?: typeof fetch,
@@ -197,4 +200,4 @@ export async function saveFutureLetterFunction(
   }
 }
 
-serve(saveFutureLetterFunction);
+if (shouldServe()) serve((req: Request) => saveFutureLetterFunction(req));

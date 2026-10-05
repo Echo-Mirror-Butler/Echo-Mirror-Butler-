@@ -20,7 +20,7 @@ Deno.test("reports a failed ledger insert after a successful payment", () => {
   const result = buildPayoutResult(1, "user-1", 100, "stellar-hash", "database unavailable");
 
   assertFalse(result.success);
-  assertStringIncludes(result.error, "Payment succeeded but payout recording failed");
+  assertStringIncludes(result.error ?? '', "Payment succeeded but payout recording failed");
 });
 
 Deno.test("resolves Stellar mainnet settings from environment", () => {

@@ -4,19 +4,40 @@ import {
   assertStringIncludes,
 } from "https://deno.land/std@0.192.0/testing/asserts.ts";
 
-// Register individual unit test suites (Issue #735)
-import "./settle-leaderboard-rewards.test.ts";
-import "./delete-account.test.ts";
-import "./request-password-reset.test.ts";
-import "./export-user-data.test.ts";
-import "./send-echo.test.ts";
-import "./save-future-letter.test.ts";
-import "./generate-encouragement.test.ts";
-import "./generate-insight.test.ts";
-import "./get-crypto-price.test.ts";
-import "./unsubscribe-digest.test.ts";
-import "./get-agora-credentials.test.ts";
-import "./env-fallback-guard.test.ts";
+// Register individual unit test suites (Issue #735).
+//
+// These are dynamic on purpose. Each function module calls serve() at the top
+// level, so importing them statically would bind the same port once per
+// function and the runner would die with
+// `AddrInUse: Address already in use (os error 98)` before a single test ran.
+// Setting the flag first, then importing, keeps the module-level exports
+// reachable without listening — see `_shared/serve-guard.ts`.
+Deno.env.set("EDGE_FUNCTIONS_NO_SERVE", "1");
+
+// The functions read their configuration from the environment. The tests inject
+// the network and client dependencies, but a function still resolves these
+// before it reaches an injected client, so without placeholders it answers 500
+// "Missing Supabase credentials" and the suite can never assert anything
+// meaningful. Values are local placeholders, not secrets.
+Deno.env.set("SUPABASE_URL", "http://localhost:54321");
+Deno.env.set("SUPABASE_ANON_KEY", "test-anon-key");
+Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
+
+await import("./settle-leaderboard-rewards.test.ts");
+await import("./delete-account.test.ts");
+await import("./request-password-reset.test.ts");
+await import("./export-user-data.test.ts");
+await import("./send-echo.test.ts");
+await import("./save-future-letter.test.ts");
+await import("./generate-encouragement.test.ts");
+await import("./generate-insight.test.ts");
+await import("./get-crypto-price.test.ts");
+await import("./unsubscribe-digest.test.ts");
+await import("./get-agora-credentials.test.ts");
+await import("./env-fallback-guard.test.ts");
+// Issue #763: shared cron-only caller check.
+await import("./_shared/require-cron-secret_test.ts");
+await import("./cleanup-expired-stories/index_test.ts");
 
 // Test utilities
 function createMockRequest(

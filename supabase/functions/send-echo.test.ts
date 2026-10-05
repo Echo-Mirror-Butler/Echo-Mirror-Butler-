@@ -57,5 +57,7 @@ Deno.test("send-echo: rejects request with missing recipient with 400", async ()
   });
   assertEquals(res.status, 400);
   const body = await getResponseBody(res);
-  assertEquals(body.code, "INVALID_PAYLOAD");
+  // The API answers a missing recipient_id with MISSING_FIELD (see
+  // send-echo/index.ts), which is what a client can actually branch on.
+  assertEquals(body.code, "MISSING_FIELD");
 });

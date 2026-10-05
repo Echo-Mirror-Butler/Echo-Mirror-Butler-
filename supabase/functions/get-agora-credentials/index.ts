@@ -39,6 +39,7 @@ import {
   createLogger,
   extractTraceId,
 } from "../_shared/logger.ts";
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const logger = createLogger("get-agora-credentials");
 
@@ -304,4 +305,4 @@ export async function getAgoraCredentialsFunction(
   }
 }
 
-serve(getAgoraCredentialsFunction);
+if (shouldServe()) serve(getAgoraCredentialsFunction);

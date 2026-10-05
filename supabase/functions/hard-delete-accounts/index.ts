@@ -13,6 +13,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createLogger } from '../_shared/logger.ts';
+import { shouldServe } from "../_shared/serve-guard.ts";
 
 const logger = createLogger('hard-delete-accounts');
 
@@ -127,7 +128,7 @@ export async function handleRequest(req: Request): Promise<Response> {
 }
 
 // Export for Supabase Edge Functions
-Deno.serve(handleRequest);
+if (shouldServe()) Deno.serve(handleRequest);
 
 // For pg_cron scheduling:
 // SELECT cron.schedule(
