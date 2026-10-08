@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 
 export interface AuthenticatedRequest extends Request {
   userId: string;
@@ -12,8 +12,8 @@ export function requireAuth(
 ): void {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or invalid Authorization header' });
+  if (!authHeader?.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Missing or invalid Authorization header" });
     return;
   }
 
@@ -21,7 +21,9 @@ export function requireAuth(
   const secret = process.env.JWT_SECRET;
 
   if (!secret) {
-    res.status(500).json({ error: 'Server misconfiguration: JWT_SECRET not set' });
+    res
+      .status(500)
+      .json({ error: "Server misconfiguration: JWT_SECRET not set" });
     return;
   }
 
@@ -30,13 +32,13 @@ export function requireAuth(
     const userId = payload.sub;
 
     if (!userId) {
-      res.status(401).json({ error: 'Invalid token: missing sub claim' });
+      res.status(401).json({ error: "Invalid token: missing sub claim" });
       return;
     }
 
     (req as AuthenticatedRequest).userId = userId;
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 }

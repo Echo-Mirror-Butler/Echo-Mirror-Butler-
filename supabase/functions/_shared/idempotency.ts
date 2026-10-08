@@ -28,7 +28,7 @@
  * Issue #639
  */
 
-import { SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,13 +47,13 @@ export type IdempotencyCheckResult = IdempotencyCacheHit | IdempotencyCacheMiss;
 // ── Constants ──────────────────────────────────────────────────────────────
 
 /** The HTTP header clients must send to opt into idempotency. */
-export const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
+export const IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
 
 /**
  * HTTP header added to replayed responses so clients can distinguish a cached
  * reply from a fresh execution.
  */
-export const IDEMPOTENCY_REPLAYED_HEADER = 'Idempotency-Replayed';
+export const IDEMPOTENCY_REPLAYED_HEADER = "Idempotency-Replayed";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -88,11 +88,11 @@ export async function checkIdempotency(
   key: string,
 ): Promise<IdempotencyCheckResult> {
   const { data, error } = await supabaseAdmin
-    .from('idempotency_keys')
-    .select('response_status, response_body, expires_at')
-    .eq('user_id', userId)
-    .eq('function_name', functionName)
-    .eq('idempotency_key', key)
+    .from("idempotency_keys")
+    .select("response_status, response_body, expires_at")
+    .eq("user_id", userId)
+    .eq("function_name", functionName)
+    .eq("idempotency_key", key)
     .maybeSingle();
 
   if (error) {
@@ -142,7 +142,7 @@ export async function storeIdempotencyResult(
   status: number,
   body: unknown,
 ): Promise<void> {
-  const { error } = await supabaseAdmin.from('idempotency_keys').insert({
+  const { error } = await supabaseAdmin.from("idempotency_keys").insert({
     user_id: userId,
     function_name: functionName,
     idempotency_key: key,
@@ -155,7 +155,7 @@ export async function storeIdempotencyResult(
     // A unique-constraint violation means another concurrent request raced us
     // to store the same key — that is fine; both callers will return the same
     // logical result, and the first insert wins.
-    if (error.code === '23505') {
+    if (error.code === "23505") {
       console.warn(
         `[idempotency] Concurrent insert race for key=${key} fn=${functionName} — this is safe to ignore.`,
       );
@@ -183,8 +183,8 @@ export function buildReplayedResponse(
   return new Response(JSON.stringify(body), {
     status,
     headers: {
-      'Content-Type': 'application/json',
-      [IDEMPOTENCY_REPLAYED_HEADER]: 'true',
+      "Content-Type": "application/json",
+      [IDEMPOTENCY_REPLAYED_HEADER]: "true",
       ...extraHeaders,
     },
   });

@@ -1,6 +1,7 @@
 # Settlement Scheduling Implementation Summary
 
 ## Issue Resolved
+
 The `settle-leaderboard-rewards` Edge Function was fully implemented but never actually ran in production. Users saw leaderboard rankings and `echo_earned_this_week` values implying real stakes, but weekly top-earner payouts never executed automatically.
 
 **Root cause:** No migration existed to schedule the function via `pg_cron`, unlike the established pattern used for `send-daily-reminder` and `send-weekly-digest`.
@@ -12,6 +13,7 @@ The `settle-leaderboard-rewards` Edge Function was fully implemented but never a
 **Purpose:** Schedules `settle-leaderboard-rewards` to run automatically every Monday at 01:00 UTC via `pg_cron`.
 
 **Key features:**
+
 - Follows the exact pattern established by `20260726000003_schedule_daily_reminder_push.sql`
 - Idempotent: checks if the job already exists before scheduling
 - Uses `app.settings.supabase_url` and `app.settings.service_role_key` (must be configured in database)
@@ -19,12 +21,14 @@ The `settle-leaderboard-rewards` Edge Function was fully implemented but never a
 - Timing ensures the week boundary (Monday 00:00 UTC) has passed before paying out
 
 **Leaderboard & Settlement Alignment:**
+
 - `leaderboard_weekly` view calculates earnings from `date_trunc('week', now())` (Monday 00:00 UTC)
 - `settle-leaderboard-rewards` calculates week start via `getSettlementWeekStart()` (same logic)
 - Settlement runs Monday at 01:00 UTC, after the weekly boundary crosses
 - Payouts are recorded with reason `leaderboard_bonus_rank_{N}_week_{YYYY-MM-DD}` for idempotency
 
 **Payout tiers:**
+
 - Rank 1: 100 ECHO
 - Rank 2: 75 ECHO
 - Rank 3: 50 ECHO
@@ -33,6 +37,7 @@ The `settle-leaderboard-rewards` Edge Function was fully implemented but never a
 ### 2. Testing Documentation: `docs/SETTLE_LEADERBOARD_REWARDS_TESTING.md`
 
 Comprehensive guide for end-to-end verification including:
+
 - How to apply the migration locally
 - How to verify the cron job was created
 - How to set up test data for the leaderboard
@@ -45,6 +50,7 @@ Comprehensive guide for end-to-end verification including:
 ## Dependency on Issue #692
 
 This implementation **assumes** that issue #692's idempotency and reliability fixes are in place (or will land) to prevent:
+
 - Double-pays on transaction retry
 - Silent ledger record loss
 - Hardcoded testnet references
@@ -63,12 +69,14 @@ The migration adds a **recurring trigger** to the settlement function, which mak
 ## How to Deploy
 
 ### Local Testing
+
 ```bash
 supabase db reset
 # Runs all migrations including the new settlement scheduler
 ```
 
 ### Production Deployment
+
 ```bash
 # 1. Ensure production Supabase has these configured:
 #    - app.settings.supabase_url
@@ -86,10 +94,12 @@ SELECT jobname FROM cron.job WHERE jobname = 'settle-leaderboard-rewards';
 ```
 
 ## Files Modified
+
 - ✅ Created: `supabase/migrations/20260829000001_schedule_settle_leaderboard_rewards.sql`
 - ✅ Created: `docs/SETTLE_LEADERBOARD_REWARDS_TESTING.md`
 
 ## Related Issues/PRs
+
 - Related to: #692 (idempotency and reliability fixes)
 - Depends on: #692 (should land first or concurrently)
 - Addresses: Weekly top-earner ECHO payouts now actually fire in production

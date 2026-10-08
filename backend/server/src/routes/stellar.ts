@@ -1,12 +1,12 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
-import { supabase } from '../services/supabase';
+import { Router, Request, Response, NextFunction } from "express";
+import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
+import { supabase } from "../services/supabase";
 import {
   createWallet,
   establishTrustline,
   getWalletBalances,
   sendEcho,
-} from '../services/stellar';
+} from "../services/stellar";
 
 export const stellarRouter = Router();
 
@@ -20,28 +20,29 @@ stellarRouter.use(requireAuth);
 // and returns { publicKey, funded: true }.
 // ─────────────────────────────────────────────
 stellarRouter.post(
-  '/wallet/create',
+  "/wallet/create",
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as AuthenticatedRequest).userId;
 
     try {
       const { data: existing } = await supabase
-        .from('user_wallets')
-        .select('public_key')
-        .eq('user_id', userId)
+        .from("user_wallets")
+        .select("public_key")
+        .eq("user_id", userId)
         .single();
 
       if (existing) {
-        res
-          .status(409)
-          .json({ error: 'Wallet already exists for this user', publicKey: existing.public_key });
+        res.status(409).json({
+          error: "Wallet already exists for this user",
+          publicKey: existing.public_key,
+        });
         return;
       }
 
       const { publicKey, secretKey } = await createWallet();
       await establishTrustline(secretKey);
 
-      const { error } = await supabase.from('user_wallets').insert({
+      const { error } = await supabase.from("user_wallets").insert({
         user_id: userId,
         public_key: publicKey,
         secret_key: secretKey,
@@ -61,19 +62,21 @@ stellarRouter.post(
 // Returns XLM and ECHO balances for the authenticated user's wallet.
 // ─────────────────────────────────────────────
 stellarRouter.get(
-  '/wallet/balance',
+  "/wallet/balance",
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as AuthenticatedRequest).userId;
 
     try {
       const { data: wallet, error } = await supabase
-        .from('user_wallets')
-        .select('public_key')
-        .eq('user_id', userId)
+        .from("user_wallets")
+        .select("public_key")
+        .eq("user_id", userId)
         .single();
 
       if (error || !wallet) {
-        res.status(404).json({ error: 'Wallet not found. Call POST /stellar/wallet/create first.' });
+        res.status(404).json({
+          error: "Wallet not found. Call POST /stellar/wallet/create first.",
+        });
         return;
       }
 
@@ -92,7 +95,7 @@ stellarRouter.get(
 // Returns { txHash, amount, recipient }
 // ─────────────────────────────────────────────
 stellarRouter.post(
-  '/gift',
+  "/gift",
   async (req: Request, res: Response, next: NextFunction) => {
     const senderId = (req as AuthenticatedRequest).userId;
     const { recipientUserId, amount, message } = req.body as {
@@ -102,54 +105,56 @@ stellarRouter.post(
     };
 
     if (!recipientUserId || !amount) {
-      res.status(400).json({ error: 'recipientUserId and amount are required' });
+      res
+        .status(400)
+        .json({ error: "recipientUserId and amount are required" });
       return;
     }
 
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      res.status(400).json({ error: 'amount must be a positive number' });
+      res.status(400).json({ error: "amount must be a positive number" });
       return;
     }
 
     if (parsedAmount < 1 || parsedAmount > 100) {
-      res.status(400).json({ error: 'amount must be between 1 and 100 ECHO' });
+      res.status(400).json({ error: "amount must be between 1 and 100 ECHO" });
       return;
     }
 
     if (senderId === recipientUserId) {
-      res.status(400).json({ error: 'Cannot gift ECHO to yourself' });
+      res.status(400).json({ error: "Cannot gift ECHO to yourself" });
       return;
     }
 
     try {
       const [senderWallet, recipientWallet] = await Promise.all([
         supabase
-          .from('user_wallets')
-          .select('public_key, secret_key')
-          .eq('user_id', senderId)
+          .from("user_wallets")
+          .select("public_key, secret_key")
+          .eq("user_id", senderId)
           .single(),
         supabase
-          .from('user_wallets')
-          .select('public_key')
-          .eq('user_id', recipientUserId)
+          .from("user_wallets")
+          .select("public_key")
+          .eq("user_id", recipientUserId)
           .single(),
       ]);
 
       if (senderWallet.error || !senderWallet.data) {
-        res.status(404).json({ error: 'Sender wallet not found' });
+        res.status(404).json({ error: "Sender wallet not found" });
         return;
       }
 
       if (recipientWallet.error || !recipientWallet.data) {
-        res.status(404).json({ error: 'Recipient wallet not found' });
+        res.status(404).json({ error: "Recipient wallet not found" });
         return;
       }
 
       const balances = await getWalletBalances(senderWallet.data.public_key);
       if (parseFloat(balances.echo) < parsedAmount) {
         res.status(422).json({
-          error: 'Insufficient ECHO balance',
+          error: "Insufficient ECHO balance",
           available: balances.echo,
           requested: amount,
         });
@@ -164,38 +169,41 @@ stellarRouter.post(
       );
 
       const { error: insertError } = await supabase
-        .from('gift_transactions')
+        .from("gift_transactions")
         .insert({
           sender_id: senderId,
           recipient_id: recipientUserId,
           amount: parsedAmount,
           tx_hash: result.txHash,
-          status: 'completed',
+          status: "completed",
           message: message ?? null,
         });
 
       if (insertError) {
-        console.error('[stellar/gift] Failed to record transaction:', insertError.message);
+        console.error(
+          "[stellar/gift] Failed to record transaction:",
+          insertError.message,
+        );
       }
 
       res.status(201).json(result);
     } catch (err) {
       const stellarError = err as Error;
 
-      await supabase.from('gift_transactions').insert({
+      await supabase.from("gift_transactions").insert({
         sender_id: senderId,
         recipient_id: recipientUserId,
         amount: parsedAmount,
         tx_hash: null,
-        status: 'failed',
+        status: "failed",
         message: message ?? null,
       });
 
       if (
-        stellarError.message?.includes('op_no_trust') ||
-        stellarError.message?.includes('no trustline')
+        stellarError.message?.includes("op_no_trust") ||
+        stellarError.message?.includes("no trustline")
       ) {
-        res.status(422).json({ error: 'Recipient has no ECHO trustline' });
+        res.status(422).json({ error: "Recipient has no ECHO trustline" });
         return;
       }
 
@@ -210,20 +218,23 @@ stellarRouter.post(
 // Query params: page (default 1), limit (default 20, max 100)
 // ─────────────────────────────────────────────
 stellarRouter.get(
-  '/transactions',
+  "/transactions",
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as AuthenticatedRequest).userId;
 
-    const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10)));
+    const page = Math.max(1, parseInt((req.query.page as string) ?? "1", 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt((req.query.limit as string) ?? "20", 10)),
+    );
     const offset = (page - 1) * limit;
 
     try {
       const { data, error, count } = await supabase
-        .from('gift_transactions')
-        .select('*', { count: 'exact' })
+        .from("gift_transactions")
+        .select("*", { count: "exact" })
         .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-        .order('created_at', { ascending: false })
+        .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) throw new Error(error.message);

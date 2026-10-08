@@ -1,63 +1,65 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/features/auth/store/authStore'
-import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
-import type { SignInCredentials } from '@/types/auth'
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/features/auth/store/authStore";
+import { Button } from "@/components/Button";
+import { Input } from "@/components/Input";
+import type { SignInCredentials } from "@/types/auth";
 
 export function LoginPage() {
-  const navigate = useNavigate()
-  const setUser = useAuthStore((state) => state.setUser)
+  const navigate = useNavigate();
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [credentials, setCredentials] = useState<SignInCredentials>({
-    email: '',
-    password: '',
-  })
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(
-    () => localStorage.getItem('echo-remember-me') !== 'false',
-  )
+    () => localStorage.getItem("echo-remember-me") !== "false",
+  );
 
   const validateForm = (): string | null => {
-    if (!credentials.email) return 'Email is required'
-    if (!credentials.email.includes('@')) return 'Invalid email address'
-    if (!credentials.password) return 'Password is required'
-    if (credentials.password.length < 6) return 'Password must be at least 6 characters'
-    return null
-  }
+    if (!credentials.email) return "Email is required";
+    if (!credentials.email.includes("@")) return "Invalid email address";
+    if (!credentials.password) return "Password is required";
+    if (credentials.password.length < 6)
+      return "Password must be at least 6 characters";
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
-    const validationError = validateForm()
+    const validationError = validateForm();
     if (validationError) {
-      setError(validationError)
-      return
+      setError(validationError);
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
-      })
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
 
-      if (signInError) throw signInError
+      if (signInError) throw signInError;
 
       if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || '' })
-        navigate('/dashboard')
+        setUser({ id: data.user.id, email: data.user.email || "" });
+        navigate("/dashboard");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign in')
+      setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -74,23 +76,25 @@ export function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input
             label="Email"
-            type="email" autoComplete="email"
+            type="email"
+            autoComplete="email"
             value={credentials.email}
             onChange={(e) =>
               setCredentials({ ...credentials, email: e.target.value })
             }
-            error={error && !credentials.email ? error : ''}
+            error={error && !credentials.email ? error : ""}
             placeholder="you@example.com"
           />
 
           <Input
             label="Password"
-            type="password" autoComplete="current-password"
+            type="password"
+            autoComplete="current-password"
             value={credentials.password}
             onChange={(e) =>
               setCredentials({ ...credentials, password: e.target.value })
             }
-            error={error && credentials.email ? error : ''}
+            error={error && credentials.email ? error : ""}
             placeholder="••••••••"
           />
 
@@ -100,31 +104,37 @@ export function LoginPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <input
               id="remember-me"
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => {
-                const val = e.target.checked
-                setRememberMe(val)
-                localStorage.setItem('echo-remember-me', String(val))
+                const val = e.target.checked;
+                setRememberMe(val);
+                localStorage.setItem("echo-remember-me", String(val));
               }}
-              style={{ accentColor: 'var(--brand)', width: '1rem', height: '1rem', cursor: 'pointer' }}
+              style={{
+                accentColor: "var(--brand)",
+                width: "1rem",
+                height: "1rem",
+                cursor: "pointer",
+              }}
             />
             <label
               htmlFor="remember-me"
-              style={{ fontSize: '0.875rem', color: 'var(--muted)', cursor: 'pointer', userSelect: 'none' }}
+              style={{
+                fontSize: "0.875rem",
+                color: "var(--muted)",
+                cursor: "pointer",
+                userSelect: "none",
+              }}
             >
               Keep me signed in
             </label>
           </div>
 
-          <Button
-            type="submit"
-            isLoading={isLoading}
-            className="w-full"
-          >
+          <Button type="submit" isLoading={isLoading} className="w-full">
             Sign In
           </Button>
 
@@ -136,7 +146,7 @@ export function LoginPage() {
               Forgot your password?
             </Link>
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <Link
                 to="/signup"
                 className="text-primary hover:text-primary-600 font-medium"
@@ -148,5 +158,5 @@ export function LoginPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }

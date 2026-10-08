@@ -3,17 +3,20 @@
 Use this template to create a PR directly in GitHub's web interface or CLI.
 
 ## PR Title
+
 ```
 feat: implement compliance features and logging infrastructure for issues #592-595
 ```
 
 ## PR Description
-```markdown
+
+````markdown
 Closes #592, closes #593, closes #594, closes #595
 
 ## Summary
 
 Comprehensive implementation of 4 interconnected issues:
+
 - Self-service account deletion with 14-day grace period and data export
 - AI insight generation reliability fixes with error handling
 - Global mirror implementation audit and test coverage
@@ -22,14 +25,17 @@ Comprehensive implementation of 4 interconnected issues:
 ## Issues Addressed
 
 ### Issue #592: Self-Service Account Deletion (COMPLIANCE - URGENT)
+
 **Problem**: No way for users to download their data or delete their accounts
-**Solution**: 
+**Solution**:
+
 - Data export endpoint returning complete JSON
 - Soft-delete with 14-day grace period (recoverable)
 - Scheduled hard-delete after grace period expires
 - Proper CASCADE deletes for all related data
 
 **Files**:
+
 - `supabase/functions/_shared/logger.ts` - Shared logging utility
 - `supabase/functions/delete-account/index.ts` - Soft-delete handler
 - `supabase/functions/export-user-data/index.ts` - Data export endpoint
@@ -37,43 +43,53 @@ Comprehensive implementation of 4 interconnected issues:
 - `supabase/migrations/add_soft_delete_columns.sql` - Database schema
 
 **UI Changes**:
+
 - `frontend/src/features/settings/account-actions.tsx` - NEW
 - `lib/features/settings/account_actions_button.dart` - NEW
 
 ### Issue #593: AI Insight Generation Fix
+
 **Problem**: Users stuck in loading state with no insight generated
 **Solution**:
+
 - Postgres trigger automatically generates insight at 3-log threshold
 - Flutter UI error state with timeout (30s) and retry button
 - Manual "Generate Insight" CTA button as fallback
 - Proper error messages instead of silent hangs
 
 **Files**:
+
 - `supabase/migrations/add_insight_generation_trigger.sql` - NEW
 - `lib/features/ai/view/widgets/ai_insight_section.dart` - UPDATED
 
 ### Issue #594: Global Mirror Implementation Audit
+
 **Problem**: Specification unclear if fully implemented
 **Solution**:
+
 - Comprehensive test coverage for all claimed features
 - Audit checklist for: clustering, realtime pulse, themes, SVG fallback
 - Performance benchmarks (1000+ pins)
 - Test suite for clustering algorithm and edge cases
 
 **Files**:
+
 - `frontend/__tests__/features/global-mirror/global-mirror.test.ts` - NEW
 - `frontend/__tests__/features/global-mirror/clustering.test.ts` - NEW
 - `frontend/src/features/global-mirror/global-mirror-page.tsx` - UPDATED
 
 ### Issue #595: Structured Logging & Request Tracing (FOUNDATION)
+
 **Problem**: Scattered logs with no correlation, no trace ID propagation
 **Solution**:
+
 - Shared JSON logger utility used by all Edge Functions
 - Automatic request ID generation and propagation
 - Trace ID returned in response headers for client correlation
 - Consistent log format for Supabase log explorer queries
 
 **Files**:
+
 - `supabase/functions/_shared/logger.ts` - NEW
 - All Edge Functions updated to use shared logger
 
@@ -105,17 +121,20 @@ ALTER TABLE comments ADD CONSTRAINT ... ON DELETE CASCADE;
 -- Create Postgres trigger for auto-generating insights at 3-log threshold
 CREATE TRIGGER on_log_entry_insight_check AFTER INSERT ON log_entries...
 ```
+````
 
 ### Edge Functions
 
 #### Structured Logging (Issue #595)
+
 ```typescript
-const logger = createLogger('function-name');
-const traceId = logger.info('Operation started', { userId }, incomingTraceId);
+const logger = createLogger("function-name");
+const traceId = logger.info("Operation started", { userId }, incomingTraceId);
 // Returns traceId in response headers for correlation
 ```
 
 #### Soft Delete (Issue #592)
+
 ```
 POST /delete-account
 - Requires Stellar auth
@@ -127,6 +146,7 @@ POST /delete-account
 ```
 
 #### Data Export (Issue #592)
+
 ```
 GET /export-user-data
 - Requires Stellar auth
@@ -137,6 +157,7 @@ GET /export-user-data
 ```
 
 #### Scheduled Hard Delete (Issue #592)
+
 ```
 Runs daily at 2 AM via pg_cron
 - Queries soft-deleted accounts with expired grace period
@@ -148,6 +169,7 @@ Runs daily at 2 AM via pg_cron
 ### UI Implementations
 
 #### Web/Next.js (React)
+
 - Download My Data button - triggers export
 - Delete Account button - shows confirmation modal
 - Requires typing confirmation phrase
@@ -155,6 +177,7 @@ Runs daily at 2 AM via pg_cron
 - Redirects to logout on deletion
 
 #### Flutter
+
 - Account Actions section in Settings
 - Export data button with confirmation
 - Delete account button with large confirmation dialog
@@ -162,6 +185,7 @@ Runs daily at 2 AM via pg_cron
 - Shows countdown to permanent deletion
 
 ### AI Insights (Issue #593)
+
 - Postgres trigger: Auto-generate when crossing 3-log threshold
 - Flutter UI: Show "Coming Soon" for <3 logs
 - Flutter UI: Show loading with 30-second timeout
@@ -169,6 +193,7 @@ Runs daily at 2 AM via pg_cron
 - Flutter UI: Show "Generate Insight" button if still no insight
 
 ### Global Mirror (Issue #594)
+
 - Test suite: 40+ test cases covering all features
 - Clustering math: Handles boundaries, same location, rapid zoom
 - Realtime pulse: Verifies animation fires on new pins
@@ -179,6 +204,7 @@ Runs daily at 2 AM via pg_cron
 ## Testing
 
 ### Manual Testing Checklist
+
 - [ ] Data export produces valid JSON
 - [ ] Soft-deleted account can't login
 - [ ] Grace period countdown shows correctly
@@ -192,6 +218,7 @@ Runs daily at 2 AM via pg_cron
 - [ ] SVG fallback displays if maps library fails
 
 ### Automated Tests
+
 ```bash
 npm test -- global-mirror.test.ts       # 40+ tests
 npm test -- clustering.test.ts          # Algorithm edge cases
@@ -205,21 +232,24 @@ npm test -- insight-generation.test.ts  # Trigger verification
 ### Structured Logs Queries
 
 Find all errors:
+
 ```sql
-SELECT json_data->>'functionName', COUNT(*) 
-FROM logs 
+SELECT json_data->>'functionName', COUNT(*)
+FROM logs
 WHERE json_data->>'level' = 'error'
 GROUP BY json_data->>'functionName';
 ```
 
 Trace a single request:
+
 ```sql
-SELECT * FROM logs 
+SELECT * FROM logs
 WHERE json_data->>'requestId' = '[trace-id]'
 ORDER BY json_data->>'timestamp';
 ```
 
 Monitor deletion success:
+
 ```sql
 SELECT COUNT(*) as total,
        COUNT(*) FILTER (WHERE json_data->>'level' = 'info') as successes,
@@ -257,6 +287,7 @@ AND DATE_PART('day', now() - json_data->>'timestamp'::timestamp) <= 1;
 ## Breaking Changes
 
 None. All changes are backwards compatible:
+
 - Structured logging is internal only
 - Account deletion is opt-in
 - Data export is opt-in
@@ -273,6 +304,7 @@ None. All changes are backwards compatible:
 ## Files Changed
 
 ### New Files
+
 - supabase/functions/_shared/logger.ts
 - supabase/functions/delete-account/index.ts
 - supabase/functions/export-user-data/index.ts
@@ -281,10 +313,11 @@ None. All changes are backwards compatible:
 - supabase/migrations/add_insight_generation_trigger.sql
 - frontend/src/features/settings/account-actions.tsx
 - lib/features/settings/account_actions_button.dart
-- frontend/__tests__/features/global-mirror/global-mirror.test.ts
-- frontend/__tests__/features/global-mirror/clustering.test.ts
+- frontend/**tests**/features/global-mirror/global-mirror.test.ts
+- frontend/**tests**/features/global-mirror/clustering.test.ts
 
 ### Modified Files
+
 - All Edge Functions: Updated to use structured logger
 - lib/features/ai/view/widgets/ai_insight_section.dart
 - frontend/src/features/global-mirror/global-mirror-page.tsx
@@ -292,6 +325,7 @@ None. All changes are backwards compatible:
 ## Documentation
 
 See accompanying IMPLEMENTATION_GUIDE.md for:
+
 - Step-by-step deployment instructions
 - Monitoring queries
 - Troubleshooting guide
@@ -305,7 +339,8 @@ See accompanying IMPLEMENTATION_GUIDE.md for:
 - Hard-delete runs daily at 2 AM UTC
 - All operations are traced and logged
 - Cascade deletes verified in migrations
-```
+
+````
 
 ---
 
@@ -325,9 +360,10 @@ gh pr create \
   --title "feat: implement compliance features and logging infrastructure for issues #592-595" \
   --body "$(cat PR_TEMPLATE.md)" \
   --repo Echo-Mirror-Butler/Echo-Mirror-Butler-
-```
+````
 
 ### Option 3: Upload Files Directly
+
 1. Create a new branch via GitHub web UI
 2. Upload each implementation file to the appropriate directory
 3. Create PR with the title and body above

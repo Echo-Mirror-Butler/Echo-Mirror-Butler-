@@ -1,198 +1,216 @@
-import { useEffect, useMemo, useState, useRef, useId } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '../../lib/auth-context'
-import { supabase } from '../../lib/supabase'
-import { useSearchLogs } from '../../lib/use-search-logs'
-import { useTheme, type Theme } from '../../lib/use-theme'
-import { formatDate, moodToEmoji } from '../../lib/date'
-import { NotificationDrawer } from '../../features/notifications/notification-drawer'
-import { AchievementsWatcher } from '../../features/achievements/achievements-watcher'
-import { useUnlockedAchievements } from '../../features/achievements/use-achievements'
-import { useGlobalShortcut } from '../../hooks/use-global-shortcut'
-import { useFocusTrap } from '../../hooks/use-focus-trap'
-import { MoodLogModal } from '../mood-log-modal'
-import { WhatsNewModal } from '../whats-new-modal'
-import { useWhatsNew } from '../../hooks/use-whats-new'
+import { useEffect, useMemo, useState, useRef, useId } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../../lib/auth-context";
+import { supabase } from "../../lib/supabase";
+import { useSearchLogs } from "../../lib/use-search-logs";
+import { useTheme, type Theme } from "../../lib/use-theme";
+import { formatDate, moodToEmoji } from "../../lib/date";
+import { NotificationDrawer } from "../../features/notifications/notification-drawer";
+import { AchievementsWatcher } from "../../features/achievements/achievements-watcher";
+import { useUnlockedAchievements } from "../../features/achievements/use-achievements";
+import { useGlobalShortcut } from "../../hooks/use-global-shortcut";
+import { useFocusTrap } from "../../hooks/use-focus-trap";
+import { MoodLogModal } from "../mood-log-modal";
+import { WhatsNewModal } from "../whats-new-modal";
+import { useWhatsNew } from "../../hooks/use-whats-new";
 
-type UserProfile = { display_name: string | null; avatar_url: string | null }
+type UserProfile = { display_name: string | null; avatar_url: string | null };
 
 async function fetchUserProfile(userId: string): Promise<UserProfile> {
   const { data } = await supabase
-    .from('profiles')
-    .select('display_name, avatar_url')
-    .eq('id', userId)
-    .single()
-  if (!data) return { display_name: null, avatar_url: null }
-  const row = data as Record<string, unknown>
+    .from("profiles")
+    .select("display_name, avatar_url")
+    .eq("id", userId)
+    .single();
+  if (!data) return { display_name: null, avatar_url: null };
+  const row = data as Record<string, unknown>;
   return {
     display_name: (row.display_name as string | null) ?? null,
     avatar_url: (row.avatar_url as string | null) ?? null,
-  }
+  };
 }
 
 const navItems = [
-  { icon: '🏠', to: '/dashboard', label: 'Dashboard' },
-  { icon: '📝', to: '/logs', label: 'Logs' },
-  { icon: '✨', to: '/insights', label: 'AI Insights' },
-  { icon: '📊', to: '/analytics', label: 'Analytics' },
-  { icon: '🎞️', to: '/recap', label: 'Recap' },
-  { icon: '🌍', to: '/global-mirror', label: 'Global Mirror' },
-  { icon: '🏆', to: '/leaderboard', label: 'Leaderboard' }, 
-  { icon: '\u{1F3C5}', to: '/achievements', label: 'Achievements' },
-  { icon: '\u{1F48E}', to: '/wallet', label: 'Wallet' },
-  { icon: '\u2699\uFE0F', to: '/settings', label: 'Settings' },
+  { icon: "🏠", to: "/dashboard", label: "Dashboard" },
+  { icon: "📝", to: "/logs", label: "Logs" },
+  { icon: "✨", to: "/insights", label: "AI Insights" },
+  { icon: "📊", to: "/analytics", label: "Analytics" },
+  { icon: "🎞️", to: "/recap", label: "Recap" },
+  { icon: "🌍", to: "/global-mirror", label: "Global Mirror" },
+  { icon: "🏆", to: "/leaderboard", label: "Leaderboard" },
+  { icon: "\u{1F3C5}", to: "/achievements", label: "Achievements" },
+  { icon: "\u{1F48E}", to: "/wallet", label: "Wallet" },
+  { icon: "\u2699\uFE0F", to: "/settings", label: "Settings" },
 ];
 
 async function getUnreadNotificationsCount(userId: string): Promise<number> {
   const { count, error } = await supabase
-    .from('mood_comment_notifications')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('is_read', false)
+    .from("mood_comment_notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("is_read", false);
 
   if (error) {
-    return 0
+    return 0;
   }
 
-  return count ?? 0
+  return count ?? 0;
 }
 
 export function AppShell() {
-  const navigate = useNavigate()
-  const { user, signOut } = useAuth()
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
-  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false)
-  const [isMoodModalOpen, setIsMoodModalOpen] = useState(false)
-  const whatsNew = useWhatsNew()
-  const { theme, setTheme } = useTheme()
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const [isMoodModalOpen, setIsMoodModalOpen] = useState(false);
+  const whatsNew = useWhatsNew();
+  const { theme, setTheme } = useTheme();
 
-  useGlobalShortcut('k', () => {
-    setIsMoodModalOpen(true)
-  })
+  useGlobalShortcut("k", () => {
+    setIsMoodModalOpen(true);
+  });
 
-  const themeIcon: Record<Theme, string> = { light: '\u2600\uFE0F', dark: '\u{1F319}', system: '\u{1F5A5}\uFE0F' }
-  const themeNext: Record<Theme, Theme> = { light: 'dark', dark: 'system', system: 'light' }
+  const themeIcon: Record<Theme, string> = {
+    light: "\u2600\uFE0F",
+    dark: "\u{1F319}",
+    system: "\u{1F5A5}\uFE0F",
+  };
+  const themeNext: Record<Theme, Theme> = {
+    light: "dark",
+    dark: "system",
+    system: "light",
+  };
   const themeAriaLabel: Record<Theme, string> = {
-    light: 'Switch to dark mode',
-    dark: 'Switch to system theme',
-    system: 'Switch to light mode',
-  }
+    light: "Switch to dark mode",
+    dark: "Switch to system theme",
+    system: "Switch to light mode",
+  };
 
   // Search state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [selectedResultIdx, setSelectedResultIdx] = useState(-1)
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const userMenuRef = useRef<HTMLDivElement>(null)
-  const { results: searchResults, isLoading: searchLoading } = useSearchLogs(user?.id, searchQuery)
-  const searchListboxId = useId()
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [selectedResultIdx, setSelectedResultIdx] = useState(-1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { results: searchResults, isLoading: searchLoading } = useSearchLogs(
+    user?.id,
+    searchQuery,
+  );
+  const searchListboxId = useId();
 
   const unreadNotificationsQuery = useQuery({
-    queryKey: ['unread-notifications', user?.id],
+    queryKey: ["unread-notifications", user?.id],
     queryFn: () => getUnreadNotificationsCount(user!.id),
     enabled: Boolean(user?.id),
     refetchInterval: 30_000,
-  })
+  });
 
   const profileQuery = useQuery({
-    queryKey: ['user-profile', user?.id],
+    queryKey: ["user-profile", user?.id],
     queryFn: () => fetchUserProfile(user!.id),
     enabled: Boolean(user?.id),
     staleTime: 5 * 60 * 1000,
-  })
+  });
 
-  const unlockedAchievementsQuery = useUnlockedAchievements(user?.id)
-  const achievementCount = Object.keys(unlockedAchievementsQuery.data ?? {}).length
+  const unlockedAchievementsQuery = useUnlockedAchievements(user?.id);
+  const achievementCount = Object.keys(
+    unlockedAchievementsQuery.data ?? {},
+  ).length;
 
   const avatarText = useMemo(() => {
-    const name = profileQuery.data?.display_name ?? user?.email ?? ''
-    return name.trim().charAt(0).toUpperCase() || 'U'
-  }, [profileQuery.data?.display_name, user?.email])
+    const name = profileQuery.data?.display_name ?? user?.email ?? "";
+    return name.trim().charAt(0).toUpperCase() || "U";
+  }, [profileQuery.data?.display_name, user?.email]);
 
   useEffect(() => {
     if (!isMobileDrawerOpen) {
-      return
+      return;
     }
 
     const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsMobileDrawerOpen(false)
+      if (event.key === "Escape") {
+        setIsMobileDrawerOpen(false);
       }
-    }
+    };
 
-    window.addEventListener('keydown', onEscape)
-    return () => window.removeEventListener('keydown', onEscape)
-  }, [isMobileDrawerOpen])
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [isMobileDrawerOpen]);
 
   // Handle keyboard navigation in search
   useEffect(() => {
     const handleSearchKeyDown = (event: KeyboardEvent) => {
       if (!isSearchOpen || searchResults.length === 0) {
-        if (event.key === 'Escape') {
-          setIsSearchOpen(false)
+        if (event.key === "Escape") {
+          setIsSearchOpen(false);
         }
-        return
+        return;
       }
 
-      if (event.key === 'ArrowDown') {
-        event.preventDefault()
-        setSelectedResultIdx((prev) => (prev + 1) % searchResults.length)
-      } else if (event.key === 'ArrowUp') {
-        event.preventDefault()
-        setSelectedResultIdx((prev) => (prev - 1 + searchResults.length) % searchResults.length)
-      } else if (event.key === 'Enter' && selectedResultIdx >= 0) {
-        event.preventDefault()
-        const result = searchResults[selectedResultIdx]
-        navigate(`/logs/${result.id}/edit`)
-        setSearchQuery('')
-        setIsSearchOpen(false)
-        setSelectedResultIdx(-1)
-      } else if (event.key === 'Escape') {
-        setIsSearchOpen(false)
-        setSelectedResultIdx(-1)
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setSelectedResultIdx((prev) => (prev + 1) % searchResults.length);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setSelectedResultIdx(
+          (prev) => (prev - 1 + searchResults.length) % searchResults.length,
+        );
+      } else if (event.key === "Enter" && selectedResultIdx >= 0) {
+        event.preventDefault();
+        const result = searchResults[selectedResultIdx];
+        navigate(`/logs/${result.id}/edit`);
+        setSearchQuery("");
+        setIsSearchOpen(false);
+        setSelectedResultIdx(-1);
+      } else if (event.key === "Escape") {
+        setIsSearchOpen(false);
+        setSelectedResultIdx(-1);
       }
-    }
+    };
 
     if (searchInputRef.current === document.activeElement) {
-      document.addEventListener('keydown', handleSearchKeyDown)
-      return () => document.removeEventListener('keydown', handleSearchKeyDown)
+      document.addEventListener("keydown", handleSearchKeyDown);
+      return () => document.removeEventListener("keydown", handleSearchKeyDown);
     }
-  }, [isSearchOpen, selectedResultIdx, searchResults, navigate])
+  }, [isSearchOpen, selectedResultIdx, searchResults, navigate]);
 
   // Trap focus in the user menu while open, close on Escape, restore focus to the avatar button on close
-  useFocusTrap(isUserMenuOpen, () => setIsUserMenuOpen(false), userMenuRef)
+  useFocusTrap(isUserMenuOpen, () => setIsUserMenuOpen(false), userMenuRef);
 
   const onSignOut = async () => {
-    await signOut()
-    navigate('/login', { replace: true })
-  }
+    await signOut();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="shell-root" aria-keyshortcuts="k">
-      <MoodLogModal isOpen={isMoodModalOpen} onClose={() => setIsMoodModalOpen(false)} />
+      <MoodLogModal
+        isOpen={isMoodModalOpen}
+        onClose={() => setIsMoodModalOpen(false)}
+      />
       <WhatsNewModal isOpen={whatsNew.isOpen} onClose={whatsNew.dismiss} />
       <AchievementsWatcher />
       <aside
         className={[
-          'shell-sidebar',
-          isCollapsed ? 'collapsed' : '',
-          isMobileDrawerOpen ? 'open' : '',
+          "shell-sidebar",
+          isCollapsed ? "collapsed" : "",
+          isMobileDrawerOpen ? "open" : "",
         ]
           .filter(Boolean)
-          .join(' ')}
+          .join(" ")}
       >
         <div className="shell-sidebar-header">
           <h1>EchoMirror</h1>
           <button
             type="button"
             className="icon-btn desktop-only"
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             onClick={() => setIsCollapsed((prev) => !prev)}
           >
-            {isCollapsed ? '\u27E9' : '\u27E8'}
+            {isCollapsed ? "\u27E9" : "\u27E8"}
           </button>
         </div>
 
@@ -202,13 +220,15 @@ export function AppShell() {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                ['shell-nav-item', isActive ? 'active' : ''].filter(Boolean).join(' ')
+                ["shell-nav-item", isActive ? "active" : ""]
+                  .filter(Boolean)
+                  .join(" ")
               }
               onClick={() => setIsMobileDrawerOpen(false)}
             >
               <span className="icon">{item.icon}</span>
               <span className="label">
-                {item.to === '/achievements' && achievementCount > 0
+                {item.to === "/achievements" && achievementCount > 0
                   ? `${item.label} (${achievementCount})`
                   : item.label}
               </span>
@@ -217,14 +237,32 @@ export function AppShell() {
         </nav>
 
         {!isCollapsed && (
-          <div style={{ padding: '0 1rem', marginTop: 'auto', marginBottom: '1rem', color: 'var(--muted)', fontSize: '0.85rem', textAlign: 'center' }}>
-            <kbd style={{ background: 'var(--bg-card)', padding: '0.2rem 0.4rem', borderRadius: '4px', border: '1px solid var(--border)' }}>K</kbd>
-            <span style={{ marginLeft: '0.5rem' }}>— log mood</span>
+          <div
+            style={{
+              padding: "0 1rem",
+              marginTop: "auto",
+              marginBottom: "1rem",
+              color: "var(--muted)",
+              fontSize: "0.85rem",
+              textAlign: "center",
+            }}
+          >
+            <kbd
+              style={{
+                background: "var(--bg-card)",
+                padding: "0.2rem 0.4rem",
+                borderRadius: "4px",
+                border: "1px solid var(--border)",
+              }}
+            >
+              K
+            </kbd>
+            <span style={{ marginLeft: "0.5rem" }}>— log mood</span>
           </div>
         )}
 
         <div className="shell-sidebar-footer">
-          <span className="email-text">{user?.email ?? 'Signed in user'}</span>
+          <span className="email-text">{user?.email ?? "Signed in user"}</span>
         </div>
       </aside>
 
@@ -243,7 +281,11 @@ export function AppShell() {
             <button
               type="button"
               className="icon-btn mobile-only"
-              aria-label={isMobileDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-label={
+                isMobileDrawerOpen
+                  ? "Close navigation menu"
+                  : "Open navigation menu"
+              }
               aria-expanded={isMobileDrawerOpen}
               onClick={() => setIsMobileDrawerOpen(true)}
             >
@@ -252,17 +294,17 @@ export function AppShell() {
             <span className="shell-logo-text">EchoMirror</span>
           </div>
 
-          <div className="shell-search" style={{ position: 'relative' }}>
-            <div style={{ position: 'relative', width: '100%' }}>
+          <div className="shell-search" style={{ position: "relative" }}>
+            <div style={{ position: "relative", width: "100%" }}>
               <span
                 style={{
-                  position: 'absolute',
-                  left: '0.65rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '0.85rem',
-                  color: 'var(--muted)',
-                  pointerEvents: 'none',
+                  position: "absolute",
+                  left: "0.65rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  fontSize: "0.85rem",
+                  color: "var(--muted)",
+                  pointerEvents: "none",
                 }}
                 aria-hidden="true"
               >
@@ -275,17 +317,21 @@ export function AppShell() {
                 role="combobox"
                 aria-expanded={isSearchOpen && searchResults.length > 0}
                 aria-controls={searchListboxId}
-                aria-activedescendant={selectedResultIdx >= 0 ? `search-result-${selectedResultIdx}` : undefined}
+                aria-activedescendant={
+                  selectedResultIdx >= 0
+                    ? `search-result-${selectedResultIdx}`
+                    : undefined
+                }
                 aria-autocomplete="list"
                 aria-haspopup="listbox"
                 aria-label="Search logs by notes, date, or mood score"
                 placeholder="Search logs…"
                 value={searchQuery}
-                style={{ paddingLeft: '2rem' }}
+                style={{ paddingLeft: "2rem" }}
                 onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setIsSearchOpen(true)
-                  setSelectedResultIdx(-1)
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(true);
+                  setSelectedResultIdx(-1);
                 }}
                 onFocus={() => searchQuery && setIsSearchOpen(true)}
                 autoComplete="off"
@@ -297,8 +343,8 @@ export function AppShell() {
                 role="listbox"
                 className="search-dropdown"
                 style={{
-                  position: 'absolute',
-                  top: '100%',
+                  position: "absolute",
+                  top: "100%",
                   left: 0,
                   right: 0,
                   zIndex: 1000,
@@ -317,17 +363,25 @@ export function AppShell() {
                         role="option"
                         type="button"
                         aria-selected={selectedResultIdx === idx}
-                        className={`search-result ${selectedResultIdx === idx ? 'focused' : ''}`}
+                        className={`search-result ${selectedResultIdx === idx ? "focused" : ""}`}
                         onClick={() => {
-                          navigate(`/logs/${result.id}/edit`)
-                          setSearchQuery('')
-                          setIsSearchOpen(false)
-                          setSelectedResultIdx(-1)
+                          navigate(`/logs/${result.id}/edit`);
+                          setSearchQuery("");
+                          setIsSearchOpen(false);
+                          setSelectedResultIdx(-1);
                         }}
                       >
-                        <span className="result-date">{formatDate(result.date)}</span>
-                        <span className="result-mood">{moodToEmoji(result.mood)}</span>
-                        <span className="result-notes">{result.notes ? result.notes.substring(0, 60) : 'No notes'}</span>
+                        <span className="result-date">
+                          {formatDate(result.date)}
+                        </span>
+                        <span className="result-mood">
+                          {moodToEmoji(result.mood)}
+                        </span>
+                        <span className="result-notes">
+                          {result.notes
+                            ? result.notes.substring(0, 60)
+                            : "No notes"}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -340,11 +394,11 @@ export function AppShell() {
               type="button"
               className="search-overlay"
               onClick={() => {
-                setIsSearchOpen(false)
-                setSelectedResultIdx(-1)
+                setIsSearchOpen(false);
+                setSelectedResultIdx(-1);
               }}
               style={{
-                position: 'fixed',
+                position: "fixed",
                 top: 0,
                 left: 0,
                 right: 0,
@@ -366,7 +420,7 @@ export function AppShell() {
               {themeIcon[theme]}
             </button>
 
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: "relative" }}>
               <button
                 type="button"
                 className="icon-btn notification-btn"
@@ -396,8 +450,15 @@ export function AppShell() {
                 {profileQuery.data?.avatar_url ? (
                   <img
                     src={profileQuery.data.avatar_url}
-                    alt={profileQuery.data.display_name ?? user?.email ?? 'Avatar'}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                    alt={
+                      profileQuery.data.display_name ?? user?.email ?? "Avatar"
+                    }
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: "50%",
+                    }}
                   />
                 ) : (
                   <span>{avatarText}</span>
@@ -405,11 +466,28 @@ export function AppShell() {
               </button>
 
               {isUserMenuOpen ? (
-                <div className="avatar-menu" ref={userMenuRef} role="menu" aria-label="User menu" tabIndex={-1}>
-                  <button type="button" role="menuitem" onClick={() => { setIsUserMenuOpen(false); navigate('/settings') }}>
+                <div
+                  className="avatar-menu"
+                  ref={userMenuRef}
+                  role="menu"
+                  aria-label="User menu"
+                  tabIndex={-1}
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      navigate("/settings");
+                    }}
+                  >
                     Profile
                   </button>
-                  <button type="button" role="menuitem" onClick={() => void onSignOut()}>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void onSignOut()}
+                  >
                     Sign out
                   </button>
                 </div>
@@ -423,5 +501,5 @@ export function AppShell() {
         </main>
       </section>
     </div>
-  )
+  );
 }

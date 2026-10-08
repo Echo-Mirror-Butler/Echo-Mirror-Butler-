@@ -11,21 +11,21 @@
  */
 
 export type QuietHours = {
-  enabled: boolean
-  start: string // "HH:MM"
-  end: string // "HH:MM"
-}
+  enabled: boolean;
+  start: string; // "HH:MM"
+  end: string; // "HH:MM"
+};
 
-export type DigestMode = 'immediately' | 'daily'
+export type DigestMode = "immediately" | "daily";
 
 /** Convert an "HH:MM" string to minutes-since-midnight. Returns NaN if invalid. */
 export function parseHHMM(value: string): number {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(value?.trim() ?? '')
-  if (!m) return NaN
-  const h = Number(m[1])
-  const min = Number(m[2])
-  if (h < 0 || h > 23 || min < 0 || min > 59) return NaN
-  return h * 60 + min
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value?.trim() ?? "");
+  if (!m) return NaN;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h < 0 || h > 23 || min < 0 || min > 59) return NaN;
+  return h * 60 + min;
 }
 
 /**
@@ -34,17 +34,18 @@ export function parseHHMM(value: string): number {
  */
 export function minutesInTimezone(date: Date, timeZone: string): number {
   try {
-    const parts = new Intl.DateTimeFormat('en-US', {
+    const parts = new Intl.DateTimeFormat("en-US", {
       timeZone,
-      hour: '2-digit',
-      minute: '2-digit',
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
-    }).formatToParts(date)
-    const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0') % 24
-    const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0')
-    return hour * 60 + minute
+    }).formatToParts(date);
+    const hour =
+      Number(parts.find((p) => p.type === "hour")?.value ?? "0") % 24;
+    const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+    return hour * 60 + minute;
   } catch {
-    return date.getUTCHours() * 60 + date.getUTCMinutes()
+    return date.getUTCHours() * 60 + date.getUTCMinutes();
   }
 }
 
@@ -64,14 +65,14 @@ export function isWithinQuietWindow(
     Number.isNaN(endMinutes) ||
     startMinutes === endMinutes
   ) {
-    return false
+    return false;
   }
   if (startMinutes < endMinutes) {
     // Same-day window, e.g. 01:00 → 06:00
-    return nowMinutes >= startMinutes && nowMinutes < endMinutes
+    return nowMinutes >= startMinutes && nowMinutes < endMinutes;
   }
   // Wrap-around window, e.g. 22:00 → 08:00
-  return nowMinutes >= startMinutes || nowMinutes < endMinutes
+  return nowMinutes >= startMinutes || nowMinutes < endMinutes;
 }
 
 /**
@@ -83,9 +84,13 @@ export function isInQuietHours(
   quiet: QuietHours,
   timeZone: string,
 ): boolean {
-  if (!quiet?.enabled) return false
-  const nowMin = minutesInTimezone(now, timeZone)
-  return isWithinQuietWindow(nowMin, parseHHMM(quiet.start), parseHHMM(quiet.end))
+  if (!quiet?.enabled) return false;
+  const nowMin = minutesInTimezone(now, timeZone);
+  return isWithinQuietWindow(
+    nowMin,
+    parseHHMM(quiet.start),
+    parseHHMM(quiet.end),
+  );
 }
 
 /**
@@ -97,13 +102,13 @@ export function nextQuietHoursEnd(
   quiet: QuietHours,
   timeZone: string,
 ): Date {
-  const endMin = parseHHMM(quiet.end)
-  if (Number.isNaN(endMin)) return now
-  const nowMin = minutesInTimezone(now, timeZone)
+  const endMin = parseHHMM(quiet.end);
+  if (Number.isNaN(endMin)) return now;
+  const nowMin = minutesInTimezone(now, timeZone);
   // Minutes until the local wall-clock reaches `end`.
-  let delta = endMin - nowMin
-  if (delta <= 0) delta += 24 * 60
-  return new Date(now.getTime() + delta * 60_000)
+  let delta = endMin - nowMin;
+  if (delta <= 0) delta += 24 * 60;
+  return new Date(now.getTime() + delta * 60_000);
 }
 
 /**
@@ -111,8 +116,8 @@ export function nextQuietHoursEnd(
  * sent immediately? Only lower-priority types honour the digest mode; critical
  * types always send immediately.
  */
-const DIGESTIBLE_TYPES = new Set(['mood_comment'])
+const DIGESTIBLE_TYPES = new Set(["mood_comment"]);
 
 export function shouldBatchIntoDigest(type: string, mode: DigestMode): boolean {
-  return mode === 'daily' && DIGESTIBLE_TYPES.has(type)
+  return mode === "daily" && DIGESTIBLE_TYPES.has(type);
 }

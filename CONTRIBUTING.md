@@ -17,7 +17,7 @@ If you have any questions or feedback, please open an issue or start a discussio
 
 ---
 
-*Wellness is better together.*
+_Wellness is better together._
 Thank you for contributing! Please read this guide before opening a PR.
 
 ---
@@ -51,6 +51,7 @@ flutter test                   # run tests
 ```
 
 > **Tip:** Enable the pre-push hook to catch formatting issues automatically:
+>
 > ```bash
 > git config core.hooksPath .githooks
 > ```
@@ -81,20 +82,22 @@ flutter run \
 
 ## 3. Branching Strategy
 
-| Branch | Purpose |
-|---|---|
-| `main` | Production — do **not** target PRs here |
-| `development` | Default branch — all PRs target this |
-| `feature/issue-{number}-short-description` | New features |
-| `fix/issue-{number}-short-description` | Bug fixes |
+| Branch                                     | Purpose                                 |
+| ------------------------------------------ | --------------------------------------- |
+| `main`                                     | Production — do **not** target PRs here |
+| `development`                              | Default branch — all PRs target this    |
+| `feature/issue-{number}-short-description` | New features                            |
+| `fix/issue-{number}-short-description`     | Bug fixes                               |
 
 Examples:
+
 ```
 feature/issue-42-stellar-gifting-ui
 fix/issue-87-auth-session-expiry
 ```
 
 Create your branch from `development`:
+
 ```bash
 git checkout development
 git pull origin development
@@ -128,6 +131,7 @@ Before opening a PR, confirm all of the following:
 **Types:** `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
 
 Examples:
+
 ```
 feat(#42): add Stellar gift animation on live call screen
 fix(#87): resolve auth session not persisting after restart
@@ -154,6 +158,7 @@ test(#61): add unit tests for mood log repository
 See [supabase/README.md](supabase/README.md) for full instructions on starting local Supabase, running migrations, and setting edge function secrets.
 
 Quick start:
+
 ```bash
 supabase start   # starts local Postgres, Auth, Storage, Studio
 supabase db reset  # apply all migrations
@@ -164,6 +169,7 @@ supabase db reset  # apply all migrations
 ## 8. Continuous Integration & Platform Builds
 
 All pull requests targeting `development` run automated CI checks defined in `.github/workflows/ci.yml`:
+
 - **Code Quality**: Dart formatting, `flutter analyze`, and unit/widget tests with minimum coverage gating.
 - **Supabase Stack**: pgTAP database tests and Deno edge function unit test suite (`deno test --allow-all supabase/functions/test_runner.ts`).
 - **Platform Compilation**:
@@ -178,6 +184,7 @@ All pull requests targeting `development` run automated CI checks defined in `.g
 ## 9. Release Process
 
 To cut a new release:
+
 1. **Bump Version:** Update the `version` field in `pubspec.yaml`.
 2. **Update Changelog:** Ensure the top entry in `CHANGELOG.md` matches the new version in `pubspec.yaml`.
 3. **Commit and Tag:** Commit these changes and create a git tag for the new version (e.g., `v1.2.0`).

@@ -56,11 +56,13 @@ export function HabitTrackerWidget() {
   });
 
   // Toggle habit completion
-  const toggleMutation = useMutation<void, Error, { habitId: string; isCompleted: boolean }, { previousCompletions: HabitCompletion[] | undefined }>({
-    mutationFn: async ({
-      habitId,
-      isCompleted,
-    }) => {
+  const toggleMutation = useMutation<
+    void,
+    Error,
+    { habitId: string; isCompleted: boolean },
+    { previousCompletions: HabitCompletion[] | undefined }
+  >({
+    mutationFn: async ({ habitId, isCompleted }) => {
       if (!user) throw new Error("Not authenticated");
 
       if (isCompleted) {
@@ -79,10 +81,7 @@ export function HabitTrackerWidget() {
         if (error) throw error;
       }
     },
-    onMutate: async ({
-      habitId,
-      isCompleted,
-    }) => {
+    onMutate: async ({ habitId, isCompleted }) => {
       await queryClient.cancelQueries({
         queryKey: ["habit-completions", user?.id, today],
       });

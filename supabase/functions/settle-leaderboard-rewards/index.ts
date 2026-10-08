@@ -33,7 +33,9 @@ export function resolveStellarSettings() {
   const isMainnet = network === "mainnet";
 
   return {
-    horizonUrl: isMainnet ? "https://horizon.stellar.org" : "https://horizon-testnet.stellar.org",
+    horizonUrl: isMainnet
+      ? "https://horizon.stellar.org"
+      : "https://horizon-testnet.stellar.org",
     networkPassphrase: isMainnet
       ? StellarSdk.Networks.PUBLIC
       : StellarSdk.Networks.TESTNET,
@@ -70,13 +72,13 @@ export function buildPayoutResult(
 } {
   return insertError
     ? {
-      rank,
-      userId,
-      amount,
-      txHash,
-      success: false,
-      error: `Payment succeeded but payout recording failed: ${insertError}`,
-    }
+        rank,
+        userId,
+        amount,
+        txHash,
+        success: false,
+        error: `Payment succeeded but payout recording failed: ${insertError}`,
+      }
     : { rank, userId, amount, txHash, success: true };
 }
 
@@ -88,7 +90,7 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
     console.log("[settle-leaderboard-rewards] Starting settlement");
@@ -102,8 +104,11 @@ serve(async (req) => {
 
     if (fetchError || !topUsers) {
       return new Response(
-        JSON.stringify({ error: "Failed to fetch leaderboard", details: fetchError?.message }),
-        { status: 500 }
+        JSON.stringify({
+          error: "Failed to fetch leaderboard",
+          details: fetchError?.message,
+        }),
+        { status: 500 },
       );
     }
 
@@ -113,7 +118,9 @@ serve(async (req) => {
     }
 
     // 2. Pre-flight Collusion & Anomaly Detection (Issue #701)
-    console.log("[settle-leaderboard-rewards] Running anti-collusion fraud audit");
+    console.log(
+      "[settle-leaderboard-rewards] Running anti-collusion fraud audit",
+    );
     const collusionAudit = await auditLeaderboardCollusion(supabase, topUsers);
 
     const stellarSettings = resolveStellarSettings();
@@ -132,19 +139,17 @@ serve(async (req) => {
       const audit = collusionAudit.get(entry.user_id);
       if (audit && audit.action === "WITHHOLD_FOR_REVIEW") {
         console.warn(
-          `[settle-leaderboard-rewards] Collusion risk detected for user ${entry.user_id} (Rank ${entry.rank}). Withholding payout. Reasons: ${audit.reasons.join("; ")}`
+          `[settle-leaderboard-rewards] Collusion risk detected for user ${entry.user_id} (Rank ${entry.rank}). Withholding payout. Reasons: ${audit.reasons.join("; ")}`,
         );
 
         // Record withheld status in rewards audit ledger
-        await supabase
-          .from("echo_rewards")
-          .insert({
-            user_id: entry.user_id,
-            reason: `leaderboard_bonus_rank_${entry.rank}_withheld_collusion_review`,
-            amount: payoutAmount,
-            stellar_tx_hash: null,
-            created_at: new Date().toISOString(),
-          });
+        await supabase.from("echo_rewards").insert({
+          user_id: entry.user_id,
+          reason: `leaderboard_bonus_rank_${entry.rank}_withheld_collusion_review`,
+          amount: payoutAmount,
+          stellar_tx_hash: null,
+          created_at: new Date().toISOString(),
+        });
 
         payoutResults.push({
           rank: entry.rank,
@@ -159,19 +164,24 @@ serve(async (req) => {
 
       try {
         const rewardReason = getSettlementReason(entry.rank, weekStart);
-        const { data: existingReward, error: rewardLookupError } = await supabase
-          .from("echo_rewards")
-          .select("id")
-          .eq("user_id", entry.user_id)
-          .eq("reason", rewardReason)
-          .maybeSingle();
+        const { data: existingReward, error: rewardLookupError } =
+          await supabase
+            .from("echo_rewards")
+            .select("id")
+            .eq("user_id", entry.user_id)
+            .eq("reason", rewardReason)
+            .maybeSingle();
 
         if (rewardLookupError) {
-          throw new Error(`Failed to check existing payout: ${rewardLookupError.message}`);
+          throw new Error(
+            `Failed to check existing payout: ${rewardLookupError.message}`,
+          );
         }
 
         if (existingReward) {
-          console.log(`[settle-leaderboard-rewards] Payout already recorded for rank ${entry.rank} user`);
+          console.log(
+            `[settle-leaderboard-rewards] Payout already recorded for rank ${entry.rank} user`,
+          );
           continue;
         }
 
@@ -183,7 +193,9 @@ serve(async (req) => {
           .single();
 
         if (!wallet) {
-          console.warn(`[settle-leaderboard-rewards] No wallet for user ${entry.user_id}`);
+          console.warn(
+            `[settle-leaderboard-rewards] No wallet for user ${entry.user_id}`,
+          );
           continue;
         }
 
@@ -194,27 +206,38 @@ serve(async (req) => {
         try {
           recipientAccount = await server.loadAccount(recipientPublicKey);
         } catch (e) {
-          console.log(`[settle-leaderboard-rewards] Recipient unfunded, attempting Friendbot...`);
+          console.log(
+            `[settle-leaderboard-rewards] Recipient unfunded, attempting Friendbot...`,
+          );
           if (!stellarSettings.isTestnet) {
-            throw new Error("Recipient account is not funded on Stellar mainnet");
+            throw new Error(
+              "Recipient account is not funded on Stellar mainnet",
+            );
           }
-          const friendbotRes = await fetch(`${FRIENDBOT_URL}${recipientPublicKey}`);
+          const friendbotRes = await fetch(
+            `${FRIENDBOT_URL}${recipientPublicKey}`,
+          );
           if (!friendbotRes.ok) {
-            console.error(`[settle-leaderboard-rewards] Friendbot failed for ${recipientPublicKey}`);
+            console.error(
+              `[settle-leaderboard-rewards] Friendbot failed for ${recipientPublicKey}`,
+            );
             continue;
           }
           recipientAccount = await server.loadAccount(recipientPublicKey);
         }
 
         // Build and submit ECHO payment
-        const echoAsset = new StellarSdk.Asset(ECHO_TOKEN_CODE, ISSUER_PUBLIC_KEY);
+        const echoAsset = new StellarSdk.Asset(
+          ECHO_TOKEN_CODE,
+          ISSUER_PUBLIC_KEY,
+        );
         const transaction = new StellarSdk.TransactionBuilder(issuerAccount)
           .addOperation(
             StellarSdk.Operation.payment({
               destination: recipientPublicKey,
               asset: echoAsset,
               amount: payoutAmount.toString(),
-            })
+            }),
           )
           .setNetworkPassphrase(stellarSettings.networkPassphrase)
           .setTimeout(30)
@@ -224,7 +247,9 @@ serve(async (req) => {
         const result = await server.submitTransaction(transaction);
 
         const txHash = result.hash;
-        console.log(`[settle-leaderboard-rewards] Sent ${payoutAmount} ECHO to rank ${entry.rank} user, tx: ${txHash}`);
+        console.log(
+          `[settle-leaderboard-rewards] Sent ${payoutAmount} ECHO to rank ${entry.rank} user, tx: ${txHash}`,
+        );
 
         // 3. Record payout in rewards ledger
         const { error: insertError } = await supabase
@@ -238,29 +263,31 @@ serve(async (req) => {
           });
 
         if (insertError) {
-          console.error(`[settle-leaderboard-rewards] Failed to record payout: ${insertError.message}`);
-          payoutResults.push(buildPayoutResult(
-            entry.rank,
-            entry.user_id,
-            payoutAmount,
-            txHash,
-            insertError.message,
-          ));
+          console.error(
+            `[settle-leaderboard-rewards] Failed to record payout: ${insertError.message}`,
+          );
+          payoutResults.push(
+            buildPayoutResult(
+              entry.rank,
+              entry.user_id,
+              payoutAmount,
+              txHash,
+              insertError.message,
+            ),
+          );
           continue;
         }
 
         // Refresh issuer account for next transaction
         issuerAccount = await server.loadAccount(issuerKeypair.publicKey());
 
-        payoutResults.push(buildPayoutResult(
-          entry.rank,
-          entry.user_id,
-          payoutAmount,
-          txHash,
-        ));
-
+        payoutResults.push(
+          buildPayoutResult(entry.rank, entry.user_id, payoutAmount, txHash),
+        );
       } catch (e) {
-        console.error(`[settle-leaderboard-rewards] Error processing rank ${entry.rank}: ${e}`);
+        console.error(
+          `[settle-leaderboard-rewards] Error processing rank ${entry.rank}: ${e}`,
+        );
         payoutResults.push({
           rank: entry.rank,
           userId: entry.user_id,
@@ -270,18 +297,20 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      settledAt: new Date().toISOString(),
-      totalPayouts: payoutResults.filter((r) => r.success).length,
-      results: payoutResults,
-    }), { status: 200 });
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        settledAt: new Date().toISOString(),
+        totalPayouts: payoutResults.filter((r) => r.success).length,
+        results: payoutResults,
+      }),
+      { status: 200 },
+    );
   } catch (err) {
     console.error("[settle-leaderboard-rewards] Unhandled error:", err);
     return new Response(
       JSON.stringify({ error: "Internal server error", details: String(err) }),
-      { status: 500 }
+      { status: 500 },
     );
   }
 });

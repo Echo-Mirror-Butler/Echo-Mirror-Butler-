@@ -48,9 +48,9 @@ export async function verifyToken(
     ["sign"],
   );
   const signature = await crypto.subtle.sign("HMAC", key, data);
-  const expected = Array.from(new Uint8Array(signature)).map((b) =>
-    b.toString(16).padStart(2, "0")
-  ).join("");
+  const expected = Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
   return tokenHash === expected;
 }
@@ -143,8 +143,8 @@ export async function unsubscribeDigestFunction(
     });
   }
 
-  const supabase = injectedClient ||
-    createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const supabase =
+    injectedClient || createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   const { error } = await supabase
     .from("profiles")

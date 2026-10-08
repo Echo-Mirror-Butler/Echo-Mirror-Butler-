@@ -39,7 +39,10 @@ async function getResponseBody(res: Response) {
 }
 
 // Test suites
-const testSuites: Record<string, { name: string; tests: (() => Promise<void>)[] }> = {};
+const testSuites: Record<
+  string,
+  { name: string; tests: (() => Promise<void>)[] }
+> = {};
 
 function registerTestSuite(name: string, tests: (() => Promise<void>)[]) {
   testSuites[name] = { name, tests };
@@ -54,7 +57,11 @@ function registerTestSuite(name: string, tests: (() => Promise<void>)[]) {
 // create-stellar-wallet tests
 registerTestSuite("create-stellar-wallet", [
   async () => {
-    const req = createMockRequest("POST", { user_id: "test-user" }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      { user_id: "test-user" },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -70,7 +77,11 @@ registerTestSuite("create-stellar-wallet", [
 // export-user-data tests
 registerTestSuite("export-user-data", [
   async () => {
-    const req = createMockRequest("POST", {}, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      {},
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -86,7 +97,11 @@ registerTestSuite("export-user-data", [
 // generate-chat-response tests
 registerTestSuite("generate-chat-response", [
   async () => {
-    const req = createMockRequest("POST", { message: "Hello" }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      { message: "Hello" },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -102,7 +117,11 @@ registerTestSuite("generate-chat-response", [
 // generate-encouragement tests
 registerTestSuite("generate-encouragement", [
   async () => {
-    const req = createMockRequest("POST", { mood: "sad" }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      { mood: "sad" },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -130,7 +149,9 @@ registerTestSuite("generate-insight", [
     assertEquals(req.method, "POST");
   },
   async () => {
-    const req = createMockRequest("POST", { recentLogs: [{ id: "log-1", mood: 3 }] });
+    const req = createMockRequest("POST", {
+      recentLogs: [{ id: "log-1", mood: 3 }],
+    });
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -139,11 +160,14 @@ registerTestSuite("generate-insight", [
   },
 ]);
 
-
 // get-agora-credentials tests
 registerTestSuite("get-agora-credentials", [
   async () => {
-    const req = createMockRequest("POST", { channel: "test-room" }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      { channel: "test-room" },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -159,7 +183,11 @@ registerTestSuite("get-agora-credentials", [
 // save-future-letter tests
 registerTestSuite("save-future-letter", [
   async () => {
-    const req = createMockRequest("POST", { content: "letter text" }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      { content: "letter text" },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -175,7 +203,11 @@ registerTestSuite("save-future-letter", [
 // cleanup-expired-stories tests
 registerTestSuite("cleanup-expired-stories", [
   async () => {
-    const req = createMockRequest("POST", {}, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      {},
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -191,7 +223,11 @@ registerTestSuite("cleanup-expired-stories", [
 // send-daily-reminder tests
 registerTestSuite("send-daily-reminder", [
   async () => {
-    const req = createMockRequest("POST", {}, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      {},
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -207,7 +243,11 @@ registerTestSuite("send-daily-reminder", [
 // send-echo tests
 registerTestSuite("send-echo", [
   async () => {
-    const req = createMockRequest("POST", { recipient_id: "user-2", amount: 10 }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      { recipient_id: "user-2", amount: 10 },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -223,7 +263,11 @@ registerTestSuite("send-echo", [
 // send-weekly-digest tests
 registerTestSuite("send-weekly-digest", [
   async () => {
-    const req = createMockRequest("POST", {}, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      {},
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -239,7 +283,11 @@ registerTestSuite("send-weekly-digest", [
 // unsubscribe-digest tests
 registerTestSuite("unsubscribe-digest", [
   async () => {
-    const req = createMockRequest("POST", { user_id: "test-user" }, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      { user_id: "test-user" },
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {
@@ -255,7 +303,11 @@ registerTestSuite("unsubscribe-digest", [
 // settle-leaderboard-rewards tests (Issue #701)
 registerTestSuite("settle-leaderboard-rewards", [
   async () => {
-    const req = createMockRequest("POST", {}, { Authorization: "Bearer test-token" });
+    const req = createMockRequest(
+      "POST",
+      {},
+      { Authorization: "Bearer test-token" },
+    );
     assertEquals(req.method, "POST");
   },
   async () => {

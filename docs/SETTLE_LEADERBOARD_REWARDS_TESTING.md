@@ -1,9 +1,11 @@
 # End-to-End Testing Guide: settle-leaderboard-rewards Scheduling
 
 ## Overview
+
 The migration `20260829000001_schedule_settle_leaderboard_rewards.sql` schedules the `settle-leaderboard-rewards` Edge Function to run every Monday at 01:00 UTC via `pg_cron`.
 
 ## Prerequisites
+
 - Local Supabase running: `supabase start`
 - Service role key and API URL configured as custom database settings
 - Test data: users with stellar wallets and echo_rewards in the current week
@@ -45,7 +47,7 @@ Before testing settlement, create test leaderboard data:
 ```sql
 -- Create test users with wallets (run in Supabase Studio)
 INSERT INTO public.profiles (id, display_name, leaderboard_anonymous)
-VALUES 
+VALUES
   ('user-1', 'Rank 1 Earner', false),
   ('user-2', 'Rank 2 Earner', false),
   ('user-3', 'Rank 3 Earner', false)
@@ -54,7 +56,7 @@ ON CONFLICT DO NOTHING;
 -- Add stellar wallets for each user
 -- (Use valid testnet public keys or generate via Friendbot)
 INSERT INTO public.stellar_wallets (user_id, public_key, created_at)
-VALUES 
+VALUES
   ('user-1', 'GBWQZ4BTDGN5KNPXF7OPBPZF4KEGLYJ5ETUGQHBXXR6M6TTNXFBAKDXF', NOW()),
   ('user-2', 'GBRPYHIL2CI3WHZDTOOQFC6EB4RBWDUVM6FSJ7S7BTWY73JZCRKLHX4T', NOW()),
   ('user-3', 'GCZST3XVCDTUJ76ZAV2HA72KYIWXHUGOM2ZRHYWM6RCXVL7GCVJ5RRQL', NOW())
@@ -63,7 +65,7 @@ ON CONFLICT DO NOTHING;
 -- Add echo_rewards for this week (to build up the leaderboard)
 -- The leaderboard view calculates earnings from date_trunc('week', now())
 INSERT INTO public.echo_rewards (user_id, reason, amount, created_at)
-VALUES 
+VALUES
   ('user-1', 'mood_log_streak_day_1', 50, NOW()),
   ('user-1', 'mood_log_streak_day_2', 50, NOW()),
   ('user-2', 'mood_log_streak_day_1', 40, NOW()),
@@ -76,8 +78,8 @@ VALUES
 
 ```sql
 -- Check that leaderboard_weekly view shows the test users
-SELECT id, rank, echo_earned_this_week, display_name 
-FROM public.leaderboard_weekly 
+SELECT id, rank, echo_earned_this_week, display_name
+FROM public.leaderboard_weekly
 WHERE id IN ('user-1', 'user-2', 'user-3')
 ORDER BY rank;
 
@@ -202,12 +204,12 @@ To test that the leaderboard properly resets after a new week starts, simulate t
 
 -- Simulate payouts from a PREVIOUS week (older than current week boundary)
 INSERT INTO public.echo_rewards (user_id, reason, amount, created_at)
-VALUES 
+VALUES
   ('user-1', 'mood_log_streak_day_1', 25, NOW() - INTERVAL '8 days');
 
 -- View the leaderboard — it should NOT include the old reward
 -- (because leaderboard_weekly filters: er.created_at >= date_trunc('week', now()))
-SELECT id, rank, echo_earned_this_week FROM public.leaderboard_weekly 
+SELECT id, rank, echo_earned_this_week FROM public.leaderboard_weekly
 WHERE id = 'user-1';
 
 -- After running settlement again on a new Monday, user-1 should not receive
@@ -229,20 +231,24 @@ Before merging:
 ## Troubleshooting
 
 ### "Failed to fetch leaderboard" error
+
 - Ensure `leaderboard_entries` table exists (it's actually `leaderboard_weekly` view)
 - Check that Stellar environment variables are set: `STELLAR_NETWORK`, `STELLAR_ISSUER_PUBLIC_KEY`, `STELLAR_ISSUER_SECRET_KEY`
 
 ### Cron job not firing
+
 - Verify database settings are set: `SHOW app.settings.supabase_url;`
 - Check Supabase logs for `pg_cron` execution logs
 - Ensure the Edge Function endpoint is reachable from the database
 
 ### "Recipient account is not funded on Stellar mainnet"
+
 - This is expected and handled — testnet uses Friendbot to fund accounts
 - Ensure `STELLAR_NETWORK=testnet` is set
 
 ### Duplicate payouts
-- Check that the unique index was created: 
+
+- Check that the unique index was created:
   ```sql
   SELECT * FROM pg_indexes WHERE tablename = 'echo_rewards' AND indexname LIKE '%leaderboard%';
   ```
@@ -268,4 +274,3 @@ For production deployment:
    - Check Supabase logs for successful edge function invocations
    - Verify top-10 users receive payouts each Monday
    - Monitor for any errors in settlement and adjust schedule if needed
-

@@ -1,8 +1,8 @@
-import { FormEvent, useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase } from '../../../lib/supabase'
-import { useAuth } from '../../../lib/auth-context'
-import '../../landing/landing-page.css'
+import { FormEvent, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "../../../lib/supabase";
+import { useAuth } from "../../../lib/auth-context";
+import "../../landing/landing-page.css";
 
 /**
  * Set a new password after recovery, or change password while logged in.
@@ -11,141 +11,141 @@ import '../../landing/landing-page.css'
  * an already-authenticated user.
  */
 export function UpdatePasswordPage() {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { user } = useAuth()
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [ready, setReady] = useState(Boolean(user))
-  const [isRecovery, setIsRecovery] = useState(false)
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ready, setReady] = useState(Boolean(user));
+  const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    let cancelled = false
-    let recoveryDetected = false
+    let cancelled = false;
+    let recoveryDetected = false;
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        recoveryDetected = true
+      if (event === "PASSWORD_RECOVERY") {
+        recoveryDetected = true;
         if (!cancelled) {
-          setIsRecovery(true)
-          setReady(true)
-          setError(null)
+          setIsRecovery(true);
+          setReady(true);
+          setError(null);
         }
       }
-    })
+    });
 
     const bootstrap = async () => {
       // Reject legacy / tampered query tokens — never establish a session from them
       const tamperedToken =
-        searchParams.get('access_token') ||
-        searchParams.get('refresh_token') ||
-        searchParams.get('token')
-      if (tamperedToken && !searchParams.get('code')) {
+        searchParams.get("access_token") ||
+        searchParams.get("refresh_token") ||
+        searchParams.get("token");
+      if (tamperedToken && !searchParams.get("code")) {
         if (!cancelled) {
-          setError('Invalid or expired reset link')
-          setReady(false)
+          setError("Invalid or expired reset link");
+          setReady(false);
         }
-        return
+        return;
       }
 
-      const code = searchParams.get('code')
+      const code = searchParams.get("code");
       if (code) {
         try {
-          await supabase.auth.signOut({ scope: 'local' })
+          await supabase.auth.signOut({ scope: "local" });
         } catch {
           // ignore
         }
         const { data, error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(code)
+          await supabase.auth.exchangeCodeForSession(code);
         try {
-          window.history.replaceState({}, document.title, '/update-password')
+          window.history.replaceState({}, document.title, "/update-password");
         } catch {
           // ignore
         }
-        if (cancelled) return
+        if (cancelled) return;
         if (exchangeError || !data.session) {
-          setError('Invalid or expired reset link')
-          setReady(false)
-          return
+          setError("Invalid or expired reset link");
+          setReady(false);
+          return;
         }
-        setIsRecovery(true)
-        setReady(true)
-        return
+        setIsRecovery(true);
+        setReady(true);
+        return;
       }
 
       // Already authenticated (settings → change password)
-      const { data } = await supabase.auth.getSession()
-      if (cancelled) return
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
       if (data.session?.user || user) {
-        setReady(true)
-        return
+        setReady(true);
+        return;
       }
 
       // Wait briefly for PASSWORD_RECOVERY event from hash fragment flows
-      await new Promise((r) => setTimeout(r, 400))
-      if (cancelled) return
-      if (recoveryDetected) return
+      await new Promise((r) => setTimeout(r, 400));
+      if (cancelled) return;
+      if (recoveryDetected) return;
 
-      const again = await supabase.auth.getSession()
-      if (cancelled) return
+      const again = await supabase.auth.getSession();
+      if (cancelled) return;
       if (again.data.session?.user) {
-        setReady(true)
+        setReady(true);
       } else {
-        setError('Invalid or expired reset link')
-        setReady(false)
+        setError("Invalid or expired reset link");
+        setReady(false);
       }
-    }
+    };
 
-    void bootstrap()
+    void bootstrap();
 
     return () => {
-      cancelled = true
-      subscription.unsubscribe()
-    }
-  }, [searchParams, user])
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [searchParams, user]);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError(null)
-    setSuccess(null)
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
     if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
+      setError("Password must be at least 6 characters");
+      return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
+      setError("Passwords do not match");
+      return;
     }
 
-    const { data: sessionData } = await supabase.auth.getSession()
+    const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
-      setError('Invalid or expired reset link')
-      return
+      setError("Invalid or expired reset link");
+      return;
     }
 
-    setIsSubmitting(true)
-    const { error: err } = await supabase.auth.updateUser({ password })
-    setIsSubmitting(false)
+    setIsSubmitting(true);
+    const { error: err } = await supabase.auth.updateUser({ password });
+    setIsSubmitting(false);
     if (err) {
-      setError(err.message)
-      return
+      setError(err.message);
+      return;
     }
 
-    setSuccess('Password updated successfully.')
-    setPassword('')
-    setConfirmPassword('')
+    setSuccess("Password updated successfully.");
+    setPassword("");
+    setConfirmPassword("");
     if (isRecovery || !user) {
       // Force a clean re-login after recovery
-      await supabase.auth.signOut()
-      navigate('/login')
+      await supabase.auth.signOut();
+      navigate("/login");
     }
-  }
+  };
 
   return (
     <div className="lp-auth-overlay">
@@ -172,8 +172,8 @@ export function UpdatePasswordPage() {
             <em>new password.</em>
           </h2>
           <p className="lp-auth-hero-body">
-            Choose something strong. Your account and all your data will be right where you left
-            them.
+            Choose something strong. Your account and all your data will be
+            right where you left them.
           </p>
         </div>
       </div>
@@ -181,7 +181,9 @@ export function UpdatePasswordPage() {
       <div className="lp-auth-right">
         <div className="lp-auth-card">
           <h2 className="lp-auth-card-title">New password</h2>
-          <p className="lp-auth-card-sub">At least 6 characters. Make it count.</p>
+          <p className="lp-auth-card-sub">
+            At least 6 characters. Make it count.
+          </p>
 
           {!ready && error ? (
             <div className="lp-auth-error">{error}</div>
@@ -223,9 +225,9 @@ export function UpdatePasswordPage() {
               {success && (
                 <div
                   style={{
-                    color: 'var(--success, #22c55e)',
-                    fontSize: '0.88rem',
-                    margin: '0.5rem 0',
+                    color: "var(--success, #22c55e)",
+                    fontSize: "0.88rem",
+                    margin: "0.5rem 0",
                   }}
                 >
                   {success}
@@ -236,13 +238,13 @@ export function UpdatePasswordPage() {
                 className="lp-auth-submit"
                 disabled={isSubmitting || !ready}
               >
-                {isSubmitting ? 'Updating…' : 'Update password'}
+                {isSubmitting ? "Updating…" : "Update password"}
               </button>
               {user && !isRecovery && (
                 <button
                   type="button"
                   className="lp-auth-link"
-                  onClick={() => navigate('/settings')}
+                  onClick={() => navigate("/settings")}
                 >
                   Back to settings
                 </button>
@@ -252,5 +254,5 @@ export function UpdatePasswordPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

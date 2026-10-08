@@ -1,7 +1,7 @@
 type PlaceholderPageProps = {
-  title: string
-  description: string
-}
+  title: string;
+  description: string;
+};
 
 export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
   return (
@@ -9,5 +9,5 @@ export function PlaceholderPage({ title, description }: PlaceholderPageProps) {
       <h2>{title}</h2>
       <p className="muted">{description}</p>
     </section>
-  )
+  );
 }

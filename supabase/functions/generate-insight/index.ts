@@ -41,7 +41,8 @@ export async function generateInsightFunction(
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const supabase = injectedClient || createClient(supabaseUrl, supabaseServiceKey);
+    const supabase =
+      injectedClient || createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify user and get user ID
     const token = authHeader.replace("Bearer ", "");

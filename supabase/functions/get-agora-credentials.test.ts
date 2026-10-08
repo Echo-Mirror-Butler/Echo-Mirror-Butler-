@@ -71,58 +71,77 @@ Deno.test("get-agora-credentials: handles OPTIONS preflight", async () => {
   assertEquals(res.status, 200);
 });
 
-Deno.test("get-agora-credentials: rejects non-POST methods with 405", async () => {
-  const res = await getAgoraCredentialsFunction(createMockRequest("GET"));
-  assertEquals(res.status, 405);
-});
+Deno.test(
+  "get-agora-credentials: rejects non-POST methods with 405",
+  async () => {
+    const res = await getAgoraCredentialsFunction(createMockRequest("GET"));
+    assertEquals(res.status, 405);
+  },
+);
 
-Deno.test("get-agora-credentials: rejects a request without an Authorization header (401)", async () => {
-  const req = createMockRequest("POST", { sessionId: SESSION_ID, userId: "1" });
-  const res = await getAgoraCredentialsFunction(
-    req,
-    clientWith(activeSession()),
-  );
+Deno.test(
+  "get-agora-credentials: rejects a request without an Authorization header (401)",
+  async () => {
+    const req = createMockRequest("POST", {
+      sessionId: SESSION_ID,
+      userId: "1",
+    });
+    const res = await getAgoraCredentialsFunction(
+      req,
+      clientWith(activeSession()),
+    );
 
-  assertEquals(res.status, 401);
-  const body = await getResponseBody(res);
-  assertEquals(body.error, "Unauthorized");
-  // The regression: no token may exist in this response.
-  assertEquals(body.token, undefined);
-});
+    assertEquals(res.status, 401);
+    const body = await getResponseBody(res);
+    assertEquals(body.error, "Unauthorized");
+    // The regression: no token may exist in this response.
+    assertEquals(body.token, undefined);
+  },
+);
 
-Deno.test("get-agora-credentials: rejects a malformed Authorization header (401)", async () => {
-  const req = createMockRequest(
-    "POST",
-    { sessionId: SESSION_ID },
-    { Authorization: "Basic abc123" },
-  );
-  const res = await getAgoraCredentialsFunction(
-    req,
-    clientWith(activeSession()),
-  );
-  assertEquals(res.status, 401);
-});
+Deno.test(
+  "get-agora-credentials: rejects a malformed Authorization header (401)",
+  async () => {
+    const req = createMockRequest(
+      "POST",
+      { sessionId: SESSION_ID },
+      { Authorization: "Basic abc123" },
+    );
+    const res = await getAgoraCredentialsFunction(
+      req,
+      clientWith(activeSession()),
+    );
+    assertEquals(res.status, 401);
+  },
+);
 
-Deno.test("get-agora-credentials: rejects an invalid or expired token (401)", async () => {
-  const client = createMockSupabaseClient({
-    authError: new Error("Token expired"),
-  });
-  const req = createMockRequest(
-    "POST",
-    { sessionId: SESSION_ID },
-    { Authorization: "Bearer expired-token" },
-  );
-  const res = await getAgoraCredentialsFunction(req, client);
+Deno.test(
+  "get-agora-credentials: rejects an invalid or expired token (401)",
+  async () => {
+    const client = createMockSupabaseClient({
+      authError: new Error("Token expired"),
+    });
+    const req = createMockRequest(
+      "POST",
+      { sessionId: SESSION_ID },
+      { Authorization: "Bearer expired-token" },
+    );
+    const res = await getAgoraCredentialsFunction(req, client);
 
-  assertEquals(res.status, 401);
-  const body = await getResponseBody(res);
-  assertStringIncludes(body.message, "Invalid or expired");
-});
+    assertEquals(res.status, 401);
+    const body = await getResponseBody(res);
+    assertStringIncludes(body.message, "Invalid or expired");
+  },
+);
 
 Deno.test("get-agora-credentials: requires a sessionId (400)", async () => {
-  const req = createMockRequest("POST", {}, {
-    Authorization: "Bearer valid-token",
-  });
+  const req = createMockRequest(
+    "POST",
+    {},
+    {
+      Authorization: "Bearer valid-token",
+    },
+  );
   const res = await getAgoraCredentialsFunction(
     req,
     clientWith(activeSession()),
@@ -130,132 +149,156 @@ Deno.test("get-agora-credentials: requires a sessionId (400)", async () => {
   assertEquals(res.status, 400);
 });
 
-Deno.test("get-agora-credentials: rejects an unknown session before minting (404)", async () => {
-  const req = createMockRequest(
-    "POST",
-    { sessionId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" },
-    { Authorization: "Bearer valid-token" },
-  );
-  const res = await getAgoraCredentialsFunction(req, clientWith(null));
-
-  assertEquals(res.status, 404);
-  const body = await getResponseBody(res);
-  assertEquals(body.token, undefined);
-});
-
-Deno.test("get-agora-credentials: rejects an inactive session (403)", async () => {
-  const req = createMockRequest(
-    "POST",
-    { sessionId: SESSION_ID },
-    { Authorization: "Bearer valid-token" },
-  );
-  const res = await getAgoraCredentialsFunction(
-    req,
-    clientWith(activeSession({ is_active: false })),
-  );
-
-  assertEquals(res.status, 403);
-  const body = await getResponseBody(res);
-  assertEquals(body.token, undefined);
-});
-
-Deno.test("get-agora-credentials: rejects an expired session (403)", async () => {
-  const req = createMockRequest(
-    "POST",
-    { sessionId: SESSION_ID },
-    { Authorization: "Bearer valid-token" },
-  );
-  const expired = activeSession({
-    expires_at: new Date(Date.now() - 60_000).toISOString(),
-  });
-  const res = await getAgoraCredentialsFunction(req, clientWith(expired));
-
-  assertEquals(res.status, 403);
-  assertEquals((await getResponseBody(res)).token, undefined);
-});
-
-// ─── Success path ───────────────────────────────────────────────────────────
-
-Deno.test("get-agora-credentials: an authenticated caller joining an active session gets a token", async () => {
-  await withAgoraEnv(async () => {
+Deno.test(
+  "get-agora-credentials: rejects an unknown session before minting (404)",
+  async () => {
     const req = createMockRequest(
       "POST",
-      { sessionId: SESSION_ID, userId: "4242" },
+      { sessionId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" },
       { Authorization: "Bearer valid-token" },
     );
-    const res = await getAgoraCredentialsFunction(
-      req,
-      clientWith(activeSession()),
-    );
+    const res = await getAgoraCredentialsFunction(req, clientWith(null));
 
-    assertEquals(res.status, 200);
+    assertEquals(res.status, 404);
     const body = await getResponseBody(res);
-    assertEquals(typeof body.token, "string");
-    assertEquals(body.token.length > 0, true);
-    assertEquals(body.appId, "test-app-id");
-    // The uid is derived from the authenticated user, not from the body.
-    assertEquals(body.uid, deriveAgoraUid(CALLER_ID));
-    assertNotEquals(body.uid, 4242);
-    assertEquals(typeof body.expiresAt, "number");
-  });
-});
+    assertEquals(body.token, undefined);
+  },
+);
 
-Deno.test("get-agora-credentials: a token never outlives its session", async () => {
-  await withAgoraEnv(async () => {
-    const sessionExpiry = Math.floor(Date.now() / 1000) + 120; // two minutes
-    const session = activeSession({
-      expires_at: new Date(sessionExpiry * 1000).toISOString(),
-    });
-
+Deno.test(
+  "get-agora-credentials: rejects an inactive session (403)",
+  async () => {
     const req = createMockRequest(
       "POST",
       { sessionId: SESSION_ID },
       { Authorization: "Bearer valid-token" },
     );
-    const res = await getAgoraCredentialsFunction(req, clientWith(session));
-    const body = await getResponseBody(res);
+    const res = await getAgoraCredentialsFunction(
+      req,
+      clientWith(activeSession({ is_active: false })),
+    );
 
-    assertEquals(res.status, 200);
-    assertEquals(body.expiresAt <= sessionExpiry, true);
-    assertEquals(body.expiresAt > Math.floor(Date.now() / 1000), true);
-  });
-});
+    assertEquals(res.status, 403);
+    const body = await getResponseBody(res);
+    assertEquals(body.token, undefined);
+  },
+);
+
+Deno.test(
+  "get-agora-credentials: rejects an expired session (403)",
+  async () => {
+    const req = createMockRequest(
+      "POST",
+      { sessionId: SESSION_ID },
+      { Authorization: "Bearer valid-token" },
+    );
+    const expired = activeSession({
+      expires_at: new Date(Date.now() - 60_000).toISOString(),
+    });
+    const res = await getAgoraCredentialsFunction(req, clientWith(expired));
+
+    assertEquals(res.status, 403);
+    assertEquals((await getResponseBody(res)).token, undefined);
+  },
+);
+
+// ─── Success path ───────────────────────────────────────────────────────────
+
+Deno.test(
+  "get-agora-credentials: an authenticated caller joining an active session gets a token",
+  async () => {
+    await withAgoraEnv(async () => {
+      const req = createMockRequest(
+        "POST",
+        { sessionId: SESSION_ID, userId: "4242" },
+        { Authorization: "Bearer valid-token" },
+      );
+      const res = await getAgoraCredentialsFunction(
+        req,
+        clientWith(activeSession()),
+      );
+
+      assertEquals(res.status, 200);
+      const body = await getResponseBody(res);
+      assertEquals(typeof body.token, "string");
+      assertEquals(body.token.length > 0, true);
+      assertEquals(body.appId, "test-app-id");
+      // The uid is derived from the authenticated user, not from the body.
+      assertEquals(body.uid, deriveAgoraUid(CALLER_ID));
+      assertNotEquals(body.uid, 4242);
+      assertEquals(typeof body.expiresAt, "number");
+    });
+  },
+);
+
+Deno.test(
+  "get-agora-credentials: a token never outlives its session",
+  async () => {
+    await withAgoraEnv(async () => {
+      const sessionExpiry = Math.floor(Date.now() / 1000) + 120; // two minutes
+      const session = activeSession({
+        expires_at: new Date(sessionExpiry * 1000).toISOString(),
+      });
+
+      const req = createMockRequest(
+        "POST",
+        { sessionId: SESSION_ID },
+        { Authorization: "Bearer valid-token" },
+      );
+      const res = await getAgoraCredentialsFunction(req, clientWith(session));
+      const body = await getResponseBody(res);
+
+      assertEquals(res.status, 200);
+      assertEquals(body.expiresAt <= sessionExpiry, true);
+      assertEquals(body.expiresAt > Math.floor(Date.now() / 1000), true);
+    });
+  },
+);
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-Deno.test("deriveAgoraUid: deterministic, distinct per user, never zero", () => {
-  const first = deriveAgoraUid("user-1");
+Deno.test(
+  "deriveAgoraUid: deterministic, distinct per user, never zero",
+  () => {
+    const first = deriveAgoraUid("user-1");
 
-  assertEquals(deriveAgoraUid("user-1"), first);
-  assertNotEquals(deriveAgoraUid("user-2"), first);
-  assertEquals(first > 0, true);
-  assertEquals(first <= 0x7fffffff, true); // Agora wants a 32-bit int
-});
+    assertEquals(deriveAgoraUid("user-1"), first);
+    assertNotEquals(deriveAgoraUid("user-2"), first);
+    assertEquals(first > 0, true);
+    assertEquals(first <= 0x7fffffff, true); // Agora wants a 32-bit int
+  },
+);
 
-Deno.test("resolveTokenTtlSeconds: two hours by default, clamped when configured", () => {
-  assertEquals(
-    resolveTokenTtlSeconds({ get: () => undefined }),
-    DEFAULT_TOKEN_TTL_SECONDS,
-  );
-  assertEquals(
-    resolveTokenTtlSeconds({ get: () => "not-a-number" }),
-    DEFAULT_TOKEN_TTL_SECONDS,
-  );
-  assertEquals(resolveTokenTtlSeconds({ get: () => "600" }), 600);
-  assertEquals(resolveTokenTtlSeconds({ get: () => "5" }), 60); // floor
-  assertEquals(
-    resolveTokenTtlSeconds({ get: () => String(MAX_TOKEN_TTL_SECONDS * 10) }),
-    MAX_TOKEN_TTL_SECONDS,
-  );
-  assertEquals(DEFAULT_TOKEN_TTL_SECONDS, 7200);
-});
+Deno.test(
+  "resolveTokenTtlSeconds: two hours by default, clamped when configured",
+  () => {
+    assertEquals(
+      resolveTokenTtlSeconds({ get: () => undefined }),
+      DEFAULT_TOKEN_TTL_SECONDS,
+    );
+    assertEquals(
+      resolveTokenTtlSeconds({ get: () => "not-a-number" }),
+      DEFAULT_TOKEN_TTL_SECONDS,
+    );
+    assertEquals(resolveTokenTtlSeconds({ get: () => "600" }), 600);
+    assertEquals(resolveTokenTtlSeconds({ get: () => "5" }), 60); // floor
+    assertEquals(
+      resolveTokenTtlSeconds({ get: () => String(MAX_TOKEN_TTL_SECONDS * 10) }),
+      MAX_TOKEN_TTL_SECONDS,
+    );
+    assertEquals(DEFAULT_TOKEN_TTL_SECONDS, 7200);
+  },
+);
 
-Deno.test("sessionExpirySeconds: parses ISO timestamps and ignores junk", () => {
-  const iso = "2026-09-30T12:00:00.000Z";
-  assertEquals(
-    sessionExpirySeconds({ expires_at: iso }),
-    Math.floor(Date.parse(iso) / 1000),
-  );
-  assertEquals(sessionExpirySeconds({ expires_at: "not-a-date" }), null);
-  assertEquals(sessionExpirySeconds({}), null);
-});
+Deno.test(
+  "sessionExpirySeconds: parses ISO timestamps and ignores junk",
+  () => {
+    const iso = "2026-09-30T12:00:00.000Z";
+    assertEquals(
+      sessionExpirySeconds({ expires_at: iso }),
+      Math.floor(Date.parse(iso) / 1000),
+    );
+    assertEquals(sessionExpirySeconds({ expires_at: "not-a-date" }), null);
+    assertEquals(sessionExpirySeconds({}), null);
+  },
+);

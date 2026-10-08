@@ -1,6 +1,7 @@
 # Issue #593: Fix AI Insight Generation Trigger
 
 ## Problem
+
 The AI insight generation may not trigger reliably when users cross the 3-log threshold. Users can get stuck in an indefinite loading state with no insight generated.
 
 ## Root Cause Investigation Steps
@@ -33,10 +34,10 @@ DECLARE
 BEGIN
   -- Count logs for this user
   SELECT COUNT(*) INTO log_count FROM log_entries WHERE user_id = NEW.user_id;
-  
+
   -- Check if user already has an insight
   SELECT EXISTS(SELECT 1 FROM insights WHERE user_id = NEW.user_id) INTO user_has_insight;
-  
+
   -- If exactly 3 logs and no insight yet, trigger generation
   IF log_count = 3 AND NOT user_has_insight THEN
     -- Call Supabase Edge Function to generate insight
@@ -47,7 +48,7 @@ BEGIN
       json_build_object('Authorization', 'Bearer ' || current_setting('app.settings.supabase_key'))
     );
   END IF;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -84,11 +85,11 @@ class _AIInsightSectionState extends State<AIInsightSection> {
 
   Future<void> _initializeInsightGeneration() async {
     final logCount = await context.read<LogBloc>().getLogCount();
-    
+
     // If user has 3+ logs but no insight, generate or show CTA
     if (logCount >= 3) {
       final hasInsight = await context.read<InsightBloc>().checkIfInsightExists();
-      
+
       if (!hasInsight) {
         // Trigger generation with timeout
         try {
@@ -311,29 +312,29 @@ Ensure the function is robust and returns proper errors:
 
 ```typescript
 // supabase/functions/generate-insight/index.ts
-import { createLogger, extractTraceId } from '../_shared/logger.ts';
+import { createLogger, extractTraceId } from "../_shared/logger.ts";
 
-const logger = createLogger('generate-insight');
+const logger = createLogger("generate-insight");
 
 export async function generateInsight(req: Request): Promise<Response> {
   const traceId = extractTraceId(Object.fromEntries(req.headers));
-  
+
   try {
     const { userId } = await req.json();
-    
-    logger.info('Generating insight', { userId }, traceId);
-    
+
+    logger.info("Generating insight", { userId }, traceId);
+
     // ... generate insight logic ...
-    
-    return new Response(
-      JSON.stringify({ success: true, traceId }),
-      { status: 200, headers: { 'X-Trace-ID': traceId } }
-    );
+
+    return new Response(JSON.stringify({ success: true, traceId }), {
+      status: 200,
+      headers: { "X-Trace-ID": traceId },
+    });
   } catch (error) {
-    logger.error('Failed to generate insight', error, { userId }, traceId);
+    logger.error("Failed to generate insight", error, { userId }, traceId);
     return new Response(
-      JSON.stringify({ error: 'Generation failed', traceId }),
-      { status: 500, headers: { 'X-Trace-ID': traceId } }
+      JSON.stringify({ error: "Generation failed", traceId }),
+      { status: 500, headers: { "X-Trace-ID": traceId } },
     );
   }
 }
@@ -350,17 +351,17 @@ void main() {
       final user = await createTestUser();
       await createLogEntry(user.id);
       await createLogEntry(user.id);
-      
+
       // Verify no insight exists
       final initialInsight = await fetchInsight(user.id);
       expect(initialInsight, isNull);
-      
+
       // Add 3rd log
       await createLogEntry(user.id);
-      
+
       // Wait for generation
       await Future.delayed(Duration(seconds: 5));
-      
+
       // Verify insight was generated
       final generatedInsight = await fetchInsight(user.id);
       expect(generatedInsight, isNotNull);

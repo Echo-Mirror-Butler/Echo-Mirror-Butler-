@@ -4,16 +4,17 @@ Complete implementation package for 4 interconnected issues addressing complianc
 
 ## Overview
 
-| Issue | Title | Priority | Status | Files |
-|-------|-------|----------|--------|-------|
-| #592 | Account Deletion with Grace Period | HIGH | Complete | 4 files |
-| #593 | AI Insight Generation Fix | HIGH | Complete | 1 file |
-| #594 | Global Mirror Implementation Audit | MEDIUM | Complete | 1 file |
-| #595 | Structured Logging & Tracing | HIGH | Complete | 1 file |
+| Issue | Title                              | Priority | Status   | Files   |
+| ----- | ---------------------------------- | -------- | -------- | ------- |
+| #592  | Account Deletion with Grace Period | HIGH     | Complete | 4 files |
+| #593  | AI Insight Generation Fix          | HIGH     | Complete | 1 file  |
+| #594  | Global Mirror Implementation Audit | MEDIUM   | Complete | 1 file  |
+| #595  | Structured Logging & Tracing       | HIGH     | Complete | 1 file  |
 
 ## Quick Start
 
 ### Prerequisites
+
 - Supabase project with Edge Functions support
 - Postgres with http extension enabled
 - Flutter and web frontend environments
@@ -26,7 +27,7 @@ Complete implementation package for 4 interconnected issues addressing complianc
    - This enables debugging for all other work
 
 2. **Then #592** (Compliance - Urgent)
-   - Run `migrations_add_soft_delete.sql` 
+   - Run `migrations_add_soft_delete.sql`
    - Deploy `delete-account-function.ts` as Edge Function
    - Deploy `export-user-data-improved.ts` as Edge Function
    - Deploy `hard-delete-scheduled-job.ts` with pg_cron schedule
@@ -65,6 +66,7 @@ implementation-files/
 **Files**: `logger.ts`
 
 **Installation**:
+
 ```bash
 # Copy to Supabase
 cp logger.ts supabase/functions/_shared/
@@ -80,6 +82,7 @@ const traceId = logger.info('Operation started', { userId }, incomingTraceId);
 ```
 
 **Verification**:
+
 ```bash
 # Check Supabase function logs - should see structured JSON
 # Example output:
@@ -91,6 +94,7 @@ const traceId = logger.info('Operation started', { userId }, incomingTraceId);
 **Why**: Legal requirement for data privacy. Enables self-service account deletion without manual support.
 
 **Files**:
+
 - `migrations_add_soft_delete.sql`
 - `delete-account-function.ts`
 - `export-user-data-improved.ts`
@@ -99,17 +103,19 @@ const traceId = logger.info('Operation started', { userId }, incomingTraceId);
 **Setup Steps**:
 
 1. **Database Migration**:
+
 ```bash
 # Run in Supabase SQL editor or via migration tool
 psql -U postgres -d postgres -f migrations_add_soft_delete.sql
 
 # Verify
-SELECT column_name FROM information_schema.columns 
+SELECT column_name FROM information_schema.columns
 WHERE table_name = 'users' AND column_name LIKE '%deleted%';
 # Should show: soft_deleted_at, deleted_at
 ```
 
 2. **Deploy Edge Functions**:
+
 ```bash
 # Create functions directory structure
 mkdir -p supabase/functions/delete-account
@@ -128,6 +134,7 @@ supabase functions deploy hard-delete-accounts
 ```
 
 3. **Schedule Recurring Job**:
+
 ```sql
 -- Enable pg_cron extension
 CREATE EXTENSION IF NOT EXISTS pg_cron;
@@ -150,6 +157,7 @@ SELECT cron.schedule(
 ```
 
 4. **Add UI Buttons** (Web - React/Next.js):
+
 ```typescript
 // frontend/src/features/settings/account-actions.tsx
 import { useState } from 'react';
@@ -157,7 +165,7 @@ import { deleteAccount, exportUserData } from '@/services/auth';
 
 export function AccountActions() {
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const handleExportData = async () => {
     const response = await exportUserData();
     // Trigger download
@@ -166,17 +174,17 @@ export function AccountActions() {
     link.download = `export-${Date.now()}.json`;
     link.click();
   };
-  
+
   const handleDeleteAccount = async () => {
     const confirmation = prompt(
       'Type DELETE MY ACCOUNT to confirm permanent deletion (14-day grace period):'
     );
-    
+
     if (confirmation !== 'DELETE MY ACCOUNT') {
       alert('Confirmation phrase does not match');
       return;
     }
-    
+
     setIsDeleting(true);
     try {
       const { gracePeriodEndsAt } = await deleteAccount(confirmation);
@@ -189,7 +197,7 @@ export function AccountActions() {
       setIsDeleting(false);
     }
   };
-  
+
   return (
     <div className="space-y-4">
       <button onClick={handleExportData}>Download My Data</button>
@@ -202,6 +210,7 @@ export function AccountActions() {
 ```
 
 5. **Add UI Buttons** (Flutter):
+
 ```dart
 // lib/features/settings/account_actions_button.dart
 class AccountActionsButton extends StatelessWidget {
@@ -245,7 +254,7 @@ class AccountActionsButton extends StatelessWidget {
 
   void _showDeleteConfirmation(BuildContext context) {
     final controller = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -288,6 +297,7 @@ class AccountActionsButton extends StatelessWidget {
 ```
 
 **Verification**:
+
 ```bash
 # Test soft-delete
 curl -X POST https://[project].supabase.co/functions/v1/delete-account \
@@ -311,12 +321,14 @@ curl -X GET https://[project].supabase.co/functions/v1/export-user-data \
 **Files**: `issue-593-ai-insight-fix.md`
 
 **Implementation**:
+
 1. Run the Postgres trigger migration (adds automatic generation on 3rd log)
 2. Update Flutter UI with error state and retry button
 3. Add timeout handling (30 second timeout)
 4. Implement manual "Generate Insight" button as fallback
 
 **Testing**:
+
 ```bash
 # Create test user and add 2 logs (no insight yet)
 INSERT INTO log_entries (user_id, mood, notes) VALUES ('[user-id]', 5, 'Test');
@@ -339,12 +351,14 @@ SELECT * FROM insights WHERE user_id = '[user-id]'; -- Should have data
 **Files**: `issue-594-global-mirror-audit.md`
 
 **Implementation**:
+
 1. Run comprehensive test suite
 2. Verify each feature in the header comment works
 3. Fix any gaps found
 4. Add test coverage for clustering and realtime logic
 
 **Test Execution**:
+
 ```bash
 npm test -- global-mirror.test.ts
 npm test -- clustering.test.ts
@@ -358,6 +372,7 @@ npm test -- clustering.test.ts
 ## Deployment Checklist
 
 ### Pre-Production
+
 - [ ] #595: All Edge Functions use structured logger
 - [ ] #592: Database migration applied
 - [ ] #592: All 3 delete/export functions deployed
@@ -368,6 +383,7 @@ npm test -- clustering.test.ts
 - [ ] #594: All tests pass with >90% coverage
 
 ### Production Rollout
+
 - [ ] Monitor structured logs for first 24 hours
 - [ ] Test account deletion with real user (soft delete)
 - [ ] Verify data export produces valid JSON
@@ -376,6 +392,7 @@ npm test -- clustering.test.ts
 - [ ] Verify global mirror features all work
 
 ### Post-Deployment
+
 - [ ] Document any issues found
 - [ ] Collect user feedback on deletion flow UX
 - [ ] Monitor trace ID correlation effectiveness
@@ -387,7 +404,7 @@ npm test -- clustering.test.ts
 
 ```sql
 -- Find all errors in delete-account function
-SELECT json_data->>'message' as message, 
+SELECT json_data->>'message' as message,
        COUNT(*) as count
 FROM logs
 WHERE json_data->>'functionName' = 'delete-account'
@@ -401,10 +418,10 @@ WHERE json_data->>'requestId' = '[trace-id]'
 ORDER BY json_data->>'timestamp';
 
 -- Monitor deletion success rate
-SELECT 
+SELECT
   COUNT(*) FILTER (WHERE json_data->>'level' = 'info' AND json_data->>'message' LIKE 'soft%') as soft_deletes,
   COUNT(*) FILTER (WHERE json_data->>'level' = 'error') as failures,
-  ROUND(100.0 * COUNT(*) FILTER (WHERE json_data->>'level' = 'info') 
+  ROUND(100.0 * COUNT(*) FILTER (WHERE json_data->>'level' = 'info')
         / COUNT(*), 2) as success_rate_percent
 FROM logs
 WHERE json_data->>'functionName' IN ('delete-account', 'hard-delete-accounts')
@@ -414,21 +431,25 @@ WHERE json_data->>'functionName' IN ('delete-account', 'hard-delete-accounts')
 ## Troubleshooting
 
 ### Issue: Soft-deleted accounts not auto-deleting
+
 - Check pg_cron is enabled: `SELECT * FROM cron.job;`
 - Check Edge Function logs for hard-delete-accounts
 - Verify SERVICE_ROLE_KEY in cron job authorization
 
 ### Issue: Insights never generate
+
 - Check Postgres trigger exists: `SELECT * FROM pg_trigger WHERE tgname LIKE '%insight%';`
 - Check generate-insight function logs
 - Manually trigger: `SELECT trigger_generate_insight_on_threshold();`
 
 ### Issue: Trace IDs not appearing in logs
+
 - Verify logger.ts is in `_shared/` directory
 - Check all Edge Functions import from `_shared/logger`
 - Verify extractTraceId is called with request headers
 
 ### Issue: Global Mirror clusters not forming
+
 - Run clustering tests: `npm test -- clustering.test.ts`
 - Check zoom level matches threshold
 - Verify pins have valid latitude/longitude

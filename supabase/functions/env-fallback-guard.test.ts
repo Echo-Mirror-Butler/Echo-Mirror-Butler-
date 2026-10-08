@@ -50,40 +50,46 @@ async function functionSources(): Promise<
   return sources;
 }
 
-Deno.test("no Edge Function falls back to a literal value for a secret env var", async () => {
-  const offenders: string[] = [];
+Deno.test(
+  "no Edge Function falls back to a literal value for a secret env var",
+  async () => {
+    const offenders: string[] = [];
 
-  for (const { path, text } of await functionSources()) {
-    for (const match of text.matchAll(FALLBACK_PATTERN)) {
-      const [, name, , literal] = match;
-      if (!SECRET_LIKE.test(name)) continue;
-      if (literal.trim() === "") continue; // empty means "fail loudly downstream"
-      const line = text.slice(0, match.index).split("\n").length;
-      offenders.push(`${path}:${line} — ${name} falls back to '${literal}'`);
+    for (const { path, text } of await functionSources()) {
+      for (const match of text.matchAll(FALLBACK_PATTERN)) {
+        const [, name, , literal] = match;
+        if (!SECRET_LIKE.test(name)) continue;
+        if (literal.trim() === "") continue; // empty means "fail loudly downstream"
+        const line = text.slice(0, match.index).split("\n").length;
+        offenders.push(`${path}:${line} — ${name} falls back to '${literal}'`);
+      }
     }
-  }
 
-  assertEquals(
-    offenders.length,
-    0,
-    `Secret environment variables must not have literal fallbacks:\n  ${
-      offenders.join("\n  ")
-    }`,
-  );
-});
+    assertEquals(
+      offenders.length,
+      0,
+      `Secret environment variables must not have literal fallbacks:\n  ${offenders.join(
+        "\n  ",
+      )}`,
+    );
+  },
+);
 
-Deno.test("both digest functions resolve the unsubscribe secret from the shared module", async () => {
-  for (const name of ["unsubscribe-digest", "send-weekly-digest"]) {
-    const text = await Deno.readTextFile(
-      new URL(`${name}/index.ts`, FUNCTIONS_DIR),
-    );
-    assert(
-      text.includes("_shared/unsubscribe-hmac.ts"),
-      `${name} must use _shared/unsubscribe-hmac.ts instead of reading the env var itself`,
-    );
-    assert(
-      !text.includes("default-unsubscribe-secret"),
-      `${name} still mentions the historical default secret`,
-    );
-  }
-});
+Deno.test(
+  "both digest functions resolve the unsubscribe secret from the shared module",
+  async () => {
+    for (const name of ["unsubscribe-digest", "send-weekly-digest"]) {
+      const text = await Deno.readTextFile(
+        new URL(`${name}/index.ts`, FUNCTIONS_DIR),
+      );
+      assert(
+        text.includes("_shared/unsubscribe-hmac.ts"),
+        `${name} must use _shared/unsubscribe-hmac.ts instead of reading the env var itself`,
+      );
+      assert(
+        !text.includes("default-unsubscribe-secret"),
+        `${name} still mentions the historical default secret`,
+      );
+    }
+  },
+);

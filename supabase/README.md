@@ -8,6 +8,7 @@ This project uses Supabase for backend services (auth, database, storage, realti
 - [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started)
 
 Install the CLI:
+
 ```bash
 # macOS
 brew install supabase/tap/supabase
@@ -33,12 +34,12 @@ flutter run
 
 After `supabase start`, these are available:
 
-| Service | URL |
-|---|---|
-| API | http://127.0.0.1:54321 |
-| Studio (DB GUI) | http://127.0.0.1:54323 |
-| Inbucket (email testing) | http://127.0.0.1:54324 |
-| Database | postgresql://postgres:postgres@127.0.0.1:54322/postgres |
+| Service                  | URL                                                     |
+| ------------------------ | ------------------------------------------------------- |
+| API                      | http://127.0.0.1:54321                                  |
+| Studio (DB GUI)          | http://127.0.0.1:54323                                  |
+| Inbucket (email testing) | http://127.0.0.1:54324                                  |
+| Database                 | postgresql://postgres:postgres@127.0.0.1:54322/postgres |
 
 ## Working with Migrations
 

@@ -1,150 +1,150 @@
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../lib/auth-context'
+import { useState, useEffect, useRef } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/auth-context";
 
 type UserSuggestion = {
-  id: string
-  email: string
-  display_name?: string
-}
+  id: string;
+  email: string;
+  display_name?: string;
+};
 
 type RecipientAutocompleteProps = {
-  value: string
-  onChange: (value: string) => void
-  onSelect: (userId: string) => void
-  placeholder?: string
-}
+  value: string;
+  onChange: (value: string) => void;
+  onSelect: (userId: string) => void;
+  placeholder?: string;
+};
 
-export function RecipientAutocomplete({ 
-  value, 
-  onChange, 
-  onSelect, 
-  placeholder = "UUID or email" 
+export function RecipientAutocomplete({
+  value,
+  onChange,
+  onSelect,
+  placeholder = "UUID or email",
 }: RecipientAutocompleteProps) {
-  const { user } = useAuth()
-  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedIndex, setSelectedIndex] = useState(-1)
-  const [isLoading, setIsLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const { user } = useAuth();
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Reset suggestions when input changes
   useEffect(() => {
-    setSelectedIndex(-1)
-  }, [suggestions])
+    setSelectedIndex(-1);
+  }, [suggestions]);
 
   // Fetch suggestions when input meets criteria
   useEffect(() => {
     if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
+      clearTimeout(debounceRef.current);
     }
 
-    const shouldSearch = value.length >= 3 && value.includes('@')
+    const shouldSearch = value.length >= 3 && value.includes("@");
 
     if (!shouldSearch) {
-      setSuggestions([])
-      setIsOpen(false)
-      return
+      setSuggestions([]);
+      setIsOpen(false);
+      return;
     }
 
     debounceRef.current = setTimeout(() => {
-      fetchSuggestions(value)
-    }, 300)
+      fetchSuggestions(value);
+    }, 300);
 
     return () => {
       if (debounceRef.current) {
-        clearTimeout(debounceRef.current)
+        clearTimeout(debounceRef.current);
       }
-    }
-  }, [value, user?.id])
+    };
+  }, [value, user?.id]);
 
   async function fetchSuggestions(query: string) {
-    if (!user?.id) return
+    if (!user?.id) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Try profiles table first, then user_profiles
-      const profileTables = ['profiles', 'user_profiles']
-      let results: UserSuggestion[] = []
+      const profileTables = ["profiles", "user_profiles"];
+      let results: UserSuggestion[] = [];
 
       for (const table of profileTables) {
         try {
           const { data, error } = await supabase
             .from(table)
-            .select('id, email, display_name')
-            .ilike('email', `%${query}%`)
-            .neq('id', user.id)
-            .limit(5)
+            .select("id, email, display_name")
+            .ilike("email", `%${query}%`)
+            .neq("id", user.id)
+            .limit(5);
 
           if (!error && data) {
-            results = data as UserSuggestion[]
-            break
+            results = data as UserSuggestion[];
+            break;
           }
         } catch {
           // Continue to next table if this one fails
-          continue
+          continue;
         }
       }
 
-      setSuggestions(results)
-      setIsOpen(results.length > 0)
+      setSuggestions(results);
+      setIsOpen(results.length > 0);
     } catch (error) {
-      console.error('Error fetching suggestions:', error)
-      setSuggestions([])
-      setIsOpen(false)
+      console.error("Error fetching suggestions:", error);
+      setSuggestions([]);
+      setIsOpen(false);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   function handleKeyDown(event: React.KeyboardEvent) {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault()
-        setSelectedIndex((prev) => 
-          prev < suggestions.length - 1 ? prev + 1 : prev
-        )
-        break
-      case 'ArrowUp':
-        event.preventDefault()
-        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1))
-        break
-      case 'Enter':
-        event.preventDefault()
+      case "ArrowDown":
+        event.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : prev,
+        );
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case "Enter":
+        event.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
-          handleSelect(suggestions[selectedIndex])
+          handleSelect(suggestions[selectedIndex]);
         }
-        break
-      case 'Escape':
-        setIsOpen(false)
-        setSelectedIndex(-1)
-        inputRef.current?.focus()
-        break
+        break;
+      case "Escape":
+        setIsOpen(false);
+        setSelectedIndex(-1);
+        inputRef.current?.focus();
+        break;
     }
   }
 
   function handleSelect(suggestion: UserSuggestion) {
-    onSelect(suggestion.id)
-    onChange(suggestion.id) // Fill input with user ID
-    setIsOpen(false)
-    setSelectedIndex(-1)
+    onSelect(suggestion.id);
+    onChange(suggestion.id); // Fill input with user ID
+    setIsOpen(false);
+    setSelectedIndex(-1);
   }
 
   function handleClickOutside(event: MouseEvent) {
     if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
-      setIsOpen(false)
+      setIsOpen(false);
     }
   }
 
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="recipient-autocomplete">
@@ -155,15 +155,15 @@ export function RecipientAutocomplete({
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={isLoading ? 'loading' : ''}
+        className={isLoading ? "loading" : ""}
       />
-      
+
       {isOpen && (
         <ul className="suggestions-list">
           {suggestions.map((suggestion, index) => (
             <li
               key={suggestion.id}
-              className={index === selectedIndex ? 'selected' : ''}
+              className={index === selectedIndex ? "selected" : ""}
               onClick={() => handleSelect(suggestion)}
             >
               <div className="suggestion-email">{suggestion.email}</div>
@@ -174,7 +174,7 @@ export function RecipientAutocomplete({
           ))}
         </ul>
       )}
-      
+
       <style>{`
         .recipient-autocomplete {
           position: relative;
@@ -232,5 +232,5 @@ export function RecipientAutocomplete({
         }
       `}</style>
     </div>
-  )
+  );
 }

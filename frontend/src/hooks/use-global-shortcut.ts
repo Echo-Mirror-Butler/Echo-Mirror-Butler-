@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect } from "react";
 
 /**
  * A custom hook to attach a global keyboard shortcut.
@@ -10,24 +10,28 @@ import { useEffect } from 'react'
 export function useGlobalShortcut(key: string, callback: () => void) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const activeElement = document.activeElement as HTMLElement | null
-      
+      const activeElement = document.activeElement as HTMLElement | null;
+
       // Do not trigger if the user is typing inside an input, textarea, or contenteditable area
       if (activeElement) {
-        const tagName = activeElement.tagName.toLowerCase()
-        if (tagName === 'input' || tagName === 'textarea' || activeElement.isContentEditable) {
-          return
+        const tagName = activeElement.tagName.toLowerCase();
+        if (
+          tagName === "input" ||
+          tagName === "textarea" ||
+          activeElement.isContentEditable
+        ) {
+          return;
         }
       }
 
       // Check if the pressed key matches (case-insensitive)
       if (event.key.toLowerCase() === key.toLowerCase()) {
-        event.preventDefault()
-        callback()
+        event.preventDefault();
+        callback();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [key, callback])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [key, callback]);
 }

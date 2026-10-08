@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main, development]
     paths:
-      - 'server/**'
-      - 'backend/server/**'
+      - "server/**"
+      - "backend/server/**"
 
 jobs:
   server-ci:
