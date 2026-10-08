@@ -32,12 +32,10 @@ stellarRouter.post(
         .single();
 
       if (existing) {
-        res
-          .status(409)
-          .json({
-            error: "Wallet already exists for this user",
-            publicKey: existing.public_key,
-          });
+        res.status(409).json({
+          error: "Wallet already exists for this user",
+          publicKey: existing.public_key,
+        });
         return;
       }
 
@@ -76,11 +74,9 @@ stellarRouter.get(
         .single();
 
       if (error || !wallet) {
-        res
-          .status(404)
-          .json({
-            error: "Wallet not found. Call POST /stellar/wallet/create first.",
-          });
+        res.status(404).json({
+          error: "Wallet not found. Call POST /stellar/wallet/create first.",
+        });
         return;
       }
 
