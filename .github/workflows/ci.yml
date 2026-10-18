@@ -175,7 +175,7 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle cache
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - uses: subosito/flutter-action@v2
         with:

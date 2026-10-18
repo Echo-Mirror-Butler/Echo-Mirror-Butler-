@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   osv-scan:
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.6.0
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.7.0
     with:
       scan-args: |-
         --lockfile=pubspec.lock
@@ -22,7 +22,7 @@ jobs:
     name: Fail on hardcoded fallback secrets
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Reject hardcoded default secrets in edge functions
         run: |
           set -euo pipefail
