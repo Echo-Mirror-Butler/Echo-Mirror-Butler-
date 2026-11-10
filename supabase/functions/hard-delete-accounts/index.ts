@@ -11,22 +11,27 @@
  * to remove: mood logs, comments, transactions, social connections, etc.
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { createLogger } from '../_shared/logger.ts';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
 
-const logger = createLogger('hard-delete-accounts');
+const logger = createLogger("hard-delete-accounts");
 
 export async function hardDeleteExpiredAccounts(): Promise<void> {
-  const traceId = logger.info('Starting scheduled hard-delete job', {
+  const traceId = logger.info("Starting scheduled hard-delete job", {
     scheduledTime: new Date().toISOString(),
   });
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !supabaseKey) {
-      logger.error('Missing Supabase credentials', 'Configuration error', {}, traceId);
+      logger.error(
+        "Missing Supabase credentials",
+        "Configuration error",
+        {},
+        traceId,
+      );
       return;
     }
 
@@ -35,23 +40,28 @@ export async function hardDeleteExpiredAccounts(): Promise<void> {
     // Find all accounts where grace period has expired
     const now = new Date().toISOString();
     const { data: expiredAccounts, error: selectError } = await supabase
-      .from('auth.users')
-      .select('id, email')
-      .eq('soft_deleted_at', true) // soft_deleted_at is not null
-      .lt('deleted_at', now) // deleted_at is in the past
+      .from("auth.users")
+      .select("id, email")
+      .eq("soft_deleted_at", true) // soft_deleted_at is not null
+      .lt("deleted_at", now) // deleted_at is in the past
       .limit(100); // Process in batches to avoid timeouts
 
     if (selectError) {
-      logger.error('Failed to query expired accounts', selectError, { error: selectError.message }, traceId);
+      logger.error(
+        "Failed to query expired accounts",
+        selectError,
+        { error: selectError.message },
+        traceId,
+      );
       return;
     }
 
     if (!expiredAccounts || expiredAccounts.length === 0) {
-      logger.info('No accounts ready for hard deletion', {}, traceId);
+      logger.info("No accounts ready for hard deletion", {}, traceId);
       return;
     }
 
-    logger.info('Found expired accounts to delete', {
+    logger.info("Found expired accounts to delete", {
       count: expiredAccounts.length,
       now,
     });
@@ -63,17 +73,19 @@ export async function hardDeleteExpiredAccounts(): Promise<void> {
     for (const account of expiredAccounts) {
       try {
         // Delete from auth.users (cascade should handle related records)
-        const { error: deleteError } = await supabase.auth.admin.deleteUser(account.id);
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(
+          account.id,
+        );
 
         if (deleteError) {
-          logger.warn('Failed to delete account', {
+          logger.warn("Failed to delete account", {
             userId: account.id,
             email: account.email,
             error: deleteError.message,
           });
           failedCount++;
         } else {
-          logger.info('Hard-deleted account', {
+          logger.info("Hard-deleted account", {
             userId: account.id,
             email: account.email,
           });
@@ -81,16 +93,16 @@ export async function hardDeleteExpiredAccounts(): Promise<void> {
         }
       } catch (error) {
         logger.error(
-          'Error deleting account',
+          "Error deleting account",
           error instanceof Error ? error : new Error(String(error)),
           { userId: account.id },
-          traceId
+          traceId,
         );
         failedCount++;
       }
     }
 
-    logger.info('Hard-delete job completed', {
+    logger.info("Hard-delete job completed", {
       totalProcessed: expiredAccounts.length,
       successfulDeletes: deletedCount,
       failedDeletes: failedCount,
@@ -98,30 +110,32 @@ export async function hardDeleteExpiredAccounts(): Promise<void> {
     });
   } catch (error) {
     logger.error(
-      'Unexpected error in hard-delete-accounts',
+      "Unexpected error in hard-delete-accounts",
       error instanceof Error ? error : new Error(String(error)),
       {},
-      traceId
+      traceId,
     );
   }
 }
 
 // For local testing or manual triggering
 export async function handleRequest(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+    });
   }
 
   try {
     await hardDeleteExpiredAccounts();
     return new Response(
-      JSON.stringify({ success: true, message: 'Hard-delete job executed' }),
-      { status: 200 }
+      JSON.stringify({ success: true, message: "Hard-delete job executed" }),
+      { status: 200 },
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'Job failed', details: String(error) }),
-      { status: 500 }
+      JSON.stringify({ error: "Job failed", details: String(error) }),
+      { status: 500 },
     );
   }
 }

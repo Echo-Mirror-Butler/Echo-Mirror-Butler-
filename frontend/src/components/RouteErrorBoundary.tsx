@@ -1,16 +1,16 @@
-import { Component, ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Component, ReactNode } from "react";
+import { Link } from "react-router-dom";
 
 interface Props {
-  children: ReactNode
-  routeName?: string
+  children: ReactNode;
+  routeName?: string;
 }
 
 interface State {
-  hasError: boolean
-  error: Error | null
-  errorInfo: React.ErrorInfo | null
-  referenceCode: string
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: React.ErrorInfo | null;
+  referenceCode: string;
 }
 
 export class RouteErrorBoundary extends Component<Props, State> {
@@ -18,42 +18,48 @@ export class RouteErrorBoundary extends Component<Props, State> {
     hasError: false,
     error: null,
     errorInfo: null,
-    referenceCode: '',
-  }
+    referenceCode: "",
+  };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
-    const referenceCode = crypto.randomUUID().slice(0, 8).toUpperCase()
+    const referenceCode = crypto.randomUUID().slice(0, 8).toUpperCase();
     return {
       hasError: true,
       error,
       referenceCode,
-    }
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    const { routeName } = this.props
-    const { referenceCode } = this.state
+    const { routeName } = this.props;
+    const { referenceCode } = this.state;
 
-    console.error('Route error boundary caught an error:', {
-      routeName: routeName || 'Unknown route',
+    console.error("Route error boundary caught an error:", {
+      routeName: routeName || "Unknown route",
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
       referenceCode,
       timestamp: new Date().toISOString(),
-    })
+    });
 
-    this.setState({ errorInfo })
+    this.setState({ errorInfo });
 
-    this.logErrorToService(error, errorInfo, referenceCode)
+    this.logErrorToService(error, errorInfo, referenceCode);
   }
 
-  async logErrorToService(error: Error, errorInfo: React.ErrorInfo, referenceCode: string) {
+  async logErrorToService(
+    error: Error,
+    errorInfo: React.ErrorInfo,
+    referenceCode: string,
+  ) {
     try {
-      const { supabase } = await import('@/lib/supabase')
-      const { data: { user } } = await supabase.auth.getUser()
+      const { supabase } = await import("@/lib/supabase");
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      await supabase.from('error_logs').insert({
+      await supabase.from("error_logs").insert({
         reference_code: referenceCode,
         error_message: error.message,
         error_stack: error.stack,
@@ -61,20 +67,20 @@ export class RouteErrorBoundary extends Component<Props, State> {
         route_path: window.location.pathname,
         user_id: user?.id || null,
         timestamp: new Date().toISOString(),
-      })
+      });
     } catch (logError) {
-      console.error('Failed to log error to service:', logError)
+      console.error("Failed to log error to service:", logError);
     }
   }
 
   handleReload = () => {
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   render() {
     if (this.state.hasError) {
-      const { routeName } = this.props
-      const { referenceCode, error } = this.state
+      const { routeName } = this.props;
+      const { referenceCode, error } = this.state;
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -96,12 +102,12 @@ export class RouteErrorBoundary extends Component<Props, State> {
             </div>
 
             <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
-              {routeName ? `${routeName} page` : 'This page'} ran into a problem
+              {routeName ? `${routeName} page` : "This page"} ran into a problem
             </h2>
 
             <p className="text-gray-600 text-center mb-4">
-              Something unexpected happened. You can try reloading the page or return to the
-              dashboard.
+              Something unexpected happened. You can try reloading the page or
+              return to the dashboard.
             </p>
 
             <div className="bg-gray-100 rounded-lg p-3 mb-4">
@@ -143,9 +149,9 @@ export class RouteErrorBoundary extends Component<Props, State> {
             </div>
           </div>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }

@@ -1,11 +1,11 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 class SupabaseService {
   private client: SupabaseClient;
 
   constructor() {
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Missing Supabase environment variables');
+      throw new Error("Missing Supabase environment variables");
     }
 
     this.client = createClient(
@@ -14,9 +14,9 @@ class SupabaseService {
       {
         auth: {
           autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+          persistSession: false,
+        },
+      },
     );
   }
 
@@ -28,9 +28,9 @@ class SupabaseService {
   // User profile operations
   async getUserProfile(userId: string) {
     const { data, error } = await this.client
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
       .single();
 
     if (error) throw error;
@@ -39,9 +39,9 @@ class SupabaseService {
 
   async updateUserProfile(userId: string, updates: any) {
     const { data, error } = await this.client
-      .from('profiles')
+      .from("profiles")
       .update(updates)
-      .eq('id', userId)
+      .eq("id", userId)
       .select()
       .single();
 
@@ -52,7 +52,7 @@ class SupabaseService {
   // Stellar transaction operations
   async createStellarTransaction(transaction: any) {
     const { data, error } = await this.client
-      .from('stellar_transactions')
+      .from("stellar_transactions")
       .insert(transaction)
       .select()
       .single();
@@ -63,10 +63,10 @@ class SupabaseService {
 
   async getStellarTransactions(userId: string, limit = 50) {
     const { data, error } = await this.client
-      .from('stellar_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .from("stellar_transactions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) throw error;
@@ -76,7 +76,7 @@ class SupabaseService {
   // Webhook logging
   async logWebhook(webhookData: any) {
     const { data, error } = await this.client
-      .from('webhook_logs')
+      .from("webhook_logs")
       .insert(webhookData)
       .select()
       .single();
@@ -89,20 +89,20 @@ class SupabaseService {
   async healthCheck() {
     try {
       const { error } = await this.client
-        .from('profiles')
-        .select('count')
+        .from("profiles")
+        .select("count")
         .limit(1);
 
       return {
-        status: error ? 'error' : 'healthy',
+        status: error ? "error" : "healthy",
         error: error?.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     } catch (err) {
       return {
-        status: 'error',
-        error: err instanceof Error ? err.message : 'Unknown error',
-        timestamp: new Date().toISOString()
+        status: "error",
+        error: err instanceof Error ? err.message : "Unknown error",
+        timestamp: new Date().toISOString(),
       };
     }
   }

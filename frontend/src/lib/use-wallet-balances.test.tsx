@@ -1,26 +1,26 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useWalletBalances } from './use-wallet-balances'
-import { stellarConfig } from './stellar-config'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useWalletBalances } from "./use-wallet-balances";
+import { stellarConfig } from "./stellar-config";
 
-const PUBLIC_KEY = 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD'
+const PUBLIC_KEY = "GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCD";
 
 function renderWithClient() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
-  })
+  });
   return renderHook(() => useWalletBalances(PUBLIC_KEY), {
     wrapper: ({ children }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
-  })
+  });
 }
 
-describe('useWalletBalances', () => {
+describe("useWalletBalances", () => {
   beforeEach(() => {
     vi.stubGlobal(
-      'fetch',
+      "fetch",
       vi.fn(() =>
         Promise.resolve({
           ok: true,
@@ -28,40 +28,53 @@ describe('useWalletBalances', () => {
           json: () => Promise.resolve({ balances: [] }),
         }),
       ),
-    )
-  })
+    );
+  });
 
   afterEach(() => {
-    vi.unstubAllGlobals()
-  })
+    vi.unstubAllGlobals();
+  });
 
-  it('requests balances from the configured Horizon URL, not a hardcoded host', async () => {
-    const { result } = renderWithClient()
+  it("requests balances from the configured Horizon URL, not a hardcoded host", async () => {
+    const { result } = renderWithClient();
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(fetch).toHaveBeenCalledWith(`${stellarConfig.horizonUrl}/accounts/${PUBLIC_KEY}`)
-  })
+    expect(fetch).toHaveBeenCalledWith(
+      `${stellarConfig.horizonUrl}/accounts/${PUBLIC_KEY}`,
+    );
+  });
 
-  it('respects VITE_STELLAR_HORIZON_URL overrides', async () => {
-    vi.stubEnv('VITE_STELLAR_HORIZON_URL', 'https://custom-horizon.example.com')
-    vi.resetModules()
+  it("respects VITE_STELLAR_HORIZON_URL overrides", async () => {
+    vi.stubEnv(
+      "VITE_STELLAR_HORIZON_URL",
+      "https://custom-horizon.example.com",
+    );
+    vi.resetModules();
 
-    const { useWalletBalances: useWalletBalancesWithOverride } = await import('./use-wallet-balances')
+    const { useWalletBalances: useWalletBalancesWithOverride } =
+      await import("./use-wallet-balances");
 
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const { result } = renderHook(() => useWalletBalancesWithOverride(PUBLIC_KEY), {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-      ),
-    })
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { result } = renderHook(
+      () => useWalletBalancesWithOverride(PUBLIC_KEY),
+      {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        ),
+      },
+    );
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(fetch).toHaveBeenCalledWith(
       `https://custom-horizon.example.com/accounts/${PUBLIC_KEY}`,
-    )
+    );
 
-    vi.unstubAllEnvs()
-  })
-})
+    vi.unstubAllEnvs();
+  });
+});

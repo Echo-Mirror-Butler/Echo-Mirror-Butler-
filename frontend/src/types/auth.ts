@@ -1,26 +1,26 @@
 export interface User {
-  id: string
-  email: string
+  id: string;
+  email: string;
 }
 
 export interface AuthState {
-  user: User | null
-  isLoading: boolean
+  user: User | null;
+  isLoading: boolean;
 }
 
 export interface SignInCredentials {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 export interface SignUpCredentials extends SignInCredentials {
-  name?: string
+  name?: string;
 }
 
 export interface ResetPasswordCredentials {
-  email: string
+  email: string;
 }
 
 export interface UpdatePasswordCredentials {
-  password: string
+  password: string;
 }

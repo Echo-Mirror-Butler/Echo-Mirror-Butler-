@@ -12,13 +12,13 @@ This repo also has no project ref, staging project, or production project name c
 
 **Action for the project owner:** fill in the table below from the Dashboard for whichever hosted project(s) exist (fields depend on plan tier — Free tier has no automated backups; Pro and above include daily backups with point-in-time recovery available on higher tiers).
 
-| Field | Value |
-|---|---|
-| Project ref | _fill in_ |
-| Plan tier | _fill in_ |
-| Backup frequency | _fill in (Dashboard → Database → Backups)_ |
-| Retention window | _fill in_ |
-| Point-in-time recovery (PITR) enabled | _fill in_ |
+| Field                                 | Value                                      |
+| ------------------------------------- | ------------------------------------------ |
+| Project ref                           | _fill in_                                  |
+| Plan tier                             | _fill in_                                  |
+| Backup frequency                      | _fill in (Dashboard → Database → Backups)_ |
+| Retention window                      | _fill in_                                  |
+| Point-in-time recovery (PITR) enabled | _fill in_                                  |
 
 ### Other operational state a restore must account for
 
@@ -59,9 +59,9 @@ Run this against a **disposable staging project**, never against production.
 
 **Status:** this runbook has not yet been executed against a live project — no hosted project ref/credentials were available to run it end-to-end while writing this doc. The next maintainer with Dashboard access to the production project should run the drill above and record the result in the table below.
 
-| Date | Run by | Source project | Result | Notes |
-|---|---|---|---|---|
-| _pending_ | _pending_ | _pending_ | _pending_ | First drill not yet run — see Status above |
+| Date      | Run by    | Source project | Result    | Notes                                      |
+| --------- | --------- | -------------- | --------- | ------------------------------------------ |
+| _pending_ | _pending_ | _pending_      | _pending_ | First drill not yet run — see Status above |
 
 ## Real Recovery Runbook
 

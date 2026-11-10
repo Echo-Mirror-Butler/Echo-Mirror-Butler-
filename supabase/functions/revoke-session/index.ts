@@ -24,7 +24,7 @@ serve(async (req) => {
         global: {
           headers: { Authorization: req.headers.get("Authorization")! },
         },
-      }
+      },
     );
 
     const {
@@ -33,25 +33,19 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { ...cors_headers, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...cors_headers, "Content-Type": "application/json" },
+      });
     }
 
     const { session_id } = (await req.json()) as RevokeSessionRequest;
 
     if (!session_id) {
-      return new Response(
-        JSON.stringify({ error: "session_id is required" }),
-        {
-          status: 400,
-          headers: { ...cors_headers, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "session_id is required" }), {
+        status: 400,
+        headers: { ...cors_headers, "Content-Type": "application/json" },
+      });
     }
 
     const { data: session, error: fetchError } = await supabaseClient
@@ -67,7 +61,7 @@ serve(async (req) => {
         {
           status: 404,
           headers: { ...cors_headers, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -79,7 +73,7 @@ serve(async (req) => {
         {
           status: 400,
           headers: { ...cors_headers, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -91,11 +85,11 @@ serve(async (req) => {
           autoRefreshToken: false,
           persistSession: false,
         },
-      }
+      },
     );
 
     const { error: revokeError } = await supabaseAdmin.auth.admin.signOut(
-      session.refresh_token_id
+      session.refresh_token_id,
     );
 
     if (revokeError) {
@@ -108,7 +102,7 @@ serve(async (req) => {
         {
           status: 500,
           headers: { ...cors_headers, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -119,20 +113,26 @@ serve(async (req) => {
       .eq("user_id", user.id);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Session revoked successfully" }),
+      JSON.stringify({
+        success: true,
+        message: "Session revoked successfully",
+      }),
       {
         status: 200,
         headers: { ...cors_headers, "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("[revoke-session] Error:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({
+        error: "Internal server error",
+        details: error.message,
+      }),
       {
         status: 500,
         headers: { ...cors_headers, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });

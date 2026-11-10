@@ -14,69 +14,94 @@
  * Response: { userId, exportedAt, data: { profiles, logs, comments, transactions, social } }
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { createLogger, extractTraceId, addTraceIdToResponse } from '../_shared/logger.ts';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  createLogger,
+  extractTraceId,
+  addTraceIdToResponse,
+} from "../_shared/logger.ts";
 
-const logger = createLogger('export-user-data');
+const logger = createLogger("export-user-data");
 
-export async function exportUserDataFunction(req: Request, injectedClient?: any): Promise<Response> {
+export async function exportUserDataFunction(
+  req: Request,
+  injectedClient?: any,
+): Promise<Response> {
   const incomingTraceId = extractTraceId(Object.fromEntries(req.headers));
   let traceId = incomingTraceId;
 
   // Handle OPTIONS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "authorization, x-client-info, apikey, content-type",
       },
     });
   }
 
   try {
     // Verify request method
-    if (req.method !== 'GET') {
-      const errorTraceId = logger.warn('Invalid request method', { method: req.method }, traceId);
+    if (req.method !== "GET") {
+      const errorTraceId = logger.warn(
+        "Invalid request method",
+        { method: req.method },
+        traceId,
+      );
       traceId = errorTraceId;
       return new Response(
-        JSON.stringify({ error: 'Method not allowed', traceId }),
+        JSON.stringify({ error: "Method not allowed", traceId }),
         {
           status: 405,
-          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
-        }
+          headers: addTraceIdToResponse(
+            { "Content-Type": "application/json" },
+            traceId,
+          ),
+        },
       );
     }
 
     // Extract user ID from Authorization header (JWT)
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      const errorTraceId = logger.warn('Missing authorization header', {}, traceId);
-      traceId = errorTraceId;
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', traceId }),
-        {
-          status: 401,
-          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
-        }
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      const errorTraceId = logger.warn(
+        "Missing authorization header",
+        {},
+        traceId,
       );
+      traceId = errorTraceId;
+      return new Response(JSON.stringify({ error: "Unauthorized", traceId }), {
+        status: 401,
+        headers: addTraceIdToResponse(
+          { "Content-Type": "application/json" },
+          traceId,
+        ),
+      });
     }
 
     let supabase = injectedClient;
     if (!supabase) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL');
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
       if (!supabaseUrl || !supabaseKey) {
         const errorTraceId = logger.error(
-          'Missing Supabase credentials',
-          'Configuration error',
+          "Missing Supabase credentials",
+          "Configuration error",
           {},
-          traceId
+          traceId,
         );
         traceId = errorTraceId;
         return new Response(
-          JSON.stringify({ error: 'Server configuration error', traceId }),
-          { status: 500, headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId) }
+          JSON.stringify({ error: "Server configuration error", traceId }),
+          {
+            status: 500,
+            headers: addTraceIdToResponse(
+              { "Content-Type": "application/json" },
+              traceId,
+            ),
+          },
         );
       }
 
@@ -85,56 +110,87 @@ export async function exportUserDataFunction(req: Request, injectedClient?: any)
 
     // Get authenticated user from JWT
     const token = authHeader.slice(7);
-    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+    const { data: userData, error: authError } =
+      await supabase.auth.getUser(token);
 
     if (authError || !userData.user) {
-      const errorTraceId = logger.warn('Invalid authorization token', {}, traceId);
-      traceId = errorTraceId;
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized', traceId }),
-        {
-          status: 401,
-          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
-        }
+      const errorTraceId = logger.warn(
+        "Invalid authorization token",
+        {},
+        traceId,
       );
+      traceId = errorTraceId;
+      return new Response(JSON.stringify({ error: "Unauthorized", traceId }), {
+        status: 401,
+        headers: addTraceIdToResponse(
+          { "Content-Type": "application/json" },
+          traceId,
+        ),
+      });
     }
 
     const userId = userData.user.id;
-    traceId = logger.info('Exporting user data', { userId }, traceId);
+    traceId = logger.info("Exporting user data", { userId }, traceId);
 
     // Fetch all user data in parallel
-    const [profilesRes, logsRes, commentsRes, transactionsRes, followersRes, followingRes] =
-      await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId),
-        supabase.from('log_entries').select('*').eq('user_id', userId).order('created_at', {
+    const [
+      profilesRes,
+      logsRes,
+      commentsRes,
+      transactionsRes,
+      followersRes,
+      followingRes,
+    ] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId),
+      supabase
+        .from("log_entries")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", {
           ascending: false,
         }),
-        supabase.from('comments').select('*').eq('user_id', userId).order('created_at', {
+      supabase
+        .from("comments")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", {
           ascending: false,
         }),
-        supabase
-          .from('transactions')
-          .select('*')
-          .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-          .order('created_at', { ascending: false }),
-        supabase.from('follows').select('follower_id').eq('followee_id', userId),
-        supabase.from('follows').select('followee_id').eq('follower_id', userId),
-      ]);
+      supabase
+        .from("transactions")
+        .select("*")
+        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+        .order("created_at", { ascending: false }),
+      supabase.from("follows").select("follower_id").eq("followee_id", userId),
+      supabase.from("follows").select("followee_id").eq("follower_id", userId),
+    ]);
 
     // Check for errors
-    const errors = [profilesRes.error, logsRes.error, commentsRes.error, transactionsRes.error];
+    const errors = [
+      profilesRes.error,
+      logsRes.error,
+      commentsRes.error,
+      transactionsRes.error,
+    ];
     if (errors.some((e) => e)) {
-      const errorTraceId = logger.error('Failed to export user data', 'Database query failed', {
-        userId,
-        errors: errors.filter((e) => e).map((e) => e?.message),
-      });
+      const errorTraceId = logger.error(
+        "Failed to export user data",
+        "Database query failed",
+        {
+          userId,
+          errors: errors.filter((e) => e).map((e) => e?.message),
+        },
+      );
       traceId = errorTraceId;
       return new Response(
-        JSON.stringify({ error: 'Failed to export data', traceId }),
+        JSON.stringify({ error: "Failed to export data", traceId }),
         {
           status: 500,
-          headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
-        }
+          headers: addTraceIdToResponse(
+            { "Content-Type": "application/json" },
+            traceId,
+          ),
+        },
       );
     }
 
@@ -161,7 +217,7 @@ export async function exportUserDataFunction(req: Request, injectedClient?: any)
       },
     };
 
-    traceId = logger.info('User data exported successfully', {
+    traceId = logger.info("User data exported successfully", {
       userId,
       dataSize: JSON.stringify(exportData).length,
       summary: exportData.summary,
@@ -174,27 +230,30 @@ export async function exportUserDataFunction(req: Request, injectedClient?: any)
       status: 200,
       headers: addTraceIdToResponse(
         {
-          'Content-Type': 'application/json',
-          'Content-Disposition': `attachment; filename="${filename}"`,
+          "Content-Type": "application/json",
+          "Content-Disposition": `attachment; filename="${filename}"`,
         },
-        traceId
+        traceId,
       ),
     });
   } catch (error) {
     const errorTraceId = logger.error(
-      'Unexpected error in export-user-data',
+      "Unexpected error in export-user-data",
       error instanceof Error ? error : new Error(String(error)),
       {},
-      traceId
+      traceId,
     );
     traceId = errorTraceId;
 
     return new Response(
-      JSON.stringify({ error: 'Internal server error', traceId }),
+      JSON.stringify({ error: "Internal server error", traceId }),
       {
         status: 500,
-        headers: addTraceIdToResponse({ 'Content-Type': 'application/json' }, traceId),
-      }
+        headers: addTraceIdToResponse(
+          { "Content-Type": "application/json" },
+          traceId,
+        ),
+      },
     );
   }
 }

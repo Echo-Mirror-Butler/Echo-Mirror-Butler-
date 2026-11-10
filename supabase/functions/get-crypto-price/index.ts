@@ -19,18 +19,19 @@ export async function getCryptoPriceFunction(
 ): Promise<Response> {
   const customFetch = injectedFetch || fetch;
 
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers":
+          "authorization, x-client-info, apikey, content-type",
       },
     });
   }
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      headers: { 'Content-Type': 'application/json' },
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      headers: { "Content-Type": "application/json" },
       status: 405,
     });
   }
@@ -44,10 +45,12 @@ export async function getCryptoPriceFunction(
     }
     const { coin = "stellar" } = body;
 
-    const supabaseClient = injectedClient || createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
+    const supabaseClient =
+      injectedClient ||
+      createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      );
 
     // Try to get cached price first
     const { data: cachedData, error: cacheError } = await supabaseClient

@@ -1,11 +1,11 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
-import * as StellarSdk from 'npm:@stellar/stellar-sdk';
+import { createClient } from "npm:@supabase/supabase-js@2";
+import * as StellarSdk from "npm:@stellar/stellar-sdk";
 import {
   extractIdempotencyKey,
   checkIdempotency,
   storeIdempotencyResult,
   buildReplayedResponse,
-} from '../_shared/idempotency.ts';
+} from "../_shared/idempotency.ts";
 
 type SendEchoPayload = {
   recipient_id?: string;
@@ -18,7 +18,7 @@ type SendEchoPayload = {
 };
 
 const jsonHeaders = {
-  'Content-Type': 'application/json',
+  "Content-Type": "application/json",
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -28,7 +28,7 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function getEnv(name: string, fallback = '') {
+function getEnv(name: string, fallback = "") {
   return Deno.env.get(name) ?? fallback;
 }
 
@@ -42,7 +42,7 @@ function decodeBase64(value: string) {
 }
 
 function encodeBase64(bytes: Uint8Array) {
-  let binary = '';
+  let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }
@@ -50,20 +50,20 @@ function encodeBase64(bytes: Uint8Array) {
 }
 
 function resolveStellarSettings() {
-  const network = getEnv('STELLAR_NETWORK', 'testnet').toLowerCase();
-  const isMainnet = network === 'mainnet';
+  const network = getEnv("STELLAR_NETWORK", "testnet").toLowerCase();
+  const isMainnet = network === "mainnet";
 
   return {
     network,
     horizonUrl: isMainnet
-      ? 'https://horizon.stellar.org'
-      : 'https://horizon-testnet.stellar.org',
+      ? "https://horizon.stellar.org"
+      : "https://horizon-testnet.stellar.org",
     networkPassphrase: isMainnet
       ? StellarSdk.Networks.PUBLIC
       : StellarSdk.Networks.TESTNET,
-    issuerPublicKey: getEnv('STELLAR_ISSUER_PUBLIC_KEY'),
-    assetCode: getEnv('STELLAR_ASSET_CODE', 'ECHO'),
-    walletEncryptionKey: getEnv('WALLET_ENCRYPTION_KEY'),
+    issuerPublicKey: getEnv("STELLAR_ISSUER_PUBLIC_KEY"),
+    assetCode: getEnv("STELLAR_ASSET_CODE", "ECHO"),
+    walletEncryptionKey: getEnv("WALLET_ENCRYPTION_KEY"),
   };
 }
 
@@ -77,10 +77,10 @@ async function importDecryptionKey(rawKey: string) {
   }
 
   if (decoded.length !== 32) {
-    throw new Error('WALLET_ENCRYPTION_KEY must be a 32-byte value');
+    throw new Error("WALLET_ENCRYPTION_KEY must be a 32-byte value");
   }
 
-  return crypto.subtle.importKey('raw', decoded, 'AES-GCM', false, ['decrypt']);
+  return crypto.subtle.importKey("raw", decoded, "AES-GCM", false, ["decrypt"]);
 }
 
 async function decryptSecret(encryptedPayload: string, rawKey: string) {
@@ -90,7 +90,7 @@ async function decryptSecret(encryptedPayload: string, rawKey: string) {
     ciphertext: string;
   };
 
-  if (algorithm !== 'AES-GCM') {
+  if (algorithm !== "AES-GCM") {
     throw new Error(`Unsupported encryption algorithm: ${algorithm}`);
   }
 
@@ -100,7 +100,7 @@ async function decryptSecret(encryptedPayload: string, rawKey: string) {
 
   const plainBytes = new Uint8Array(
     await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: ivBytes },
+      { name: "AES-GCM", iv: ivBytes },
       key,
       cipherBytes,
     ),
@@ -113,50 +113,67 @@ export async function sendEchoFunction(
   req: Request,
   injectedClients?: { supabaseClient?: any; supabaseAdmin?: any },
 ): Promise<Response> {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return jsonResponse({ ok: true });
   }
 
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' }, 405);
+  if (req.method !== "POST") {
+    return jsonResponse(
+      { error: "Method not allowed", code: "METHOD_NOT_ALLOWED" },
+      405,
+    );
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return jsonResponse({ error: 'Missing or invalid Authorization header', code: 'UNAUTHORIZED' }, 401);
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return jsonResponse(
+        {
+          error: "Missing or invalid Authorization header",
+          code: "UNAUTHORIZED",
+        },
+        401,
+      );
     }
 
-    const supabaseUrl = getEnv('SUPABASE_URL');
-    const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
-    const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = getEnv("SUPABASE_URL");
+    const supabaseAnonKey = getEnv("SUPABASE_ANON_KEY");
+    const serviceRoleKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
     let supabaseClient = injectedClients?.supabaseClient;
     let supabaseAdmin = injectedClients?.supabaseAdmin;
 
     if (!supabaseClient || !supabaseAdmin) {
       if (!supabaseUrl || !serviceRoleKey) {
-        return jsonResponse({
-          error: 'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required',
-          code: 'SERVER_CONFIG_ERROR',
-        }, 500);
+        return jsonResponse(
+          {
+            error: "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required",
+            code: "SERVER_CONFIG_ERROR",
+          },
+          500,
+        );
       }
 
-      supabaseClient = supabaseClient || createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
+      supabaseClient =
+        supabaseClient ||
+        createClient(supabaseUrl, supabaseAnonKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
 
-      supabaseAdmin = supabaseAdmin || createClient(supabaseUrl, serviceRoleKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
+      supabaseAdmin =
+        supabaseAdmin ||
+        createClient(supabaseUrl, serviceRoleKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
     }
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
-      authHeader.replace('Bearer ', ''),
-    );
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);
+      return jsonResponse({ error: "Unauthorized", code: "UNAUTHORIZED" }, 401);
     }
 
     // ── Idempotency: extract key (header takes precedence over body field) ──
@@ -170,18 +187,22 @@ export async function sendEchoFunction(
     try {
       payload = (await req.json()) as SendEchoPayload;
     } catch {
-      return jsonResponse({ error: 'Invalid JSON body', code: 'INVALID_BODY' }, 400);
+      return jsonResponse(
+        { error: "Invalid JSON body", code: "INVALID_BODY" },
+        400,
+      );
     }
 
     // Allow body-supplied key as fallback (header wins if both are present)
-    const resolvedIdempotencyKey = idempotencyKey ?? payload.idempotency_key?.trim() ?? null;
+    const resolvedIdempotencyKey =
+      idempotencyKey ?? payload.idempotency_key?.trim() ?? null;
 
     // ── Idempotency cache check ──
     if (resolvedIdempotencyKey) {
       const cached = await checkIdempotency(
         supabaseAdmin,
         user.id,
-        'send-echo',
+        "send-echo",
         resolvedIdempotencyKey,
       );
 
@@ -197,101 +218,168 @@ export async function sendEchoFunction(
     const recipientUserId = recipient_id ?? recipient_user_id;
 
     // ── Self-send prevention ──
-    if (!recipientUserId || typeof recipientUserId !== 'string') {
-      return jsonResponse({ error: 'recipient_id is required', code: 'MISSING_FIELD' }, 400);
+    if (!recipientUserId || typeof recipientUserId !== "string") {
+      return jsonResponse(
+        { error: "recipient_id is required", code: "MISSING_FIELD" },
+        400,
+      );
     }
 
     if (recipientUserId === user.id) {
-      return jsonResponse({ error: 'Cannot send ECHO to yourself', code: 'SELF_SEND' }, 400);
+      return jsonResponse(
+        { error: "Cannot send ECHO to yourself", code: "SELF_SEND" },
+        400,
+      );
     }
 
     // ── Amount validation ──
-    if (amount === undefined || amount === null || typeof amount !== 'number' || isNaN(amount)) {
-      return jsonResponse({ error: 'amount must be a valid number', code: 'INVALID_AMOUNT' }, 400);
+    if (
+      amount === undefined ||
+      amount === null ||
+      typeof amount !== "number" ||
+      isNaN(amount)
+    ) {
+      return jsonResponse(
+        { error: "amount must be a valid number", code: "INVALID_AMOUNT" },
+        400,
+      );
     }
 
     if (amount <= 0) {
-      return jsonResponse({ error: 'amount must be a positive number', code: 'INVALID_AMOUNT' }, 400);
+      return jsonResponse(
+        { error: "amount must be a positive number", code: "INVALID_AMOUNT" },
+        400,
+      );
     }
 
     if (amount > 100) {
-      return jsonResponse({ error: 'amount must not exceed 100 ECHO', code: 'AMOUNT_EXCEEDS_LIMIT' }, 400);
+      return jsonResponse(
+        {
+          error: "amount must not exceed 100 ECHO",
+          code: "AMOUNT_EXCEEDS_LIMIT",
+        },
+        400,
+      );
     }
 
     // Round to integer (ECHO balances are integer in the database)
     const intAmount = Math.floor(amount);
 
     if (intAmount <= 0) {
-      return jsonResponse({ error: 'amount rounds down to 0', code: 'INVALID_AMOUNT' }, 400);
+      return jsonResponse(
+        { error: "amount rounds down to 0", code: "INVALID_AMOUNT" },
+        400,
+      );
     }
 
     // ── Recipient validation ──
-    const { data: recipientProfile, error: recipientError } = await supabaseAdmin
-      .from('user_wallets')
-      .select('public_key, user_id')
-      .eq('user_id', recipientUserId)
-      .maybeSingle();
+    const { data: recipientProfile, error: recipientError } =
+      await supabaseAdmin
+        .from("user_wallets")
+        .select("public_key, user_id")
+        .eq("user_id", recipientUserId)
+        .maybeSingle();
 
     if (recipientError) {
-      console.error('[send-echo] Recipient lookup error:', recipientError.message);
-      return jsonResponse({ error: 'Failed to verify recipient', code: 'INTERNAL_ERROR' }, 500);
+      console.error(
+        "[send-echo] Recipient lookup error:",
+        recipientError.message,
+      );
+      return jsonResponse(
+        { error: "Failed to verify recipient", code: "INTERNAL_ERROR" },
+        500,
+      );
     }
 
     if (!recipientProfile) {
-      return jsonResponse({
-        error: 'Recipient not found — they need to create a wallet first',
-        code: 'RECIPIENT_NOT_FOUND',
-      }, 404);
+      return jsonResponse(
+        {
+          error: "Recipient not found — they need to create a wallet first",
+          code: "RECIPIENT_NOT_FOUND",
+        },
+        404,
+      );
     }
 
     // ── Rate limiting ──
     const { data: rateAllowed, error: rateError } = await supabaseAdmin.rpc(
-      'check_rate_limit',
+      "check_rate_limit",
       {
         p_user_id: user.id,
-        p_action: 'send_echo',
+        p_action: "send_echo",
         p_max_count: 10,
         p_window_hours: 1.0,
       },
     );
 
     if (rateError) {
-      console.error('[send-echo] Rate limit check error:', rateError.message);
+      console.error("[send-echo] Rate limit check error:", rateError.message);
       // Don't block the transfer if rate limiting fails — log and proceed
     } else if (rateAllowed === false) {
-      return jsonResponse({
-        error: 'Rate limit exceeded. Maximum 10 ECHO transfers per hour allowed.',
-        code: 'RATE_LIMITED',
-      }, 429);
+      return jsonResponse(
+        {
+          error:
+            "Rate limit exceeded. Maximum 10 ECHO transfers per hour allowed.",
+          code: "RATE_LIMITED",
+        },
+        429,
+      );
     }
 
     // ── Get sender wallet for Stellar transaction ──
     const { data: senderWallet, error: senderWalletError } = await supabaseAdmin
-      .from('user_wallets')
-      .select('encrypted_secret, public_key, balance')
-      .eq('user_id', user.id)
+      .from("user_wallets")
+      .select("encrypted_secret, public_key, balance")
+      .eq("user_id", user.id)
       .maybeSingle();
 
     if (senderWalletError) {
-      console.error('[send-echo] Sender wallet lookup error:', senderWalletError.message);
-      return jsonResponse({ error: 'Failed to fetch sender wallet', code: 'INTERNAL_ERROR' }, 500);
+      console.error(
+        "[send-echo] Sender wallet lookup error:",
+        senderWalletError.message,
+      );
+      return jsonResponse(
+        { error: "Failed to fetch sender wallet", code: "INTERNAL_ERROR" },
+        500,
+      );
     }
 
     if (!senderWallet?.encrypted_secret) {
-      return jsonResponse({ error: 'Sender wallet not found or not configured', code: 'SENDER_WALLET_NOT_FOUND' }, 400);
+      return jsonResponse(
+        {
+          error: "Sender wallet not found or not configured",
+          code: "SENDER_WALLET_NOT_FOUND",
+        },
+        400,
+      );
     }
 
     // ── Balance check before Stellar (double-check, RPC also checks) ──
     if (senderWallet.balance < intAmount) {
-      return jsonResponse({ error: 'Insufficient balance', code: 'INSUFFICIENT_BALANCE' }, 400);
+      return jsonResponse(
+        { error: "Insufficient balance", code: "INSUFFICIENT_BALANCE" },
+        400,
+      );
     }
 
     const settings = resolveStellarSettings();
     if (!settings.issuerPublicKey) {
-      return jsonResponse({ error: 'STELLAR_ISSUER_PUBLIC_KEY is not configured', code: 'SERVER_CONFIG_ERROR' }, 500);
+      return jsonResponse(
+        {
+          error: "STELLAR_ISSUER_PUBLIC_KEY is not configured",
+          code: "SERVER_CONFIG_ERROR",
+        },
+        500,
+      );
     }
     if (!settings.walletEncryptionKey) {
-      return jsonResponse({ error: 'WALLET_ENCRYPTION_KEY is not configured', code: 'SERVER_CONFIG_ERROR' }, 500);
+      return jsonResponse(
+        {
+          error: "WALLET_ENCRYPTION_KEY is not configured",
+          code: "SERVER_CONFIG_ERROR",
+        },
+        500,
+      );
     }
 
     // ── Submit Stellar transaction ──
@@ -312,21 +400,19 @@ export async function sendEchoFunction(
     const amountStr = intAmount.toFixed(7);
 
     const txBuilder = new StellarSdk.TransactionBuilder(account, {
-      fee: '100',
+      fee: "100",
       networkPassphrase: settings.networkPassphrase,
-    })
-      .addOperation(
-        StellarSdk.Operation.payment({
-          destination: recipientProfile.public_key as string,
-          asset: echoAsset,
-          amount: amountStr,
-        }),
-      );
+    }).addOperation(
+      StellarSdk.Operation.payment({
+        destination: recipientProfile.public_key as string,
+        asset: echoAsset,
+        amount: amountStr,
+      }),
+    );
 
     if (message && message.length > 0) {
-      const truncatedMemo = message.length > 28
-        ? message.substring(0, 28)
-        : message;
+      const truncatedMemo =
+        message.length > 28 ? message.substring(0, 28) : message;
       txBuilder.addMemo(StellarSdk.Memo.text(truncatedMemo));
     }
 
@@ -336,14 +422,20 @@ export async function sendEchoFunction(
     const submitResult = await server.submitTransaction(transaction);
 
     if (!submitResult.hash) {
-      return jsonResponse({ error: 'Stellar transaction submission returned no hash', code: 'STELLAR_ERROR' }, 500);
+      return jsonResponse(
+        {
+          error: "Stellar transaction submission returned no hash",
+          code: "STELLAR_ERROR",
+        },
+        500,
+      );
     }
 
     const txHash = submitResult.hash;
 
     // ── Atomic balance update + audit log via RPC ──
     const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
-      'complete_echo_transfer',
+      "complete_echo_transfer",
       {
         p_sender_id: user.id,
         p_recipient_id: recipientUserId,
@@ -354,30 +446,43 @@ export async function sendEchoFunction(
     );
 
     if (rpcError) {
-      console.error('[send-echo] Atomic transfer RPC failed:', rpcError.message);
+      console.error(
+        "[send-echo] Atomic transfer RPC failed:",
+        rpcError.message,
+      );
       // Stellar tx went through but DB state is inconsistent
-      return jsonResponse({
-        error: 'Stellar transaction submitted but failed to record in database. Please contact support.',
-        code: 'DB_RECORDING_FAILED',
-        stellar_tx_hash: txHash,
-      }, 500);
+      return jsonResponse(
+        {
+          error:
+            "Stellar transaction submitted but failed to record in database. Please contact support.",
+          code: "DB_RECORDING_FAILED",
+          stellar_tx_hash: txHash,
+        },
+        500,
+      );
     }
 
     if (!rpcResult?.success) {
-      console.error('[send-echo] Atomic transfer RPC returned error:', rpcResult?.error);
+      console.error(
+        "[send-echo] Atomic transfer RPC returned error:",
+        rpcResult?.error,
+      );
       // Stellar tx went through but our validation failed (e.g. balance changed between checks)
-      return jsonResponse({
-        error: rpcResult?.error || 'Database transfer failed',
-        code: rpcResult?.code || 'DB_TRANSFER_FAILED',
-        stellar_tx_hash: txHash,
-      }, 500);
+      return jsonResponse(
+        {
+          error: rpcResult?.error || "Database transfer failed",
+          code: rpcResult?.code || "DB_TRANSFER_FAILED",
+          stellar_tx_hash: txHash,
+        },
+        500,
+      );
     }
 
     // ── Fetch the created gift transaction for the response ──
     const { data: giftRow, error: fetchError } = await supabaseAdmin
-      .from('gift_transactions')
-      .select('*')
-      .eq('id', rpcResult.gift_id)
+      .from("gift_transactions")
+      .select("*")
+      .eq("id", rpcResult.gift_id)
       .single();
 
     const successBody = {
@@ -385,7 +490,9 @@ export async function sendEchoFunction(
       stellar_tx_hash: txHash,
       transaction: fetchError ? null : giftRow,
       // Echo back the idempotency key so clients can correlate requests
-      ...(resolvedIdempotencyKey ? { idempotency_key: resolvedIdempotencyKey } : {}),
+      ...(resolvedIdempotencyKey
+        ? { idempotency_key: resolvedIdempotencyKey }
+        : {}),
     };
 
     // ── Store idempotency result (only on full success) ──
@@ -396,7 +503,7 @@ export async function sendEchoFunction(
       await storeIdempotencyResult(
         supabaseAdmin,
         user.id,
-        'send-echo',
+        "send-echo",
         resolvedIdempotencyKey,
         201,
         successBody,
@@ -406,11 +513,14 @@ export async function sendEchoFunction(
     return jsonResponse(successBody, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[send-echo] Error:', message);
-    return jsonResponse({
-      error: message,
-      code: 'INTERNAL_ERROR',
-    }, 500);
+    console.error("[send-echo] Error:", message);
+    return jsonResponse(
+      {
+        error: message,
+        code: "INTERNAL_ERROR",
+      },
+      500,
+    );
   }
 }
 

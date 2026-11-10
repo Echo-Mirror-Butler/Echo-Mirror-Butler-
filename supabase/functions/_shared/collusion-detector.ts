@@ -27,7 +27,7 @@ export interface CollusionAuditResult {
   flagged: boolean;
   riskScore: number; // 0 to 100
   reasons: string[];
-  action: 'WITHHOLD_FOR_REVIEW' | 'CLEAR';
+  action: "WITHHOLD_FOR_REVIEW" | "CLEAR";
   evidence: {
     reciprocityRatio: number;
     closedLoopPartners: string[];
@@ -52,7 +52,7 @@ export function evaluateUserCollusion(
   allGifts: GiftTransactionRecord[],
   allProfiles: UserProfileRecord[],
   userMoodLogsCount: number,
-  options: CollusionDetectorOptions = {}
+  options: CollusionDetectorOptions = {},
 ): CollusionAuditResult {
   const {
     reciprocityThreshold = 0.7,
@@ -87,7 +87,10 @@ export function evaluateUserCollusion(
 
     const receivedFrom = new Map<string, number>();
     for (const g of receivedGifts) {
-      receivedFrom.set(g.sender_id, (receivedFrom.get(g.sender_id) ?? 0) + g.amount);
+      receivedFrom.set(
+        g.sender_id,
+        (receivedFrom.get(g.sender_id) ?? 0) + g.amount,
+      );
     }
 
     // Identify partners with two-way gifting
@@ -105,8 +108,8 @@ export function evaluateUserCollusion(
       riskScore += 45;
       reasons.push(
         `High gift-loop reciprocity: ${(reciprocityRatio * 100).toFixed(
-          0
-        )}% of gift volume cycled with partner(s): ${closedLoopPartners.join(', ')}`
+          0,
+        )}% of gift volume cycled with partner(s): ${closedLoopPartners.join(", ")}`,
       );
     }
   }
@@ -138,8 +141,8 @@ export function evaluateUserCollusion(
       riskScore += 35;
       reasons.push(
         `Account creation clustering: created within ${creationClusterWindowMinutes}m of active gifting partner(s) [${creationClusterAccounts.join(
-          ', '
-        )}]`
+          ", ",
+        )}]`,
       );
     }
   }
@@ -152,12 +155,12 @@ export function evaluateUserCollusion(
   ) {
     riskScore += 30;
     reasons.push(
-      `Velocity anomaly: high earnings (${candidate.echo_earned_this_week} ECHO) with negligible core logging activity (${userMoodLogsCount} mood logs)`
+      `Velocity anomaly: high earnings (${candidate.echo_earned_this_week} ECHO) with negligible core logging activity (${userMoodLogsCount} mood logs)`,
     );
   }
 
   const flagged = riskScore >= 50;
-  const action = flagged ? 'WITHHOLD_FOR_REVIEW' : 'CLEAR';
+  const action = flagged ? "WITHHOLD_FOR_REVIEW" : "CLEAR";
 
   return {
     userId,
@@ -182,7 +185,7 @@ export function evaluateUserCollusion(
 export async function auditLeaderboardCollusion(
   supabase: any,
   candidates: LeaderboardCandidate[],
-  options?: CollusionDetectorOptions
+  options?: CollusionDetectorOptions,
 ): Promise<Map<string, CollusionAuditResult>> {
   const results = new Map<string, CollusionAuditResult>();
   if (!candidates || candidates.length === 0) return results;
@@ -191,16 +194,18 @@ export async function auditLeaderboardCollusion(
 
   // Fetch recent gifts for all candidates
   const { data: giftsData } = await supabase
-    .from('gift_transactions')
-    .select('id, sender_id, recipient_id, amount, created_at')
-    .or(`sender_id.in.(${userIds.join(',')}),recipient_id.in.(${userIds.join(',')})`);
+    .from("gift_transactions")
+    .select("id, sender_id, recipient_id, amount, created_at")
+    .or(
+      `sender_id.in.(${userIds.join(",")}),recipient_id.in.(${userIds.join(",")})`,
+    );
 
   const allGifts: GiftTransactionRecord[] = giftsData ?? [];
 
   // Fetch profile creation dates
   const { data: profilesData } = await supabase
-    .from('profiles')
-    .select('id, created_at');
+    .from("profiles")
+    .select("id, created_at");
 
   const allProfiles: UserProfileRecord[] = profilesData ?? [];
 
@@ -208,9 +213,9 @@ export async function auditLeaderboardCollusion(
   const moodLogsCountMap = new Map<string, number>();
   for (const userId of userIds) {
     const { count } = await supabase
-      .from('log_entries')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId);
+      .from("log_entries")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
     moodLogsCountMap.set(userId, count ?? 0);
   }
 
@@ -220,7 +225,7 @@ export async function auditLeaderboardCollusion(
       allGifts,
       allProfiles,
       moodLogsCountMap.get(candidate.user_id) ?? 0,
-      options
+      options,
     );
     results.set(candidate.user_id, auditResult);
   }

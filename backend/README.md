@@ -1,12 +1,14 @@
 # EchoMirror Backend — Stellar Integration
 
 This folder contains:
+
 1. **`server/`** — Node.js + Express REST API for Stellar wallet management and ECHO gifting (issue #103)
 2. **`stellar/`** — Dart Stellar service used by the Flutter client (reference implementation)
 
 ## What is ECHO?
 
 ECHO is a custom Stellar asset on the testnet. Users earn ECHO by participating in the Global Mirror:
+
 - Sharing a mood pin → **+2 ECHO**
 - Posting a video → **+5 ECHO**
 - Receiving a comment on your pin → **+1 ECHO**
@@ -60,31 +62,32 @@ npm run dev            # starts on http://localhost:3000
 ### API Routes
 
 All routes (except `GET /health`) require a valid Supabase JWT:
+
 ```
 Authorization: Bearer <supabase_jwt>
 ```
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `GET` | `/health` | Server health check |
-| `POST` | `/stellar/wallet/create` | Create + fund testnet wallet, store public key |
-| `GET` | `/stellar/wallet/balance` | Get XLM and ECHO balances |
-| `POST` | `/stellar/gift` | Send ECHO to another user |
-| `GET` | `/stellar/transactions` | Paginated gift history |
+| Method | Route                     | Description                                    |
+| ------ | ------------------------- | ---------------------------------------------- |
+| `GET`  | `/health`                 | Server health check                            |
+| `POST` | `/stellar/wallet/create`  | Create + fund testnet wallet, store public key |
+| `GET`  | `/stellar/wallet/balance` | Get XLM and ECHO balances                      |
+| `POST` | `/stellar/gift`           | Send ECHO to another user                      |
+| `GET`  | `/stellar/transactions`   | Paginated gift history                         |
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `PORT` | Server port (default `3000`) |
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS — keep secret) |
-| `JWT_SECRET` | Supabase JWT secret (from project settings) |
-| `STELLAR_ISSUER_PUBLIC` | ECHO token issuer public key |
-| `STELLAR_ISSUER_SECRET` | ECHO token issuer secret key |
-| `STELLAR_HORIZON_URL` | Horizon endpoint (default: testnet) |
-| `STELLAR_NETWORK_PASSPHRASE` | Stellar network passphrase |
-| `STELLAR_ASSET_CODE` | Token code (default: `ECHO`) |
+| Variable                     | Description                                   |
+| ---------------------------- | --------------------------------------------- |
+| `PORT`                       | Server port (default `3000`)                  |
+| `SUPABASE_URL`               | Your Supabase project URL                     |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Service role key (bypasses RLS — keep secret) |
+| `JWT_SECRET`                 | Supabase JWT secret (from project settings)   |
+| `STELLAR_ISSUER_PUBLIC`      | ECHO token issuer public key                  |
+| `STELLAR_ISSUER_SECRET`      | ECHO token issuer secret key                  |
+| `STELLAR_HORIZON_URL`        | Horizon endpoint (default: testnet)           |
+| `STELLAR_NETWORK_PASSPHRASE` | Stellar network passphrase                    |
+| `STELLAR_ASSET_CODE`         | Token code (default: `ECHO`)                  |
 
 ### Testing with Postman/Bruno
 
@@ -97,13 +100,13 @@ Set the `base_url` and `jwt_token` collection variables before running requests.
 
 ## Network Details
 
-| Setting      | Value                                  |
-|--------------|----------------------------------------|
-| Network      | Stellar Testnet                        |
-| Horizon URL  | https://horizon-testnet.stellar.org    |
-| Asset Code   | ECHO                                   |
-| Friendbot    | https://friendbot.stellar.org          |
-| SDK Package  | stellar_flutter_sdk ^2.0.0             |
+| Setting     | Value                               |
+| ----------- | ----------------------------------- |
+| Network     | Stellar Testnet                     |
+| Horizon URL | https://horizon-testnet.stellar.org |
+| Asset Code  | ECHO                                |
+| Friendbot   | https://friendbot.stellar.org       |
+| SDK Package | stellar_flutter_sdk ^2.0.0          |
 
 ---
 
@@ -201,19 +204,22 @@ dart format --set-exit-if-changed .
 ## Serverpod Gift Endpoint
 
 The gift feature lives in the server repo at:
+
 ```
 lib/src/endpoints/gift_endpoint.dart
 ```
 
 Methods:
-| Method | Description |
-|---|---|
-| `getEchoBalance()` | Returns the current user's ECHO balance |
-| `sendGift(recipientUserId, amount, message)` | Transfers ECHO from sender to recipient |
-| `getGiftHistory()` | Returns the current user's gift transaction history |
-| `awardEcho(userId, amount, reason)` | Server-side ECHO award (mood pins, videos, etc.) |
+
+| Method                                       | Description                                         |
+| -------------------------------------------- | --------------------------------------------------- |
+| `getEchoBalance()`                           | Returns the current user's ECHO balance             |
+| `sendGift(recipientUserId, amount, message)` | Transfers ECHO from sender to recipient             |
+| `getGiftHistory()`                           | Returns the current user's gift transaction history |
+| `awardEcho(userId, amount, reason)`          | Server-side ECHO award (mood pins, videos, etc.)    |
 
 After modifying any Serverpod endpoint or YAML model, regenerate the client:
+
 ```bash
 cd echomirror_server
 serverpod generate
@@ -225,12 +231,12 @@ serverpod generate
 
 `backend/stellar/stellar_service.dart` exposes:
 
-| Method | Description |
-|---|---|
-| `createWallet()` | Generates a new Stellar keypair and funds via Friendbot |
-| `establishTrustline(secretKey)` | Creates a trustline for the ECHO asset |
-| `sendEcho(senderSecret, recipientPublic, amount)` | Sends ECHO between wallets |
-| `getEchoBalance(publicKey)` | Fetches ECHO balance from Horizon |
+| Method                                            | Description                                             |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| `createWallet()`                                  | Generates a new Stellar keypair and funds via Friendbot |
+| `establishTrustline(secretKey)`                   | Creates a trustline for the ECHO asset                  |
+| `sendEcho(senderSecret, recipientPublic, amount)` | Sends ECHO between wallets                              |
+| `getEchoBalance(publicKey)`                       | Fetches ECHO balance from Horizon                       |
 
 ---
 

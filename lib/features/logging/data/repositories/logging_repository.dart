@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/field_level_encryption_service.dart';
 import '../../../../core/services/supabase_client_service.dart';
 import '../models/log_entry_model.dart';
 
@@ -19,9 +20,13 @@ class MoodLogRateLimitException implements Exception {
 
 /// Repository for logging operations
 /// Handles all Supabase table queries for daily logging
+/// with client-side field-level encryption for sensitive reflection notes (Issue #700).
 class LoggingRepository {
-  LoggingRepository({SupabaseClient? supabaseClient})
-    : _injectedClient = supabaseClient {
+  LoggingRepository({
+    SupabaseClient? supabaseClient,
+    FieldLevelEncryptionService? encryptionService,
+  })  : _injectedClient = supabaseClient,
+        _encryptionService = encryptionService ?? FieldLevelEncryptionService() {
     debugPrint(
       supabaseClient == null
           ? '[LoggingRepository] Using shared Supabase client'
@@ -30,9 +35,12 @@ class LoggingRepository {
   }
 
   final SupabaseClient? _injectedClient;
+  final FieldLevelEncryptionService _encryptionService;
 
   SupabaseClient get _supabase =>
       _injectedClient ?? SupabaseClientService.instance.client;
+
+  FieldLevelEncryptionService get encryptionService => _encryptionService;
 
   String _toDateString(DateTime date) {
     final utcDate = date.isUtc
@@ -42,6 +50,25 @@ class LoggingRepository {
     final month = utcDate.month.toString().padLeft(2, '0');
     final day = utcDate.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
+  }
+
+  /// Helper to map and transparently decrypt entry notes from raw DB records.
+  LogEntryModel _mapDecryptedEntry(Map<String, dynamic> raw) {
+    final entry = LogEntryModel.fromJson(raw);
+    if (entry.notes != null && _encryptionService.isEncrypted(entry.notes)) {
+      final decrypted = _encryptionService.decryptField(entry.notes);
+      return LogEntryModel(
+        id: entry.id,
+        userId: entry.userId,
+        date: entry.date,
+        mood: entry.mood,
+        habits: entry.habits,
+        notes: decrypted,
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt,
+      );
+    }
+    return entry;
   }
 
   /// Parses the `{"error":"rate_limit_exceeded","retry_after_seconds":N}`
@@ -59,10 +86,14 @@ class LoggingRepository {
     return 3600;
   }
 
-  /// Create a new log entry
+  /// Create a new log entry with field-level encryption for private notes
   Future<LogEntryModel> createLogEntry(LogEntryModel entry) async {
     try {
       debugPrint('[LoggingRepository] createLogEntry -> ${entry.toJson()}');
+      final encryptedNotes = entry.notes != null
+          ? _encryptionService.encryptField(entry.notes)
+          : null;
+
       final result = await _supabase
           .from('log_entries')
           .insert({
@@ -70,13 +101,13 @@ class LoggingRepository {
             'date': _toDateString(entry.date),
             'mood': entry.mood,
             'habits': entry.habits,
-            'notes': entry.notes,
+            'notes': encryptedNotes,
           })
           .select()
           .single();
 
       debugPrint('[LoggingRepository] createLogEntry success');
-      return LogEntryModel.fromJson(result);
+      return _mapDecryptedEntry(result);
     } on PostgrestException catch (e) {
       if (e.code == 'PT429') {
         final retryAfter = _parseRetryAfterSeconds(e.message);
@@ -96,17 +127,21 @@ class LoggingRepository {
     }
   }
 
-  /// Update an existing log entry
+  /// Update an existing log entry with field-level encryption for private notes
   Future<LogEntryModel> updateLogEntry(LogEntryModel entry) async {
     try {
       debugPrint('[LoggingRepository] updateLogEntry -> ${entry.id}');
+      final encryptedNotes = entry.notes != null
+          ? _encryptionService.encryptField(entry.notes)
+          : null;
+
       final result = await _supabase
           .from('log_entries')
           .update({
             'date': _toDateString(entry.date),
             'mood': entry.mood,
             'habits': entry.habits,
-            'notes': entry.notes,
+            'notes': encryptedNotes,
           })
           .eq('id', entry.id)
           .eq('user_id', entry.userId)
@@ -114,7 +149,7 @@ class LoggingRepository {
           .single();
 
       debugPrint('[LoggingRepository] updateLogEntry success');
-      return LogEntryModel.fromJson(result);
+      return _mapDecryptedEntry(result);
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] updateLogEntry error -> $e');
       debugPrint(
@@ -147,7 +182,7 @@ class LoggingRepository {
       }
 
       debugPrint('[LoggingRepository] getLogEntryForDate success');
-      return LogEntryModel.fromJson(result);
+      return _mapDecryptedEntry(result);
     } catch (e) {
       debugPrint('[LoggingRepository] getLogEntryForDate error -> $e');
       return null;
@@ -194,7 +229,7 @@ class LoggingRepository {
       debugPrint(
         '[LoggingRepository] getLogEntries success -> ${results.length} entries',
       );
-      return results.map((result) => LogEntryModel.fromJson(result)).toList();
+      return results.map((result) => _mapDecryptedEntry(result)).toList();
     } catch (e, stackTrace) {
       debugPrint('[LoggingRepository] getLogEntries error -> $e');
       debugPrint('[LoggingRepository] getLogEntries stackTrace -> $stackTrace');

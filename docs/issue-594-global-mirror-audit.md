@@ -60,7 +60,7 @@ describe('GlobalMirrorPage', () => {
   describe('Map Rendering', () => {
     test('renders map with react-simple-maps', async () => {
       render(<GlobalMirrorPage {...createMockMapProps()} />);
-      
+
       await waitFor(() => {
         expect(screen.getByRole('region', { name: /world map/i })).toBeInTheDocument();
       });
@@ -74,9 +74,9 @@ describe('GlobalMirrorPage', () => {
     test('removes loading skeleton when map is ready', async () => {
       const { rerender } = render(<GlobalMirrorPage loading={true} />);
       expect(screen.getByTestId('map-skeleton')).toBeVisible();
-      
+
       rerender(<GlobalMirrorPage loading={false} />);
-      
+
       await waitFor(() => {
         expect(screen.queryByTestId('map-skeleton')).not.toBeInTheDocument();
       });
@@ -88,9 +88,9 @@ describe('GlobalMirrorPage', () => {
       const pins = Array.from({ length: 10 }, (_, i) =>
         createMockPin({ latitude: 40.7128, longitude: -74.006 })
       );
-      
+
       render(<GlobalMirrorPage pins={pins} zoom={4} />);
-      
+
       // Should show cluster marker with count
       expect(screen.getByText(/10 pins/i)).toBeInTheDocument();
     });
@@ -99,13 +99,13 @@ describe('GlobalMirrorPage', () => {
       const pins = Array.from({ length: 10 }, (_, i) =>
         createMockPin({ latitude: 40.7128, longitude: -74.006 })
       );
-      
+
       const { rerender } = render(<GlobalMirrorPage pins={pins} zoom={4} />);
       expect(screen.getByText(/10 pins/i)).toBeInTheDocument();
-      
+
       // Simulate zoom in
       rerender(<GlobalMirrorPage pins={pins} zoom={8} />);
-      
+
       await waitFor(() => {
         // Individual pins should now be visible
         pins.forEach(pin => {
@@ -117,9 +117,9 @@ describe('GlobalMirrorPage', () => {
     test('handles all pins in same location', () => {
       const sameLocation = { latitude: 40.7128, longitude: -74.006 };
       const pins = Array.from({ length: 5 }, () => createMockPin(sameLocation));
-      
+
       render(<GlobalMirrorPage pins={pins} />);
-      
+
       // Should show single aggregated marker
       expect(screen.getByText(/5 pins/i)).toBeInTheDocument();
     });
@@ -129,9 +129,9 @@ describe('GlobalMirrorPage', () => {
         createMockPin({ latitude: 40.7128, longitude: -74.006 }),
         createMockPin({ latitude: 40.7129, longitude: -74.0061 }), // Slightly offset
       ];
-      
+
       render(<GlobalMirrorPage pins={pins} zoom={5} />);
-      
+
       // Both clustering logic should work correctly
       expect(screen.getByTestId('map')).toBeInTheDocument();
     });
@@ -140,12 +140,12 @@ describe('GlobalMirrorPage', () => {
   describe('Realtime Updates', () => {
     test('triggers pulse animation on new pin from realtime subscription', async () => {
       const { rerender } = render(<GlobalMirrorPage pins={[]} />);
-      
+
       const newPin = createMockPin();
-      
+
       // Simulate realtime INSERT
       rerender(<GlobalMirrorPage pins={[newPin]} />);
-      
+
       await waitFor(() => {
         const pinElement = screen.getByTestId(`pin-${newPin.id}`);
         // Check if animation class is applied
@@ -156,21 +156,21 @@ describe('GlobalMirrorPage', () => {
     test('pulse animation is visible and not just silent', async () => {
       const pin = createMockPin();
       const { container } = render(<GlobalMirrorPage pins={[pin]} isNew={true} />);
-      
+
       // Get computed animation style
       const styles = window.getComputedStyle(container.querySelector('[data-testid^="pin-"]')!);
-      
+
       expect(styles.animation).toContain('pulse');
       expect(styles.animationDuration).toBeTruthy();
     });
 
     test('realtime pulse animation does not cause performance issues with 1000+ pins', async () => {
       const pins = Array.from({ length: 1000 }, (_, i) => createMockPin({ id: `pin-${i}` }));
-      
+
       const startTime = performance.now();
       render(<GlobalMirrorPage pins={pins} />);
       const renderTime = performance.now() - startTime;
-      
+
       // Should render in < 500ms
       expect(renderTime).toBeLessThan(500);
     });
@@ -179,32 +179,32 @@ describe('GlobalMirrorPage', () => {
   describe('Theme Support', () => {
     test('applies light theme styles', () => {
       render(<GlobalMirrorPage theme="light" />);
-      
+
       const mapContainer = screen.getByTestId('map');
       const styles = window.getComputedStyle(mapContainer);
-      
+
       // Light theme should have light background
       expect(styles.backgroundColor).toMatch(/white|light/i);
     });
 
     test('applies dark theme styles', () => {
       render(<GlobalMirrorPage theme="dark" />);
-      
+
       const mapContainer = screen.getByTestId('map');
       const styles = window.getComputedStyle(mapContainer);
-      
+
       // Dark theme should have dark background
       expect(styles.backgroundColor).toMatch(/dark|black/i);
     });
 
     test('updates theme dynamically when system theme changes', async () => {
       const { rerender } = render(<GlobalMirrorPage theme="light" />);
-      
+
       let styles = window.getComputedStyle(screen.getByTestId('map'));
       expect(styles.backgroundColor).toMatch(/white|light/i);
-      
+
       rerender(<GlobalMirrorPage theme="dark" />);
-      
+
       await waitFor(() => {
         styles = window.getComputedStyle(screen.getByTestId('map'));
         expect(styles.backgroundColor).toMatch(/dark|black/i);
@@ -215,10 +215,10 @@ describe('GlobalMirrorPage', () => {
   describe('Zoom and Pan', () => {
     test('zoom controls are visible and functional', async () => {
       render(<GlobalMirrorPage />);
-      
+
       const zoomInButton = screen.getByRole('button', { name: /zoom in/i });
       const zoomOutButton = screen.getByRole('button', { name: /zoom out/i });
-      
+
       expect(zoomInButton).toBeEnabled();
       expect(zoomOutButton).toBeEnabled();
     });
@@ -226,9 +226,9 @@ describe('GlobalMirrorPage', () => {
     test('pan works smoothly with mouse drag', async () => {
       // This would require more complex interaction testing
       render(<GlobalMirrorPage />);
-      
+
       const mapContainer = screen.getByTestId('map');
-      
+
       // Simulate drag
       // Implementation depends on your mouse event setup
     });
@@ -240,9 +240,9 @@ describe('GlobalMirrorPage', () => {
       jest.mock('react-simple-maps', () => {
         throw new Error('Failed to load maps library');
       });
-      
+
       render(<GlobalMirrorPage />);
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('map-svg-fallback')).toBeVisible();
       });
@@ -253,9 +253,9 @@ describe('GlobalMirrorPage', () => {
         createMockPin({ latitude: 40.7128, longitude: -74.006 }), // NYC
         createMockPin({ latitude: 51.5074, longitude: -0.1278 }), // London
       ];
-      
+
       render(<GlobalMirrorPage pins={pins} useFallback={true} />);
-      
+
       // Static SVG should still show pins
       pins.forEach(pin => {
         expect(screen.getByTestId(`fallback-pin-${pin.id}`)).toBeInTheDocument();
@@ -269,19 +269,22 @@ describe('GlobalMirrorPage', () => {
 
 ```typescript
 // frontend/__tests__/features/global-mirror/clustering.test.ts
-import { clusterPins, calculateClusterCenter } from '@/features/global-mirror/clustering';
-import { createMockPin } from './mocks';
+import {
+  clusterPins,
+  calculateClusterCenter,
+} from "@/features/global-mirror/clustering";
+import { createMockPin } from "./mocks";
 
-describe('Pin Clustering', () => {
-  test('clusters pins within specified radius', () => {
+describe("Pin Clustering", () => {
+  test("clusters pins within specified radius", () => {
     const pins = [
-      createMockPin({ id: 'pin-1', latitude: 40.7128, longitude: -74.006 }),
-      createMockPin({ id: 'pin-2', latitude: 40.7129, longitude: -74.0061 }), // ~110m away
-      createMockPin({ id: 'pin-3', latitude: 51.5074, longitude: -0.1278 }), // London
+      createMockPin({ id: "pin-1", latitude: 40.7128, longitude: -74.006 }),
+      createMockPin({ id: "pin-2", latitude: 40.7129, longitude: -74.0061 }), // ~110m away
+      createMockPin({ id: "pin-3", latitude: 51.5074, longitude: -0.1278 }), // London
     ];
-    
+
     const clusters = clusterPins(pins, { radiusKm: 10 });
-    
+
     // Should have 2 clusters: NYC area and London
     expect(clusters).toHaveLength(2);
     expect(clusters[0].pins).toContain(pins[0]);
@@ -289,43 +292,43 @@ describe('Pin Clustering', () => {
     expect(clusters[1].pins).toContain(pins[2]);
   });
 
-  test('calculates correct cluster center (mean coordinates)', () => {
+  test("calculates correct cluster center (mean coordinates)", () => {
     const pins = [
       createMockPin({ latitude: 40.7128, longitude: -74.006 }),
-      createMockPin({ latitude: 40.7130, longitude: -74.0080 }),
+      createMockPin({ latitude: 40.713, longitude: -74.008 }),
     ];
-    
+
     const center = calculateClusterCenter(pins);
-    
+
     expect(center.latitude).toBeCloseTo(40.7129);
     expect(center.longitude).toBeCloseTo(-74.007);
   });
 
-  test('handles edge case: all pins at exactly same location', () => {
+  test("handles edge case: all pins at exactly same location", () => {
     const sameLoc = { latitude: 40.7128, longitude: -74.006 };
     const pins = Array.from({ length: 5 }, (_, i) =>
-      createMockPin({ id: `pin-${i}`, ...sameLoc })
+      createMockPin({ id: `pin-${i}`, ...sameLoc }),
     );
-    
+
     const clusters = clusterPins(pins, { radiusKm: 1 });
-    
+
     expect(clusters).toHaveLength(1);
     expect(clusters[0].pins).toHaveLength(5);
   });
 
-  test('respects zoom level for clustering', () => {
+  test("respects zoom level for clustering", () => {
     const pins = Array.from({ length: 20 }, (_, i) =>
       createMockPin({
         id: `pin-${i}`,
-        latitude: 40.7128 + (i * 0.001),
+        latitude: 40.7128 + i * 0.001,
         longitude: -74.006,
-      })
+      }),
     );
-    
+
     // At low zoom, more aggressive clustering
     const lowZoomClusters = clusterPins(pins, { zoom: 2, radiusKm: 100 });
     const highZoomClusters = clusterPins(pins, { zoom: 12, radiusKm: 5 });
-    
+
     // Low zoom should have fewer clusters
     expect(lowZoomClusters.length).toBeLessThan(highZoomClusters.length);
   });

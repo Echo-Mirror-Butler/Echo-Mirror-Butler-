@@ -1,7 +1,7 @@
-﻿import { isTestnet } from '../lib/stellar-config'
+﻿import { isTestnet } from "../lib/stellar-config";
 
 export function TestnetBadge() {
-  if (!isTestnet) return null
+  if (!isTestnet) return null;
 
   return (
     <span
@@ -15,7 +15,7 @@ export function TestnetBadge() {
       </span>
       TESTNET
     </span>
-  )
+  );
 }
 
-export default TestnetBadge
+export default TestnetBadge;

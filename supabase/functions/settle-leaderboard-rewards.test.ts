@@ -11,16 +11,30 @@ import {
 } from "./settle-leaderboard-rewards/index.ts";
 
 Deno.test("uses one reward reason for a user's weekly settlement", () => {
-  const weekStart = getSettlementWeekStart(new Date("2026-08-26T12:00:00.000Z"));
+  const weekStart = getSettlementWeekStart(
+    new Date("2026-08-26T12:00:00.000Z"),
+  );
   assertEquals(weekStart, "2026-08-24");
-  assertEquals(getSettlementReason(1, weekStart), "leaderboard_bonus_rank_1_week_2026-08-24");
+  assertEquals(
+    getSettlementReason(1, weekStart),
+    "leaderboard_bonus_rank_1_week_2026-08-24",
+  );
 });
 
 Deno.test("reports a failed ledger insert after a successful payment", () => {
-  const result = buildPayoutResult(1, "user-1", 100, "stellar-hash", "database unavailable");
+  const result = buildPayoutResult(
+    1,
+    "user-1",
+    100,
+    "stellar-hash",
+    "database unavailable",
+  );
 
   assertFalse(result.success);
-  assertStringIncludes(result.error, "Payment succeeded but payout recording failed");
+  assertStringIncludes(
+    result.error,
+    "Payment succeeded but payout recording failed",
+  );
 });
 
 Deno.test("resolves Stellar mainnet settings from environment", () => {

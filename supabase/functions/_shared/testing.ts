@@ -18,7 +18,7 @@ export function createMockRequest(
   method: string,
   body?: unknown,
   headers?: Record<string, string>,
-  url = "http://localhost:3000/test"
+  url = "http://localhost:3000/test",
 ): Request {
   const reqHeaders = new Headers();
   reqHeaders.set("Content-Type", "application/json");
@@ -32,9 +32,12 @@ export function createMockRequest(
   return new Request(url, {
     method,
     headers: reqHeaders,
-    body: body !== undefined && method !== "GET" && method !== "HEAD"
-      ? (typeof body === "string" ? body : JSON.stringify(body))
-      : undefined,
+    body:
+      body !== undefined && method !== "GET" && method !== "HEAD"
+        ? typeof body === "string"
+          ? body
+          : JSON.stringify(body)
+        : undefined,
   });
 }
 
@@ -60,7 +63,10 @@ export function createMockSupabaseClient(options: MockSupabaseOptions = {}) {
     auth: {
       getUser: async (token: string) => {
         if (authError || token === "invalid-token" || !token) {
-          return { data: { user: null }, error: authError || new Error("Invalid token") };
+          return {
+            data: { user: null },
+            error: authError || new Error("Invalid token"),
+          };
         }
         return { data: { user }, error: null };
       },
@@ -95,8 +101,12 @@ export function createMockSupabaseClient(options: MockSupabaseOptions = {}) {
           return { data: rows[0] || null, error: null };
         },
         then: (resolve: any, reject: any) => {
-          if (error) return Promise.resolve({ data: null, error }).then(resolve, reject);
-          return Promise.resolve({ data: rows, error: null }).then(resolve, reject);
+          if (error)
+            return Promise.resolve({ data: null, error }).then(resolve, reject);
+          return Promise.resolve({ data: rows, error: null }).then(
+            resolve,
+            reject,
+          );
         },
       };
 

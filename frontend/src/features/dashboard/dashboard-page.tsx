@@ -6,7 +6,7 @@ import type { LogEntry, Insight } from "../../lib/types";
 import { formatDate, moodToEmoji } from "../../lib/date";
 import { HabitTrackerWidget } from "./components/habit-tracker-widget";
 
-const MOOD_EMOJIS = ['😞', '😕', '😐', '🙂', '😄'];
+const MOOD_EMOJIS = ["😞", "😕", "😐", "🙂", "😄"];
 
 async function fetchMoodTrend(userId: string) {
   const today = new Date();
@@ -150,7 +150,8 @@ export function DashboardPage() {
         .maybeSingle();
 
       const balance =
-        walletRes.data && typeof (walletRes.data as Record<string, unknown>).balance === "number"
+        walletRes.data &&
+        typeof (walletRes.data as Record<string, unknown>).balance === "number"
           ? Number((walletRes.data as Record<string, unknown>).balance)
           : 0;
 
@@ -161,11 +162,11 @@ export function DashboardPage() {
         .eq("user_id", user.id)
         .gte("created_at", today);
 
-      const earnedToday =
-        (rewards ?? []).reduce(
-          (sum: number, r: Record<string, unknown>) => sum + Number(r.amount ?? 0),
-          0,
-        );
+      const earnedToday = (rewards ?? []).reduce(
+        (sum: number, r: Record<string, unknown>) =>
+          sum + Number(r.amount ?? 0),
+        0,
+      );
 
       return { balance, earnedToday };
     },
@@ -185,23 +186,26 @@ export function DashboardPage() {
     return null;
   }
 
-  const hasNoLogs = !recentLogsQuery.isLoading && recentLogsQuery.data && recentLogsQuery.data.length === 0;
+  const hasNoLogs =
+    !recentLogsQuery.isLoading &&
+    recentLogsQuery.data &&
+    recentLogsQuery.data.length === 0;
 
   if (hasNoLogs) {
     return (
-      <div 
-        className="card" 
-        style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          maxWidth: '480px',
-          margin: '3rem auto',
-          gap: '1.5rem',
-          animation: 'fadeIn 0.6s ease-out',
+      <div
+        className="card"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          padding: "4rem 2rem",
+          maxWidth: "480px",
+          margin: "3rem auto",
+          gap: "1.5rem",
+          animation: "fadeIn 0.6s ease-out",
         }}
       >
         <style>{`
@@ -215,43 +219,129 @@ export function DashboardPage() {
             to { opacity: 1; transform: translateY(0); }
           }
         `}</style>
-        <div style={{ animation: 'float 3.5s ease-in-out infinite', display: 'flex', justifyContent: 'center' }}>
-          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="60" cy="60" r="50" stroke="var(--line)" strokeWidth="1.5" strokeDasharray="3 3" />
-            <circle cx="60" cy="60" r="40" fill="var(--surface-soft)" stroke="var(--line)" strokeWidth="1" />
-            <rect x="42" y="24" width="36" height="52" rx="18" fill="var(--surface)" stroke="var(--brand)" strokeWidth="3" />
-            <rect x="46" y="28" width="28" height="44" rx="14" fill="var(--surface-soft)" />
-            <path d="M60 76V94" stroke="var(--brand)" strokeWidth="4" strokeLinecap="round" />
+        <div
+          style={{
+            animation: "float 3.5s ease-in-out infinite",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <svg
+            width="120"
+            height="120"
+            viewBox="0 0 120 120"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="60"
+              cy="60"
+              r="50"
+              stroke="var(--line)"
+              strokeWidth="1.5"
+              strokeDasharray="3 3"
+            />
+            <circle
+              cx="60"
+              cy="60"
+              r="40"
+              fill="var(--surface-soft)"
+              stroke="var(--line)"
+              strokeWidth="1"
+            />
+            <rect
+              x="42"
+              y="24"
+              width="36"
+              height="52"
+              rx="18"
+              fill="var(--surface)"
+              stroke="var(--brand)"
+              strokeWidth="3"
+            />
+            <rect
+              x="46"
+              y="28"
+              width="28"
+              height="44"
+              rx="14"
+              fill="var(--surface-soft)"
+            />
+            <path
+              d="M60 76V94"
+              stroke="var(--brand)"
+              strokeWidth="4"
+              strokeLinecap="round"
+            />
             <circle cx="60" cy="96" r="2.5" fill="var(--brand)" />
-            <path d="M52 38 L68 64" stroke="var(--line)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-            <path d="M58 35 L65 49" stroke="var(--line)" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
-            <path d="M90 30 L91.5 34.5 L96 36 L91.5 37.5 L90 42 L88.5 37.5 L84 36 L88.5 34.5 Z" fill="var(--accent)" opacity="0.8" />
-            <path d="M30 70 L31 73 L34 74 L31 75 L30 78 L29 75 L26 74 L29 73 Z" fill="var(--brand)" opacity="0.7" />
+            <path
+              d="M52 38 L68 64"
+              stroke="var(--line)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              opacity="0.6"
+            />
+            <path
+              d="M58 35 L65 49"
+              stroke="var(--line)"
+              strokeWidth="1"
+              strokeLinecap="round"
+              opacity="0.6"
+            />
+            <path
+              d="M90 30 L91.5 34.5 L96 36 L91.5 37.5 L90 42 L88.5 37.5 L84 36 L88.5 34.5 Z"
+              fill="var(--accent)"
+              opacity="0.8"
+            />
+            <path
+              d="M30 70 L31 73 L34 74 L31 75 L30 78 L29 75 L26 74 L29 73 Z"
+              fill="var(--brand)"
+              opacity="0.7"
+            />
           </svg>
         </div>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 600, color: 'var(--text)', margin: 0 }}>
+        <h2
+          style={{
+            fontSize: "1.6rem",
+            fontWeight: 600,
+            color: "var(--text)",
+            margin: 0,
+          }}
+        >
           Your mirror is empty
         </h2>
-        <p className="muted" style={{ fontSize: '0.95rem', maxWidth: '320px', margin: 0, lineHeight: 1.5 }}>
+        <p
+          className="muted"
+          style={{
+            fontSize: "0.95rem",
+            maxWidth: "320px",
+            margin: 0,
+            lineHeight: 1.5,
+          }}
+        >
           Log your first mood to start your streak.
         </p>
         <button
           type="button"
-          onClick={() => navigate('/log')}
+          onClick={() => navigate("/log")}
           style={{
-            padding: '0.75rem 1.75rem',
-            fontSize: '0.95rem',
+            padding: "0.75rem 1.75rem",
+            fontSize: "0.95rem",
             fontWeight: 600,
-            borderRadius: 'var(--radius)',
-            backgroundColor: 'var(--brand)',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s, transform 0.1s',
-            marginTop: '0.5rem',
+            borderRadius: "var(--radius)",
+            backgroundColor: "var(--brand)",
+            color: "#fff",
+            border: "none",
+            cursor: "pointer",
+            transition: "background-color 0.2s, transform 0.1s",
+            marginTop: "0.5rem",
           }}
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--brand-strong)')}
-          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'var(--brand)')}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor = "var(--brand-strong)")
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = "var(--brand)")
+          }
         >
           Log your first mood
         </button>
@@ -264,32 +354,47 @@ export function DashboardPage() {
   return (
     <section className="feature-grid">
       {/* Log Today's Mood button */}
-      <article className="card full-width" style={{ gridColumn: '1 / -1', padding: '0.75rem 1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem' }}>
+      <article
+        className="card full-width"
+        style={{ gridColumn: "1 / -1", padding: "0.75rem 1rem" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.8rem",
+          }}
+        >
           <div>
-            <strong style={{ fontSize: '1rem' }}>How are you feeling today?</strong>
-            <p className="muted" style={{ margin: '0.15rem 0 0', fontSize: '0.85rem' }}>
+            <strong style={{ fontSize: "1rem" }}>
+              How are you feeling today?
+            </strong>
+            <p
+              className="muted"
+              style={{ margin: "0.15rem 0 0", fontSize: "0.85rem" }}
+            >
               Log your mood to track your emotional journey
             </p>
           </div>
           <button
             type="button"
             onClick={async () => {
-              const today = new Date().toISOString().slice(0, 10)
+              const today = new Date().toISOString().slice(0, 10);
               const { data } = await supabase
-                .from('log_entries')
-                .select('id')
-                .eq('user_id', user.id)
-                .gte('date', `${today}T00:00:00.000Z`)
-                .lte('date', `${today}T23:59:59.999Z`)
-                .maybeSingle()
+                .from("log_entries")
+                .select("id")
+                .eq("user_id", user.id)
+                .gte("date", `${today}T00:00:00.000Z`)
+                .lte("date", `${today}T23:59:59.999Z`)
+                .maybeSingle();
               if (data) {
-                navigate(`/logs/${data.id}/edit`)
+                navigate(`/logs/${data.id}/edit`);
               } else {
-                navigate(`/logs/new?date=${today}`)
+                navigate(`/logs/new?date=${today}`);
               }
             }}
-            style={{ whiteSpace: 'nowrap' }}
+            style={{ whiteSpace: "nowrap" }}
           >
             Log Today's Mood
           </button>
@@ -305,7 +410,9 @@ export function DashboardPage() {
           {moodTrendQuery.isLoading ? (
             <div className="skeleton-line large" />
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}
+            >
               <div>
                 <p className="muted">Today's Mood</p>
                 <h2 style={{ margin: "0.25rem 0" }}>
@@ -316,7 +423,9 @@ export function DashboardPage() {
                     style={{
                       margin: "0.25rem 0 0",
                       color:
-                        percentageChange > 0 ? "var(--success)" : "var(--danger)",
+                        percentageChange > 0
+                          ? "var(--success)"
+                          : "var(--danger)",
                       fontWeight: 600,
                     }}
                   >
@@ -346,8 +455,14 @@ export function DashboardPage() {
         </div>
         <div className="card-content">
           {streakQuery.isLoading ? (
-            <div style={{ display: "grid", gap: "0.65rem" }} aria-label="Loading streak">
-              <div className="skeleton-line large" style={{ maxWidth: "190px" }} />
+            <div
+              style={{ display: "grid", gap: "0.65rem" }}
+              aria-label="Loading streak"
+            >
+              <div
+                className="skeleton-line large"
+                style={{ maxWidth: "190px" }}
+              />
               <div className="skeleton-line" style={{ maxWidth: "260px" }} />
             </div>
           ) : streakQuery.isError ? (
@@ -355,7 +470,9 @@ export function DashboardPage() {
           ) : currentStreak > 0 ? (
             <div className="streak-count">
               <p className="muted">Current streak</p>
-              <h2 style={{ margin: "0.25rem 0 0" }}>🔥 {currentStreak}-day streak</h2>
+              <h2 style={{ margin: "0.25rem 0 0" }}>
+                🔥 {currentStreak}-day streak
+              </h2>
             </div>
           ) : (
             <div className="streak-count">
@@ -384,15 +501,16 @@ export function DashboardPage() {
             <p className="muted">Failed to load balance.</p>
           ) : (
             <>
-              <h2>
-                ✦ {echoData.balance.toFixed(0)} ECHO
-              </h2>
+              <h2>✦ {echoData.balance.toFixed(0)} ECHO</h2>
               {echoData.earnedToday > 0 && (
                 <p className="muted" style={{ marginTop: "0.25rem" }}>
                   +{echoData.earnedToday} today
                 </p>
               )}
-              <p className="muted" style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>
+              <p
+                className="muted"
+                style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}
+              >
                 Tap to view wallet →
               </p>
             </>
@@ -406,28 +524,70 @@ export function DashboardPage() {
           <h3>Friends Today</h3>
         </div>
         <div className="card-content">
-          {friendsMoodQuery.isLoading && <p className="muted">Loading friends' mood…</p>}
+          {friendsMoodQuery.isLoading && (
+            <p className="muted">Loading friends' mood…</p>
+          )}
           {friendsMoodQuery.data && friendsMoodQuery.data.length === 0 && (
-            <p className="muted" style={{ fontSize: '0.85rem' }}>Follow other users from the Global Mirror to see their mood here</p>
+            <p className="muted" style={{ fontSize: "0.85rem" }}>
+              Follow other users from the Global Mirror to see their mood here
+            </p>
           )}
           {friendsMoodQuery.data && friendsMoodQuery.data.length > 0 && (
             <div className="chip-row">
               {friendsMoodQuery.data.map((friend) => {
-                const moodEmoji = friend.mood != null && friend.mood >= 1 && friend.mood <= 5
-                  ? MOOD_EMOJIS[friend.mood - 1]
-                  : '❓';
+                const moodEmoji =
+                  friend.mood != null && friend.mood >= 1 && friend.mood <= 5
+                    ? MOOD_EMOJIS[friend.mood - 1]
+                    : "❓";
                 const name = friend.display_name ?? friend.user_id.slice(0, 8);
                 return (
-                  <div key={friend.user_id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.65rem', borderRadius: '999px', background: 'var(--surface-soft)', border: '1px solid var(--line)' }}>
+                  <div
+                    key={friend.user_id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.35rem 0.65rem",
+                      borderRadius: "999px",
+                      background: "var(--surface-soft)",
+                      border: "1px solid var(--line)",
+                    }}
+                  >
                     {friend.avatar_url ? (
-                      <img src={friend.avatar_url} alt={name} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />
+                      <img
+                        src={friend.avatar_url}
+                        alt={name}
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
                     ) : (
-                      <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>{name.charAt(0).toUpperCase()}</span>
+                      <span
+                        style={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          background: "var(--brand)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#fff",
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {name.charAt(0).toUpperCase()}
+                      </span>
                     )}
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{name}</span>
-                    <span style={{ fontSize: '1.1rem' }}>{moodEmoji}</span>
+                    <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                      {name}
+                    </span>
+                    <span style={{ fontSize: "1.1rem" }}>{moodEmoji}</span>
                   </div>
-                )
+                );
               })}
             </div>
           )}
@@ -492,9 +652,7 @@ export function DashboardPage() {
                     borderBottom: "1px solid var(--line)",
                   }}
                 >
-                  <span className="muted">
-                    {formatDate(log.date)}
-                  </span>
+                  <span className="muted">{formatDate(log.date)}</span>
                   <span>{moodToEmoji(log.mood)}</span>
                   <span className="muted">
                     {log.notes ? log.notes.substring(0, 80) : "No notes"}
@@ -537,7 +695,10 @@ export function DashboardPage() {
           ) : (
             <>
               <p className="muted">No insights yet</p>
-              <p className="muted" style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}>
+              <p
+                className="muted"
+                style={{ fontSize: "0.8rem", marginTop: "0.25rem" }}
+              >
                 Insights are generated after you log a few entries
               </p>
               <button
@@ -559,13 +720,16 @@ export function DashboardPage() {
           )}
         </div>
       </article>
-
     </section>
   );
 }
 
 // Simple sparkline component for mood trend
-function MoodSparkline({ logs }: { logs: Array<{ date: string; mood: number | null }> }) {
+function MoodSparkline({
+  logs,
+}: {
+  logs: Array<{ date: string; mood: number | null }>;
+}) {
   if (!logs || logs.length === 0) {
     return (
       <div
@@ -593,7 +757,8 @@ function MoodSparkline({ logs }: { logs: Array<{ date: string; mood: number | nu
   // Handle single data point case
   if (moodValues.length < 2) {
     const x = width / 2;
-    const y = height - ((moodValues[0] - minMood) / (maxMood - minMood)) * height;
+    const y =
+      height - ((moodValues[0] - minMood) / (maxMood - minMood)) * height;
     return (
       <svg
         width="100%"

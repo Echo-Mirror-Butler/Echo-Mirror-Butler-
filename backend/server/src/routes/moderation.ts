@@ -1,6 +1,6 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
-import { supabase } from '../services/supabase';
+import { Router, Request, Response, NextFunction } from "express";
+import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
+import { supabase } from "../services/supabase";
 
 export const moderationRouter = Router();
 
@@ -8,13 +8,13 @@ export const moderationRouter = Router();
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const userId = (req as AuthenticatedRequest).userId;
   const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', userId)
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
     .single();
 
-  if (error || !profile || !['admin', 'moderator'].includes(profile.role)) {
-    res.status(403).json({ error: 'Unauthorized: admin role required' });
+  if (error || !profile || !["admin", "moderator"].includes(profile.role)) {
+    res.status(403).json({ error: "Unauthorized: admin role required" });
     return;
   }
 
@@ -30,25 +30,27 @@ moderationRouter.use(requireAuth);
 // Body: { content_type, content_id, reason }
 // ─────────────────────────────────────────────
 moderationRouter.post(
-  '/report',
+  "/report",
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as AuthenticatedRequest).userId;
     const { content_type, content_id, reason } = req.body;
 
     if (!content_type || !content_id || !reason) {
-      res.status(400).json({ error: 'content_type, content_id, and reason are required' });
+      res
+        .status(400)
+        .json({ error: "content_type, content_id, and reason are required" });
       return;
     }
 
     try {
       const { data, error } = await supabase
-        .from('reported_content')
+        .from("reported_content")
         .insert({
           content_type,
           content_id,
           reported_by: userId,
           reason,
-          status: 'pending',
+          status: "pending",
         })
         .select();
 
@@ -67,24 +69,33 @@ moderationRouter.post(
 // Query: status (pending, reviewed, dismissed, action_taken), limit, offset
 // ─────────────────────────────────────────────
 moderationRouter.get(
-  '/reports',
+  "/reports",
   requireAdmin,
   async (req: Request, res: Response, next: NextFunction) => {
     const status = req.query.status as string;
-    const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10)));
-    const offset = Math.max(0, parseInt((req.query.offset as string) ?? '0', 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt((req.query.limit as string) ?? "20", 10)),
+    );
+    const offset = Math.max(
+      0,
+      parseInt((req.query.offset as string) ?? "0", 10),
+    );
 
     try {
       let query = supabase
-        .from('reported_content')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
+        .from("reported_content")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false });
 
       if (status) {
-        query = query.eq('status', status);
+        query = query.eq("status", status);
       }
 
-      const { data, error, count } = await query.range(offset, offset + limit - 1);
+      const { data, error, count } = await query.range(
+        offset,
+        offset + limit - 1,
+      );
 
       if (error) throw error;
 
@@ -104,7 +115,7 @@ moderationRouter.get(
 // Body: { status, admin_notes? }
 // ─────────────────────────────────────────────
 moderationRouter.patch(
-  '/reports/:reportId',
+  "/reports/:reportId",
   requireAdmin,
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as AuthenticatedRequest).userId;
@@ -112,33 +123,33 @@ moderationRouter.patch(
     const { status, admin_notes } = req.body;
 
     if (!status) {
-      res.status(400).json({ error: 'status is required' });
+      res.status(400).json({ error: "status is required" });
       return;
     }
 
     try {
       const { data, error } = await supabase
-        .from('reported_content')
+        .from("reported_content")
         .update({
           status,
           admin_notes: admin_notes ?? null,
           resolved_at: new Date().toISOString(),
           resolved_by: userId,
         })
-        .eq('id', reportId)
+        .eq("id", reportId)
         .select();
 
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        res.status(404).json({ error: 'Report not found' });
+        res.status(404).json({ error: "Report not found" });
         return;
       }
 
       // Log audit action
-      await supabase.rpc('log_audit_action', {
-        p_action: 'update_report',
-        p_target_type: 'reported_content',
+      await supabase.rpc("log_audit_action", {
+        p_action: "update_report",
+        p_target_type: "reported_content",
         p_target_id: reportId,
         p_details: { status, notes: admin_notes },
       });
@@ -156,17 +167,23 @@ moderationRouter.patch(
 // Query: limit, offset
 // ─────────────────────────────────────────────
 moderationRouter.get(
-  '/audit-logs',
+  "/audit-logs",
   requireAdmin,
   async (req: Request, res: Response, next: NextFunction) => {
-    const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10)));
-    const offset = Math.max(0, parseInt((req.query.offset as string) ?? '0', 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt((req.query.limit as string) ?? "20", 10)),
+    );
+    const offset = Math.max(
+      0,
+      parseInt((req.query.offset as string) ?? "0", 10),
+    );
 
     try {
       const { data, error, count } = await supabase
-        .from('audit_log')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .from("audit_log")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
@@ -187,17 +204,23 @@ moderationRouter.get(
 // Query: limit, offset
 // ─────────────────────────────────────────────
 moderationRouter.get(
-  '/error-logs',
+  "/error-logs",
   requireAdmin,
   async (req: Request, res: Response, next: NextFunction) => {
-    const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10)));
-    const offset = Math.max(0, parseInt((req.query.offset as string) ?? '0', 10));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt((req.query.limit as string) ?? "20", 10)),
+    );
+    const offset = Math.max(
+      0,
+      parseInt((req.query.offset as string) ?? "0", 10),
+    );
 
     try {
       const { data, error, count } = await supabase
-        .from('error_logs')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .from("error_logs")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) throw error;

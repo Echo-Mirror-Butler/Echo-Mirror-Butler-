@@ -4,7 +4,7 @@
 
 **A Social Wellness App Powered by Stellar, AI, and Real-Time Video**
 
-*Track your mood, compete with friends, gift Stellar crypto during live sessions, and grow together*
+_Track your mood, compete with friends, gift Stellar crypto during live sessions, and grow together_
 
 ### 🌐 [echomirrorbutler.vercel.app](https://echomirrorbutler.vercel.app)
 
@@ -31,6 +31,7 @@ The app also tracks your mood, logs daily habits, and uses Google Gemini AI to g
 ### 🎯 Core Philosophy
 
 We believe wellness is better together. EchoMirror Butler helps you:
+
 - **Gift** — Send Stellar crypto to friends during live video sessions as a way to show support
 - **Compete** — Join stress-relief games and competitions with other users
 - **Reflect** — Track your mood, habits, and daily experiences
@@ -42,34 +43,40 @@ We believe wellness is better together. EchoMirror Butler helps you:
 ## ✨ Key Features
 
 ### 💸 Stellar Blockchain Gifting
+
 - **In-App Gifting**: Send and receive Stellar (XLM) tokens directly within the app
 - **Live Session Gifts**: Gift crypto to other users during real-time video calls
 - **Gift History**: Track all sent and received gifts with status and timestamps
 - **Testnet Support**: Built and tested against the Stellar testnet for safe development
 
 ### 🎮 Competitions & Stress Relief
+
 - **Interactive Games**: Engage in competitions and activities designed to reduce stress
 - **Social Challenges**: Compete with friends and other users on wellness goals
 - **Leaderboards**: Track your progress against the community
 
 ### 📹 Real-Time Video Sessions (Agora)
+
 - **Live Calls**: Connect with other users through real-time video powered by Agora
 - **Scheduled Sessions**: Book and manage upcoming video sessions
 - **In-Call Gifting**: Send Stellar crypto gifts while on a live call
 
 ### 📝 Daily Logging
+
 - **Mood Tracking**: Rate your day on a 1-5 scale
 - **Habit Tracking**: Log daily habits and routines
 - **Notes**: Capture thoughts, reflections, and memorable moments
 - **Calendar View**: Visual calendar to see your logging history at a glance
 
 ### 🤖 AI-Powered Insights (Google Gemini)
+
 - **1-Month Predictions**: Forecasts based on your mood and habit patterns
 - **Habit Suggestions**: Personalized, actionable habit tweaks
 - **Future Letters**: Motivational messages from "future you"
 - **Pattern Detection**: AI analyzes mood trends, habit consistency, and note themes
 
 ### 🔐 Authentication & Security
+
 - **Secure Login**: Email/password authentication via Supabase Auth
 - **User Sessions**: Persistent sessions managed by Supabase
 - **User Sessions**: Persistent sessions with JWT tokens
@@ -80,6 +87,7 @@ We believe wellness is better together. EchoMirror Butler helps you:
 ## 🛠️ Tech Stack
 
 ### Frontend (Flutter)
+
 - **Flutter** 3.10+ - Cross-platform framework
 - **Riverpod** 2.6+ - State management
 - **GoRouter** 14.2+ - Navigation and routing
@@ -89,6 +97,7 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **Table Calendar** - Calendar widget
 
 ### Backend (Supabase + Node.js)
+
 - **Supabase** - Backend as a Service (PostgreSQL + Auth + Storage + Edge Functions)
 - **PostgreSQL** - Database (managed by Supabase)
 - **Supabase Auth** - Authentication with JWT
@@ -98,11 +107,13 @@ We believe wellness is better together. EchoMirror Butler helps you:
 - **Resend** - Email delivery
 
 ### Blockchain (Stellar)
+
 - **Stellar SDK** - Wallet creation, token transfers, and transaction signing
 - **Stellar Testnet** - Safe development and testing environment
 - **XLM Tokens** - Native Stellar currency for in-app gifting
 
 ### AI Integration
+
 - **Google Gemini 1.5 Flash** - Fast, cost-effective AI model
 - **Structured JSON Output** - Reliable parsing
 - **Mock Data Fallback** - Works offline without API key
@@ -112,14 +123,17 @@ We believe wellness is better together. EchoMirror Butler helps you:
 ## 📸 Screenshots
 
 ### Landing Page
+
 ![Landing Page](assets/screenshots/landing.png)
 
 ### Features
+
 ![Features Section](assets/screenshots/features.png)
 
 ![ECHO Wallet & Habit Logs](assets/screenshots/features2.png)
 
 ### Authentication
+
 ![Sign In](assets/screenshots/login.png)
 
 ![Create Account](assets/screenshots/signup.png)
@@ -190,6 +204,7 @@ source ~/.zshrc
 ### 4. Run the app
 
 **Terminal:**
+
 ```bash
 fvm flutter run -d "iPhone 16 Pro" \
   --dart-define=SUPABASE_URL=$SUPABASE_URL \
@@ -294,7 +309,6 @@ lib/
 - **Repository Pattern**: Abstract data access layer
 - **Provider Pattern**: Riverpod for state management
 - **Feature Modules**: Self-contained, modular features
-
 
 ---
 
@@ -415,6 +429,7 @@ EchoMirror Butler is designed with these principles:
 ## 🛣️ Roadmap
 
 ### Current Features ✅
+
 - [x] User authentication (email/password via Supabase Auth)
 - [x] Daily logging (mood, habits, notes)
 - [x] AI-powered insights and predictions (Google Gemini)
@@ -427,6 +442,7 @@ EchoMirror Butler is designed with these principles:
 - [x] In-call Stellar gifting during video sessions
 
 ### Planned Features 🚧
+
 - [ ] Competitions and stress-relief games
 - [ ] Leaderboards and social challenges
 - [ ] Stellar mainnet support
@@ -476,6 +492,6 @@ If you find EchoMirror Butler helpful, please **[give it a ⭐ on GitHub](https:
 
 **Built with ❤️ using Flutter, Supabase & Stellar**
 
-*Wellness is better together — gift, compete, reflect, and grow.*
+_Wellness is better together — gift, compete, reflect, and grow._
 
 </div>

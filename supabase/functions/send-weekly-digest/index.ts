@@ -20,8 +20,8 @@ import {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
-const APP_URL = Deno.env.get("APP_URL") ??
-  "https://echomirrorbutler.vercel.app";
+const APP_URL =
+  Deno.env.get("APP_URL") ?? "https://echomirrorbutler.vercel.app";
 
 type LogEntry = {
   date: string;
@@ -42,9 +42,10 @@ function calculateStats(
   logs: LogEntry[],
 ): Omit<WeeklyStats, "streak" | "echoEarned"> {
   const moods = logs.filter((l) => l.mood != null).map((l) => l.mood!);
-  const avgMood = moods.length > 0
-    ? Math.round((moods.reduce((a, b) => a + b, 0) / moods.length) * 10) / 10
-    : null;
+  const avgMood =
+    moods.length > 0
+      ? Math.round((moods.reduce((a, b) => a + b, 0) / moods.length) * 10) / 10
+      : null;
 
   const habitCounts = new Map<string, number>();
   for (const log of logs) {
@@ -66,8 +67,9 @@ function getMoodEmoji(mood: number): string {
 }
 
 function getMoodLabel(mood: number): string {
-  return { 1: "Tough", 2: "Down", 3: "Okay", 4: "Good", 5: "Great" }[mood] ??
-    "Okay";
+  return (
+    { 1: "Tough", 2: "Down", 3: "Okay", 4: "Good", 5: "Great" }[mood] ?? "Okay"
+  );
 }
 
 function truncate(str: string, max: number): string {
@@ -92,9 +94,9 @@ async function createUnsubscribeToken(
     ["sign"],
   );
   const signature = await crypto.subtle.sign("HMAC", key, data);
-  const hash = Array.from(new Uint8Array(signature)).map((b) =>
-    b.toString(16).padStart(2, "0")
-  ).join("");
+  const hash = Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
   return `${userId}:${hash}`;
 }
@@ -163,33 +165,35 @@ function buildEmailHtml(
 </table>
 </td></tr>
 ${
-    stats.topHabits.length > 0
-      ? `
+  stats.topHabits.length > 0
+    ? `
 <tr><td style="padding:24px 32px 0;">
 <h2 style="color:#1a1a2e;font-size:18px;margin:0 0 12px;">Top Habits</h2>
-${
-        stats.topHabits.map((h, i) =>
-          `<div style="display:inline-block;background:#e0e7ff;color:#4338ca;padding:8px 16px;border-radius:20px;font-size:14px;margin:0 6px 6px 0;">${
-            ["🥇", "🥈", "🥉"][i] || "•"
-          } ${h}</div>`
-        ).join("")
-      }
+${stats.topHabits
+  .map(
+    (h, i) =>
+      `<div style="display:inline-block;background:#e0e7ff;color:#4338ca;padding:8px 16px;border-radius:20px;font-size:14px;margin:0 6px 6px 0;">${
+        ["🥇", "🥈", "🥉"][i] || "•"
+      } ${h}</div>`,
+  )
+  .join("")}
 </td></tr>`
-      : ""
-  }
+    : ""
+}
 ${
-    quote
-      ? `
+  quote
+    ? `
 <tr><td style="padding:24px 32px 0;">
 <div style="background:linear-gradient(135deg,#f0f0ff,#fdf2f8);border-radius:12px;padding:20px;border-left:4px solid #8B5CF6;">
-<p style="font-style:italic;color:#4a4a6a;font-size:14px;margin:0;line-height:1.5;">"${
-        truncate(quote, 280)
-      }"</p>
+<p style="font-style:italic;color:#4a4a6a;font-size:14px;margin:0;line-height:1.5;">"${truncate(
+        quote,
+        280,
+      )}"</p>
 <p style="color:#8B5CF6;font-size:12px;margin:8px 0 0;font-weight:600;">💡 Your AI Insight</p>
 </div>
 </td></tr>`
-      : ""
-  }
+    : ""
+}
 <tr><td style="padding:32px;text-align:center;">
 <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:600;">View your insights →</a>
 </td></tr>
@@ -222,9 +226,10 @@ Deno.serve(async (req) => {
   try {
     unsubscribeSecret = resolveUnsubscribeSecret();
   } catch (error) {
-    const message = error instanceof UnsubscribeSecretMissingError
-      ? error.message
-      : "UNSUBSCRIBE_SECRET is not usable";
+    const message =
+      error instanceof UnsubscribeSecretMissingError
+        ? error.message
+        : "UNSUBSCRIBE_SECRET is not usable";
     console.error(
       JSON.stringify({ function: "send-weekly-digest", error: message }),
     );
@@ -267,10 +272,8 @@ Deno.serve(async (req) => {
   await Promise.allSettled(
     profiles.map(async (profile) => {
       try {
-        const { data: userData, error: userError } = await supabase.auth.admin
-          .getUserById(
-            profile.id,
-          );
+        const { data: userData, error: userError } =
+          await supabase.auth.admin.getUserById(profile.id);
         if (userError || !userData?.user?.email) {
           console.error(
             `No email for user ${profile.id}: ${
@@ -322,18 +325,18 @@ Deno.serve(async (req) => {
           .order("created_at", { ascending: false })
           .limit(1);
 
-        const quote = (insights && insights.length > 0)
-          ? (insights[0] as { prediction: string }).prediction
-          : null;
+        const quote =
+          insights && insights.length > 0
+            ? (insights[0] as { prediction: string }).prediction
+            : null;
 
         const token = await createUnsubscribeToken(
           profile.id,
           unsubscribeSecret,
         );
-        const unsubscribeUrl =
-          `${SUPABASE_URL}/functions/v1/unsubscribe-digest?user_id=${profile.id}&token=${
-            encodeURIComponent(token)
-          }`;
+        const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe-digest?user_id=${profile.id}&token=${encodeURIComponent(
+          token,
+        )}`;
 
         const html = buildEmailHtml(
           stats,
@@ -345,14 +348,15 @@ Deno.serve(async (req) => {
         const moodEmoji = stats.avgMood
           ? getMoodEmoji(Math.round(stats.avgMood))
           : "📊";
-        const subject = stats.daysLogged > 0
-          ? `Your EchoMirror week: ${moodEmoji} ${stats.avgMood} avg mood, ${stats.streak}🔥 streak`
-          : `Your EchoMirror week: No entries this week`;
+        const subject =
+          stats.daysLogged > 0
+            ? `Your EchoMirror week: ${moodEmoji} ${stats.avgMood} avg mood, ${stats.streak}🔥 streak`
+            : `Your EchoMirror week: No entries this week`;
 
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${RESEND_API_KEY}`,
+            Authorization: `Bearer ${RESEND_API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

@@ -46,8 +46,6 @@ app.*.map.json
 
 # Sensitive files - API keys, secrets, constants
 **/local.properties
-**/.env
-**/.env.*
 !**/.env.example
 **/*secret*
 **/config/passwords.yaml
@@ -71,3 +69,4 @@ dump.rdb
 *.rdb
 pr_msg_*.txt
 *_config.txt
+config.bat

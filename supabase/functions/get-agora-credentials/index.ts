@@ -85,9 +85,9 @@ export function deriveAgoraUid(userId: string): number {
 }
 
 /** Epoch seconds at which a session stops being joinable, or null if unknown. */
-export function sessionExpirySeconds(
-  session: { expires_at?: unknown },
-): number | null {
+export function sessionExpirySeconds(session: {
+  expires_at?: unknown;
+}): number | null {
   const value = session?.expires_at;
   if (typeof value !== "string") return null;
   const parsed = Date.parse(value);
@@ -96,10 +96,13 @@ export function sessionExpirySeconds(
 
 function json(body: unknown, status: number, traceId?: string): Response {
   const headers = traceId
-    ? addTraceIdToResponse({
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    }, traceId)
+    ? addTraceIdToResponse(
+        {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
+        traceId,
+      )
     : { ...corsHeaders, "Content-Type": "application/json" };
   return new Response(JSON.stringify(body), { status, headers });
 }
@@ -144,9 +147,8 @@ export async function getAgoraCredentialsFunction(
       return json({ error: "Invalid JSON body", traceId }, 400, traceId);
     }
 
-    const sessionId = typeof body?.sessionId === "string"
-      ? body.sessionId.trim()
-      : "";
+    const sessionId =
+      typeof body?.sessionId === "string" ? body.sessionId.trim() : "";
     if (!sessionId) {
       traceId = logger.warn("Missing sessionId", {}, traceId);
       return json({ error: "sessionId is required", traceId }, 400, traceId);
@@ -177,9 +179,13 @@ export async function getAgoraCredentialsFunction(
       authHeader.slice(7),
     );
     if (authError || !userData?.user) {
-      traceId = logger.warn("Invalid authorization token", {
-        error: authError?.message,
-      }, traceId);
+      traceId = logger.warn(
+        "Invalid authorization token",
+        {
+          error: authError?.message,
+        },
+        traceId,
+      );
       return json(
         {
           error: "Unauthorized",
@@ -201,9 +207,14 @@ export async function getAgoraCredentialsFunction(
       .single();
 
     if (sessionError && sessionError.code !== "PGRST116") {
-      traceId = logger.error("Failed to load session", sessionError, {
-        sessionId,
-      }, traceId);
+      traceId = logger.error(
+        "Failed to load session",
+        sessionError,
+        {
+          sessionId,
+        },
+        traceId,
+      );
       return json({ error: "Failed to load session", traceId }, 500, traceId);
     }
 
@@ -252,9 +263,10 @@ export async function getAgoraCredentialsFunction(
 
     // ── 4. Mint for the caller's derived identity, not a claimed one ────────
     const uid = deriveAgoraUid(callerId);
-    const requestedUid = body?.userId === undefined || body?.userId === null
-      ? null
-      : String(body.userId);
+    const requestedUid =
+      body?.userId === undefined || body?.userId === null
+        ? null
+        : String(body.userId);
 
     if (requestedUid !== null && requestedUid !== String(uid)) {
       // Not an error: older builds send their own numeric id. The token below

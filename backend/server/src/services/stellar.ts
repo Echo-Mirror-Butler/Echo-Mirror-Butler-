@@ -6,15 +6,15 @@ import {
   Networks,
   Operation,
   TransactionBuilder,
-} from '@stellar/stellar-sdk';
+} from "@stellar/stellar-sdk";
 
 const horizonUrl =
-  process.env.STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
+  process.env.STELLAR_HORIZON_URL ?? "https://horizon-testnet.stellar.org";
 const networkPassphrase =
   process.env.STELLAR_NETWORK_PASSPHRASE ?? Networks.TESTNET;
-const assetCode = process.env.STELLAR_ASSET_CODE ?? 'ECHO';
-const issuerPublic = process.env.STELLAR_ISSUER_PUBLIC ?? '';
-const friendbotUrl = 'https://friendbot.stellar.org';
+const assetCode = process.env.STELLAR_ASSET_CODE ?? "ECHO";
+const issuerPublic = process.env.STELLAR_ISSUER_PUBLIC ?? "";
+const friendbotUrl = "https://friendbot.stellar.org";
 
 const server = new Horizon.Server(horizonUrl);
 
@@ -34,7 +34,10 @@ export interface GiftResult {
 /**
  * Generates a new Stellar keypair and funds it via Friendbot (testnet only).
  */
-export async function createWallet(): Promise<{ publicKey: string; secretKey: string }> {
+export async function createWallet(): Promise<{
+  publicKey: string;
+  secretKey: string;
+}> {
   const keypair = Keypair.random();
 
   const response = await fetch(`${friendbotUrl}?addr=${keypair.publicKey()}`);
@@ -53,19 +56,19 @@ export async function createWallet(): Promise<{ publicKey: string; secretKey: st
  * Establishes a trustline so the wallet can hold ECHO tokens.
  */
 export async function establishTrustline(secretKey: string): Promise<void> {
-  if (!issuerPublic) throw new Error('STELLAR_ISSUER_PUBLIC is not configured');
+  if (!issuerPublic) throw new Error("STELLAR_ISSUER_PUBLIC is not configured");
 
   const keypair = Keypair.fromSecret(secretKey);
   const account = await server.loadAccount(keypair.publicKey());
 
   const tx = new TransactionBuilder(account, {
-    fee: '100',
+    fee: "100",
     networkPassphrase,
   })
     .addOperation(
       Operation.changeTrust({
         asset: echoAsset,
-        limit: '1000000',
+        limit: "1000000",
       }),
     )
     .setTimeout(30)
@@ -78,17 +81,19 @@ export async function establishTrustline(secretKey: string): Promise<void> {
 /**
  * Returns XLM and ECHO balances for the given public key.
  */
-export async function getWalletBalances(publicKey: string): Promise<WalletBalance> {
+export async function getWalletBalances(
+  publicKey: string,
+): Promise<WalletBalance> {
   const account = await server.loadAccount(publicKey);
 
-  let xlm = '0';
-  let echo = '0';
+  let xlm = "0";
+  let echo = "0";
 
   for (const balance of account.balances) {
-    if (balance.asset_type === 'native') {
+    if (balance.asset_type === "native") {
       xlm = balance.balance;
     } else if (
-      balance.asset_type === 'credit_alphanum4' &&
+      balance.asset_type === "credit_alphanum4" &&
       balance.asset_code === assetCode &&
       balance.asset_issuer === issuerPublic
     ) {
@@ -108,13 +113,13 @@ export async function sendEcho(
   amount: string,
   memo?: string,
 ): Promise<GiftResult> {
-  if (!issuerPublic) throw new Error('STELLAR_ISSUER_PUBLIC is not configured');
+  if (!issuerPublic) throw new Error("STELLAR_ISSUER_PUBLIC is not configured");
 
   const senderKeypair = Keypair.fromSecret(senderSecret);
   const account = await server.loadAccount(senderKeypair.publicKey());
 
   const builder = new TransactionBuilder(account, {
-    fee: '100',
+    fee: "100",
     networkPassphrase,
   }).addOperation(
     Operation.payment({

@@ -5,6 +5,7 @@ Node.js + Express API server for Echo Mirror Butler custom business logic that d
 ## Purpose
 
 While Supabase Edge Functions handle AI and Agora token generation, this server handles more complex business logic including:
+
 - Webhook processing (Supabase, Stripe, Agora)
 - Complex Stellar transaction orchestration
 - Scheduled jobs and background tasks
@@ -26,7 +27,7 @@ While Supabase Edge Functions handle AI and Agora token generation, this server 
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Supabase project with service role key
 
@@ -82,14 +83,17 @@ docker run -p 3000:3000 echo-mirror-butler-server
 ## API Endpoints
 
 ### Health Checks
+
 - `GET /health` - Basic health status
 - `GET /health/detailed` - Detailed system metrics
 
 ### Stellar API (Protected)
+
 - `POST /stellar/transaction` - Process Stellar transactions
 - `GET /stellar/balance/:accountId` - Get account balance
 
 ### Webhooks
+
 - `POST /webhooks/supabase` - Handle Supabase webhooks
 - `POST /webhooks/stripe` - Handle Stripe webhooks
 - `POST /webhooks/agora` - Handle Agora webhooks
@@ -145,8 +149,9 @@ server/
 ## Monitoring
 
 The server provides comprehensive health checks including:
+
 - Memory usage
-- CPU usage  
+- CPU usage
 - Uptime
 - Environment information
 - Node.js version details
@@ -166,6 +171,7 @@ docker run -p 3000:3000 --env-file .env echo-mirror-butler-server
 ### Environment Variables in Production
 
 Ensure all required environment variables are set in production:
+
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Service role key for admin operations
 - `JWT_SECRET` - Secret for JWT token validation

@@ -5,7 +5,11 @@
   justify-content: center;
   padding: 2rem 1rem;
   background:
-    radial-gradient(circle at 18% 14%, rgba(20, 99, 255, 0.17), transparent 32%),
+    radial-gradient(
+      circle at 18% 14%,
+      rgba(20, 99, 255, 0.17),
+      transparent 32%
+    ),
     radial-gradient(circle at 88% 10%, rgba(10, 138, 91, 0.2), transparent 28%),
     linear-gradient(130deg, var(--bg), var(--bg-accent));
 }
@@ -33,7 +37,9 @@
   background: var(--line);
   border: none;
   padding: 0;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .onboarding-dot.active {
@@ -114,7 +120,7 @@
 .onboarding-slider-value {
   font-size: 2.5rem;
   font-weight: 700;
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   color: var(--brand);
 }
 

@@ -8,7 +8,7 @@
  *   // Include traceId in response headers for client correlation
  */
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface LogContext {
   level: LogLevel;
@@ -47,7 +47,12 @@ export function createLogger(functionName: string) {
      * Log at a specific level
      * Returns the trace ID for inclusion in response headers
      */
-    log: (level: LogLevel, message: string, data?: any, requestId?: string): string => {
+    log: (
+      level: LogLevel,
+      message: string,
+      data?: any,
+      requestId?: string,
+    ): string => {
       const traceId = generateRequestId(requestId);
       const logEntry: LogContext = {
         level,
@@ -67,7 +72,7 @@ export function createLogger(functionName: string) {
     debug: (message: string, data?: any, requestId?: string): string => {
       const traceId = generateRequestId(requestId);
       const logEntry: LogContext = {
-        level: 'debug',
+        level: "debug",
         functionName,
         requestId: traceId,
         timestamp: new Date().toISOString(),
@@ -84,7 +89,7 @@ export function createLogger(functionName: string) {
     info: (message: string, data?: any, requestId?: string): string => {
       const traceId = generateRequestId(requestId);
       const logEntry: LogContext = {
-        level: 'info',
+        level: "info",
         functionName,
         requestId: traceId,
         timestamp: new Date().toISOString(),
@@ -101,7 +106,7 @@ export function createLogger(functionName: string) {
     warn: (message: string, data?: any, requestId?: string): string => {
       const traceId = generateRequestId(requestId);
       const logEntry: LogContext = {
-        level: 'warn',
+        level: "warn",
         functionName,
         requestId: traceId,
         timestamp: new Date().toISOString(),
@@ -115,10 +120,15 @@ export function createLogger(functionName: string) {
     /**
      * Log at error level (unrecoverable issues)
      */
-    error: (message: string, error?: Error | string, data?: any, requestId?: string): string => {
+    error: (
+      message: string,
+      error?: Error | string,
+      data?: any,
+      requestId?: string,
+    ): string => {
       const traceId = generateRequestId(requestId);
 
-      let errorContext: LogContext['error'] | undefined;
+      let errorContext: LogContext["error"] | undefined;
       if (error) {
         if (error instanceof Error) {
           errorContext = {
@@ -132,7 +142,7 @@ export function createLogger(functionName: string) {
       }
 
       const logEntry: LogContext = {
-        level: 'error',
+        level: "error",
         functionName,
         requestId: traceId,
         timestamp: new Date().toISOString(),
@@ -150,12 +160,14 @@ export function createLogger(functionName: string) {
  * Extract trace ID from incoming request headers
  * Looks for: X-Trace-ID, X-Request-ID, or X-Correlation-ID
  */
-export function extractTraceId(headers: Record<string, string>): string | undefined {
+export function extractTraceId(
+  headers: Record<string, string>,
+): string | undefined {
   return (
-    headers['x-trace-id'] ||
-    headers['x-request-id'] ||
-    headers['x-correlation-id'] ||
-    headers['traceparent']?.split('-')[1] // OpenTelemetry format
+    headers["x-trace-id"] ||
+    headers["x-request-id"] ||
+    headers["x-correlation-id"] ||
+    headers["traceparent"]?.split("-")[1] // OpenTelemetry format
   );
 }
 
@@ -164,11 +176,11 @@ export function extractTraceId(headers: Record<string, string>): string | undefi
  */
 export function addTraceIdToResponse(
   headers: Record<string, string>,
-  traceId: string
+  traceId: string,
 ): Record<string, string> {
   return {
     ...headers,
-    'X-Trace-ID': traceId,
-    'X-Request-ID': traceId,
+    "X-Trace-ID": traceId,
+    "X-Request-ID": traceId,
   };
 }
